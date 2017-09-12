@@ -12,9 +12,11 @@ These files allows to :
 
 Several packages are required to run the code. Most are pretty standard.
 
-  *[Numpy](http://www.numpy.org)
-  *[Scipy](https://www.scipy.org/)
-  *[PyTorch](http://pytorch.org)
+  * [Numpy](http://www.numpy.org)
+
+  * [Scipy](https://www.scipy.org/)
+  
+  * [PyTorch](http://pytorch.org)
 
 The deep learning was implemented with PyTorch 2. (pytorch.org)
 To install pytorch with anaconda 
@@ -23,7 +25,7 @@ To install pytorch with anaconda
 conda install pytorch torchvision cuda80 -c soumith
 ```
 
-..*[tensorboard](https://github.com/lanpa/tensorboard-pytorch)
+  * [tensorboard](https://github.com/lanpa/tensorboard-pytorch)
 
 To install pytorch-tensorboard with pip
 
