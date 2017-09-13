@@ -1,12 +1,27 @@
 # DeepRank Machinery Version 0.0
 
-These files allows to :
+These module allows to :
 
    * assemble data from different sources (PDB,PSSM,Scores,....) in a comprehensible data base where each conformation has its own folder. In each folder are stored the conformation, features and targets.
 
    * Map several features to a grid. The type of features as well as the grid parameters can be freely chosen. New features can be mapped without havng to recompute old ones.
 
    * Use a 3d or 2d CNN to predict possible targets (binary class, haddock-score ...) from the data set
+
+
+## Quick introdution
+
+Minimal information to use the module 
+
+  * clone the repository `git clone https://github.com/DeepRank/deeprank_v0.0.git`
+  * go there `cd deeprank_v0.0`
+  * install the module `python setup.py install`
+  * download the BM4 from aclazar (/home/deep/HADDOCK-decoys/BM4_dimers)
+  * go in the example folder `cd ./example/`
+  * change the path to the BM4 folder in assemble.py
+  * assemble the data base `python assemble.py`
+  * map the features to the grid `python map.py`
+  * use deep learning `python learn.py`
 
 
 ## Installation 
