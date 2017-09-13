@@ -242,7 +242,7 @@ The example file learn.py shows how to use the module to perform deep learning
 
 ```python
 import torch.optim as optim
-from deeprank.learn import models3d
+import models3d
 
 #adress of the database
 database = './training_set/'
@@ -254,7 +254,7 @@ data_set = deeprank.DeepRankDataSet(database,
 
 # create the network
 model = deeprank.DeepRankConvNet(data_set,
-                        models3d.SmallConvNet3D,
+                        models3d.ConvNet3D_reg,
                         model_type='3d',
                         task='reg',
                         tensorboard=False,
@@ -271,9 +271,11 @@ model.train(nepoch = 250)
 ````
 
 The file decoysID.dat contains only the ID of the decoys. We use this file here to filter the database. The features are all the atomic densities and the target the haddock score. 
-Using this data set we perform a regression using a 3D CNN defined models3d.py. We here change the optimizer and perform only 250 epoch.
+Using this data set we perform a regression using a 3D CNN defined models3d.py. We here change the optimizer and perform only 250 epoch. After completion you should obtain a picture that looks like that
 
-To perform a regression on the binary_class using all the comformation in the database, we can modify the script as follow
+![alt-text](https://github.com/DeepRank/deeprank_v0.0/blob/master/pics/haddock_prediction.png)
+
+To perform a regression on the binary_class using all the comformation in the database, we can modify the script as follow. Note that we use different CNN for regression and classification. The only difference is in the final layer that has 1 or  2 output.
 
 ```python
 data_set = deeprank.DeepRankDataSet(database,
@@ -282,9 +284,12 @@ data_set = deeprank.DeepRankDataSet(database,
 
 # create the network
 model = deeprank.DeepRankConvNet(data_set,
-                        models3d.SmallConvNet3D,
+                        models3d.ConvNet3D_binclass,
                         model_type='3d',
                         task='class',
                         tensorboard=False,
                         outdir='./test_out/')
 ```
+After completion you should have a picture looking like that 
+
+![alt-text](https://github.com/DeepRank/deeprank_v0.0/blob/master/pics/class_prediction.png)
