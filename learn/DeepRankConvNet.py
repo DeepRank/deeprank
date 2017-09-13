@@ -17,11 +17,6 @@ import torch.utils.data as data_utils
 
 from tensorboard import SummaryWriter
 
-from models3d import *
-from models2d import *
-from DeepRankDataSet import DeepRankDataSet
-
-
 class DeepRankConvNet():
 
 	'''
@@ -662,6 +657,8 @@ class DeepRankConvNet():
 
 if __name__ == "__main__":
 
+
+	from deeprank import DeepRankDataSet, DeepRankConvNet
 
 	# create the sets
 	data_folder = '../training_set/'

@@ -20,6 +20,7 @@ def read_pdb(filename):
 
 	return atom_xyz
 
+'''
 def data_augmentation(data_folder):
 
 	# check all the input subfolders 
@@ -27,7 +28,7 @@ def data_augmentation(data_folder):
 	sub_names = sub_names.split()
 
 	# loop through them
-	for isub sub_ in enuemrate(sub_names):
+	for isub, sub_ in enuemrate(sub_names):
 
 		# get the name
 		sub = sub_.decode('utf8')
@@ -37,4 +38,4 @@ def data_augmentation(data_folder):
 
 		# rotate the positions
 		center = np.mean(xyz,0)
-		
+'''

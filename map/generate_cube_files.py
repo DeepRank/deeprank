@@ -5,7 +5,7 @@ import argparse
 import subprocess as sp 
 import os
 
-def main(argv):
+def generate_viz_files(mol_dir):
 
 
 	'''
@@ -29,13 +29,6 @@ def main(argv):
 
 	vmd -e <feature_name>.vmd
 	'''
-
-	parser = argparse.ArgumentParser(description='export the grid data in cube format')
-	parser.add_argument('mol_dir',help="Directory of the molecule")
-	args = parser.parse_args()
-
-	# shortcut
-	mol_dir = args.mol_dir
 
 	# create the output directory
 	outdir = mol_dir+'/data_viz/'
@@ -132,5 +125,14 @@ def write_molspec_vmd(f,name,rep,color):
 
 
 if __name__ == "__main__":
-	import sys
-	main(sys.argv[1:])
+	
+	import argparse
+
+	parser = argparse.ArgumentParser(description='export the grid data in cube format')
+	parser.add_argument('mol_dir',help="Directory of the molecule")
+	args = parser.parse_args()
+
+	# shortcut
+	mol_dir = args.mol_dir
+
+	generate_viz_files(mol_dir)

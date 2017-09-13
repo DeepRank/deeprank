@@ -13,7 +13,7 @@ except:
 # the main gridtool class
 class GridTools(object):
 
-'''
+	'''
 	
 	Map the feature of a complex on the grid
 
@@ -104,8 +104,8 @@ class GridTools(object):
 
 			PDB files containing the positions of each monomer
 			Can be used to represent each monomer with a specific color
-
- 	'''
+	
+	'''
 
 	def __init__(self,mol_name=None,data_type='haddock',
 		         number_of_points = [30,30,30], resolution = [1.,1.,1.],
@@ -289,6 +289,10 @@ class GridTools(object):
 		os.system(cmd)
 		os.system('mv xaa %smonomer1.pdb' %(self.export_path))
 		os.system('mv xab %smonomer2.pdb' %(self.export_path))
+
+		# remove an extra file that is generated sometimes
+		if os.path.isfile('xac'):
+			os.system('rm xac')
 
 		# clean
 		os.system('rm _atom.dat')

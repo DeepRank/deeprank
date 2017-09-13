@@ -53,7 +53,7 @@ class DataAssembler(object):
 		self.targets = targets
 		self.outdir = outdir
 
-	def create_data_folders(self):
+	def create_database(self):
 
 		'''
 		Create all the data files generate by all the pdb contained
@@ -233,7 +233,7 @@ if __name__ == "__main__":
 		              features=features,targets=targets,outdir=outdir)
 
 
-	da.create_data_folders()
+	da.create_database()
 	
 
 	'''
