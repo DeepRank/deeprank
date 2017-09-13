@@ -13,31 +13,52 @@ except:
 # the main gridtool class
 class GridTools(object):
 
-	'''
+'''
+	
+	Map the feature of a complex on the grid
+
+
 	ARGUMENTS
 
-	mol_name : molecule name containing the two proteins docked. MUST BE A PDB FILE
+	mol_name
+
+			molecule name containing the two proteins docked. 
+			MUST BE A PDB FILE
 	          
-	data_type : 'haddock' or 'zdock' Type of PDB we re tryin to read
-	             the corresponding routines are in get_pdb_data.py
+	data_type
 
-	number_of_points : the number of points we want in each direction of the grid
+			'haddock' or 'zdock' Type of PDB we re tryin to read
+			the corresponding routines are in get_pdb_data.py
 
-	resolution : the distance (in Angs) between two points we want. 
+	number_of_points 
 
-	atomic_densities : dictionary of atom types cand their vdw radius
-					   exemple {'CA':3.5, 'CB':3.0}
-	                   The correspondign atomic densities will be mapped on the grid 
-	                   and exported
+			the number of points we want in each direction of the grid
 
-	residue_feature : dictionnary containing the name and the data files of the features
-					  exemple : {'PSSM' : [fileA,fileB]}
-					  The corresponding features will be mapped on the grid and exorted
+	resolution
 
-	atomic_feature  : Not yet implemented
+			the distance (in Angs) between two points we want. 
 
-	export_path : the path where to export the file. 
-	              if not specified the files will be exported in the cwd  
+	atomic_densities
+
+			dictionary of atom types cand their vdw radius
+			exemple {'CA':3.5, 'CB':3.0}
+			The correspondign atomic densities will be mapped on the grid 
+			and exported
+
+	residue_feature
+
+			dictionnary containing the name and the data files of the features
+			exemple : {'PSSM' : [fileA,fileB]}
+			The corresponding features will be mapped on the grid and exorted
+
+	atomic_feature
+
+			Not yet implemented
+
+	export_path
+			
+			the path where to export the file. 
+			if not specified the files will be exported in the cwd  
 
 
 	USAGE
@@ -55,28 +76,39 @@ class GridTools(object):
 
 	OUTPUT : all files are located in export_path
 
-	AtomicDensities.npy : requires export_atomic_densities = True
-	                      contains the atomic densities for each atom_type.
-						  The format is : Natomtype x Nx x Ny x Nz
+	AtomicDensities.npy
 
-	XX_atdens.cube 		: requires export_atomic_densities = True
-						  XX is the PDB atom type e.g. CA, CE, .... specified in atomtype_list
-						  Cube file containing the atomic densities. 
-						  Can be read directly in VMD
+			requires export_atomic_densities = True
+			contains the atomic densities for each atom_type.
+			The format is : Natomtype x Nx x Ny x Nz
 
-	<feature_name>.npy  : if residue_feature or atomic_feature is not NONE
-						  contains all the grid data of he corresponding feature
-						  The format is : Nfeature x Nx x Ny x Nz
-						  for example PSSM.npy contains usually 20 grid_data
+	XX_atdens.cube
 
-	<n>_<feature_name>.cube : Cube file containing the n-th grid data of the
-	                          corresponding feature
+			requires export_atomic_densities = True
+			XX is the PDB atom type e.g. CA, CE, .... specified in atomtype_list
+			Cube file containing the atomic densities. 
+			Can be read directly in VMD
+
+	<feature_name>.npy
+
+			if residue_feature or atomic_feature is not NONE
+			contains all the grid data of he corresponding feature
+			The format is : Nfeature x Nx x Ny x Nz
+			for example PSSM.npy contains usually 20 grid_data
+
+	<n>_<feature_name>.cube
+
+			Cube file containing the n-th grid data of the
+			corresponding feature
  
-	contact_atoms.xyz   : XYZ file containing the positions of the contact atoms 
+	contact_atoms.xyz
 
-	monomer1.pdb        : 
-	monomer2.pdb 		: PDB files containing the positions of each monomer
-						  Can be used to represent each monomer with a specific color
+			XYZ file containing the positions of the contact atoms 
+
+	monomer1.pdb/momomer2.pdb
+
+			PDB files containing the positions of each monomer
+			Can be used to represent each monomer with a specific color
 
  	'''
 

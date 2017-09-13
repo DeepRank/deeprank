@@ -7,19 +7,20 @@ import sys
 
 
 '''
-Generate the input/output data on the grids for a series of prot-prot conformations
-The calculation is actually performed by the gridtools class in GridTools.py
+	Generate the input/output data on the grids for a series of prot-prot conformations
+	The calculation is actually performed by the gridtools class in GridTools.py
 
-Argument:
+	ARGUMENTS:
 
-      data_folder   : main folder containing subfolder with pdbs targets/features
-                      of the complexes required for the dataset
+	data_folder 
 
-	  data_type	    : 'haddock' or 'zdock' to specify the format of the in/out
-	                   so far only tested with haddock
+			main folder containing subfolder with pdbs targets/features
+			of the complexes required for the dataset
 
-	  grid info 	: dictionay containing the grid information
-	                  see below for details
+	grid info
+
+			dictionay containing the grid information
+			see below for details
 '''
 
 def generate_data(data_folder, grid_info,data_type='haddock'):
