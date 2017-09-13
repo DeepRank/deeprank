@@ -8,6 +8,20 @@ These files allows to :
 
    * Use a 3d or 2d CNN to predict possible targets (binary class, haddock-score ...) from the data set
 
+
+## Installation 
+
+You should be able to install the module with
+
+```
+python setup.py install
+```
+If you need dependencies check the pre-requisite section. To test the installation open a python console and type
+
+```python
+import deeprank
+```
+
 ## Pre-requisite
 
 The code is written in Python3. Several packages are required to run the code but most are pretty standard. Here is an non-exhaustive list of dependencies
@@ -41,7 +55,9 @@ This package depends on tensorflow-tensorboard. If you don't have tensorflow ins
 pip install tensorflow-tensorboard
 ```
 
-The visuzalisation of the feature on the grid can be done quite easily with VMD
+## Visualization of the features
+
+The visuzalisation of the features on the grid can be done quite easily with VMD
 
   * [VMD](http://www.ks.uiuc.edu/Research/vmd/)
 
@@ -58,6 +74,7 @@ The (manual) workflow contains three main stages
 3 Create a torch dataset from the database and use a CNN to predict a pre-defined target
 
 The code for each stage are contained in the own folder : **_assemble/ map/ learn/_**
+Examples of use for the three stages are contained in the example folder. They are detailled in the foloowing as well
 
 ### Download the data set
 
@@ -69,48 +86,72 @@ BM4=/home/deep/HADDOCK-decoys/BM4_dimers
 
 All the files needed in the following are there
 
-decoys pdb : $BM4/decoys_pdbFLs
+  * decoys pdb : $BM4/decoys_pdbFLs
 
-native pdb : $BM4/BM4_dimers_bound/pdbFLs_ori (or refined ...)
+  * native pdb : $BM4/BM4_dimers_bound/pdbFLs_ori (or refined ...)
 
-features   : $BM4/PSSM (only PSSM so far)
+  * features   : $BM4/PSSM (only PSSM so far)
 
-targets    : $BM4/model_qualities/XXX/water   (XXX=haddockscore, i-rmsd, Fnat, ....)
+  * targets    : $BM4/model_qualities/XXX/water   (XXX=haddockscore, i-rmsd, Fnat, ....)
 
-classID    : $BM4/training_set_IDS/classIDs.lst
+  * classID    : $BM4/training_set_IDS/classIDs.lst
 
 We can later on add more features, and more targets.
 The classIDs.lst contains the IDs of 228 complexes (114 natives / 114 decoys) preselected for training. The decoys were selected for their very low i-rmsd, i.e. they are very bad decoys.
 
 Dowload the $BM4 folder (maybe zip it before as it is pretty big !)
 
-### Assemble the database
+## Assemble the database
 
 The file assemble/assemble_data.py allows to collect data and to create a clean database. The data can contain natives pdbs, decoy pdbs, different features, different targets. In the output directory of the database, each conformation  has its own subfolder containing its pdb, features files and target data.
 
-To test the routine, change the path to the BM4 folder in assemble.py at line 223. Then simply type
 
-```
-python assemble_data.py
-```
-
-to assemble the database. There are several example of use at the end of assemble.py to add a feature or a target to an existing dataset. For example
+The example assemble.py demonstrate how to use the module to create the database. 
 
 ```python
-da = DataAssembler(targets={'i-rmsd' : BM4 /path/to/irmsd},outdir='../training_set')
+import deeprank
+
+# adress of the BM4 folder
+BM4 = '/path/to/BM4/folder'
+
+# sources to assemble the data base
+decoys = BM4 + 'decoys_pdbFLs/'
+natives = BM4 + '/BM4_dimers_bound/pdbFLs_ori'
+features = {'PSSM' : BM4 + '/PSSM'}
+targets = {'haddock_score' : BM4 + '/model_qualities/haddockScore/water'}
+classID = BM4 + '/training_set_IDS/classIDs.lst'
+
+# address of the database
+database = './training_set/'
+
+#init the data assembler 
+da = deeprank.DataAssembler(classID=classID,decoys=decoys,natives=natives,
+	              features=features,targets=targets,outdir=database)
+
+#create new files
+da.create_database()
+
+
+# add a new target to the database
+targets = {'fnat' : BM4 + '/model_qualities/Fnat/water'}
+da = DataAssembler(targets=targets,outdir=database)
 da.add_target()
+
+# add a new feature to the database
+features = {'PSSM_2' : BM4 + '/PSSM'}
+da = DataAssembler(features=features,outdir=database)
+da.add_feature()
 ```
 
-will add a new target, here the i-rmsd, to all the complexes present in the database ../training_set.
-
-
-### Map the feature to a grid
+## Map the feature to a grid
 
 The file gridtool.py in map/ is the main class for the mapping of the features on the grid. 
-This class has a lot of attributes and methods.
+This class has a lot of attributes and methods. The atomic densities are mapped following the protein-ligand paper. The mapping of the other features (so far only PSSM) is still very experimental.
+
 You can test the routine on a single conformation with
 
 ```
+cd $deeprankhome/map
 python gridtool.py
 ````
 
@@ -135,27 +176,104 @@ cd ./data_viz/
 vmd -e AtomicDensities.vmd
 ```
 
-### Map the features of all the database
+## Map the features of all the database
 
-To map the features of all the complexes contained in the database, change the folder name in gendatatool.py to the training_set/ folder on your machine. Then type
+The file map/gendatatool.py allows to map all the features of all the conformations contained in the database. The example file map.py shows how to use the module to do that
 
+
+```python
+import deeprank
+
+# adress of the database
+database = './training_set/'
+
+
+#define the dictionary for the grid
+#many more options are available
+#see deeprank/map/gridtool.py
+
+grid_info = {
+	'atomic_densities' : {'CA':3.5,'CB':3.5,'N':3.5},
+	'number_of_points' : [30,30,30],
+	'resolution' : [1.,1.,1.]
+}
+
+
+#map the features
+deeprank.map_features(database,grid_info)
+
+#visualize the data of one complex
+deeprank.generate_viz_files(database+'/1AK4')
 ```
-python gendatatool.py
-```
 
-This will loop over all the folder and map all the features. The cuve files are not generated automatically as it will take to much time. The generate_cube_files.py is however automatically copied to the training_set/ folder. You can use it to visualize the data of a particular complex as before.
+## Deep Learning
 
-```
-python generate_cube_files.py molfolder
-cp moldfolder/viz_data
-vmd -e AtomicDensities.vmd
-```
+The main file for the deeplearning phase is learn/DeepRankConvNet.py and learn/DeepRankDataSet. A lot of options are available here. The headers f=of both file contains information about the arguments of both classes and their use. 
 
-### Deep Learning
+DeepRankDataSet allows to create a Torch data set from the database. During this process it is possible to select :
 
-The main file for the deeplearning phase is DeepRankConvNet.py. A lot of options are available here. You can in particular to use a 2d or 3d conv net and to do either a regression or a classification. The header of the file explains all the options. To start the learning loop simply type 
+  * to select a subset of the database either with an integer or by providing a list of IDs. 
+   
+  * to select only some features from the database and exclude others
 
-```
-python DeepRankConvNet.py
+  * to select the target among the ones contained in the database
+
+  * normalize the features and/or the targets
+
+DeepRankConvnet is the class in charge of the deep learning. During the initialisation you need to provide a torch dataset outputed by DeepRankDataSet and a model, i.e. the definition of a Neural Network. Examples of such NN are provided in models2d.py and models3d.py. You can also
+
+  * choose to use a 2d or a 3d CNN. This must match the definition of the CNN used. If a 2d CNN is chosen we can pick the plane orientation
+
+  * choose the type of task between regression (reg) and classification (class). Depending on the task, the loss function and the plotting routines will be autmaticall adjusted.
+
+ 
+The example file learn.py shows how to use the module to perform deep learning
+
+```python
+import torch.optim as optim
+from deeprank.learn import models3d
+
+#adress of the database
+database = './training_set/'
+
+data_set = deeprank.DeepRankDataSet(database,
+                           filter_dataset = 'decoyID.dat',
+                           select_feature={'AtomicDensities' : 'all'},
+                           select_target='haddock_score')
+
+# create the network
+model = deeprank.DeepRankConvNet(data_set,
+                        models3d.SmallConvNet3D,
+                        model_type='3d',
+                        task='reg',
+                        tensorboard=False,
+                        outdir='./test_out/')
+
+# change the optimizer (optional)
+model.optimizer = optim.SGD(model.net.parameters(),
+                            lr=0.001,
+                            momentum=0.9,
+                            weight_decay=0.005)
+
+# start the training
+model.train(nepoch = 250)
 ````
 
+The file decoysID.dat contains only the ID of the decoys. We use this file here to filter the database. The features are all the atomic densities and the target the haddock score. 
+Using this data set we perform a regression using a 3D CNN defined models3d.py. We here change the optimizer and perform only 250 epoch.
+
+To perform a regression on the binary_class using all the comformation in the database, we can modify the script as follow
+
+```python
+data_set = deeprank.DeepRankDataSet(database,
+                           select_feature={'AtomicDensities' : 'all'},
+                           select_target='binary_class')
+
+# create the network
+model = deeprank.DeepRankConvNet(data_set,
+                        models3d.SmallConvNet3D,
+                        model_type='3d',
+                        task='class',
+                        tensorboard=False,
+                        outdir='./test_out/')
+```
