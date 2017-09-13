@@ -261,6 +261,7 @@ DeepRankConvnet is the class in charge of the deep learning. During the initiali
 The example file learn.py shows how to use the module to perform deep learning
 
 ```python
+import deeprank
 import torch.optim as optim
 import models3d
 

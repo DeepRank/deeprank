@@ -1,5 +1,6 @@
 import deeprank
-
+import torch.optim as optim
+import models3d
 
 ##########################################################################
 #
@@ -7,8 +8,6 @@ import deeprank
 #
 ##########################################################################
 
-import torch.optim as optim
-import models3d
 
 #adress of the database
 database = './training_set/'
