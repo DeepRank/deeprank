@@ -146,7 +146,12 @@ da.add_feature()
 ## Map the feature to a grid
 
 The file gridtool.py in map/ is the main class for the mapping of the features on the grid. 
-This class has a lot of attributes and methods. The atomic densities are mapped following the protein-ligand paper. The mapping of the other features (so far only PSSM) is still very experimental.
+This class has a lot of attributes and methods. 
+
+The atomic densities are mapped following the protein-ligand paper. A main difference though is that the atomic density of chain A(B) are encoded as positive(negative) numbers. 
+
+
+The mapping of the other features (so far only PSSM) is still very experimental. The value of the features are mapped to the grid using a bspline of degree 3. This is a usual method in Particle Mesh Ewald. 
 
 You can test the routine on a single conformation with
 
@@ -290,6 +295,6 @@ model = deeprank.DeepRankConvNet(data_set,
                         tensorboard=False,
                         outdir='./test_out/')
 ```
-After completion you should have a picture looking like that 
+After completion you should have a picture looking like that. The blue/red dots are native/deoys. The dots are in center if the CNN thinks that they are decoys and at the border if it thinks they are natives. The stars are training set, triangles validation set and circle test set. This is probably not the best way of visualizing this. Suggestions are welcome !
 
 ![alt-text](https://github.com/DeepRank/deeprank_v0.0/blob/master/pics/class_prediction.png)
