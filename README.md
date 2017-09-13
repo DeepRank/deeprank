@@ -76,7 +76,7 @@ The (manual) workflow contains three main stages
 The code for each stage are contained in the own folder : **_assemble/ map/ learn/_**
 Examples of use for the three stages are contained in the example folder. They are detailled in the foloowing as well
 
-### Download the data set
+## Download the data set
 
 The docking bench mark 4 (BM4) is located on alcazar at 
 
@@ -205,6 +205,17 @@ deeprank.map_features(database,grid_info)
 #visualize the data of one complex
 deeprank.generate_viz_files(database+'/1AK4')
 ```
+
+After completion of the script you can visualize the atomic densities with
+
+```
+cd ./training_set/1AK4/data_viz
+vmd -e AtomicDensities.vmd
+```
+
+You should get something that looks like that
+
+![alt-text](https://github.com/DeepRank/deeprank_v0.0/blob/master/pics/grid.jpeg)
 
 ## Deep Learning
 
