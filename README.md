@@ -59,11 +59,16 @@ The data set BM4 is located on alcazar at
 BM4=/home/deep/HADDOCK-decoys/BM4_dimers
 ```
 
-All the files needed in the following are there, i.e. 
+All the files needed in the following are there
+
 decoys pdb : $BM4/decoys_pdbFLs
+
 native pdb : $BM4/BM4_dimers_bound/pdbFLs_ori (or refined ...)
+
 features   : $BM4/PSSM (only PSSM so far)
+
 targets    : $BM4/model_qualities/XXX/water   (XXX=haddockscore, i-rmsd, Fnat, ....)
+
 classID    : $BM4/training_set_IDS/classIDs.lst
 
 We can add later on more features, and more targets.
