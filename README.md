@@ -51,6 +51,26 @@ The (manual) workflow contains three main stages
 
 The code for each stage are contained in the own folder : **_assemble/ map/ learn/_**
 
+### Download the data set
+
+The data set BM4 is located on alcazar at 
+
+```
+BM4=/home/deep/HADDOCK-decoys/BM4_dimers
+```
+
+All the files needed in the following are there, i.e. 
+decoys pdb : $BM4/decoys_pdbFLs
+native pdb : $BM4/BM4_dimers_bound/pdbFLs_ori (or refined ...)
+features   : $BM4/PSSM (only PSSM so far)
+targets    : $BM4/model_qualities/XXX/water   (XXX=haddockscore, i-rmsd, Fnat, ....)
+classID    : $BM4/training_set_IDS/classIDs.lst
+
+We can add later on more features, and more targets.
+The classIDs.lst contains the IDs of 228 complexes (114 natives 114 decoys) preselected for training. The decoys were selected for theur very low i-rmsd, i.e. they are very bad decoys.
+
+Dowload the $BM4 folder (maybe zip it before as it is pretty big !)
+
 ### Assemble the data set
 
 The file assemble/assemble_data.py allows to collect data and to create a clean data base. The data can contain natives pdbs, decoy pdbs, different features, different targets. In the output directory, each conformation will have its own subfolder containing its pdb, features files and target data.

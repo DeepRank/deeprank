@@ -65,7 +65,7 @@ class GridTools(object):
 
 
 	grid = GridTools(mol_name='complex.1.pdb',
-		             atomic_densities=['CA'],
+		             atomic_densities={'CA':3.5},
 		             number_of_points = [30,30,30],
 		             resolution = [1.,1.,1.])
 
@@ -95,11 +95,6 @@ class GridTools(object):
 			contains all the grid data of he corresponding feature
 			The format is : Nfeature x Nx x Ny x Nz
 			for example PSSM.npy contains usually 20 grid_data
-
-	<n>_<feature_name>.cube
-
-			Cube file containing the n-th grid data of the
-			corresponding feature
  
 	contact_atoms.xyz
 
