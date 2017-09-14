@@ -25,7 +25,7 @@ Minimal information to use the module
 
 ## To Do list
 
-There are many things that are still needed to further develop the platform.
+There are many things that are still needed to further develop the platform. The two most important ones are:
 
 1 *Feature Mapping* : So far we only use the atomic densities and somehow the PSSM. Even for the PSSM the mapping can be drastically improved. Besides, we need to make it possible to use other residue based features and atomic based features. To do so we need to decide if the code reads precalculated feature values and only map them to the grid, or if we compute these values on the fly. 
 
