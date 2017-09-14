@@ -27,7 +27,7 @@ Minimal information to use the module
 
 There are many things that are still needed to further develop the platform. The two most important ones are:
 
-1 *Feature Mapping* : So far we only use the atomic densities and somehow the PSSM. Even for the PSSM the mapping can be drastically improved. Besides, we need to make it possible to use other residue based features and atomic based features. To do so we need to decide if the code reads precalculated feature values and only map them to the grid, or if we compute these values on the fly. 
+1 *Feature Mapping* : So far we only use the atomic densities and somehow the PSSM. Even for the PSSM the mapping can be drastically improved. Besides, we need to make it possible to use other residue based features and atomic based features. To do so we need to decide if the code reads precalculated feature values and only map them to the grid, or if we compute these values on the fly. Th feature mapping is done by the GridTool class in map/gridtools.py. It should be relatively easy to extend this class to map new features.
 
 2 *Cuda support* : So far the code only works on CPU. We need to port them on GPUs. We can use GPUs on the gpu node of alcazar. Torch makes it relatively easy to use GPUs but the code need to be modified.
 
