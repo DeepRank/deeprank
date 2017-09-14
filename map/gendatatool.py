@@ -25,7 +25,7 @@ from deeprank.map import gridtool as gt
 			Boolean to force the removal of all data
 '''
 
-def map_features(data_folder, grid_info,data_type='haddock',reset=False):
+def map_features(data_folder, grid_info,reset=False):
 
 
 	# check all the input PDB files
@@ -64,7 +64,6 @@ def map_features(data_folder, grid_info,data_type='haddock',reset=False):
 
 		# compute the data we want on the grid
 		grid = gt.GridTools(mol_name=mol_name,
-						 data_type = data_type,
 			             number_of_points = grid_info['number_of_points'],
 			             resolution = grid_info['resolution'],
 			             atomic_densities=grid_info['atomic_densities'],

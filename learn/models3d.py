@@ -69,7 +69,7 @@ class SmallConvNet3D(nn.Module):
 		size = self._get_conv_output(input_shape)
 
 		self.fc1   = nn.Linear(size,84)
-		self.fc2   = nn.Linear(84,1)
+		self.fc2   = nn.Linear(84,2)
 
 		self.sm = nn.Softmax()
 

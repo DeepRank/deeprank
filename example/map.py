@@ -1,4 +1,4 @@
-import deeprank
+import deeprank.map
 
 ##########################################################################
 #
@@ -22,9 +22,9 @@ grid_info = {
 
 
 #map the features
-deeprank.map_features(database,grid_info)
+deeprank.map.map_features(database,grid_info)
 
 #visualize the data of one complex
-deeprank.generate_viz_files(database+'/1AK4')
+deeprank.map.generate_viz_files(database+'/1AK4')
 
 

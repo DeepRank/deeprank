@@ -16,7 +16,7 @@ the input size of the first FC hidden layer
 
 '''
 
-class SmallConvNet2D(nn.Module):
+class ConvNet2D_reg(nn.Module):
 
 	def __init__(self,input_shape):
 		super(SmallConvNet2D,self).__init__()

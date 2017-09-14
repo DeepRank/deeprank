@@ -36,7 +36,8 @@ def generate_viz_files(mol_dir):
 		os.mkdir(outdir)
 
 	# make a copy of the pdb file
-	sp.call('cp %s/complex.pdb %s' %(mol_dir,outdir),shell=True)
+	if os.path.isfile(mol_dir+'/complex.pdb'):
+		sp.call('cp %s/complex.pdb %s' %(mol_dir,outdir),shell=True)
 
 	# get the grid points
 	grid = np.load(mol_dir+'/input/grid_points.npz')

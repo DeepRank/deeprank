@@ -1,1 +1,1 @@
-__all__ = ['assemble_data.py']
+from deeprank.assemble.assemble_data import DataAssembler

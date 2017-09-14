@@ -658,7 +658,7 @@ class DeepRankConvNet():
 if __name__ == "__main__":
 
 
-	from deeprank import DeepRankDataSet, DeepRankConvNet
+	from deeprank.learn import DeepRankDataSet, DeepRankConvNet
 
 	# create the sets
 	data_folder = '../training_set/'

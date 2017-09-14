@@ -1,4 +1,4 @@
-import deeprank
+import deeprank.assemble
 
 
 ##########################################################################
@@ -22,8 +22,8 @@ classID = BM4 + '/training_set_IDS/classIDs.lst'
 database = './training_set/'
 
 #inti the data assembler 
-da = deeprank.DataAssembler(classID=classID,decoys=decoys,natives=natives,
-	              features=features,targets=targets,outdir=database)
+da = deeprank.assemble.DataAssembler(classID=classID,decoys=decoys,natives=natives,
+	                                 features=features,targets=targets,outdir=database)
 
 #create new files
 da.create_database()
@@ -32,14 +32,14 @@ da.create_database()
 '''
 targets = {'fnat' : BM4 + '/model_qualities/Fnat/water'}
 outdir = './training_set/'
-da = DataAssembler(targets=targets,outdir=database)
+da = deeprank.assemble.DataAssembler(targets=targets,outdir=database)
 da.add_target()
 '''
 
 '''
 features = {'PSSM_2' : BM4 + '/PSSM'}
 outdir = './training_set/'
-da = DataAssembler(features=features,outdir=database)
+da = deeprank.assemble.DataAssembler(features=features,outdir=database)
 da.add_feature()
 ''' 
 

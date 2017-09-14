@@ -25,11 +25,6 @@ class GridTools(object):
 			molecule name containing the two proteins docked. 
 			MUST BE A PDB FILE
 	          
-	data_type
-
-			'haddock' or 'zdock' Type of PDB we re tryin to read
-			the corresponding routines are in get_pdb_data.py
-
 	number_of_points 
 
 			the number of points we want in each direction of the grid
@@ -107,16 +102,13 @@ class GridTools(object):
 	
 	'''
 
-	def __init__(self,mol_name=None,data_type='haddock',
+	def __init__(self,mol_name,
 		         number_of_points = [30,30,30], resolution = [1.,1.,1.],
 		         atomic_densities=None,residue_feature=None, atomic_feature=None,
 		         export_path='./'):
 		
 		# mol file	
 		self.mol = mol_name
-
-		# data type
-		self.data_type = data_type
 
 		# feature files
 		self.residue_feature = residue_feature
@@ -171,6 +163,7 @@ class GridTools(object):
 		if  os.path.exists(self.export_path+'/grid_points.npz'):
 			print('\n= Updating grid data for %s' %(self.mol))
 			self.update_feature()
+
 		else:
 			print('\n= Creating grid and grid data for %s' %(self.mol))
 			if not os.path.isdir(self.export_path):
@@ -199,25 +192,10 @@ class GridTools(object):
 		self.export_grid_points()
 
 		#map the features
-		if self.residue_feature is not None:
-		
-
-			for feat_name,feat_files in self.residue_feature.items():
-
-				# map the residue features
-				dict_data = self.map_residue_features(feat_name,feat_files)
-
-				# save the data
-				self.save_grid_data(dict_data,feat_name)
+		self.add_all_residue_features()
 
 		# if we wnat the atomic densisties
-		if self.atomic_densities is not None:
-
-			# compute the atomic densities
-			self.map_atomic_densities()
-
-			# export the densities for visuzaliation
-			self.save_grid_data(self.atdens,'AtomicDensities')
+		self.add_all_atomic_densities()
 
 	################################################################
 
@@ -236,24 +214,10 @@ class GridTools(object):
 		self.res = np.array([self.x[1]-self.x[0],self.y[1]-self.y[0],self.z[1]-self.z[0]])
 
 		#map the features
-		if self.residue_feature is not None:
-		
-			for feat_name,feat_files in self.residue_feature.items():
-
-				# map the residue features
-				dict_data = self.map_residue_features(feat_name,feat_files)
-
-				# save the data
-				self.save_grid_data(dict_data,feat_name)
+		self.add_all_residue_features()
 
 		# if we want the atomic densisties
-		if self.atomic_densities is not None:
-
-			# compute the atomic densities
-			self.map_atomic_densities()
-
-			# export the densities for visuzaliation
-			self.save_grid_data(self.atdens,'AtomicDensities')				
+		self.add_all_atomic_densities()			
 
 	################################################################
 
@@ -297,37 +261,6 @@ class GridTools(object):
 		# clean
 		os.system('rm _atom.dat')
 
-	# read the data from the PDB file
-	# outdated and replaced by read_pdb
-	# kept here just to be sure
-	def get_data(self):
-
-		print('-- Read PDB Data File')
-
-		#switch between different data types
-		if self.data_type.lower() == 'haddock':
-			self.atom_index = get_pdb_data.haddock(self.mol)
-		elif self.data_type.lower() == 'zdock':
-			self.atom_index = get_pdb_data.zdock(self.mol)
-		else:
-			print("Format %s not recognized" %self.data_type)
-			sys.exit()
-
-		# extract the positions and atom types of the mol
-		self.atom_xyz = np.loadtxt('_xyz.dat')
-		self.atom_type = np.array([line.rstrip() for line in open('_atomtype.dat')])
-		self.atom_resNum= np.loadtxt('_atomResNum.dat')
-
-		# we export the monomers if required
-		os.system("awk '/ATOM/' %s > _tmp.dat" %self.mol)
-		cmd = 'split -l %d %s' %(len(self.atom_index[0]),'_tmp.dat')
-		os.system(cmd)
-		os.system('mv xaa %smonomer1.pdb' %(self.export_path))
-		os.system('mv xab %smonomer2.pdb' %(self.export_path))
-
-		# remove the temp files
-		os.system('rm _tmp.dat _xyz.dat _atomtype.dat _atomResNum.dat')
-
 	# get the contact atoms
 	def get_contact_atoms(self):
 
@@ -343,11 +276,43 @@ class GridTools(object):
 		self.center_contact = np.mean(self.atom_xyz[self.contact_atoms,:],0)
 
 
+
+	################################################################
+
+	# add all the residue features to the data
+	def add_all_residue_features(self):
+
+		#map the features
+		if self.residue_feature is not None:
+		
+			for feat_name,feat_files in self.residue_feature.items():
+
+				# map the residue features
+				dict_data = self.map_residue_features(feat_name,feat_files)
+
+				# save the data
+				self.save_grid_data(dict_data,feat_name)
+
+	# add all the atomic densities to the data
+	def add_all_atomic_densities(self):
+
+		# if we wnat the atomic densisties
+		if self.atomic_densities is not None:
+
+			# compute the atomic densities
+			self.map_atomic_densities()
+
+			# export the densities for visuzaliation
+			self.save_grid_data(self.atdens,'AtomicDensities')
+
+
+	################################################################
 	# define the grid points
 	# there is an issue maybe with the ordering
 	# In order to visualize the data in VMD the Y and X axis must be inverted ... 
 	# I keep it like that for now as it should not matter for the CNN
 	# and maybe we don't need atomic denisties as features
+	################################################################
 	def define_grid_points(self):
 
 		print('-- Define %dx%dx%d grid ' %(self.npts[0],self.npts[1],self.npts[2]))

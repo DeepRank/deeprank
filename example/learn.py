@@ -1,4 +1,4 @@
-import deeprank
+import deeprank.learn
 import torch.optim as optim
 import models3d
 
@@ -12,13 +12,13 @@ import models3d
 #adress of the database
 database = './training_set/'
 
-data_set = deeprank.DeepRankDataSet(database,
+data_set = deeprank.learn.DeepRankDataSet(database,
                            filter_dataset = 'decoyID.dat',
                            select_feature={'AtomicDensities' : 'all'},
                            select_target='haddock_score')
 
 # create the network
-model = deeprank.DeepRankConvNet(data_set,
+model = deeprank.learn.DeepRankConvNet(data_set,
                         models3d.ConvNet3D_reg,
                         model_type='3d',
                         task='reg',
