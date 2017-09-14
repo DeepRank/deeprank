@@ -5,7 +5,9 @@ import sys
 
 from deeprank.map import gridtool as gt
 
-'''
+def map_features(data_folder, grid_info,reset=False):
+
+	'''
 	Generate the input/output data on the grids for a series of prot-prot conformations
 	The calculation is actually performed by the gridtools class in GridTools.py
 
@@ -23,10 +25,7 @@ from deeprank.map import gridtool as gt
 
 	reset
 			Boolean to force the removal of all data
-'''
-
-def map_features(data_folder, grid_info,reset=False):
-
+	'''
 
 	# check all the input PDB files
 	sub_names = sp.check_output("ls -d %s/*/" %(data_folder),shell=True)

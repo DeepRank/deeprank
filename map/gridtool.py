@@ -77,12 +77,6 @@ class GridTools(object):
 			contains the atomic densities for each atom_type.
 			The format is : Natomtype x Nx x Ny x Nz
 
-	XX_atdens.cube
-
-			requires export_atomic_densities = True
-			XX is the PDB atom type e.g. CA, CE, .... specified in atomtype_list
-			Cube file containing the atomic densities. 
-			Can be read directly in VMD
 
 	<feature_name>.npy
 

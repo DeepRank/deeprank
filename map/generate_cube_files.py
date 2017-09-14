@@ -9,16 +9,17 @@ def generate_viz_files(mol_dir):
 
 
 	'''
-	This file is automatically copied in the data_folder where the data 
-	are mapped to the grid.
-	It can be used to generate cube files for the visualization of the mapped 
+	This function can be used to generate cube files for the visualization of the mapped 
 	data in VMD
 
 	Usage
 	python generate_cube_files.py <mol_dir_name>
+	e.g. python generate_cube_files.py 1AK4
 
-	e.g. 
-	python generate_cube_files.py 1AK4
+	or within a python script
+
+	import deeprank.map
+	deeprank.map.generate_viz_files(mol_dir_name)
 
 	A new subfolder data_viz will be created in <mol_dir_name>
 	with all the cube files representing the features contained in 
