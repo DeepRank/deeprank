@@ -78,10 +78,6 @@ class DeepRankDataSet(data_utils.Dataset):
 
 		data = DeepRankDataSet(folder_name)
 
-		# to generate the data loader for the CNN 
-		train_loader = data_utils.DataLoader(data,batch_size=10,sampler=data.train_sampler)
-		valid_loader = data_utils.DataLoader(data,batch_size=1,sampler=data.valid_sampler)
-
 	'''
 
 	def __init__(self,data_folder,filter_dataset=None,
