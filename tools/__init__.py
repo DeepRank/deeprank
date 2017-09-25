@@ -1,0 +1,1 @@
+from deeprank.tools.pdb2sql import pdb2sql

@@ -10,3 +10,6 @@
 # # deep learning
 # from deeprank.learn.DeepRankDataSet import DeepRankDataSet
 # from deeprank.learn.DeepRankConvNet import DeepRankConvNet
+
+# pdb2sql
+#from deeprank.pdb2sql import pdb2sql

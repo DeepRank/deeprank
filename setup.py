@@ -9,8 +9,13 @@ setup(
     'deeprank' : './',
     'deeprank.assemble' : './assemble',
     'deeprank.map'      : './map',
-    'deeprank.learn'    : './learn'
+    'deeprank.learn'    : './learn',
+    'deeprank.tools'    : './tools'
     },
+    
     packages=['deeprank',
-              'deeprank.assemble','deeprank.map','deeprank.learn']
+              'deeprank.assemble',
+              'deeprank.map',
+              'deeprank.learn',
+              'deeprank.tools']
 )
