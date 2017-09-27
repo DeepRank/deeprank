@@ -14,7 +14,7 @@ BM4 = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
 # sources to assemble the data base
 decoys = BM4 + 'decoys_pdbFLs/'
 natives = BM4 + '/BM4_dimers_bound/pdbFLs_ori'
-features = {'PSSM' : BM4 + '/PSSM'}
+features = {'PSSM' : BM4 + '/PSSM_newformat'}
 targets = {'haddock_score' : BM4 + '/model_qualities/haddockScore/water'}
 classID = BM4 + '/training_set_IDS/classIDs.lst'
 

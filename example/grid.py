@@ -1,4 +1,5 @@
 import deeprank.map
+import os 
 
 ##########################################################################
 #
@@ -7,13 +8,19 @@ import deeprank.map
 #
 ##########################################################################
 
+if os.path.isdir('./gridtest/input'):
+	os.system('rm -rf ./gridtest/input')
 
-grid = deeprank.map.GridTools(mol_name='./gridtest/complex.pdb',
+if os.path.isdir('./gridtest/data_viz'):
+	os.system('rm -rf ./gridtest/data_viz')
+
+
+grid = deeprank.map.GridToolsSQL(mol_name='./gridtest/complex.pdb',
 	             number_of_points = [30,30,30],
 	             resolution = [1.,1.,1.],
 	             atomic_densities={'CA':3.5, 'CB':3.5},
 	             residue_feature={
-	             'PSSM' : ['./gridtest/PSSM/1CLV.protein1.ResNumPSSM','./gridtest/PSSM/1CLV.protein2.ResNumPSSM']},
+	             'PSSM' : './gridtest/PSSM/1AK4.PSSM'},
 	             export_path = './gridtest/input/')
 
 #visualize the data of one complex

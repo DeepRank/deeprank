@@ -13,7 +13,7 @@ except:
 		return x 
 
 # the main gridtool class
-class GridTools(object):
+class GridToolsSQL(object):
 
 	'''
 	
@@ -45,7 +45,7 @@ class GridTools(object):
 	residue_feature
 
 			dictionnary containing the name and the data files of the features
-			exemple : {'PSSM' : [fileA,fileB]}
+			exemple : {'PSSM' : file}
 			The corresponding features will be mapped on the grid and exorted
 
 	atomic_feature
@@ -193,6 +193,9 @@ class GridTools(object):
 		# if we wnat the atomic densisties
 		self.add_all_atomic_densities()
 
+		# cloe the db file
+		self.sqldb.close()
+
 	################################################################
 
 	def update_feature(self):
@@ -215,14 +218,17 @@ class GridTools(object):
 		# if we want the atomic densisties
 		self.add_all_atomic_densities()			
 
+		# cloe the db file
+		self.sqldb.close()
+
 	################################################################
 
 
 	def read_pdb(self):
 
 		self.sqldb = pdb2sql(self.mol,sqlfile='_mol.db')
-		self.sqldb.exportpdb('monomer1.pdb',chain='A')
-		self.sqldb.exportpdb('monomer2.pdb',chain='B')
+		self.sqldb.exportpdb(self.export_path + '/monomer1.pdb',chain='A')
+		self.sqldb.exportpdb(self.export_path + '/monomer2.pdb',chain='B')
 
 
 	# get the contact atoms
@@ -300,7 +306,6 @@ class GridTools(object):
 		self.x = np.linspace(low_lim[0],hgh_lim[0],self.npts[0])
 		self.y = np.linspace(low_lim[1],hgh_lim[1],self.npts[1])
 		self.z = np.linspace(low_lim[2],hgh_lim[2],self.npts[2])
-		#self.set_res(self.x[1]-self.x[0],self.y[1]-self.y[0],self.z[1]-self.z[0])
 
 
 		# there is something fishy about the meshgrid 3d
@@ -377,71 +382,79 @@ class GridTools(object):
 				self.atdens[atomtype] += coeff[seq]*self.densgrid(pos,vdw_rad)
 
 
-	# map a residue level feature on the grid
-	def map_residue_features(self,feature_name,feature_files):
+
+
+	# map residue a feature on the grid
+	def map_residue_features(self,feature_name,feature_file,mode='softplus',chain_coeff={'A':1,'B':-1}):
 
 		'''
-		The first file in feature_files should be for chain A and second for chain B
-		Since the residue number in the feature_files depend on the chain ID there is a bit
-		of trickyness
+		The feature file must be of the format 
+		chainID    residue_name(3-letter)     residue_number     [values]
 		'''
-		
 		print('-- Map %s on %dx%dx%d grid ' %(feature_name,self.npts[0],self.npts[1],self.npts[2]))
 
-		# read all the fefature files and create the data
-		# the first item is for protein 1 and the second for protein 2 
-		nfeat = 20		
-		feat_data = {'A' : {}, 'B': {}}
-		for chainID, feature_file in zip(['A','B'],feature_files):
+		# read the file
+		f = open(feature_file)
+		data = f.readlines()
+		f.close()
 
-			# read the feature file
-			f = open(feature_file)
-			tmp = f.readlines()
-			f.close()
+		# number of features
+		nFeat = len(data[0].split())-3
 
-			# read the data
-			for tmp_data in tmp:
-				line_data = tmp_data.split()
-				if len(line_data)>1:
-					if line_data[0].isdigit():
-						resID = int(line_data[0])
-						feat_data[chainID][resID] = [float(x) for x in line_data[3:3+nfeat]]
+		# special case of we postprocess the feature
+		if mode == 'max':
+			nFeat  = 1
 
-		# get the center of each residue
-		chain_pos = {'A': self.atom_xyz[self.atom_index[0],:], 'B':self.atom_xyz[self.atom_index[1],:]}
-		chain_res = {'A': self.atom_resNum[self.atom_index[0]], 'B': self.atom_resNum[self.atom_index[1]]}
-		posRes = {'A':{},'B':{}}
-
-		for chainID,fd in feat_data.items():
-
-			for resID,data in fd.items():
-				resIndex = np.where(np.array(chain_res[chainID])==resID)[0]		
-				posRes[chainID][resID] = np.mean(chain_pos[chainID][resIndex,:],0)
-				
-		# map the features
-		nres = [len(fd) for chainID,fd in feat_data.items()]
-		
-		# loop over all the features
+		# declare the dict
 		dict_data = {}
-		for iF in tqdm(range(nfeat)):
-
+		for iF in range(nFeat):
 			dict_data['%03d' %iF] = np.zeros(self.npts)
 
-			# loop over all the residue
-			for ichain,chainID in enumerate(['A','B']):
+		# map all the features
+		for line in tqdm(data):
 
-				for iR,pos in posRes[chainID].items():
+			line = line.split()
 
-					if ichain == 0:
-						coeff = -1
-					elif ichain == 1:
-						coeff = 1
+			# get the position of the resnumber
+			chain,resNum,resName = line[0],line[1],line[2]
+			sql_query = "WHERE chainID='{chain}' AND resSeq={resNum}".format(chain=chain,resNum=resNum)
+			pos = np.mean(np.array(self.sqldb.get('x,y,z',query=sql_query)),0)
 
-					dict_data['%03d' %iF] += coeff*self.featgrid(pos,np.max([0,feat_data[chainID][iR][iF]]))
-				
+			# check if we the resname correspond
+			sql_resName = list(set(self.sqldb.get('resName',query=sql_query)))[0]
+			if resName != sql_resName:
+				print('Error in the PSSM file %s' %(feature_file))
+				print('Residue Name mismatch')
+				print('PSSM File : chain %s resNum %s  resName %s' %(chain,resNum, resName))
+				print('SQL data  : chain %s resNum %s  resName %s' %(chain,resNum, sql_resName))
+				sys.exit()
+
+			# get the values of the feature(s) for thsi residue
+			feat_values = np.array(list(map(float,line[3:])))
+
+			# process the values
+			if mode=='all':
+				continue
+
+			elif mode == 'max':
+				feat_values = np.max(feat_values)
+
+			elif mode == 'softplus':
+				feat_values = np.log(1+np.exp(feat_values))
+
+			else:
+				print('Error feature mode %s not implemented' %mode)
+				sys.exit()
+
+			# get the coefficient of the chain
+			coeff = chain_coeff[chain]
+
+			# map this feature(s) on the grid(s)
+			for iF in range(nFeat):
+				dict_data['%03d' %iF] += coeff*self.featgrid(pos,feat_values[iF])
+
 		return dict_data
-
-
+	
 	################################################################
 
 	# export the grid points for external calculations of some
@@ -482,14 +495,5 @@ class GridTools(object):
 					
 ########################################################################################################
 
-if __name__ == "__main__":
-	os.system('rm -rf ./test_output/')
-	grid = GridTools(mol_name='./test/1CLV_1w.pdb',
-		             number_of_points = [30,30,30],
-		             resolution = [1.,1.,1.],
-		             atomic_densities={'CA':3.5, 'CB':3.5},
-		             #residue_feature={
-		             #'PSSM' : ['./test/1CLV.protein1.ResNumPSSM','./test/1CLV.protein2.ResNumPSSM']},
-		             export_path = './test/input/')
-	grid.sqldb.close()
+
 	

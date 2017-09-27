@@ -8,30 +8,68 @@ This allows to easily extract information of the PDB using SQL query
 
 USAGE db = pdb2sql('XXX.pdb')
 
-A main SQL querry handler has been implemented (might not be the best idea)
+A few SQL querry wrappers have been implemented 
 
-	pdb2sql.get(attribute_name,**kwargs)
 	
-	attributename   : must be a valid attribute name. 
-                      you can get these names via the get_colnames()
-                      serial, name, atLoc,resName,chainID, resSeq,iCode,x,y,z,occ,temp
-                      you can specify more than one attribute name at once e.g 'x,y,z'
+	self.get(attribute_name,**kwargs)
+	
+		Get hte value(s) of the attribute(s) for possible selection of the db
 
-	keyword args    : Several options are possible
-	                  None : return the entire table
+		attributename   : 	must be a valid attribute name. 
+						 	you can get these names via the get_colnames()
+						 	serial, name, atLoc,resName,chainID, resSeq,iCode,x,y,z,occ,temp
+						 	you can specify more than one attribute name at once e.g 'x,y,z'
 
-	                  chain = 'X' return the values of that chain
-	                  name  = 'CA' only these atoms
-	                  index = [0,1,2,3] return only those rows (not serial) 
+		keyword args    :   Several options are possible
+							None : return the entire table
 
-	                  where = "chainID='B'" general WHERE SQL query 
-	                  query = 'WHERE chainID='B'' general SQL Query
+							chain = 'X' return the values of that chain
+							name  = 'CA' only these atoms
+							index = [0,1,2,3] return only those rows (not serial) 
+							where = "chainID='B'" general WHERE SQL query 
+							query = 'WHERE chainID='B'' general SQL Query
 
-	example         :
+		example         :
 
-		db = pdb2sql(filename)
-		xyz  = db.get('x,y,z',index=[0,1,2,3])
-		name = db.get('name',where="resName='VAL'")
+							db = pdb2sql(filename)
+							xyz  = db.get('x,y,z',index=[0,1,2,3])
+							name = db.get('name',where="resName='VAL'")
+
+	self.put(attribute_name,value,**kwargs)
+
+		Update the value of the attribute with value specified with possible selection
+
+		attributename   : 	must be a valid attribute name. 
+						 	you can get these names via the get_colnames()
+						 	serial, name, atLoc,resName,chainID, resSeq,iCode,x,y,z,occ,temp
+						 	you can specify more than one attribute name at once e.g 'x,y,z'
+
+		keyword args    :   Several options are possible
+							None : put the value in the entire column
+
+							index = [0,1,2,3] in only these indexes (not serial)
+							where = "chainID='B'" only for this chain
+							query = general SQL Query
+
+		example         :
+
+							db = pdb2sql(filename)
+							db.add_column('CHARGE')
+							db.put('CHARGE',1.25,index=[1])							
+
+
+
+	Other queries have been made user friendly
+
+	- self.add_column(column_name,coltype='FLOAT',default=0)
+	- self.update_column(colname,values)
+	- self.commit()
+
+	TO DO 
+
+	- Add more user friendly wrappers to SQL queries
+	- Make use of the ? more often to prevent quting issues and SQL injection attack 
+
 '''
 
 class pdb2sql(object):
@@ -53,7 +91,7 @@ class pdb2sql(object):
 		pdbfile = self.pdbfile
 		sqlfile = self.sqlfile
 
-		print('CREATE SQLite DATABASE FOR FILE %s at %s' %(pdbfile,sqlfile))
+		print('-- Create SQLite3 database')
 
 		 #name of the table
 		table = 'ATOM'
@@ -119,7 +157,7 @@ class pdb2sql(object):
 		# hddock chain ID fix
 		del_copy = self.delimiter.copy()
 		if data[0][del_copy['chainID'][0]] == ' ':
-			print('Deprecated FORMAT DETECTED CHAINID AT THE END')
+			#print('  Old PDB format')
 			del_copy['chainID'] = [72,73]
 
 		# get all the data
@@ -209,37 +247,49 @@ class pdb2sql(object):
 
 		# if we have 0 key we take the entire db
 		if len(kwargs) == 0:
-			data = [list(row) for row in self.c.execute('SELECT {an} FROM ATOM'.format(an=atnames))]
-			return data 
+			query = 'SELECT {an} FROM ATOM'.format(an=atnames)
+			data = [list(row) for row in self.c.execute(query)]
+			
 
 		# otherwise we have only one key
-		key = list(keys)[0]
-		value = kwargs[key]
-
-		# select which key we have
-		if key == 'where':
-			data = [list(row) for row in self.c.execute('SELECT {an} FROM ATOM WHERE {c1}'.format(an=atnames,c1=value))]
-
-		elif key == 'index' :
-			value = [v+1 for v in value]
-			strind = ','.join(map(str,value))
-			data = [list(row) for row in self.c.execute('SELECT {an} FROM ATOM WHERE rowID in ({c1})'.format(an=atnames,c1=strind))]
-
-		elif key == 'chain':	
-			data = [list(row) for row in self.c.execute("SELECT {an} FROM ATOM WHERE chainID= '{c1}'".format(an=atnames,c1=value))]
-
-		elif key == 'name':
-			data = [list(row) for row in self.c.execute("SELECT {an} FROM ATOM WHERE name= '{c1}'".format(an=atnames,c1=value))]
-		
-		elif key == 'query' :	
-				data = [list(row) for row in self.c.execute('SELECT {an} FROM ATOM {c1}'.format(an=atnames,ind=value))]
-
 		else:
-			print('Error arguments %s not supported in pdb2sql.get()\nOptions are:\n' %(key))
-			for posskey,possvalue in arguments.items():
-				print('\t' + posskey + '\t\t' + possvalue)
-			return
+
+			key = list(keys)[0]
+			value = kwargs[key]
+
+			# select which key we have
+			if key == 'where':
+				query =  'SELECT {an} FROM ATOM WHERE {c1}'.format(an=atnames,c1=value)
+				data = [list(row) for row in self.c.execute(query)]
+
+			elif key == 'index' :
+				value = tuple([v+1 for v in value])
+				qm = ','.join(['?' for i in range(len(value))])
+				query  =  'SELECT {an} FROM ATOM WHERE rowID in ({qm})'.format(an=atnames,qm=qm)
+				data = [list(row) for row in self.c.execute(query,value)]
+
+			elif key == 'chain':
+				query = "SELECT {an} FROM ATOM WHERE chainID=?".format(an=atnames)
+				data = [list(row) for row in self.c.execute(query,value)]
+
+			elif key == 'name':
+				query = "SELECT {an} FROM ATOM WHERE name=?".format(an=atnames)
+				data = [list(row) for row in self.c.execute(query,value)]
+			
+			elif key == 'query' :	
+				query = 'SELECT {an} FROM ATOM {c1}'.format(an=atnames,c1=value)
+				data = [list(row) for row in self.c.execute(query)]
+
+			else:
+				print('Error arguments %s not supported in pdb2sql.get()\nOptions are:\n' %(key))
+				for posskey,possvalue in arguments.items():
+					print('\t' + posskey + '\t\t' + possvalue)
+				return
 		
+		# empty data
+		if len(data)==0:
+			print('Warning sqldb.get returned an empty')
+			return data
 
 		# postporcess the output of the SQl query
 		# flatten it if each els is of size 1
@@ -255,6 +305,103 @@ class pdb2sql(object):
 	def get_indexes(self,atnames,index):
 		strind = ','.join(map(str,index))
 		return self.get(atnames,where="rowID in ({ind})".format(ind=strind))
+
+
+
+	def add_column(self,colname,coltype='FLOAT',default=0):
+
+		'''
+		Add an etra column to the ATOM table
+		'''
+		query = "ALTER TABLE ATOM ADD COLUMN '%s' %s DEFAULT %s" %(colname,coltype,str(default))
+		self.c.execute(query)
+		self.conn.commit()
+
+	def update_column(self,colname,values):
+
+
+		'''
+		values must contain the correct number of elements
+		'''
+
+		data = [ [v,i+1] for i,v in enumerate(values) ]
+		query = 'UPDATE ATOM SET {cn}=? WHERE rowID=?'.format(cn=colname)
+		self.c.executemany(query,data)
+		
+
+		self.conn.commit()
+
+	def put(self,colname,value,**kwargs):
+
+		'''
+		Exectute a simple SQL query that put a value in an attributes for certain condition
+		Ex  db.put('resName','XXX',where="chainID=='A'")
+		'''
+		
+		arguments = {'where' : "String e.g 'chainID = 'A''",
+					 'index' : "Array e.g. [27,28,30]",
+					 'name'  : "'CA' atome name",
+					 'query' : "SQL query e.g. 'WHERE chainID='B''"}
+
+		# the asked keys
+		keys = kwargs.keys()			
+
+		# if we have more than one key we kill it
+		if len(keys)>1 :
+			print('You can only specify 1 conditional statement for the pdb2sql.put function')
+			return 
+
+		# check if the column exists
+		try:
+			self.c.execute("SELECT EXISTS(SELECT {an} FROM ATOM)".format(an=colname))
+		except:
+			print('Error column %s not found in the database' %colname)
+			self.get_colnames()
+			return
+
+
+		# if we have 0 key we take the entire db
+		if len(kwargs) == 0:
+			query = 'UPDATE ATOM SET {cn}=?'.format(cn=colname)
+			value = tuple([value])
+			self.c.execute(query,value)
+			return  
+
+		# otherwise we have only one key
+		key = list(keys)[0]
+		cond = kwargs[key]
+
+		# select which key we have
+		if key == 'where':
+			query = 'UPDATE ATOM SET {cn}=? WHERE {cond}'.format(cn=colname,cond=cond)
+			value = tuple([value])
+			self.c.execute(query,value)
+
+		elif key == 'name' :
+			values = tuple([value,cond])
+			query = 'UPDATE ATOM SET {cn}=? WHERE name=?'.format(cn=colname)
+			self.c.execute(query,values)
+
+		elif key == 'index' :
+			values = tuple([value] + [v+1 for v in cond])
+			qm = ','.join(['?' for i in range(len(cond))])
+			query = 'UPDATE ATOM SET {cn}=? WHERE rowID in ({qm})'.format(cn=colname,qm=qm)
+			self.c.execute(query,values)
+		
+		elif key == 'query' :
+			query = 'UPDATE ATOM SET {cn}=? {c1}'.format(cn=colname,c1=cond)
+			value = tuple([value])
+			self.c.execute(query,value)
+
+		else:
+			print('Error arguments %s not supported in pdb2sql.get()\nOptions are:\n' %(key))
+			for posskey,possvalue in arguments.items():
+				print('\t' + posskey + '\t\t' + possvalue)
+			return
+
+
+	def commit(self):
+		self.conn.commit()
 
 
 	def exportpdb(self,fname,**kwargs):
@@ -319,6 +466,10 @@ if __name__ == '__main__':
 
 	xyz = db.get('rowID',where="resName='VAL'")
 	print(xyz)
+
+	db.add_column('CHARGE','FLOAT')
+	db.put('CHARGE',0.1)
+	db.prettyprint()
 
 	db.exportpdb('chainA.pdb',where="chainID='A'")
 

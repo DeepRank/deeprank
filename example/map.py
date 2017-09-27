@@ -17,6 +17,7 @@ database = './training_set/'
 grid_info = {
 	'atomic_densities' : {'CA':3.5,'CB':3.5,'N':3.5},
 	'number_of_points' : [30,30,30],
+	#'residue_feature' : ['PSSM'],
 	'resolution' : [1.,1.,1.]
 }
 

@@ -3,7 +3,7 @@ import os
 import subprocess as sp 
 import sys
 
-from deeprank.map import gridtool as gt
+from deeprank.map import gridtool_sql as gt
 
 def map_features(data_folder, grid_info,reset=False):
 
@@ -62,7 +62,7 @@ def map_features(data_folder, grid_info,reset=False):
 			res_feat = None
 
 		# compute the data we want on the grid
-		grid = gt.GridTools(mol_name=mol_name,
+		grid = gt.GridToolsSQL(mol_name=mol_name,
 			             number_of_points = grid_info['number_of_points'],
 			             resolution = grid_info['resolution'],
 			             atomic_densities=grid_info['atomic_densities'],
@@ -70,19 +70,3 @@ def map_features(data_folder, grid_info,reset=False):
 			             export_path = sub+'/input/')
 
 
-
-if __name__ == "__main__":
-
-	# example use
-	grid_info = {
-		'atomic_densities' : {'CA':3.5,'CB':3.5,'N':3.5},
-		'number_of_points' : [30,30,30],
-		#'residue_feature' : ['PSSM'],
-		'resolution' : [1.,1.,1.]
-	}
-
-	# main folder
-	folder ='/home/nico/Documents/projects/deeprank/deeprank_classifier/test_set/'
-
-	# go
-	map_features(folder,grid_info)
