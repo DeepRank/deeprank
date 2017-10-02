@@ -4,6 +4,7 @@ import numpy as  np
 import argparse
 import subprocess as sp 
 import os
+import pickle 
 
 def generate_viz_files(mol_dir):
 
@@ -44,16 +45,17 @@ def generate_viz_files(mol_dir):
 	grid = np.load(mol_dir+'/input/grid_points.npz')
 
 	# get all the data file in the directory
-	fnames = sp.check_output('ls %s/input/*.npy' %(mol_dir),shell=True).decode('utf8').split()
+	#fnames_npy = sp.check_output('ls %s/input/*.npy' %(mol_dir),shell=True).decode('utf8').split()
+	fnames_pkl = sp.check_output('ls %s/input/*.pkl' %(mol_dir),shell=True).decode('utf8').split()
 
 	# loop over all the data files
-	for f in fnames:
+	for f in fnames_pkl:
 
-		data_list = np.load(f)
+		data_dict = pickle.load(open(f,'rb'))
 		data_name = f.split('/')[-1][:-4]
-		export_cube_files(data_list,data_name,grid,outdir)
+		export_cube_files(data_dict,data_name,grid,outdir)
 
-def export_cube_files(data_list,data_name,grid,export_path):
+def export_cube_files(data_dict,data_name,grid,export_path):
 
 	print('-- Export %s data to %s' %(data_name,export_path))
 	bohr2ang = 0.52918
@@ -70,9 +72,9 @@ def export_cube_files(data_list,data_name,grid,export_path):
 	scale_res = res/bohr2ang
 
 	# export files for visualization 
-	for idata in range(len(data_list)):
+	for key,values in data_dict.items():
 
-		fname = export_path + data_name + '_%03d' %(idata) + '.cube'
+		fname = export_path + data_name + '_%s' %(key) + '.cube'
 		f = open(fname,'w')
 		f.write('CUBE FILE\n')
 		f.write("OUTER LOOP: X, MIDDLE LOOP: Y, INNER LOOP: Z\n")
@@ -90,7 +92,7 @@ def export_cube_files(data_list,data_name,grid,export_path):
 		for i in range(npts[0]):
 			for j in range(npts[1]):
 				for k in range(npts[2]):
-					f.write(" %11.5e" % data_list[idata][i,j,k])
+					f.write(" %11.5e" % values[i,j,k])
 					last_char_check = True
 					if k % 6 == 5: 
 						f.write("\n")
@@ -106,9 +108,10 @@ def export_cube_files(data_list,data_name,grid,export_path):
 		f.write('# can be executed with vmd -e viz_mol.vmd\n\n')
 		
 		# write all the cube file in one given molecule
-		write_molspec_vmd(f, data_name +'_%03d.cube' %(0),'VolumeSlice','Volume')
-		for idata in range(1,len(data_list)):
-			f.write('mol addfile ' + data_name +'_%03d.cube\n' %(idata))
+		keys = list(data_dict.keys())
+		write_molspec_vmd(f, data_name +'_%s.cube' %(keys[0]),'VolumeSlice','Volume')
+		for idata in range(1,len(keys)):
+			f.write('mol addfile ' + data_name +'_%s.cube\n' %(keys[idata]))
 		f.write('mol rename top ' + data_name)
 
 		# load the complex

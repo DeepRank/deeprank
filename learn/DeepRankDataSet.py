@@ -4,6 +4,7 @@ import torch
 import torch.utils.data as data_utils
 import subprocess as sp
 import numpy as np
+import pickle 
 
 try:
 	from tqdm import tqdm
@@ -111,7 +112,7 @@ class DeepRankDataSet(data_utils.Dataset):
 		print('= \t %s' %data_folder)
 		print('='*40,'\n')
 
-		self.load_dataset()
+		#self.load_dataset()
 
 
 	def __len__(self):
@@ -122,7 +123,7 @@ class DeepRankDataSet(data_utils.Dataset):
 
 
 	# Load the dataset
-	def load_dataset(self):
+	def load(self):
 
 		# read the folders name
 		folders_name = sp.check_output("ls %s/*/ -d" %(self.data_folder),shell=True)
@@ -154,9 +155,11 @@ class DeepRankDataSet(data_utils.Dataset):
 
 			# load the all the features
 			if self.select_feature == 'all' :
-				feature_files  = os.system('ls %s/input/*.npy' %np.load(folder)).split()
+				feature_files  = sp.check_output('ls %s/input/*.pkl' %folder,shell=True).decode('utf-8').split()
 				for f in feature_files:
-					features.append(np.load(f))
+					feat_dict = pickle.load(open(f,'rb'))
+					for key,values in feat_dict.items():
+						features.append(values)
 
 			# load selected features only
 			else:
@@ -164,21 +167,33 @@ class DeepRankDataSet(data_utils.Dataset):
 
 					# see if the feature exists
 					try:
-						feat_data = np.load(folder+'/input/'+feat_name+'.npy')
+						feat_dict = pickle.load(open(folder+'/input/'+feat_name+'.pkl','rb'))
+						possible_channels = list(feat_dict.keys())
+
 					except:
 						print('Error : Feature name %s not found in %s' %(feat_name,folder))
-						opt = sp.check_output('ls '+ folder+'/input/*.npy',shell=True).decode('utf8').split()
+						opt = sp.check_output('ls '+ folder+'/input/*.pkl',shell=True).decode('utf8').split()
 						opt_names = [name.split('/')[-1][:-4] for name in opt ]
 						print('Error : Possible features are \n\t%s' %'\n\t'.join(opt_names))
 						sys.exit()
 
-					# filter the feature data if required
+					# make sure that all the featchanels are in the file
 					if feat_channels != 'all':
-						feat_data = feat_data[feat_channels,:,:,:]
+						for fc in feat_channels:
+							if fc not in possible_channels:
+								print("Error : required key %s for feature %s not in the database" %(fc,feat_name))
+								self.get_content()
+								sys.exit()
 
-					# append it to the list
-					features.append(feat_data)
-					
+					# load the feature channels
+					tmp_feat = []
+					for chanel_name,channel_value in feat_dict.items():
+						if feat_channels == 'all' or chanel_name in feat_channels:
+							tmp_feat.append(channel_value)
+
+					# append to the list of features
+					features.append(np.array(tmp_feat))
+
 			# target
 			try:
 				targ_data = np.loadtxt(folder+'/targets/%s.dat' %(self.select_target))
@@ -209,6 +224,26 @@ class DeepRankDataSet(data_utils.Dataset):
 			self.features /= features.max()*0.5
 			self.features -= 1.
 
+
+	# print the content of the data in the data folder
+	def get_content(self):
+
+		print('--> Content of the database')
+
+		# get the name of the first folder in the databse
+		folder_name = sp.check_output("ls %s/*/ -d" %(self.data_folder),shell=True).decode('utf-8').split()[0]
+		
+		# get the pickle file names
+		feature_files  = sp.check_output('ls %s/input/*.pkl' %folder_name,shell=True).decode('utf-8').split()
+
+		# loop over all the files
+		for f in feature_files:
+			print('\tFile : %s' %(f.split('/')[-1]))
+			feat_dict = pickle.load(open(f,'rb'))
+			for key,values in feat_dict.items():
+				print('\t\tkey : %s' %key)
+
+
 	#convert the 3d data set to 2d data set
 	def convert_dataset_to2d(self,proj2d=0):
 
@@ -223,7 +258,7 @@ class DeepRankDataSet(data_utils.Dataset):
 		print(': Project 3D data set to 2D images in the %s plane ' %planes[proj2d])
 
 		nf = self.__len__()
-		nc, nx,ny,nz = self.input_shape
+		nc,nx,ny,nz = self.input_shape
 		if proj2d==0:
 			self.features = self.features.view(nf,-1,1,ny,nz).squeeze()
 		elif proj2d==1:

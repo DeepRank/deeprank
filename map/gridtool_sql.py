@@ -3,6 +3,7 @@ import subprocess as sp
 import os, sys 
 import itertools
 from scipy.signal import bspline
+import pickle 
 
 from deeprank.tools import pdb2sql
 
@@ -100,7 +101,10 @@ class GridToolsSQL(object):
 
 	def __init__(self,mol_name,
 		         number_of_points = [30,30,30], resolution = [1.,1.,1.],
-		         atomic_densities=None,residue_feature=None, atomic_feature=None,
+		         atomic_densities=None, atomic_densities_mode='diff',
+		         residue_feature=None, 
+		         atomic_feature=None,
+		         contact_distance = 8.5,
 		         export_path='./'):
 		
 		# mol file	
@@ -109,6 +113,16 @@ class GridToolsSQL(object):
 		# feature files
 		self.residue_feature = residue_feature
 		self.atomic_feature = atomic_feature
+		
+
+		self.feattype_required = []
+
+		if self.residue_feature != None:
+			self.feattype_required.append('residue')
+
+		if self.atomic_feature != None:
+			self.feattype_required.append('atomic')
+
 
 		# find the base name of the molecule
 		# remove all the path and the extension
@@ -121,6 +135,7 @@ class GridToolsSQL(object):
 
 		# atom we wnat to compute the densities
 		self.atomic_densities = atomic_densities
+		self.atomic_densities_mode = atomic_densities_mode
 
 		# parameter of the grid
 		self.npts = np.array(number_of_points).astype('int')
@@ -145,14 +160,14 @@ class GridToolsSQL(object):
 		self.atdens = {}
 
 		# dictionary of the features
-		self.residue_features = {}
-		self.atomic_features = {}
+		# self.residue_features = {}
+		# self.atomic_features = {}
 
 		# conversion from boh to angs for VMD visualization
 		self.bohr2ang = 0.52918
 
 		# contact distance to locate the interface
-		self.contact_distance = 4.5
+		self.contact_distance = contact_distance
 
 		# if we already have an output containing the grid
 		# we update the existing features
@@ -188,7 +203,8 @@ class GridToolsSQL(object):
 		self.export_grid_points()
 
 		#map the features
-		self.add_all_residue_features()
+		for feattype in self.feattype_required:
+			self.add_all_features(feattype)
 
 		# if we wnat the atomic densisties
 		self.add_all_atomic_densities()
@@ -212,8 +228,9 @@ class GridToolsSQL(object):
 		self.npts = np.array([len(self.x),len(self.y),len(self.z)])
 		self.res = np.array([self.x[1]-self.x[0],self.y[1]-self.y[0],self.z[1]-self.z[0]])
 
-		#map the features
-		self.add_all_residue_features()
+		# map the features
+		for feattype in self.feattype_required:
+			self.add_all_features(feattype)
 
 		# if we want the atomic densisties
 		self.add_all_atomic_densities()			
@@ -256,20 +273,30 @@ class GridToolsSQL(object):
 
 
 	################################################################
+	# shortcut to add all the feature a
+	# and atomic densities in just one line
+	################################################################
 
 	# add all the residue features to the data
-	def add_all_residue_features(self):
+	def add_all_features(self,feature_type):
+
+		if feature_type == 'residue':
+			dict_feature = self.residue_feature
+		elif feature_type == 'atomic':
+			dict_feature = self.atomic_feature
+		else:
+			print('Error feature type must be residue or atomic')
+			return
 
 		#map the features
-		if self.residue_feature is not None:
+		if dict_feature is not None:
 		
-			for feat_name,feat_files in self.residue_feature.items():
+			# map the residue features
+			dict_data = self.map_features(dict_feature,feature_type)
 
-				# map the residue features
-				dict_data = self.map_residue_features(feat_name,feat_files)
+			# save the data
+			self.pickle_grid_data(dict_data,'%sFeature' %(feature_type))
 
-				# save the data
-				self.save_grid_data(dict_data,feat_name)
 
 	# add all the atomic densities to the data
 	def add_all_atomic_densities(self):
@@ -281,7 +308,7 @@ class GridToolsSQL(object):
 			self.map_atomic_densities()
 
 			# export the densities for visuzaliation
-			self.save_grid_data(self.atdens,'AtomicDensities')
+			self.pickle_grid_data(self.atdens,'AtomicDensities_%s' %(self.atomic_densities_mode))
 
 
 	################################################################
@@ -291,6 +318,7 @@ class GridToolsSQL(object):
 	# I keep it like that for now as it should not matter for the CNN
 	# and maybe we don't need atomic denisties as features
 	################################################################
+
 	def define_grid_points(self):
 
 		print('-- Define %dx%dx%d grid ' %(self.npts[0],self.npts[1],self.npts[2]))
@@ -314,7 +342,53 @@ class GridToolsSQL(object):
 		self.ygrid,self.xgrid,self.zgrid = np.meshgrid(self.y,self.x,self.z)
 
 	################################################################
-			
+	# Atomic densities
+	# as defined in the paper about ligand in protein
+	################################################################
+
+	# compute all the atomic densities data
+	def map_atomic_densities(self):
+
+		mode = self.atomic_densities_mode
+		print('-- Map atomic densities on %dx%dx%d grid (mode=%s)'%(self.npts[0],self.npts[1],self.npts[2],mode))
+
+		# loop over all the data we want
+		for atomtype,vdw_rad in tqdm(self.atomic_densities.items()):
+
+			# get the atom that are of the correct type for chain A
+			query = "WHERE name='{name}' AND chainID='{chainID}'".format(name=atomtype,chainID='A')
+			xyzA = np.array(self.sqldb.get('x,y,z',query=query))
+
+			# get the atom that are of the correct type for chain B
+			query = "WHERE name='{name}' AND chainID='{chainID}'".format(name=atomtype,chainID='B')
+			xyzB = np.array(self.sqldb.get('x,y,z',query=query))
+
+			# init the grid
+			atdensA = np.zeros(self.npts)
+			atdensB = np.zeros(self.npts)
+
+			# run on the atoms
+			for pos in xyzA:
+				atdensA += self.densgrid(pos,vdw_rad)
+
+			# run on the atoms
+			for pos in xyzB:
+				atdensB += self.densgrid(pos,vdw_rad)
+
+			# create the final grid : A - B
+			if mode=='diff':
+				self.atdens[atomtype] = atdensA-atdensB
+
+			# create the final grid : A + B
+			elif mode=='sum':
+				self.atdens[atomtype] = atdensA+atdensB
+
+			# create the final grid : A and B
+			elif mode=='ind':
+				self.atdens[atomtype+'_chainA'] = atdensA
+				self.atdens[atomtype+'_chainB'] = atdensB
+
+
 	# compute the atomic denisties on the grid
 	def densgrid(self,center,vdw_radius):
 
@@ -329,6 +403,123 @@ class GridToolsSQL(object):
 		dd[ (dd >=vdw_radius) & (dd<1.5*vdw_radius)] = 4./np.e**2/vdw_radius**2*dd[ (dd >=vdw_radius) & (dd<1.5*vdw_radius)]**2 - 12./np.e**2/vdw_radius*dd[ (dd >=vdw_radius) & (dd<1.5*vdw_radius)] + 9./np.e**2
 		dd[dd>=vdw_radius] = 0
 		return dd
+
+	################################################################
+	# Residue or Atomic features
+	# read the file provided in input 
+	# and map it on the grid
+	################################################################
+
+	# map residue a feature on the grid
+	def map_features(self,dict_feature,feature_type,mode=None,chain_sign=False):
+
+		'''
+		For residue based feature the feature file must be of the format 
+		chainID    residue_name(3-letter)     residue_number     [values] 
+
+		For atom based feature it must be
+		chainID    residue_name(3-letter)     residue_number   atome_name  [values]
+		'''
+
+		# declare the total dictionary
+		dict_data = {}
+
+		# number of features
+		if feature_type == 'residue':
+			ntext = 3
+		elif feature_type == 'atomic':
+			ntext = 4
+		else:
+			print('Error feature type either residue or atomic')
+			return None
+
+		for feature_name,feature_file in dict_feature.items():
+
+			print('-- Map %s on %dx%dx%d grid ' %(feature_name,self.npts[0],self.npts[1],self.npts[2]))
+
+			# read the file
+			f = open(feature_file)
+			data = f.readlines()
+			f.close()
+
+			# get the data on the first line
+			data_test = data[0].split()
+			data_test = list(map(float,data_test[ntext:]))
+
+			# define the length of the output
+			if mode == None:
+				nFeat = len(data_test)
+			elif callable(mode):
+				nFeat = len(mode(data_test))
+			else:
+				print('Error mode in map_feature must be callable')
+				return None			
+
+			# declare the dict
+			if nFeat == 1:
+				dict_data[feature_name] = np.zeros(self.npts)
+			else:
+				for iF in range(nFeat):
+					dict_data[feature_name+'_%03d' %iF] = np.zeros(self.npts)
+
+			# map all the features
+			for line in tqdm(data):
+
+				line = line.split()
+
+				# get the position of the resnumber
+				chain,resName,resNum = line[0],line[1],line[2]
+
+				# get the atom name for atomic data
+				if feature_type == 'atomic':
+					atName = line[3]
+
+				# get the position
+				if feature_type == 'residue':
+					sql_query = "WHERE chainID='{chain}' AND resSeq='{resNum}'".format(chain=chain,resNum=resNum)
+					pos = np.mean(np.array(self.sqldb.get('x,y,z',query=sql_query)),0)
+				else:
+					sql_query = "WHERE chainID='{chain}' AND resSeq='{resNum}' and name='{atName}'".format(chain=chain,resNum=resNum,atName=atName)
+					pos = np.array(self.sqldb.get('x,y,z',query=sql_query))[0]
+
+				# check if we the resname correspond
+				sql_resName = list(set(self.sqldb.get('resName',query=sql_query)))
+				if len(sql_resName) == 0:
+					print('Error : SQL query : %s returned empty list' %(sql_query))
+					print('Tip   : Make sure the parameter file %s' %(feature_file))
+					print('Tip   : corresponds to the pdb file %s' %(self.sqldb.pdbfile))
+					sys.exit()
+				else:
+					sql_resName = sql_resName[0]
+
+				if resName != sql_resName:
+					print('Residue Name Error in the Feature file %s' %(feature_file))
+					print('Feature File : chain %s resNum %s  resName %s' %(chain,resNum, resName))
+					print('SQL data     : chain %s resNum %s  resName %s' %(chain,resNum, sql_resName))
+					sys.exit()
+
+				# get the values of the feature(s) for thsi residue
+				feat_values = np.array(list(map(float,line[ntext:])))
+
+				# postporcess the data
+				if callable(mode):
+					feat_values = mode(feat_values)
+
+				# get the coefficient of the chain
+				if chain_sign:
+					chain_coeff = {'A':1,'B':-1}
+					coeff = chain_coeff[chain]
+				else:
+					coeff = 1.0
+
+				# map this feature(s) on the grid(s)
+				if nFeat == 1:
+					dict_data[feature_name] += coeff*self.featgrid(pos,feat_values)
+				else:
+					for iF in range(nFeat):
+						dict_data[feature_name+'_%03d' %iF] += coeff*self.featgrid(pos,feat_values[iF])
+
+		return dict_data
 
 	# compute the a given feature on the grid
 	def featgrid(self,center,value,type_='bspline'):
@@ -356,109 +547,11 @@ class GridToolsSQL(object):
 			dd = value*spl
 			return dd
 
-
 	################################################################
-
-	# compute all the atomic densities data
-	def map_atomic_densities(self):
-
-		print('-- Map atomic densities on %dx%dx%d grid '%(self.npts[0],self.npts[1],self.npts[2]))
-
-		coeff = {'A':1,'B':-1}
-
-		# loop over all the data we want
-		for atomtype,vdw_rad in tqdm(self.atomic_densities.items()):
-
-			# get the atom that are of the correct type
-			xyz = np.array(self.sqldb.get('x,y,z',name=atomtype))
-			chain = self.sqldb.get('chainID',name=atomtype)
-
-			# init the grid
-			self.atdens[atomtype] = np.zeros(self.npts)
-
-			# run on the atoms
-			for pos,seq in zip(xyz,chain):
-
-				self.atdens[atomtype] += coeff[seq]*self.densgrid(pos,vdw_rad)
-
-
-
-
-	# map residue a feature on the grid
-	def map_residue_features(self,feature_name,feature_file,mode='softplus',chain_coeff={'A':1,'B':-1}):
-
-		'''
-		The feature file must be of the format 
-		chainID    residue_name(3-letter)     residue_number     [values]
-		'''
-		print('-- Map %s on %dx%dx%d grid ' %(feature_name,self.npts[0],self.npts[1],self.npts[2]))
-
-		# read the file
-		f = open(feature_file)
-		data = f.readlines()
-		f.close()
-
-		# number of features
-		nFeat = len(data[0].split())-3
-
-		# special case of we postprocess the feature
-		if mode == 'max':
-			nFeat  = 1
-
-		# declare the dict
-		dict_data = {}
-		for iF in range(nFeat):
-			dict_data['%03d' %iF] = np.zeros(self.npts)
-
-		# map all the features
-		for line in tqdm(data):
-
-			line = line.split()
-
-			# get the position of the resnumber
-			chain,resNum,resName = line[0],line[1],line[2]
-			sql_query = "WHERE chainID='{chain}' AND resSeq={resNum}".format(chain=chain,resNum=resNum)
-			pos = np.mean(np.array(self.sqldb.get('x,y,z',query=sql_query)),0)
-
-			# check if we the resname correspond
-			sql_resName = list(set(self.sqldb.get('resName',query=sql_query)))[0]
-			if resName != sql_resName:
-				print('Error in the PSSM file %s' %(feature_file))
-				print('Residue Name mismatch')
-				print('PSSM File : chain %s resNum %s  resName %s' %(chain,resNum, resName))
-				print('SQL data  : chain %s resNum %s  resName %s' %(chain,resNum, sql_resName))
-				sys.exit()
-
-			# get the values of the feature(s) for thsi residue
-			feat_values = np.array(list(map(float,line[3:])))
-
-			# process the values
-			if mode=='all':
-				continue
-
-			elif mode == 'max':
-				feat_values = np.max(feat_values)
-
-			elif mode == 'softplus':
-				feat_values = np.log(1+np.exp(feat_values))
-
-			else:
-				print('Error feature mode %s not implemented' %mode)
-				sys.exit()
-
-			# get the coefficient of the chain
-			coeff = chain_coeff[chain]
-
-			# map this feature(s) on the grid(s)
-			for iF in range(nFeat):
-				dict_data['%03d' %iF] += coeff*self.featgrid(pos,feat_values[iF])
-
-		return dict_data
-	
-	################################################################
-
 	# export the grid points for external calculations of some
 	# features. For example the electrostatic potential etc ...
+	################################################################
+
 	def export_grid_points(self):
 		fname = self.export_path + '/grid_points'
 		np.savez(fname,x=self.x,y=self.y,z=self.z)
@@ -478,8 +571,7 @@ class GridToolsSQL(object):
 			f.write('%d %f %f %f\n' %(6,pos[0],pos[1],pos[2]))
 		f.close()
 
-	# save the data in npz format
-	# and VMD or Blender format vor vizualization
+	# save the data in npy format
 	def save_grid_data(self,dict_data,data_name):
 
 		print('-- Export %s data to %s' %(data_name,self.export_path))
@@ -491,6 +583,28 @@ class GridToolsSQL(object):
 		mol = self.export_path
 		fname = mol + '/' + data_name
 		np.save(fname,np.array(data_array))
+
+	# save the data in pickle format
+	def pickle_grid_data(self,dict_data,data_name):
+
+		print('-- Export %s data to %s' %(data_name,self.export_path))
+
+		# export a 4D matrix for the 3DConvNet 
+		data_array = []
+		for key,value in dict_data.items():	
+			data_array.append(dict_data[key])
+		mol = self.export_path
+		fname = mol + '/' + data_name + '.pkl'
+
+		# read the old data if necessary
+		# if the 2 dict have common keys
+		# the new one will superseed the old one
+		if os.path.isfile(fname):
+			old_data = pickle.load(open(fname,'rb'))
+			dict_data = {**old_data,**dict_data}
+
+		# pickle it
+		pickle.dump(dict_data,open(fname,'wb'))
 
 					
 ########################################################################################################

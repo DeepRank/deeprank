@@ -21,7 +21,7 @@ def map_features(data_folder, grid_info,reset=False):
 	grid info
 
 			dictionay containing the grid information
-			see gridtool.py for details
+			see gridtool_sql.py for details
 
 	reset
 			Boolean to force the removal of all data
@@ -61,12 +61,24 @@ def map_features(data_folder, grid_info,reset=False):
 		else:
 			res_feat = None
 
+		# create the atomic feature dictionary
+		if 'atomic_feature' in grid_info:
+			at_feat = {}
+			for feat_name in grid_info['atomic_feature']:
+				feat_file = sp.check_output("ls %s/%s/*" %(sub,feat_name),shell=True).decode('utf-8').split()
+				if len(feat_file)>1:
+					print('Warning: Multiple files found in %s.\nOnly considering the first one' %(sub))
+				at_feat[feat_name] = feat_file[0]
+		else:
+			at_feat = None
+
 		# compute the data we want on the grid
 		grid = gt.GridToolsSQL(mol_name=mol_name,
 			             number_of_points = grid_info['number_of_points'],
 			             resolution = grid_info['resolution'],
 			             atomic_densities=grid_info['atomic_densities'],
 			             residue_feature = res_feat,
+			             atomic_feature = at_feat,
 			             export_path = sub+'/input/')
 
 

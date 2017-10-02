@@ -168,7 +168,7 @@ class DataAssembler(object):
 				sp.call('cp %s %s/complex.pdb' %(cplx,cplx_dir_name),shell=True)
 
 				# add the features
-				self._add_feat(cplx_dir_name,bare_mol_name)
+				self._add_feat(cplx_dir_name,mol_name)
 
 				# create the target dir and input the binary class target
 				target_dir_name = cplx_dir_name + '/targets/'
@@ -181,7 +181,7 @@ class DataAssembler(object):
 					
 
 
-	def _add_feat(self,cplx_dir_name,bare_mol_name):
+	def _add_feat(self,cplx_dir_name,mol_name):
 
 		# get all the features
 		for feat_name,feat_dir in self.features.items():
@@ -190,8 +190,20 @@ class DataAssembler(object):
 			out_feat_dir = cplx_dir_name + '/' + feat_name
 			os.mkdir(out_feat_dir)
 
+			# the native part of the name only
+			bare_mol_name = mol_name.split('_')[0]
+
+			# get the file names
+			filenames = sp.check_output('ls %s' %(feat_dir),shell=True).decode('utf-8').split()
+			filenames = [name.split('/')[-1].split('.')[0] for name in filenames]
+
 			# copy all the files containing the bare mol name in that directory
-			sp.call('cp %s/*%s* %s/' %(feat_dir,bare_mol_name,out_feat_dir),shell=True)
+			if mol_name in filenames:
+				sp.call('cp %s/*%s.* %s/' %(feat_dir,mol_name,out_feat_dir),shell=True)
+			elif bare_mol_name in filenames:
+				sp.call('cp %s/*%s.* %s/' %(feat_dir,bare_mol_name,out_feat_dir),shell=True)
+			else:
+				print('Error: no %s file found %s' %(feat_name,mol_name))
 
 
 	def _add_targ(self,target_dir_name,mol_name):

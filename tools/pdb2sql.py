@@ -263,18 +263,30 @@ class pdb2sql(object):
 				data = [list(row) for row in self.c.execute(query)]
 
 			elif key == 'index' :
-				value = tuple([v+1 for v in value])
-				qm = ','.join(['?' for i in range(len(value))])
-				query  =  'SELECT {an} FROM ATOM WHERE rowID in ({qm})'.format(an=atnames,qm=qm)
-				data = [list(row) for row in self.c.execute(query,value)]
+
+				# we can have a max of 999 value in a SQL QUERY
+				# for larger index range we need to proceed by batch
+
+				SQL_LIMIT = 999
+				nbatch = int(len(value)/999)+1
+				data = []
+				for ibatch in range(nbatch):
+
+					start,end = ibatch*SQL_LIMIT,(ibatch+1)*SQL_LIMIT
+
+					value_tmp = tuple([v+1 for v in value[start:end]])
+					qm = ','.join(['?' for i in range(len(value_tmp))])
+
+					query  =  'SELECT {an} FROM ATOM WHERE rowID in ({qm})'.format(an=atnames,qm=qm)
+					data += [list(row) for row in self.c.execute(query,value_tmp)]
 
 			elif key == 'chain':
 				query = "SELECT {an} FROM ATOM WHERE chainID=?".format(an=atnames)
 				data = [list(row) for row in self.c.execute(query,value)]
 
 			elif key == 'name':
-				query = "SELECT {an} FROM ATOM WHERE name=?".format(an=atnames)
-				data = [list(row) for row in self.c.execute(query,value)]
+				query = "SELECT {an} FROM ATOM WHERE name='{name}'".format(an=atnames,name=value)
+				data = [list(row) for row in self.c.execute(query)]
 			
 			elif key == 'query' :	
 				query = 'SELECT {an} FROM ATOM {c1}'.format(an=atnames,c1=value)
@@ -317,14 +329,17 @@ class pdb2sql(object):
 		self.c.execute(query)
 		self.conn.commit()
 
-	def update_column(self,colname,values):
+	def update_column(self,colname,values,index=None):
 
 
 		'''
 		values must contain the correct number of elements
 		'''
+		if index==None:
+			data = [ [v,i+1] for i,v in enumerate(values) ]
+		else:
+			data = [ [v,ind] for v,ind in zip(values,index)]
 
-		data = [ [v,i+1] for i,v in enumerate(values) ]
 		query = 'UPDATE ATOM SET {cn}=? WHERE rowID=?'.format(cn=colname)
 		self.c.executemany(query,data)
 		
@@ -341,7 +356,7 @@ class pdb2sql(object):
 		arguments = {'where' : "String e.g 'chainID = 'A''",
 					 'index' : "Array e.g. [27,28,30]",
 					 'name'  : "'CA' atome name",
-					 'query' : "SQL query e.g. 'WHERE chainID='B''"}
+					 'query' : "SQL query e.g. 'WHERE chainID='B' AND resName='ASP' "}
 
 		# the asked keys
 		keys = kwargs.keys()			

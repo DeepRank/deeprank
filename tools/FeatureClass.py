@@ -1,3 +1,5 @@
+import os
+
 
 class FeatureClass(object):
 
@@ -17,15 +19,24 @@ class FeatureClass(object):
 	def __init__(self,feature_type):
 
 		self.type = feature_type
-		self.feature_data = {}		
+		self.feature_data = {}	
+		self.export_directories = {}	
 
 	# eport the data 
-	def export_data(self):
+	def export_data(self,mol_name):
 
 
 		for name,data in self.feature_data.items():
 
-			filename = name+'.dat'
+			dirname = self.export_directories[name]
+
+			if dirname[-1] != '/':
+				dirname += '/'
+
+			if not os.path.isdir(dirname):
+				os.mkdir(dirname)
+
+			filename = dirname + mol_name + '.' + name.upper()
 
 			f = open(filename,'w')
 
