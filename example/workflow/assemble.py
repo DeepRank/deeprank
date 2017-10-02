@@ -25,7 +25,7 @@ targets = {'haddock_score' : BM4 + '/model_qualities/haddockScore/water'}
 classID = BM4 + '/training_set_IDS/classIDs.lst'
 
 # adress of the database
-database = './database/'
+database = '../../database/'
 
 #inti the data assembler 
 da = deeprank.assemble.DataAssembler(classID=classID,decoys=decoys,natives=natives,
