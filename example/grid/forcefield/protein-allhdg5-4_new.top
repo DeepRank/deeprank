@@ -1,0 +1,705 @@
+CYM  atom N   type=NH1    charge=-0.570 end
+CYM  atom HN  type=H      charge= 0.370 end
+CYM  atom CA  type=CH1E   charge= 0.200 end
+CYM  atom HA  type=HA     charge= 0.000 end
+CYM  atom CB  type=CH2E   charge= 0.080 end
+CYM  atom HB1 type=HA     charge= 0.000 end
+CYM  atom HB2 type=HA     charge= 0.000 end
+CYM  atom SG  type=S      charge=-0.080 end
+CYM  atom C   type=C      charge= 0.500 end
+CYM  atom O   type=O      charge=-0.500 end
+ALA    atom N   type=NH1     charge=-0.570 end
+ALA    atom HN  type=H       charge= 0.370 end
+ALA    atom CA  type=CH1E    charge= 0.200 end
+ALA    atom HA  type=HA      charge= 0.000 end
+ALA    atom CB  type=CH3E    charge= 0.000 end
+ALA    atom HB1 type=HA      charge= 0.000 end
+ALA    atom HB2 type=HA      charge= 0.000 end
+ALA    atom HB3 type=HA      charge= 0.000 end
+ALA    atom C   type=C       charge= 0.500 end
+ALA    atom O   type=O       charge=-0.500 end
+ARG    atom N    type=NH1    charge=-0.570 end
+ARG    atom HN   type=H      charge= 0.370 end
+ARG    atom CA   type=CH1E   charge= 0.200 end
+ARG    atom HA   type=HA     charge= 0.000 end
+ARG    atom CB   type=CH2E   charge= 0.000 end
+ARG    atom HB1  type=HA     charge= 0.000 end
+ARG    atom HB2  type=HA     charge= 0.000 end
+ARG    atom CG   type=CH2E   charge= 0.070 end
+ARG    atom HG1  type=HA     charge= 0.000 end
+ARG    atom HG2  type=HA     charge= 0.000 end
+ARG    atom CD   type=CH2E   charge= 0.310 end
+ARG    atom HD1  type=HA     charge= 0.000 end
+ARG    atom HD2  type=HA     charge= 0.000 end
+ARG    atom NE   type=NH1    charge=-0.700 end
+ARG    atom HE   type=H      charge= 0.440 end
+ARG    atom CZ   type=C      charge= 0.640 end
+ARG    atom NH1  type=NC2    charge=-0.800 end
+ARG    atom HH11 type=HC     charge= 0.460 end
+ARG    atom HH12 type=HC     charge= 0.460 end
+ARG    atom NH2   type=NC2   charge=-0.800 end
+ARG    atom HH21  type=HC    charge= 0.460 end
+ARG    atom HH22  type=HC    charge= 0.460 end
+ARG    atom C     type=C     charge= 0.500 end
+ARG    atom O     type=O     charge=-0.500 end
+ASN    atom N    type=NH1    charge=-0.570 end
+ASN    atom HN   type=H      charge= 0.370 end
+ASN    atom CA   type=CH1E   charge= 0.200 end
+ASN    atom HA   type=HA     charge= 0.000 end
+ASN    atom CB   type=CH2E   charge=-0.000 end
+ASN    atom HB1  type=HA     charge= 0.000 end
+ASN    atom HB2  type=HA     charge= 0.000 end
+ASN    atom CG   type=C      charge= 0.500 end
+ASN    atom OD1  type=O      charge=-0.500 end
+ASN    atom ND2  type=NH2    charge=-0.850 end
+ASN    atom HD21 type=H      charge= 0.425 end
+ASN    atom HD22 type=H      charge= 0.425 end
+ASN    atom C    type=C      charge= 0.500 end
+ASN    atom O    type=O      charge=-0.500 end
+ASP    atom N   type=NH1   charge=-0.570 end
+ASP    atom HN  type=H     charge= 0.370 end
+ASP    atom CA  type=CH1E  charge= 0.200 end
+ASP    atom HA  type=HA    charge= 0.000 end
+ASP    atom CB  type=CH2E  charge=-0.100 end
+ASP    atom HB1 type=HA    charge= 0.000 end
+ASP    atom HB2 type=HA    charge= 0.000 end
+ASP    atom CG  type=C     charge= 0.700 end
+ASP    atom OD1 type=OC    charge=-0.800 end
+ASP    atom OD2 type=OC    charge=-0.800 end
+ASP    atom C   type=C     charge= 0.500 end
+ASP    atom O   type=O     charge=-0.500 end
+ASH    atom N   type=NH1   charge=-0.570 end
+ASH    atom HN  type=H     charge= 0.370 end
+ASH    atom CA  type=CH1E  charge= 0.200 end
+ASH    atom HA  type=HA    charge= 0.000 end
+ASH    atom CB  type=CH2E  charge= 0.000 end
+ASH    atom HB1 type=HA    charge= 0.000 end
+ASH    atom HB2 type=HA    charge= 0.000 end
+ASH    atom CG  type=C     charge= 0.500 end
+ASH    atom OD1 type=OC    charge=-0.500 end
+ASH    atom OD2 type=OH1   charge=-0.450 end
+ASH    atom HD2 type=H     charge= 0.450 end
+ASH    atom C   type=C     charge= 0.500 end
+ASH    atom O   type=O     charge=-0.500 end
+CSP    atom N   type=NH1    charge=-0.570 end
+CSP    atom HN  type=H      charge= 0.370 end
+CSP    atom CA  type=CH1E   charge= 0.200 end
+CSP    atom HA  type=HA     charge= 0.000 end
+CSP    atom CB  type=CH2E   charge= 0.080 end
+CSP    atom HB1 type=HA     charge= 0.000 end
+CSP    atom HB2 type=HA     charge= 0.000 end
+CSP    atom SG  type=SM     charge=-0.440 end
+CSP    atom P   type=PP     charge= 0.520 end
+CSP    atom O1P type=OP1    charge=-0.720 end
+CSP    atom O2P type=OP1    charge=-0.720 end
+CSP    atom O3P type=OR3    charge=-0.720 end
+CSP    atom C   type=C      charge= 0.500 end
+CSP    atom O   type=O      charge=-0.500 end
+CFE    atom N   type=NH1    charge=-0.570 end
+CFE    atom HN  type=H      charge= 0.370 end
+CFE    atom CA  type=CH1E   charge= 0.200 end
+CFE    atom HA  type=HA     charge= 0.000 end
+CFE    atom CB  type=CH2E   charge=-0.020 end
+CFE    atom HB1 type=HA     charge= 0.000 end
+CFE    atom HB2 type=HA     charge= 0.000 end
+CFE    atom SG  type=SH1E   charge=-0.720 end
+CFE    atom FE1 type=FS     charge= 0.870 end
+CFE    atom SF1 type=SF     charge=-0.560 end
+CFE    atom FE2 type=FS     charge= 0.870 end
+CFE    atom SF2 type=SF     charge=-0.560 end
+CFE    atom C   type=C      charge= 0.500 end
+CFE    atom O   type=O      charge=-0.500 end
+CYF    atom N   type=NH1    charge=-0.570 end
+CYF    atom HN  type=H      charge= 0.370 end
+CYF    atom CA  type=CH1E   charge= 0.200 end
+CYF    atom HA  type=HA     charge= 0.000 end
+CYF    atom CB  type=CH2E   charge=-0.020 end ! charged AB for better Zn coordination
+CYF    atom HB1 type=HA     charge= 0.000 end
+CYF    atom HB2 type=HA     charge= 0.000 end
+CYF    atom SG  type=SH1E   charge=-0.720 end ! charged AB for better Zn coordination
+CYF    atom C   type=C      charge= 0.500 end
+CYF    atom O   type=O      charge=-0.500 end
+CYS    atom N   type=NH1    charge=-0.570 end
+CYS    atom HN  type=H      charge= 0.370 end
+CYS    atom CA  type=CH1E   charge= 0.200 end
+CYS    atom HA  type=HA     charge= 0.000 end
+CYS    atom CB  type=CH2E   charge= 0.180 end
+CYS    atom HB1 type=HA     charge= 0.000 end
+CYS    atom HB2 type=HA     charge= 0.000 end
+CYS    atom SG  type=SH1E   charge=-0.450 end
+CYS    atom HG  type=H      charge= 0.270 end
+CYS    atom C   type=C      charge= 0.500 end
+CYS    atom O   type=O      charge=-0.500 end
+GLN    atom N    type=NH1     charge=-0.570 end
+GLN    atom HN   type=H       charge= 0.370 end
+GLN    atom CA   type=CH1E    charge= 0.200 end
+GLN    atom HA   type=HA      charge= 0.000 end
+GLN    atom CB   type=CH2E    charge= 0.000 end
+GLN    atom HB1  type=HA      charge= 0.000 end
+GLN    atom HB2  type=HA      charge= 0.000 end
+GLN    atom CG   type=CH2E    charge= 0.000 end
+GLN    atom HG1  type=HA      charge= 0.000 end
+GLN    atom HG2  type=HA      charge= 0.000 end
+GLN    atom CD   type=C       charge= 0.500 end
+GLN    atom OE1  type=O       charge=-0.500 end
+GLN    atom NE2  type=NH2     charge=-0.850 end
+GLN    atom HE21 type=H       charge= 0.425 end
+GLN    atom HE22 type=H       charge= 0.425 end
+GLN    atom C    type=C       charge= 0.500 end
+GLN    atom O    type=O       charge=-0.500 end
+GLU    atom N   type=NH1    charge=-0.570 end
+GLU    atom HN  type=H      charge= 0.370 end
+GLU    atom CA  type=CH1E   charge= 0.200 end
+GLU    atom HA  type=HA     charge= 0.000 end
+GLU    atom CB  type=CH2E   charge= 0.000 end
+GLU    atom HB1 type=HA     charge= 0.000 end
+GLU    atom HB2 type=HA     charge= 0.000 end
+GLU    atom CG  type=CH2E   charge=-0.100 end
+GLU    atom HG1 type=HA     charge= 0.000 end
+GLU    atom HG2 type=HA     charge= 0.000 end
+GLU    atom CD  type=C      charge= 0.700 end
+GLU    atom OE1 type=OC     charge=-0.800 end
+GLU    atom OE2 type=OC     charge=-0.800 end
+GLU    atom C   type=C      charge= 0.500 end
+GLU    atom O   type=O      charge=-0.500 end
+GLH    atom N   type=NH1    charge=-0.570 end
+GLH    atom HN  type=H      charge= 0.370 end
+GLH    atom CA  type=CH1E   charge= 0.200 end
+GLH    atom HA  type=HA     charge= 0.000 end
+GLH    atom CB  type=CH2E   charge= 0.000 end
+GLH    atom HB1 type=HA     charge= 0.000 end
+GLH    atom HB2 type=HA     charge= 0.000 end
+GLH    atom CG  type=CH2E   charge= 0.000 end
+GLH    atom HG1 type=HA     charge= 0.000 end
+GLH    atom HG2 type=HA     charge= 0.000 end
+GLH    atom CD  type=C      charge= 0.500 end
+GLH    atom OE1 type=OC     charge=-0.500 end
+GLH    atom OE2 type=OH1    charge=-0.450 end
+GLH    atom HE2 type=H      charge= 0.450 end
+GLH    atom C   type=C      charge= 0.500 end
+GLH    atom O   type=O      charge=-0.500 end
+GLY    atom N   type=NH1    charge=-0.570 end
+GLY    atom HN  type=H      charge= 0.370 end
+GLY    atom CA  type=CH2G   charge= 0.200 end
+GLY    atom HA1 type=HA     charge= 0.000 end
+GLY    atom HA2 type=HA     charge= 0.000 end
+GLY    atom C   type=C      charge= 0.500 end
+GLY    atom O   type=O      charge=-0.500 end
+NEP    atom N   type=NH1     charge=-0.570 end
+NEP    atom HN  type=H       charge= 0.370 end
+NEP    atom CA  type=CH1E    charge= 0.200 end
+NEP    atom HA  type=HA      charge= 0.000 end
+NEP    atom CB  type=CH2E    charge= 0.000 end
+NEP    atom HB1 type=HA      charge= 0.000 end
+NEP    atom HB2 type=HA      charge= 0.000 end
+NEP    atom CG  type=C5      charge= 0.330 end
+NEP    atom ND1 type=NH1     charge=-0.540 end
+NEP    atom HD1 type=H       charge= 0.460 end
+NEP    atom CD2 type=CR1H    charge= 0.330 end
+NEP    atom HD2 type=HA      charge= 0.000 end
+NEP    atom CE1 type=CRHH    charge= 0.500 end
+NEP    atom HE1 type=HA      charge= 0.000 end
+NEP    atom NE2 type=NR      charge=-0.440 end
+NEP    atom P   type=PP      charge= 0.520 end
+NEP    atom O1P type=OP1     charge=-0.720 end
+NEP    atom O2P type=OP1     charge=-0.720 end
+NEP    atom O3P type=OR3     charge=-0.720 end
+NEP    atom C   type=C       charge= 0.500 end
+NEP    atom O   type=O       charge=-0.500 end
+HIS    atom N   type=NH1     charge=-0.570 end
+HIS    atom HN  type=H       charge= 0.370 end
+HIS    atom CA  type=CH1E    charge= 0.200 end
+HIS    atom HA  type=HA      charge= 0.000 end
+HIS    atom CB  type=CH2E    charge= 0.000 end
+HIS    atom HB1 type=HA      charge= 0.000 end
+HIS    atom HB2 type=HA      charge= 0.000 end
+HIS    atom CG  type=C5      charge= 0.330 end
+HIS    atom ND1 type=NH1     charge=-0.540 end
+HIS    atom HD1 type=H       charge= 0.460 end
+HIS    atom CD2 type=CR1H    charge= 0.330 end
+HIS    atom HD2 type=HA      charge= 0.000 end
+HIS    atom CE1 type=CRHH    charge= 0.500 end
+HIS    atom HE1 type=HA      charge= 0.000 end
+HIS    atom NE2 type=NH1     charge=-0.540 end
+HIS    atom HE2 TYPE=H       charge= 0.460 end
+HIS    atom C   type=C       charge= 0.500 end
+HIS    atom O   type=O       charge=-0.500 end
+ILE    atom N    type=NH1     charge=-0.570 end
+ILE    atom HN   type=H       charge= 0.370 end
+ILE    atom CA   type=CH1E    charge= 0.200 end
+ILE    atom HA   type=HA      charge= 0.000 end
+ILE    atom CB   type=CH1E    charge= 0.000 end
+ILE    atom HB   type=HA      charge= 0.000 end
+ILE    atom CG1  type=CH2E    charge= 0.000 end
+ILE    atom HG11 type=HA      charge= 0.000 excl = (HG21 HG22 HG23 HD11 HD12 HD13) end
+ILE    atom HG12 type=HA      charge= 0.000 excl = (HG21 HG22 HG23 HD11 HD12 HD13) end
+ILE    atom CG2  type=CH3E    charge= 0.000 end
+ILE    atom HG21 type=HA      charge= 0.000 excl = (HG11 HG12 HD11 HD12 HD13) end
+ILE    atom HG22 type=HA      charge= 0.000 excl = (HG11 HG12 HD11 HD12 HD13) end
+ILE    atom HG23 type=HA      charge= 0.000 excl = (HG11 HG12 HD11 HD12 HD13) end
+ILE    atom CD1  type=CH3E    charge= 0.000 end
+ILE    atom HD11 type=HA      charge= 0.000 excl = (HG21 HG22 HG23 HG11 HG12) end
+ILE    atom HD12 type=HA      charge= 0.000 excl = (HG21 HG22 HG23 HG11 HG12) end
+ILE    atom HD13 type=HA      charge= 0.000 excl = (HG21 HG22 HG23 HG11 HG12) end
+ILE    atom C    type=C       charge= 0.500 end
+ILE    atom O    type=O       charge=-0.500 end
+LEU    atom N    type=NH1    charge=-0.570 end
+LEU    atom HN   type=H      charge= 0.370 end
+LEU    atom CA   type=CH1E   charge= 0.200 end
+LEU    atom HA   type=HA     charge= 0.000 end
+LEU    atom CB   type=CH2E   charge= 0.000 end
+LEU    atom HB1  type=HA     charge= 0.000 end
+LEU    atom HB2  type=HA     charge= 0.000 end
+LEU    atom CG   type=CH1E   charge= 0.000 end
+LEU    atom HG   type=HA     charge= 0.000 end
+LEU    atom CD1  type=CH3E   charge= 0.000 end
+LEU    atom HD11 type=HA     charge= 0.000 excl = (HD21 HD22 HD23 HG) end
+LEU    atom HD12 type=HA     charge= 0.000 excl = (HD21 HD22 HD23 HG) end
+LEU    atom HD13 type=HA     charge= 0.000 excl = (HD21 HD22 HD23 HG) end
+LEU    atom CD2  type=CH3E   charge= 0.000 end
+LEU    atom HD21 type=HA     charge= 0.000 excl = (HD11 HD12 HD13 HG) end
+LEU    atom HD22 type=HA     charge= 0.000 excl = (HD11 HD12 HD13 HG) end
+LEU    atom HD23 type=HA     charge= 0.000 excl = (HD11 HD12 HD13 HG) end
+LEU    atom C    type=C      charge= 0.500 end
+LEU    atom O    type=O      charge=-0.500 end
+LYS    atom N   type=NH1    charge=-0.570 end
+LYS    atom HN  type=H      charge= 0.370 end
+LYS    atom CA  type=CH1E   charge= 0.200 end
+LYS    atom HA  type=HA     charge= 0.000 end
+LYS    atom CB  type=CH2E   charge= 0.000 end
+LYS    atom HB1 type=HA     charge= 0.000 end
+LYS    atom HB2 type=HA     charge= 0.000 end
+LYS    atom CG  type=CH2E   charge= 0.000 end
+LYS    atom HG1 type=HA     charge= 0.000 end
+LYS    atom HG2 type=HA     charge= 0.000 end
+LYS    atom CD  type=CH2E   charge= 0.000 end
+LYS    atom HD1 type=HA     charge= 0.000 end
+LYS    atom HD2 type=HA     charge= 0.000 end
+LYS    atom CE  type=CH2E   charge= 0.310 end
+LYS    atom HE1 type=HA     charge= 0.000 end
+LYS    atom HE2 type=HA     charge= 0.000 end
+LYS    atom NZ  type=NH3    charge=-0.300 end
+LYS    atom HZ1 type=HC     charge= 0.330 end
+LYS    atom HZ2 type=HC     charge= 0.330 end
+LYS    atom HZ3 type=HC     charge= 0.330 end
+LYS    atom C   type=C      charge= 0.500 end
+LYS    atom O   type=O      charge=-0.500 end
+ALY    atom N   type=NH1    charge=-0.570 end
+ALY    atom HN  type=H      charge= 0.370 end
+ALY    atom CA  type=CH1E   charge= 0.200 end
+ALY    atom HA  type=HA     charge= 0.000 end
+ALY    atom CB  type=CH2E   charge= 0.000 end
+ALY    atom HB1 type=HA     charge= 0.000 end
+ALY    atom HB2 type=HA     charge= 0.000 end
+ALY    atom CG  type=CH2E   charge= 0.000 end
+ALY    atom HG1 type=HA     charge= 0.000 end
+ALY    atom HG2 type=HA     charge= 0.000 end
+ALY    atom CD  type=CH2E   charge= 0.000 end
+ALY    atom HD1 type=HA     charge= 0.000 end
+ALY    atom HD2 type=HA     charge= 0.000 end
+ALY    atom CE  type=CH2E   charge= 0.200 end
+ALY    atom HE1 type=HA     charge= 0.000 end
+ALY    atom HE2 type=HA     charge= 0.000 end
+ALY    atom NZ  type=NH1    charge=-0.570 end
+ALY    atom HZ1 type=H      charge= 0.370 end
+ALY    atom CZ  type=C      charge= 0.500 end
+ALY    atom OZ  type=O      charge=-0.500 end
+ALY    atom CM  type=CH3E   charge= 0.000 end
+ALY    atom HM1 type=HA     charge= 0.000 end
+ALY    atom HM2 type=HA     charge= 0.000 end
+ALY    atom HM3 type=HA     charge= 0.000 end
+ALY    atom C   type=C      charge= 0.500 end
+ALY    atom O   type=O      charge=-0.500 end
+MLZ    atom N    type=NH1   charge=-0.570 end
+MLZ    atom HN   type=H     charge= 0.370 end
+MLZ    atom CA   type=CH1E  charge= 0.200 end
+MLZ    atom HA   type=HA    charge= 0.000 end
+MLZ    atom CB   type=CH2E  charge= 0.000 end
+MLZ    atom HB1  type=HA    charge= 0.000 end
+MLZ    atom HB2  type=HA    charge= 0.000 end
+MLZ    atom CG   type=CH2E  charge= 0.000 end
+MLZ    atom HG1  type=HA    charge= 0.000 end
+MLZ    atom HG2  type=HA    charge= 0.000 end
+MLZ    atom CD   type=CH2E  charge= 0.000 end
+MLZ    atom HD1  type=HA    charge= 0.000 end
+MLZ    atom HD2  type=HA    charge= 0.000 end
+MLZ    atom CE   type=CH2E  charge=-0.157 end
+MLZ    atom HE1  type=HA    charge= 0.250 end
+MLZ    atom HE2  type=HA    charge= 0.250 end
+MLZ    atom NZ   type=NC2   charge=-0.400 end
+MLZ    atom HZ1  type=HC    charge= 0.320 end
+MLZ    atom HZ2  type=HC    charge= 0.320 end
+MLZ    atom CM3  type=CH3E  charge=-0.333 end
+MLZ    atom HM31 type=HA    charge= 0.250 end
+MLZ    atom HM32 type=HA    charge= 0.250 end
+MLZ    atom HM33 type=HA    charge= 0.250 end
+MLZ    atom C    type=C     charge= 0.500 end
+MLZ    atom O    type=O     charge=-0.500 end
+MLY    atom N    type=NH1   charge=-0.570 end
+MLY    atom HN   type=H     charge= 0.370 end
+MLY    atom CA   type=CH1E  charge= 0.200 end
+MLY    atom HA   type=HA    charge= 0.000 end
+MLY    atom CB   type=CH2E  charge= 0.000 end
+MLY    atom HB1  type=HA    charge= 0.000 end
+MLY    atom HB2  type=HA    charge= 0.000 end
+MLY    atom CG   type=CH2E  charge= 0.000 end
+MLY    atom HG1  type=HA    charge= 0.000 end
+MLY    atom HG2  type=HA    charge= 0.000 end
+MLY    atom CD   type=CH2E  charge= 0.000 end
+MLY    atom HD1  type=HA    charge= 0.000 end
+MLY    atom HD2  type=HA    charge= 0.000 end
+MLY    atom CE   type=CH2E  charge=-0.154 end
+MLY    atom HE1  type=HA    charge= 0.250 end
+MLY    atom HE2  type=HA    charge= 0.250 end
+MLY    atom NZ   type=NC3   charge=-0.510 end
+MLY    atom HZ1  type=HC    charge= 0.330 end
+MLY    atom CM2  type=CH3E  charge=-0.333 end
+MLY    atom HM21 type=HA    charge= 0.250 end
+MLY    atom HM22 type=HA    charge= 0.250 end
+MLY    atom HM23 type=HA    charge= 0.250 end
+MLY    atom CM3  type=CH3E  charge=-0.333 end
+MLY    atom HM31 type=HA    charge= 0.250 end
+MLY    atom HM32 type=HA    charge= 0.250 end
+MLY    atom HM33 type=HA    charge= 0.250 end
+MLY    atom C    type=C     charge= 0.500 end
+MLY    atom O    type=O     charge=-0.500 end
+M3L    atom N    type=NH1   charge=-0.570 end
+M3L    atom HN   type=H     charge= 0.370 end
+M3L    atom CA   type=CH1E  charge= 0.200 end
+M3L    atom HA   type=HA    charge= 0.000 end
+M3L    atom CB   type=CH2E  charge= 0.000 end
+M3L    atom HB1  type=HA    charge= 0.000 end
+M3L    atom HB2  type=HA    charge= 0.000 end
+M3L    atom CG   type=CH2E  charge= 0.000 end
+M3L    atom HG1  type=HA    charge= 0.000 end
+M3L    atom HG2  type=HA    charge= 0.000 end
+M3L    atom CD   type=CH2E  charge= 0.000 end
+M3L    atom HD1  type=HA    charge= 0.000 end
+M3L    atom HD2  type=HA    charge= 0.000 end
+M3L    atom CE   type=CH2E  charge=-0.151 end
+M3L    atom HE1  type=HA    charge= 0.250 end
+M3L    atom HE2  type=HA    charge= 0.250 end
+M3L    atom NZ   type=NC4   charge=-0.600 end
+M3L    atom CM1  type=CH3E  charge=-0.333 end
+M3L    atom HM11 type=HA    charge= 0.250 end
+M3L    atom HM12 type=HA    charge= 0.250 end
+M3L    atom HM13 type=HA    charge= 0.250 end
+M3L    atom CM2  type=CH3E  charge=-0.333 end
+M3L    atom HM21 type=HA    charge= 0.250 end
+M3L    atom HM22 type=HA    charge= 0.250 end
+M3L    atom HM23 type=HA    charge= 0.250 end
+M3L    atom CM3  type=CH3E  charge=-0.333 end
+M3L    atom HM31 type=HA    charge= 0.250 end
+M3L    atom HM32 type=HA    charge= 0.250 end
+M3L    atom HM33 type=HA    charge= 0.250 end
+M3L    atom C    type=C     charge= 0.500 end
+M3L    atom O    type=O     charge=-0.500 end
+MET    atom N   type=NH1     charge=-0.570 end
+MET    atom HN  type=H       charge= 0.370 end
+MET    atom CA  type=CH1E    charge= 0.200 end
+MET    atom HA  type=HA      charge= 0.000 end
+MET    atom CB  type=CH2E    charge=-0.000 end
+MET    atom HB1 type=HA      charge= 0.000 end
+MET    atom HB2 type=HA      charge= 0.000 end
+MET    atom CG  type=CH2E    charge= 0.235 end
+MET    atom HG1 type=HA      charge= 0.000 end
+MET    atom HG2 type=HA      charge= 0.000 end
+MET    atom SD  type=SM      charge=-0.470 end
+MET    atom CE  type=CH3E    charge= 0.235 end
+MET    atom HE1 type=HA      charge= 0.000 end
+MET    atom HE2 type=HA      charge= 0.000 end
+MET    atom HE3 type=HA      charge= 0.000 end
+MET    atom C   type=C       charge= 0.500 end
+MET    atom O   type=O       charge=-0.500 end
+MSE    atom N   type=NH1     charge=-0.570 end
+MSE    atom HN  type=H       charge= 0.370 end
+MSE    atom CA  type=CH1E    charge= 0.200 end
+MSE    atom HA  type=HA      charge= 0.000 end
+MSE    atom CB  type=CH2E    charge=-0.000 end
+MSE    atom HB1 type=HA      charge= 0.000 end
+MSE    atom HB2 type=HA      charge= 0.000 end
+MSE    atom CG  type=CH2E    charge= 0.235 end
+MSE    atom HG1 type=HA      charge= 0.000 end
+MSE    atom HG2 type=HA      charge= 0.000 end
+MSE    atom SE  type=SE      charge=-0.470 end
+MSE    atom CE  type=CH3E    charge= 0.235 end
+MSE    atom HE1 type=HA      charge= 0.000 end
+MSE    atom HE2 type=HA      charge= 0.000 end
+MSE    atom HE3 type=HA      charge= 0.000 end
+MSE    atom C   type=C       charge= 0.500 end
+MSE    atom O   type=O       charge=-0.500 end
+PHE    atom N   type=NH1     charge=-0.570 end
+PHE    atom HN  type=H       charge= 0.370 end
+PHE    atom CA  type=CH1E    charge= 0.200 end
+PHE    atom HA  type=HA      charge= 0.000 end
+PHE    atom CB  type=CH2E    charge= 0.000 end
+PHE    atom HB1 type=HA      charge= 0.000 end
+PHE    atom HB2 type=HA      charge= 0.000 end
+PHE    atom CG  type=CF      charge= 0.000 exclude=(CZ) end
+PHE    atom CD1 type=CR1E    charge= 0.000 exclude=(CE2) end
+PHE    atom HD1 type=HA      charge= 0.000 end
+PHE    atom CD2 type=CR1E    charge= 0.000 exclude=(CE1) end
+PHE    atom HD2 type=HA      charge= 0.000 end
+PHE    atom CE1 type=CR1E    charge= 0.000 exclude=(CD2) end
+PHE    atom HE1 type=HA      charge= 0.000 end
+PHE    atom CE2 type=CR1E    charge= 0.000 exclude=(CD1) end
+PHE    atom HE2 type=HA      charge= 0.000 end
+PHE    atom CZ  type=CR1E    charge= 0.000 exclude=(CG) end
+PHE    atom HZ  type=HA      charge= 0.000 end
+PHE    atom C   type=C       charge= 0.500 end
+PHE    atom O   type=O       charge=-0.500 end
+PRO    atom N   type=N     charge=-0.570 end
+PRO    atom CA  type=CH1E  charge= 0.285 end
+PRO    atom HA  type=HA    charge= 0.000 end
+PRO    atom CB  type=CH2E  charge= 0.000 end
+PRO    atom HB1 type=HA    charge= 0.000 end
+PRO    atom HB2 type=HA    charge= 0.000 end
+PRO    atom CG  type=CH2P  charge= 0.000 end
+PRO    atom HG1 type=HA    charge= 0.000 end
+PRO    atom HG2 type=HA    charge= 0.000 end
+PRO    atom CD  type=CH2P  charge= 0.285 end
+PRO    atom HD1 type=HA    charge= 0.000 end   
+PRO    atom HD2 type=HA    charge= 0.000 end   
+PRO    atom C   type=C     charge= 0.500 end   
+PRO    atom O   type=O     charge=-0.500 end
+HYP    atom N   type=N     charge=-0.570 end
+HYP    atom CA  type=CH1E  charge= 0.285 end
+HYP    atom HA  type=HA    charge= 0.000 end
+HYP    atom CB  type=CH2E  charge= 0.000 end
+HYP    atom HB1 type=HA    charge= 0.000 end
+HYP    atom HB2 type=HA    charge= 0.000 end
+HYP    atom CG  type=CH1P  charge= 0.485 end
+HYP    atom OG1 type=OH1   charge=-0.700 end   
+HYP    atom HG1 type=H     charge= 0.500 end   
+HYP    atom HG2 type=HA    charge= 0.000 end   
+HYP    atom CD  type=CH2P  charge= 0.000 end
+HYP    atom HD1 type=HA    charge= 0.000 end
+HYP    atom HD2 type=HA    charge= 0.000 end
+HYP    atom C   type=C     charge= 0.500 end   
+HYP    atom O   type=O     charge=-0.500 end
+SER    atom N   type=NH1    charge=-0.570 end
+SER    atom HN  type=H      charge= 0.370 end
+SER    atom CA  type=CH1E   charge= 0.200 end
+SER    atom HA  type=HA     charge= 0.000 end
+SER    atom CB  type=CH2E   charge= 0.265 end
+SER    atom HB1 type=HA     charge= 0.000 end
+SER    atom HB2 type=HA     charge= 0.000 end
+SER    atom OG  type=OH1    charge=-0.700 end
+SER    atom HG  type=H      charge= 0.435 end
+SER    atom C   type=C      charge= 0.500 end
+SER    atom O   type=O      charge=-0.500 end
+SEP    atom N   type=NH1    charge=-0.570 end
+SEP    atom HN  type=H      charge= 0.370 end
+SEP    atom CA  type=CH1E   charge= 0.200 end
+SEP    atom HA  type=HA     charge= 0.000 end
+SEP    atom CB  type=CH2E   charge= 0.265 end
+SEP    atom HB1 type=HA     charge= 0.000 end
+SEP    atom HB2 type=HA     charge= 0.000 end
+SEP    atom OG  type=OHP    charge=-0.625 end
+SEP    atom P   type=PP     charge= 0.520 end
+SEP    atom O1P type=OP1    charge=-0.720 end
+SEP    atom O2P type=OP1    charge=-0.720 end
+SEP    atom O3P type=OR3    charge=-0.720 end
+SEP    atom C   type=C      charge= 0.500 end
+SEP    atom O   type=O      charge=-0.500 end
+THR    atom N    type=NH1 charge=-0.570 end
+THR    atom HN   type=H   charge= 0.370 end
+THR    atom CA   type=CH1E  charge= 0.200 end
+THR    atom HA   type=HA  charge= 0.000 end
+THR    atom CB   type=CH1E  charge= 0.265 end
+THR    atom HB   type=HA  charge= 0.000 end
+THR    atom OG1  type=OH1  charge=-0.700 end
+THR    atom HG1  type=H   charge= 0.435 end
+THR    atom CG2  type=CH3E  charge=-0.000 end
+THR    atom HG21 type=HA  charge= 0.000 end
+THR    atom HG22 type=HA  charge= 0.000 end
+THR    atom HG23 type=HA  charge= 0.000 end
+THR    atom C    type=C   charge= 0.500 end
+THR    atom O    type=O   charge=-0.500 end
+TOP    atom N    type=NH1 charge=-0.570 end
+TOP    atom HN   type=H   charge= 0.370 end
+TOP    atom CA   type=CH1E  charge= 0.200 end
+TOP    atom HA   type=HA  charge= 0.000 end
+TOP    atom CB   type=CH1E  charge= 0.265 end
+TOP    atom HB   type=HA  charge= 0.000 end
+TOP    atom OG1  type=OHP    charge=-0.625 end
+TOP    atom P    type=PP     charge= 0.520 end
+TOP    atom O1P  type=OP1    charge=-0.720 end
+TOP    atom O2P  type=OP1    charge=-0.720 end
+TOP    atom O3P  type=OR3    charge=-0.720 end
+TOP    atom CG2  type=CH3E  charge=-0.000 end
+TOP    atom HG21 type=HA  charge= 0.000 end
+TOP    atom HG22 type=HA  charge= 0.000 end
+TOP    atom HG23 type=HA  charge= 0.000 end
+TOP    atom C    type=C   charge= 0.500 end
+TOP    atom O    type=O   charge=-0.500 end
+TRP    atom N   type=NH1 charge=-0.570 end
+TRP    atom HN  type=H   charge= 0.370 end
+TRP    atom CA  type=CH1E  charge= 0.200 end
+TRP    atom HA  type=HA  charge= 0.000 end
+TRP    atom CB  type=CH2E  charge= 0.000 end
+TRP    atom HB1 type=HA  charge= 0.000 end
+TRP    atom HB2 type=HA  charge= 0.000 end
+TRP    atom CG  type=C5W  charge=-0.055 end
+TRP    atom CD1 type=CR1E  charge= 0.130 end
+TRP    atom HD1 type=HA  charge= 0.000 end
+TRP    atom CD2 type=CW  charge=-0.055 exclude=(CH2) end
+TRP    atom NE1 type=NH1 charge=-0.570 end
+TRP    atom HE1 type=H   charge= 0.420 end
+TRP    atom CE2 type=CW  charge= 0.130 exclude=(CZ3) end
+TRP    atom CE3 type=CR1E  charge= 0.000 exclude=(CZ2) end
+TRP    atom HE3 type=HA  charge= 0.000 end
+TRP    atom CZ2 type=CR1W charge= 0.000 exclude=(CE3) end
+TRP    atom HZ2 type=HA  charge= 0.000 end
+TRP    atom CZ3 type=CR1E  charge= 0.000 exclude=(CE2) end
+TRP    atom HZ3 type=HA  charge= 0.000 end
+TRP    atom CH2 type=CR1W charge= 0.000 exclude=(CD2) end
+TRP    atom HH2 type=HA  charge= 0.000 end
+TRP    atom C   type=C   charge= 0.500 end
+TRP    atom O   type=O   charge=-0.500 end
+TYR    atom N   type=NH1 charge=-0.570 end
+TYR    atom HN  type=H   charge= 0.370 end
+TYR    atom CA  type=CH1E  charge= 0.200 end
+TYR    atom HA  type=HA  charge= 0.000 end
+TYR    atom CB  type=CH2E  charge= 0.000 end
+TYR    atom HB1 type=HA  charge= 0.000 end
+TYR    atom HB2 type=HA  charge= 0.000 end
+TYR    atom CG  type=CY  charge= 0.000 exclude=(CZ) end
+TYR    atom CD1 type=CR1E  charge= 0.000 exclude=(CE2) end
+TYR    atom HD1 type=HA  charge= 0.000 end
+TYR    atom CD2 type=CR1E  charge= 0.000 exclude=(CE1) end
+TYR    atom HD2 type=HA  charge= 0.000 end
+TYR    atom CE1 type=CR1E  charge= 0.000 exclude=(CD2) end
+TYR    atom HE1 type=HA  charge= 0.000 end
+TYR    atom CE2 type=CR1E  charge= 0.000 exclude=(CD1) end
+TYR    atom HE2 type=HA  charge= 0.000 end
+TYR    atom CZ  type=CY2   charge= 0.265 exclude=(CG) end
+TYR    atom OH  type=OH1  charge=-0.700 end
+TYR    atom HH  type=H   charge= 0.435 end
+TYR    atom C   type=C   charge= 0.500 end
+TYR    atom O   type=O   charge=-0.500 end
+TYP    atom N   type=NH1 charge=-0.570 end
+TYP    atom HN  type=H   charge= 0.370 end
+TYP    atom CA  type=CH1E  charge= 0.200 end
+TYP    atom HA  type=HA  charge= 0.000 end
+TYP    atom CB  type=CH2E  charge= 0.000 end
+TYP    atom HB1 type=HA  charge= 0.000 end
+TYP    atom HB2 type=HA  charge= 0.000 end
+TYP    atom CG  type=CY  charge= 0.000 exclude=(CZ) end
+TYP    atom CD1 type=CR1E  charge= 0.000 exclude=(CE2) end
+TYP    atom HD1 type=HA  charge= 0.000 end
+TYP    atom CD2 type=CR1E  charge= 0.000 exclude=(CE1) end
+TYP    atom HD2 type=HA  charge= 0.000 end
+TYP    atom CE1 type=CR1E  charge= 0.000 exclude=(CD2) end
+TYP    atom HE1 type=HA  charge= 0.000 end
+TYP    atom CE2 type=CR1E  charge= 0.000 exclude=(CD1) end
+TYP    atom HE2 type=HA  charge= 0.000 end
+TYP    atom CZ  type=CY2   charge= 0.265 exclude=(CG) end
+TYP    atom OH  type=OHP  charge=-0.625 end
+TYP    atom P   type=PP    charge= 0.520 end
+TYP    atom O1P type=OP1   charge=-0.720 end
+TYP    atom O2P type=OP1   charge=-0.720 end
+TYP    atom O3P type=OR3   charge=-0.720 end
+TYP    atom C   type=C   charge= 0.500 end
+TYP    atom O   type=O   charge=-0.500 end
+TYS    atom N   type=NH1 charge=-0.570 end
+TYS    atom HN  type=H   charge= 0.370 end
+TYS    atom CA  type=CH1E  charge= 0.200 end
+TYS    atom HA  type=HA  charge= 0.000 end
+TYS    atom CB  type=CH2E  charge= 0.000 end
+TYS    atom HB1 type=HA  charge= 0.000 end
+TYS    atom HB2 type=HA  charge= 0.000 end
+TYS    atom CG  type=CY  charge= 0.000 exclude=(CZ) end
+TYS    atom CD1 type=CR1E  charge= 0.000 exclude=(CE2) end
+TYS    atom HD1 type=HA  charge= 0.000 end
+TYS    atom CD2 type=CR1E  charge= 0.000 exclude=(CE1) end
+TYS    atom HD2 type=HA  charge= 0.000 end
+TYS    atom CE1 type=CR1E  charge= 0.000 exclude=(CD2) end
+TYS    atom HE1 type=HA  charge= 0.000 end
+TYS    atom CE2 type=CR1E  charge= 0.000 exclude=(CD1) end
+TYS    atom HE2 type=HA  charge= 0.000 end
+TYS    atom CZ  type=CY2   charge= 0.265 exclude=(CG) end
+TYS    atom OH  type=OUF   charge=-0.625 end
+TYS    atom S   type=SUF   charge= 0.520 end
+TYS    atom O1S type=OUF   charge=-0.720 end
+TYS    atom O2S type=OUF   charge=-0.720 end
+TYS    atom O3S type=OUF   charge=-0.720 end
+TYS    atom C   type=C   charge= 0.500 end
+TYS    atom O   type=O   charge=-0.500 end
+PTR    atom N   type=NH1 charge=-0.570 end
+PTR    atom HN  type=H   charge= 0.370 end
+PTR    atom CA  type=CH1E  charge= 0.200 end
+PTR    atom HA  type=HA  charge= 0.000 end
+PTR    atom CB  type=CH2E  charge= 0.000 end
+PTR    atom HB1 type=HA  charge= 0.000 end
+PTR    atom HB2 type=HA  charge= 0.000 end
+PTR    atom CG  type=CY  charge= 0.000 exclude=(CZ) end
+PTR    atom CD1 type=CR1E  charge= 0.000 exclude=(CE2) end
+PTR    atom HD1 type=HA  charge= 0.000 end
+PTR    atom CD2 type=CR1E  charge= 0.000 exclude=(CE1) end
+PTR    atom HD2 type=HA  charge= 0.000 end
+PTR    atom CE1 type=CR1E  charge= 0.000 exclude=(CD2) end
+PTR    atom HE1 type=HA  charge= 0.000 end
+PTR    atom CE2 type=CR1E  charge= 0.000 exclude=(CD1) end
+PTR    atom HE2 type=HA  charge= 0.000 end
+PTR    atom CZ  type=CY2   charge= 0.265 exclude=(CG) end
+PTR    atom OH  type=OHP  charge=-0.625 end
+PTR    atom P   type=PP    charge= 0.520 end
+PTR    atom O1P type=OP1   charge=-0.720 end
+PTR    atom O2P type=OP1   charge=-0.720 end
+PTR    atom O3P type=OR3   charge=-0.720 end
+PTR    atom C   type=C   charge= 0.500 end
+PTR    atom O   type=O   charge=-0.500 end
+VAL    atom N    type=NH1 charge=-0.570 end
+VAL    atom HN   type=H   charge= 0.370 end
+VAL    atom CA   type=CH1E  charge= 0.200 end
+VAL    atom HA   type=HA  charge= 0.000 end
+VAL    atom CB   type=CH1E  charge= 0.000 end
+VAL    atom HB   type=HA  charge= 0.000 end
+VAL    atom CG1  type=CH3E  charge= 0.000 end
+VAL    atom HG11 type=HA  charge= 0.000 excl = (HG21 HG22 HG23) end
+VAL    atom HG12 type=HA  charge= 0.000 excl = (HG21 HG22 HG23) end
+VAL    atom HG13 type=HA  charge= 0.000 excl = (HG21 HG22 HG23) end
+VAL    atom CG2  type=CH3E  charge=-0.000 end
+VAL    atom HG21 type=HA  charge= 0.000 excl = (HG11 HG12 HG13) end
+VAL    atom HG22 type=HA  charge= 0.000 excl = (HG11 HG12 HG13) end
+VAL    atom HG23 type=HA  charge= 0.000 excl = (HG11 HG12 HG13) end
+VAL    atom C    type=C   charge= 0.500 end
+VAL    atom O    type=O   charge=-0.500 end
+CHX    atom N   type=NH1 charge=-0.360 end
+CHX    atom HN  type=H   charge= 0.260 end
+CHX    atom CA  type=CH1E  charge= 0.000 end
+CHX    atom HA  type=HA  charge= 0.100 end
+CHX    atom CB  type=CH2E  charge=-0.200 end
+CHX    atom HB1 type=HA  charge= 0.100 end
+CHX    atom HB2 type=HA  charge= 0.100 end
+CHX    atom CG  type=CH1E  charge=-0.200 end
+CHX    atom HG  type=HA  charge= 0.100 end
+CHX    atom CD1  type=CH2E  charge=-0.200 end
+CHX    atom HD11 type=HA  charge= 0.100 end
+CHX    atom HD12 type=HA  charge= 0.100 end
+CHX    atom CD2  type=CH2E  charge=-0.200 end
+CHX    atom HD21 type=HA  charge= 0.100 end
+CHX    atom HD22 type=HA  charge= 0.100 end
+CHX    atom CE1  type=CH2E  charge=-0.200 end
+CHX    atom HE11 type=HA  charge= 0.100 end
+CHX    atom HE12 type=HA  charge= 0.100 end
+CHX    atom CE2  type=CH2E  charge=-0.200 end
+CHX    atom HE21 type=HA  charge= 0.100 end
+CHX    atom HE22 type=HA  charge= 0.100 end
+CHX    atom CZ  type=CH2E  charge=-0.200 end
+CHX    atom HZ1 type=HA  charge= 0.100 end
+CHX    atom HZ2 type=HA  charge= 0.100 end
+CHX    atom C   type=C   charge= 0.480 end
+CHX    atom O   type=O   charge=-0.480 end
+ACE    atom CA  type=CH3E charge= 0.000 end
+ACE    atom HA1 type=HA charge= 0.000 end
+ACE    atom HA2 type=HA charge= 0.000 end
+ACE    atom HA3 type=HA charge= 0.000 end
+ACE    atom C   type=C  charge= 0.500 end
+ACE    atom O   type=O  charge=-0.500 end
+CTN    atom N   type=NH2    charge=-0.520 end
+CTN    atom H1  type=H      charge= 0.260 end
+CTN    atom H2  type=H      charge= 0.260 end
+DUM    atom DUM type=DD charge= 0.000 end
+DUM    atom MAP type=DD charge= 0.000 end

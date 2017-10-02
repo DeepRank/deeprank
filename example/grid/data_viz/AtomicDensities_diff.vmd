@@ -1,0 +1,17 @@
+# can be executed with vmd -e viz_mol.vmd
+
+
+mol new AtomicDensities_diff_CA.cube
+mol delrep 0 top
+mol representation VolumeSlice
+mol color Volume 
+mol addrep top
+
+mol addfile AtomicDensities_diff_CB.cube
+mol rename top AtomicDensities_diff
+mol new complex.pdb
+mol delrep 0 top
+mol representation Cartoon
+mol color SegName 
+mol addrep top
+

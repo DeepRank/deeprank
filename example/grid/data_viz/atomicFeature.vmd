@@ -1,0 +1,17 @@
+# can be executed with vmd -e viz_mol.vmd
+
+
+mol new atomicFeature_coulomb.cube
+mol delrep 0 top
+mol representation VolumeSlice
+mol color Volume 
+mol addrep top
+
+mol addfile atomicFeature_vdw.cube
+mol rename top atomicFeature
+mol new complex.pdb
+mol delrep 0 top
+mol representation Cartoon
+mol color SegName 
+mol addrep top
+

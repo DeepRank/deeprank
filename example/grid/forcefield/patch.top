@@ -1,0 +1,102 @@
+#presidue NTER                      ! patch as "NTER - *" to any except PRO
+#  group
+NTER    MODIFY    ATOM N   TYPE=NH3 CHARGE=-0.300 
+#NTER    DELETE    ATOM HN                        
+NTER    ADD       ATOM HT1 TYPE=HC  CHARGE=0.330 
+NTER    ADD       ATOM HT2 TYPE=HC  CHARGE=0.330 
+NTER    ADD       ATOM HT3 TYPE=HC  CHARGE=0.330 
+NTER    MODIFY    ATOM CA           CHARGE=0.310 
+
+#----------------------------------------------------------------------
+
+#presidue PROP                        ! N-terminal for PRO: "PROP - PRO"
+# the CHARGEs are guessed from making the residue have CHARGE 1
+# and keeping the same CHARGE on N as in NTER (Michael Nilges)
+
+PROP  MODIFY    ATOM CD           CHARGE=0.320 
+PROP  MODIFY    ATOM CA           CHARGE=0.320 
+PROP  MODIFY    ATOM N   TYPE=NH3 CHARGE=-0.300 
+PROP  ADD       ATOM HT1 TYPE=HC  CHARGE=0.330 
+PROP  ADD       ATOM HT2 TYPE=HC  CHARGE=0.330 
+
+ 
+#----------------------------------------------------------------------
+
+#presidue CTER               ! C-terminal for all amino acids "* - CTER"
+# CHARGE on -C changed from 0.700 to make group -1, Michael Nilges
+CTER    MODIFY    ATOM CA            CHARGE=0.100  
+CTER    MODIFY    ATOM C             CHARGE=0.700  
+CTER    MODIFY    ATOM O   TYPE=OC   CHARGE=-0.800  
+CTER    ADD       ATOM OXT TYPE=OC   CHARGE=-0.800  
+
+#----------------------------------------------------------------------
+
+#presidue CTN                  ! C-terminal for all, CONH2 at  "* - CTN"
+# CHARGEs not consistent with rest, Michael Nilges
+CTN    MODIFY    ATOM C           CHARGE=0.48 
+CTN    MODIFY    ATOM O           CHARGE=-0.48 
+CTN    ADD       ATOM NT TYPE=NH2 CHARGE=-0.52 
+CTN    ADD       ATOM H1 TYPE=H   CHARGE=0.26 
+CTN    ADD       ATOM H2 TYPE=H   CHARGE=0.26 
+
+#----------------------------------------------------------------------
+#presidue DISU                ! disulfide bridge  ...CYS - DISU - CYS...
+#DISU    DELETE    ATOM 1HG               
+DISU    MODIFY    ATOM 1CB              CHARGE=0.300 
+DISU    MODIFY    ATOM 1SG  TYPE=S      CHARGE=-0.300 
+#DISU    DELETE    ATOM 2HG               
+DISU    MODIFY    ATOM 2CB              CHARGE=0.300 
+DISU    MODIFY    ATOM 2SG  TYPE=S      CHARGE=-0.300 
+
+#----------------------------------------------------------------------
+
+#presidue CYNH                ! deprotonated CYS
+
+#CYNH    DELETE    ATOM 1HG               
+CYNH    MODIFY    ATOM 1CB              CHARGE=0.000 
+CYNH    MODIFY    ATOM 1SG  TYPE=S      CHARGE=-0.500 
+
+#----------------------------------------------------------------------
+!!! 
+#presidue CISP                        ! change from trans to cis peptide bond
+#CISP  MODIFY ATOM C TYPE=CCIS  
+
+#----------------------------------------------------------------------
+
+#presidue CIPP                        ! change from trans to cis peptide bond. not necessary to have #separate patch
+#CIPP  MODIFY ATOM C TYPE=CCIS 
+
+#--------------------------------------------------------------------------
+
+#PRESidue HISE   ! Patch to change doubly protonated HIS to singly protonated histidine (HE2)
+#                ! has to be patched as REFErence=NIL=<selection>
+#  DELETE DONOR  ND1 HD1
+HISE  MODIFY ATOM  CB   TYPE=CH2E    CHARGE=0.000  
+HISE  MODIFY ATOM  CG   TYPE=C5      CHARGE=0.130   
+HISE  MODIFY ATOM  ND1  TYPE=NR      CHARGE=-0.570   
+HISE  MODIFY ATOM  CE1  TYPE=CRH     CHARGE=0.410   
+HISE  MODIFY ATOM  CD2  TYPE=CR1E    CHARGE=0.100  
+HISE  MODIFY ATOM  NE2  TYPE=NH1     CHARGE=-0.570   
+HISE  MODIFY ATOM  HE2  TYPE=H       CHARGE=0.420   
+#HISE  DELETE ATOM  HD1                              
+
+#  ADD ACCEPTOR  ND1 " "
+
+#--------------------------------------------------------------------------
+
+#PRES HISD   ! Patch to change doubly protonated HIS to singly protonated histidine (HD1)
+#            ! has to be patched as REFErence=NIL=<selection>
+#  DELETE DONOR HE2 NE2
+HISD  MODIFY ATOM  CB   TYPE=CH2E    CHARGE=0.000  
+HISD  MODIFY ATOM  CG   TYPE=C5      CHARGE=0.130   
+HISD  MODIFY ATOM  ND1  TYPE=NH1     CHARGE=-0.570    
+HISD  MODIFY ATOM  HD1  TYPE=H       CHARGE=0.420    
+HISD  MODIFY ATOM  CD2  TYPE=CR1E    CHARGE=0.100    
+HISD  MODIFY ATOM  NE2  TYPE=NR      CHARGE=-0.490    
+HISD  MODIFY ATOM  CE1  TYPE=CRH     CHARGE=0.410    
+#HISD  DELETE ATOM  HE2                              
+
+#  ADD ACCEPTOR NE2 " "
+
+
+
