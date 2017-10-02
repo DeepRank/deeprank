@@ -17,7 +17,9 @@ Minimal information to use the module
   * go there `cd deeprank_v0.0`
   * install the module `python setup.py install`
   * download the BM4 from aclazar (/home/deep/HADDOCK-decoys/BM4_dimers)
-  * go in the example folder `cd ./example/`
+  * go in the example folder `cd ./example/workflow/`
+  * change the path to the BM4 folder in computeFeature.py
+  * compute the electrostatic and VDW interactions `python computeFeature.py`
   * change the path to the BM4 folder in assemble.py
   * assemble the data base `python assemble.py`
   * map the features to the grid `python map.py`
@@ -27,7 +29,13 @@ Minimal information to use the module
 
 There are many things that are still needed to further develop the platform. The two most important ones are:
 
-1 *Feature Mapping* : So far we only use the atomic densities and somehow the PSSM. Even for the PSSM the mapping can be drastically improved. Besides, we need to make it possible to use other residue based features and atomic based features. To do so we need to decide if the code reads precalculated feature values and only map them to the grid, or if we compute these values on the fly. The feature mapping is done by the GridTool class in map/gridtools.py. It should be relatively easy to extend this class to map new features.
+1 *Feature Mapping* : So far we can only use
+  . AtomicDensities (computed on the fly)
+  . Atom-pair electrostatic interactions (precomputed by atomicFeatures.py)
+  . Atom-pair van der Waals interactions (precomputed by atomicFeatures.py)
+  . residue PSSM (precomputed by BLAST and reformated by reformat_pssm.py)
+
+Other features can be incorporated, for example the SASA. The feature calculation must be done more generically than we do now
 
 2 *Cuda support* : So far the code only works on CPU. We need to port them on GPUs. We can use GPUs on the gpu node of alcazar. Torch makes it relatively easy to use GPUs but the code need to be modified.
 
