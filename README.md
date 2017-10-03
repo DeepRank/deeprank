@@ -2,9 +2,11 @@
 
 These module allows to :
 
+   * compute some features such as electrostatic interactions and van der Waals interaction 
+
    * assemble data from different sources (PDB,PSSM,Scores,....) in a comprehensible data base where each conformation has its own folder. In each folder are stored the conformation, features and targets.
 
-   * Map several features to a grid. The type of features as well as the grid parameters can be freely chosen. New features can be mapped without havng to recompute old ones.
+   * Map the features to a grid. The type of features as well as the grid parameters can be freely chosen. New features can be mapped without having to recompute old ones.
 
    * Use a 3d or 2d CNN to predict possible targets (binary class, haddock-score ...) from the data set
 
@@ -30,10 +32,15 @@ Minimal information to use the module
 There are many things that are still needed to further develop the platform. The two most important ones are:
 
 1 *Feature Mapping* : So far we can only use
-  . AtomicDensities (computed on the fly)
-  . Atom-pair electrostatic interactions (precomputed by atomicFeatures.py)
-  . Atom-pair van der Waals interactions (precomputed by atomicFeatures.py)
-  . residue PSSM (precomputed by BLAST and reformated by reformat_pssm.py)
+
+   AtomicDensities (computed on the fly)
+
+   Atom-pair electrostatic interactions (precomputed by tools/atomicFeatures.py)
+
+   Atom-pair van der Waals interactions (precomputed by tools/atomicFeatures.py)
+
+   Residue PSSM (precomputed by BLAST and reformated by tools/reformat_pssm.py)
+
 
 Other features can be incorporated, for example the SASA. The feature calculation must be done more generically than we do now
 
@@ -104,7 +111,7 @@ The (manual) workflow contains three main stages
 3 Create a torch dataset from the database and use a CNN to predict a pre-defined target
 
 The code for each stage are contained in the own folder : **_assemble/ map/ learn/_**
-Examples of use for the three stages are contained in the example folder. They are detailled in the foloowing as well
+Examples of use for the three stages are contained in the example folder. They are detailled in the folowing as well. Some general tools are contained in **_ tools_**. The most important one is pdb2sql.py that allows manipulating PDB files using sqlite3 queries. 
 
 ## Download the data set
 
