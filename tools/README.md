@@ -121,3 +121,51 @@ or of you want to keep the .db file
 # keep the .db file
 sqldb.close(rmdb=False)
 ```
+
+## FeatureClass
+
+The file FeatureClass.py contain a super class that all feature calculations should subclass. So far the super class only contains one method **FatureClass.export_data()** that is used to export the data of the feature to a file. This ensure that we keep the same syntax for all the features. The class has 3 attributes 
+
+
+  * self.type         : "Atomic" or "Residue"
+  * self.feature_data : dictionary {feature_name : feature_dict}
+
+                        feature_name is the name of the feature e.g. 'coulomb' or 'vdwaals'
+  
+                        feature_dict is a dictionary. The format of the key depends on the type of feature
+
+                        residue-based feature
+                        {(chainId, residue_name(3-letter),residue_number) : [values1, values2, ....]}
+
+                        atomic-based feature
+                        {(chainId, residue_name(3-letter),residue_number, atom_name) : [values1, values2, ....]}
+
+  * self.export_directories : dictionary {feature_name : directory}
+
+An example of feature file is given in atomic_feature.py. This file computes the electrostatic and vdw interactions between the contact atoms of the two chains. As you can see it subclasses the FeatureClass. All new feature should use roughly the same syntax. The new classes should fill in the feature_data and export_directories dictionary and use the export_data() method
+
+```python
+
+from deeprank.tools import FeatureClass
+
+class newFeature(FeatureClass):
+
+	def __init__(self, .... ):
+
+		super.__init__(feature_type)
+		....
+
+
+
+	def compute_feature_1(self, .... ):
+
+		....
+		self.feature_data[name_feature_1] = dict_feature_data
+		self.export_directories[name_feature_1] = export_path
+
+	def export_data(self):
+		bare_mol_name = self.pdbfile.split('/')[-1][:-4]
+		super().export_data(bare_mol_name)
+		
+```
+
