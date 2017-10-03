@@ -130,15 +130,15 @@ The file FeatureClass.py contain a super class that all feature calculations sho
   * self.type         : "Atomic" or "Residue"
   * self.feature_data : dictionary {feature_name : feature_dict}
 
-                        feature_name is the name of the feature e.g. 'coulomb' or 'vdwaals'
-  
-                        feature_dict is a dictionary. The format of the key depends on the type of feature
-
-                        residue-based feature
-                        {(chainId, residue_name(3-letter),residue_number) : [values1, values2, ....]}
-
-                        atomic-based feature
-                        {(chainId, residue_name(3-letter),residue_number, atom_name) : [values1, values2, ....]}
+    feature_name is the name of the feature e.g. 'coulomb' or 'vdwaals'
+    
+    feature_dict is a dictionary. The format of the key depends on the type of feature
+    
+    residue-based feature
+    {(chainId, residue_name(3-letter),residue_number) : [values1, values2, ....]}
+    
+    atomic-based feature
+    {(chainId, residue_name(3-letter),residue_number, atom_name) : [values1, values2, ....]}
 
   * self.export_directories : dictionary {feature_name : directory}
 
@@ -166,6 +166,6 @@ class newFeature(FeatureClass):
 	def export_data(self):
 		bare_mol_name = self.pdbfile.split('/')[-1][:-4]
 		super().export_data(bare_mol_name)
-		
+
 ```
 
