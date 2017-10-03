@@ -107,6 +107,8 @@ sqldb.put('CHARGE',3.5,index=[0,1,2,3])
 
 ```
 
+### Export PDB files
+
 The method **pdb2sql.exportpdb()** allows to write pdb files. The method first call **pdb2sql.get()** with the same keyword arguments. Hence we can select part of the pdb the same way we do to extract information from the database.
 
 ```python
@@ -115,6 +117,8 @@ The method **pdb2sql.exportpdb()** allows to write pdb files. The method first c
 sqldb.exportpdb('chainA',where="chainID='A")
 
 ```
+
+### Close the database
 
 After using the database we can clean it and remove the .db file using
 
@@ -129,6 +133,8 @@ or of you want to keep the .db file
 # keep the .db file
 sqldb.close(rmdb=False)
 ```
+
+---
 
 ## FeatureClass
 
