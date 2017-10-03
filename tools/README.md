@@ -4,7 +4,11 @@ Here are located all the generic tools used during one or across multiple steps 
 
 ## PDB2SQL
 
-The file pdb2sql.py contains a class named pdb2sql that allows using sqlite3 to manipulate PDB files. The use of SQL queries makes it very easy to extract information from the PDB file using only one line of code. To create a sql database from a PDB file (named here complex.pdb) simply use:
+The file pdb2sql.py contains a class named pdb2sql that allows using sqlite3 to manipulate PDB files. The use of SQL queries makes it very easy to extract information from the PDB file using only one line of code. 
+
+### Create a SQl data base
+
+To create a sql database from a PDB file (named here complex.pdb) simply use:
 
 ```python
 
@@ -43,6 +47,8 @@ You can also print the entire data base using
 sqldb.prettyprint()
 ```
 
+### Extract information from the data base
+
 The **pdb2sql.get()** method can be used to extract information from the database. The get method require one or several column name as require arguments and accepts different keywords arguments to specify what we want in the data base. Here are a few examples:
 
 ``` python
@@ -72,6 +78,8 @@ xyz = sqldb.get('x,y,z',query=query)
 
 
 ```
+### Input information into the data base
+
 
 You can also add information to a database after its creation. To do that you first need to add a new column to the database using the method **pdb2sql.add_column()**
 
@@ -135,14 +143,14 @@ The file FeatureClass.py contain a super class that all feature calculations sho
     feature_dict is a dictionary. The format of the key depends on the type of feature
     
     residue-based feature
-    {(chainId, residue_name(3-letter),residue_number) : [values1, values2, ....]}
+    {(chainID, residue_name(3-letter), residue_number) : [values1, values2, ....]}
     
     atomic-based feature
-    {(chainId, residue_name(3-letter),residue_number, atom_name) : [values1, values2, ....]}
+    {(chainID, residue_name(3-letter), residue_number, atom_name) : [values1, values2, ....]}
 
   * self.export_directories : dictionary {feature_name : directory}
 
-An example of feature file is given in atomic_feature.py. This file computes the electrostatic and vdw interactions between the contact atoms of the two chains. As you can see it subclasses the FeatureClass. All new feature should use roughly the same syntax. The new classes should fill in the feature_data and export_directories dictionary and use the export_data() method
+An example of feature file is given in **atomic_feature.py**. This file computes the electrostatic and vdw interactions between the contact atoms of the two chains. As you can see it subclasses the FeatureClass. All new feature should use roughly the same syntax. The new classes should fill in the feature_data and export_directories dictionary and use the export_data() method
 
 ```python
 
@@ -151,14 +159,11 @@ from deeprank.tools import FeatureClass
 class newFeature(FeatureClass):
 
 	def __init__(self, .... ):
-
 		super.__init__(feature_type)
 		....
 
 
-
 	def compute_feature_1(self, .... ):
-
 		....
 		self.feature_data[name_feature_1] = dict_feature_data
 		self.export_directories[name_feature_1] = export_path
