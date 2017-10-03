@@ -7,8 +7,8 @@ from deeprank.tools import atomicFeature
 BM4        = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
 
 # dir for writing the data
-dir_elec   = BM4 + 'electrostatic/'
-dir_vdw    = BM4 + 'vanDerWaals/'
+dir_elec   = BM4 + 'ELEC/'
+dir_vdw    = BM4 + 'VDW/'
 
 # forcefield 
 FF         = BM4 +'./forcefield/'
