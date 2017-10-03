@@ -23,8 +23,8 @@ grid = deeprank.map.GridToolsSQL(mol_name='./complex.pdb',
 	             #residue_feature={
 	             #'PSSM' : './PSSM/1AK4.PSSM'},
 	             atomic_feature={
-	             'coulomb' : './ELEC/complex.dat',
-	             'vdw' : './VDW/complex.dat'
+	             'coulomb' : './ELEC/complex.COULOMB',
+	             'vdw' : './VDW/complex.VDWAALS'
 	             },
 	             export_path = './input/')
 
