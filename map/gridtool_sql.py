@@ -101,7 +101,7 @@ class GridToolsSQL(object):
 
 	def __init__(self,mol_name,
 		         number_of_points = [30,30,30], resolution = [1.,1.,1.],
-		         atomic_densities=None, atomic_densities_mode='diff',
+		         atomic_densities=None, atomic_densities_mode='sum',
 		         residue_feature=None, 
 		         atomic_feature=None,
 		         contact_distance = 8.5,
@@ -387,7 +387,9 @@ class GridToolsSQL(object):
 			elif mode=='ind':
 				self.atdens[atomtype+'_chainA'] = atdensA
 				self.atdens[atomtype+'_chainB'] = atdensB
-
+			else:
+				print('Error: Atomic density mode %s not recognized' %mode)
+				sys.exit()
 
 	# compute the atomic denisties on the grid
 	def densgrid(self,center,vdw_radius):

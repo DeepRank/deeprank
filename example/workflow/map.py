@@ -7,7 +7,7 @@ import deeprank.map
 ##########################################################################
 
 # adress of the database
-database = './database/'
+database = '../../database/'
 
 
 #define the dictionary for the grid
@@ -16,6 +16,7 @@ database = './database/'
 
 grid_info = {
 	'atomic_densities' : {'CA':3.5,'CB':3.5,'N':3.5},
+	'atomic_densities_mode' : 'diff',
 	'number_of_points' : [30,30,30],
 	#'residue_feature' : ['PSSM'],
 	'atomic_feature'  : ['ELEC','VDW'],

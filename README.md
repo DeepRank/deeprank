@@ -180,6 +180,8 @@ cd ./data_viz/
 vmd -e AtomicDensities.vmd
 ```
 
+The data are stored in pickle files _AtomicDensity_mode.pkl_, atomicFeature.pkl and residueFeature.pkl_. Using pickle allows to easily update and/or select some data from the file using the keys of the data. 
+
 ---
 
 ## Overview of the DeepRank Worflow
@@ -352,6 +354,7 @@ database = '../../database/'
 
 grid_info = {
   'atomic_densities' : {'CA':3.5,'CB':3.5,'N':3.5},
+  'atomic_densities_mode' : 'diff',
   'number_of_points' : [30,30,30],
   #'residue_feature' : ['PSSM'],
   'atomic_feature'  : ['ELEC','VDW'],
@@ -366,7 +369,7 @@ deeprank.map.map_features(database,grid_info)
 deeprank.map.generate_viz_files(database+'/1AK4')
 ```
 
-After completion of the script you can visualize the atomic densities with
+In this file we map the atomic densities of CA, CB and N using a diff mode (i.e. grid = A-B). We also map the electrostatic and vdw interaction. After completion of the script you can visualize the atomic densities with
 
 ```
 cd ./training_set/1AK4/data_viz

@@ -31,9 +31,16 @@ def map_features(data_folder, grid_info,reset=False):
 	sub_names = sp.check_output("ls -d %s/*/" %(data_folder),shell=True)
 	sub_names = sub_names.split()
 
-	# copy the cuve generating file in the folder
-	#sp.call('cp generate_cube_file.py %s' %data_folder)
+	# determine the atomic densities parametres
+	if 'atomic_densities' in grid_info:
+		atomic_densities = grid_info['atomic_densities']
+	else:
+		atomic_densities = None
 
+	if 'atomic_densities_mode' in grid_info:
+		atomic_densities_mode = grid_info['atomic_densities_mode']
+	else:
+		atomic_densities_mode = 'sum'
 
 	# loop over the data files
 	for isub,sub_ in enumerate(sub_names):
@@ -76,7 +83,8 @@ def map_features(data_folder, grid_info,reset=False):
 		grid = gt.GridToolsSQL(mol_name=mol_name,
 			             number_of_points = grid_info['number_of_points'],
 			             resolution = grid_info['resolution'],
-			             atomic_densities=grid_info['atomic_densities'],
+			             atomic_densities = atomic_densities,
+			             atomic_densities_mode = atomic_densities_mode,
 			             residue_feature = res_feat,
 			             atomic_feature = at_feat,
 			             export_path = sub+'/input/')
