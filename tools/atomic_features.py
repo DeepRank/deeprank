@@ -32,6 +32,10 @@ class atomicFeature(FeatureClass):
 		self.patch_file = patch_file
 		self.contact_distance = contact_distance
 
+		# a few constant
+		self.eps0 = 1
+		self.c = 332.0636
+
 		# dircetory to export
 		self.root_export = root_export
 
@@ -201,6 +205,10 @@ class atomicFeature(FeatureClass):
 		self.contact_atoms_A = []
 		self.contact_atoms_B = []
 
+		#The contact atom pairs only co ntains pairs of atoms that are 
+		# in contact
+		self.contact_pairs = {}
+
 		for i,x0 in enumerate(xyz1):
 
 			# compute the contact atoms
@@ -214,12 +222,18 @@ class atomicFeature(FeatureClass):
 				self.contact_atoms_A += [i]
 				self.contact_atoms_B += [index_b[k] for k in contacts if resName2[k] in self.valid_resnames]
 
+				# add the contact pairs to the list
+				self.contact_pairs[i] = [index_b[k] for k in contacts if resName2[k] in self.valid_resnames]
+
 		# create a set of unique indexes
 		self.contact_atoms_A = list(set(self.contact_atoms_A))
 		self.contact_atoms_B = list(set(self.contact_atoms_B))
 
 		if len(self.contact_atoms_A)==0:
 			print('Warning : No contact atoms detected in atomicFeature')
+
+
+
 
 	#####################################################################################
 	#
@@ -381,6 +395,112 @@ class atomicFeature(FeatureClass):
 
 		return q
 
+	#####################################################################################
+	#
+	#	PAIR INTERACTIONS
+	#
+	#####################################################################################
+
+	def evaluate_pair_interaction(self):
+
+		print('-- Compute interaction energy for contact pairs only')
+		_print_breakdown_ = False
+
+		if len(self.contact_atoms_A) == 0:
+			self.feature_data['coulomb'] = {}
+			self.export_directories['coulomb'] = self.root_export+'/ELEC/'
+			return
+
+		# extract information from the pdb2sq
+		xyz = np.array(self.sqldb.get('x,y,z'))
+		atinfo = self.sqldb.get('resName,chainID,resSeq,name')
+
+		charge = np.array(self.sqldb.get('CHARGE'))
+		vdw = np.array(self.sqldb.get('eps,sig'))
+		eps,sig = vdw[:,0],vdw[:,1]
+			
+		# define the dictionaries
+		electro_data = {}
+		vdw_data = {}
+
+		# define the matrices 
+		natA,natB = len(self.sqldb.get('x',chain='A')),len(self.sqldb.get('x',chain='B'))
+		matrix_elec = np.zeros((natA,natB))
+		matrix_vdw = np.zeros((natA,natB))
+
+		# loop over the chain A
+		for iA,indsB in self.contact_pairs.items():
+
+			# coulomb terms
+			r = np.sqrt(np.sum((xyz[indsB,:]-xyz[iA,:])**2,1))
+			q1q2 = charge[iA]*charge[indsB]
+			ec = q1q2 * self.c / (self.eps0*r) * (1 - (r/self.contact_distance)**2 ) **2
+			
+			# coulomb terms
+			sigma_avg = 0.5*(sig[iA] + sig[indsB])
+			eps_avg = np.sqrt(eps[iA]*eps[indsB])
+
+			# normal LJ potential
+			evdw = 4.0 *eps_avg * (  (sigma_avg/r)**12  - (sigma_avg/r)**6 ) * self._prefactor_vdw(r)
+
+			# atinfo
+			keyA = tuple(atinfo[iA])
+
+			# store in matrix form so that
+			# we don't have to recalculate for B
+			indb_matrix = [i - natA for i in indsB]
+			matrix_elec[iA,indb_matrix] = ec
+			matrix_vdw[iA,indb_matrix]  = evdw
+
+			# store in the dicts
+			electro_data[keyA] = [np.sum(ec)]
+			vdw_data[keyA] = [np.sum(evdw)]
+
+			# print the result
+			if _print_breakdown_:
+
+				for iB,indexB in enumerate(indsB):
+
+					line = ''
+					keyB = tuple(atinfo[indexB])
+
+					line += '{:<3s}'.format(keyA[0])
+					line += '\t{:>1s}'.format(keyA[1])
+					line += '\t{:>4d}'.format(keyA[2])
+					line += '\t{:^4s}'.format(keyA[3])
+
+					line += '\t{:<3s}'.format(keyB[0])
+					line += '\t{:>1s}'.format(keyB[1])
+					line += '\t{:>4d}'.format(keyB[2])
+					line += '\t{:^4s}'.format(keyB[3])	
+
+					line += '\t{: 6.3f}'.format(r[iB])
+					line += '\t{: f}'.format(ec[iB])
+					line += '\t{: e}'.format(evdw[iB])		
+					print(line)
+
+		# loop over the B atoms
+		for indexB in self.contact_atoms_B:
+
+			# atinfo
+			keyB = tuple(atinfo[indexB])
+
+			# extract the values from the matrix
+			ec = matrix_elec[:,indexB-natA]
+			evdw = matrix_vdw[:,indexB-natA]
+
+			# store in the dict
+			electro_data[keyB] = [np.sum(ec)]
+			vdw_data[keyB] = [np.sum(evdw)]			
+
+		# add the electrosatic feature
+		self.feature_data['coulomb'] = electro_data
+		self.export_directories['coulomb'] = self.root_export+'/ELEC/'
+
+		# add the vdw feature
+		self.feature_data['vdwaals'] = vdw_data
+		self.export_directories['vdwaals'] = self.root_export+'/VDW/'
+
 
 	#####################################################################################
 	#
@@ -388,37 +508,7 @@ class atomicFeature(FeatureClass):
 	#
 	#####################################################################################
 
-
-	def compute_coulomb(self):
-
-		print('-- Compute coulomb energy')
-		xyz = np.array(self.sqldb.get('x,y,z'))
-		charge = np.array(self.sqldb.get('CHARGE'))
-		atinfo = self.sqldb.get('chainID,resName,resSeq,name')
-
-		nat = len(xyz)
-		matrix = np.zeros((nat,nat))
-
-		for iat in range(nat):
-
-			# coulomb terms
-			r = np.sqrt(np.sum((xyz[iat+1:,:]-xyz[iat,:])**2))
-			q1q2 = charge[iat]*charge[iat+1:]
-			value = q1q2/r
-
-			# store amd symmtrized these values
-			matrix[iat,iat+1:] = value
-			matrix[iat,:iat] = matrix[:iat,iat]
-
-			# atinfo
-			key = tuple(atinfo[iat])
-
-			# store
-			value = np.sum(matrix[iat,:])
-			self.feature_data[key] = [value]
-
-
-	def compute_coulomb_interchain_only(self,contact_only=False):
+	def compute_coulomb_interchain_only(self,dosum=True,contact_only=False):
 
 		print('-- Compute coulomb energy interchain only')
 
@@ -457,7 +547,7 @@ class atomicFeature(FeatureClass):
 		for iat in range(natA):
 
 			# coulomb terms
-			r = np.sqrt(np.sum((xyzB-xyzA[iat,:])**2))
+			r = np.sqrt(np.sum((xyzB-xyzA[iat,:])**2,1))
 			q1q2 = chargeA[iat]*chargeB
 			value = q1q2/r
 
@@ -468,8 +558,9 @@ class atomicFeature(FeatureClass):
 			key = tuple(atinfoA[iat])
 
 			# store
-			value = np.sum(value)
-			electro_data[key] = [value]
+			if dosum:
+				value = [np.sum(value)]
+			electro_data[key] = value
 
 		for iat in range(natB):
 
@@ -479,12 +570,14 @@ class atomicFeature(FeatureClass):
 
 			# store
 			value = matrix[:,iat]
-			value = np.sum(value)
-			electro_data[key] = [value]
+			if dosum:
+				value = [np.sum(value)]
+			electro_data[key] = value
 
 		# add the feature to the dictionary of features
 		self.feature_data['coulomb'] = electro_data
 		self.export_directories['coulomb'] = self.root_export+'/ELEC/'
+
 
 
 	#####################################################################################
@@ -494,7 +587,7 @@ class atomicFeature(FeatureClass):
 	#####################################################################################
 
 
-	def compute_vdw_interchain_only(self,contact_only=False):
+	def compute_vdw_interchain_only(self,dosum=True,contact_only=False):
 
 
 		print('-- Compute vdw energy interchain only')
@@ -541,7 +634,7 @@ class atomicFeature(FeatureClass):
 		for iat in range(natA):
 
 			# coulomb terms
-			r = np.sqrt(np.sum((xyzB-xyzA[iat,:])**2))
+			r = np.sqrt(np.sum((xyzB-xyzA[iat,:])**2,1))
 			sigma = 0.5*(sigA[iat] + sigB)
 			eps = np.sqrt(epsA[iat]*epsB)
 
@@ -555,8 +648,9 @@ class atomicFeature(FeatureClass):
 			key = tuple(atinfoA[iat])
 
 			# store
-			value = np.sum(value)
-			vdw_data[key] = [value]
+			if dosum:
+				value = [np.sum(value)]
+			vdw_data[key] = value
 
 		for iat in range(natB):
 
@@ -565,15 +659,28 @@ class atomicFeature(FeatureClass):
 
 			# store
 			value = matrix[:,iat]
-			value = np.sum(value)
-			vdw_data[key] = [value]
+			if dosum:
+				value = [np.sum(value)]
+			vdw_data[key] = value
 
 		# add the feature to the dictionary of features
 		self.feature_data['vdwaals'] = vdw_data
 		self.export_directories['vdwaals'] = self.root_export+'/VDW/'
 
+	def _prefactor_vdw(self,r):
+		r_off,r_on = 8.5,6.5
+		r2 = r**2
+		pref = (r_off**2-r2)**2 * (r_off**2 - r2 - 3*(r_on**2 - r2)) / (r_off**2-r_on**2)**3
+		pref[r>r_off] = 0.
+		pref[r<r_on]  = 1.0
+		return pref
+
+	#####################################################################################
+	#
+	#	EXPORT THE DATA
+	#
+	#####################################################################################
+
 	def export_data(self):
 		bare_mol_name = self.pdbfile.split('/')[-1][:-4]
 		super().export_data(bare_mol_name)
-
-

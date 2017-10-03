@@ -1,7 +1,6 @@
 import deeprank.learn
 import torch.optim as optim
 import models3d
-import sys
 
 ##########################################################################
 #

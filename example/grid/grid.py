@@ -18,7 +18,7 @@ if os.path.isdir('./data_viz'):
 grid = deeprank.map.GridToolsSQL(mol_name='./complex.pdb',
 	             number_of_points = [30,30,30],
 	             resolution = [1.,1.,1.],
-	             atomic_densities={'CA':3.5, 'CB':3.5},
+	             atomic_densities={'N':3.5, 'CB':3.5},
 	             atomic_densities_mode = 'sum',
 	             #residue_feature={
 	             #'PSSM' : './PSSM/1AK4.PSSM'},

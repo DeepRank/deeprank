@@ -10,10 +10,7 @@ atfeat = atomicFeature(PDB,
 					   patch_file   = FF + 'patch.top')
 
 atfeat.assign_parameters()
-#atfeat.sqldb.prettyprint()
-
-atfeat.compute_coulomb_interchain_only(contact_only=True)
-atfeat.compute_vdw_interchain_only(contact_only=True)
+atfeat.evaluate_pair_interaction()
 atfeat.export_data()
 atfeat.sqldb.close()
 print('Done in %f s' %(time.time()-t0))

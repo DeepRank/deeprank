@@ -55,7 +55,6 @@ def map_features(data_folder, grid_info,reset=False):
 		if not os.path.isdir(sub+'/input'):
 			os.mkdir(sub+'/input/')
 		
-
 		# molecule name
 		mol_name = sub + './complex.pdb'
 
