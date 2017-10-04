@@ -123,8 +123,9 @@ atfeat = atomicFeature(PDB,
 atfeat.assign_parameters()
 atfeat.sqldb.prettyprint()
 
-atfeat.compute_coulomb_interchain_only(contact_only=True)
-atfeat.compute_vdw_interchain_only(contact_only=True)
+# compute pair interations
+atfeat.evaluate_pair_interaction(print_interactions=True)
+
 atfeat.export_data()
 atfeat.sqldb.close()
 print('Done in %f s' %(time.time()-t0))
@@ -282,8 +283,7 @@ for PDB in PDB_NAMES:
              root_export  = BM4 )
 
         atfeat.assign_parameters()
-        atfeat.compute_coulomb_interchain_only(contact_only=True)
-        atfeat.compute_vdw_interchain_only(contact_only=True)
+        atfeat.evaluate_pair_interaction(print_interactions=False)
         atfeat.export_data()
         atfeat.sqldb.close()
 ```
@@ -306,8 +306,7 @@ decoys  = BM4 + '/decoys_pdbFLs/'
 natives = BM4 + '/BM4_dimers_bound/pdbFLs_ori'
 
 # the feature we want to have
-features = {'PSSM' : BM4 + '/PSSM_newformat',
-            'ELEC' : BM4 + '/ELEC',
+features = {'ELEC' : BM4 + '/ELEC',
             'VDW'  : BM4 + '/VDW' }
 
 # the target we want to have
@@ -330,7 +329,7 @@ da = deeprank.assemble.DataAssembler(targets=targets,outdir=database)
 da.add_target()
 
 # add a new feature
-features = {'PSSM_2' : BM4 + '/PSSM_newformat'}
+features = {'PSSM' : BM4 + '/PSSM_newformat'}
 da = deeprank.assemble.DataAssembler(features=features,outdir=database)
 da.add_feature()
 
@@ -414,7 +413,8 @@ database = '../../database/'
 # declare the dataset instance
 data_set = deeprank.learn.DeepRankDataSet(database,
                            filter_dataset = 'decoyID.dat',
-                           select_feature={'AtomicDensities_diff' : ['CA','CB','N']},
+                           select_feature={'AtomicDensities_diff' : ['CA','CB','N'], 
+                                          'atomicFeature' : ['ELEC','VDW']},
                            select_target='haddock_score')
 
 # Get the content of the dataset
