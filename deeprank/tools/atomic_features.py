@@ -418,7 +418,7 @@ class atomicFeature(FeatureClass):
 
 		# extract information from the pdb2sq
 		xyz = np.array(self.sqldb.get('x,y,z'))
-		atinfo = self.sqldb.get('resName,chainID,resSeq,name')
+		atinfo = self.sqldb.get('chainID,resName,resSeq,name')
 
 		charge = np.array(self.sqldb.get('CHARGE'))
 		vdw = np.array(self.sqldb.get('eps,sig'))
