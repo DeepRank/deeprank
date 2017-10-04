@@ -318,6 +318,7 @@ class atomicFeature(FeatureClass):
 
 		{ NEWRESTYPE : [ 'OLDRESTYPE' , [atom types that must be present], [atom types that must NOT be present] }   ]  }
 		'''
+
 		new_type = {
 		'PROP' : ['all',    ['HT1','HT2'],                    [ ]],
 		'NTER' : ['all',    ['HT1','HT2','HT3'],              [ ]], 
@@ -328,6 +329,8 @@ class atomicFeature(FeatureClass):
 		'HISE' : ['HIS',    ['ND1','CE1','CD2','NE2','HE2'],  ['HD1']], # Not sure if HISE or HISD
 		'HISE' : ['HIS',    ['ND1','CE1','CD2','NE2'],        ['HE2']]  # Not sure if HISE or HISD
 		}
+
+		# this works fine now 
 
 		altResName = resName
 		for key,values in new_type.items():
