@@ -1,1 +1,0 @@
-from deeprank.assemble.assemble_data import DataAssembler

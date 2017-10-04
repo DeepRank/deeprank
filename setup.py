@@ -1,24 +1,22 @@
+<<<<<<< HEAD
 from distutils.core import setup
 #from setuptools import setup
+=======
+from setuptools import setup
+>>>>>>> 06c29226ddf03c767785b49224042764e9ac9e24
 
 setup(
     name='deeprank',
     description='Rank Protein-Protein Interactions using Deep Learning',
-    version='0.1-dev',
+    version='0.1-dev0',
     url='https://github.com/DeepRank',
-    package_dir = {
-    'deeprank' : './',
-    'deeprank.assemble' : './assemble',
-    'deeprank.map'      : './map',
-    'deeprank.learn'    : './learn',
-    'deeprank.tools'    : './tools'
-    },
-    
-    packages=['deeprank',
-              'deeprank.assemble',
-              'deeprank.map',
-              'deeprank.learn',
-              'deeprank.tools']
+    packages=['deeprank'],
+    install_requires=[
+        'numpy',
+        'scipy',
+        'torch',
+        'matplotlib',
+        'tensorboard-pytorch']
 )
 
 # setup(
