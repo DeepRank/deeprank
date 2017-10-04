@@ -314,25 +314,28 @@ class atomicFeature(FeatureClass):
 		Apply the patch data
 		This is adopted from preScan.pl
 		This is very static and I don't quite like it
+		The structure of the dictionary is as following
+
+		{ NEWRESTYPE : [ 'OLDRESTYPE' , [atom types that must be present], [atom types that must NOT be present] }   ]  }
 		'''
 		new_type = {
-		'PROP' : ['all',['HT1','HT2']],
-		'NTER' : ['all',['HT1','HT2','HT3']],
-		'CTER' : ['all',['OXT']],
-		'CTN'  : ['all',['NT','HT1','HT2']],
-		'CYNH' : ['CYS',['1SG']],
-		'DISU' : ['CYS',['1SG','2SG']],
-		'HISD' : ['HIS',['ND1','CE1','CD2','NE2','HE2']],
-		'HISE' : ['HIS',['ND1','CE1','CD2','NE2','HE2','HD1']]
+		'PROP' : ['all',    ['HT1','HT2'],                    [ ]],
+		'NTER' : ['all',    ['HT1','HT2','HT3'],              [ ]], 
+		'CTER' : ['all',    ['OXT'],                          [ ]],
+		'CTN'  : ['all',    ['NT','HT1','HT2'],               [ ]],
+		'CYNH' : ['CYS',    ['1SG'],                          ['2SG']],
+		'DISU' : ['CYS',    ['1SG','2SG'],                    [ ]],
+		'HISE' : ['HIS',    ['ND1','CE1','CD2','NE2','HE2'],  ['HD1']], # Not sure if HISE or HISD
+		'HISE' : ['HIS',    ['ND1','CE1','CD2','NE2'],        ['HE2']]  # Not sure if HISE or HISD
 		}
 
 		altResName = resName
 		for key,values in new_type.items():
 
-			res, atcond = values
+			res, atpres, atabs = values
 			
 			if res == resName or res == 'all':
-				if all(x in atNames for x in atcond):
+				if all(x in atNames for x in atpres) and all(x not in atNames for x in atabs):
 					altResName = key
 
 		return altResName
@@ -401,11 +404,10 @@ class atomicFeature(FeatureClass):
 	#
 	#####################################################################################
 
-	def evaluate_pair_interaction(self):
+	def evaluate_pair_interaction(self,print_interactions=False,export_details_dir=None):
 
 		print('-- Compute interaction energy for contact pairs only')
-		_print_breakdown_ = False
-
+		
 		if len(self.contact_atoms_A) == 0:
 			self.feature_data['coulomb'] = {}
 			self.export_directories['coulomb'] = self.root_export+'/ELEC/'
@@ -428,6 +430,16 @@ class atomicFeature(FeatureClass):
 		matrix_elec = np.zeros((natA,natB))
 		matrix_vdw = np.zeros((natA,natB))
 
+		# handle the export of the interaction breakdown
+		save_interactions = False
+		if export_details_dir != None:
+			fname = export_details_dir + '/atomic_pair_interaction.dat'
+			f = open(fname)
+			save_interactions = True
+
+		# total energy terms
+		ec_tot,evdw_tot = 0,0
+		
 		# loop over the chain A
 		for iA,indsB in self.contact_pairs.items():
 
@@ -443,6 +455,10 @@ class atomicFeature(FeatureClass):
 			# normal LJ potential
 			evdw = 4.0 *eps_avg * (  (sigma_avg/r)**12  - (sigma_avg/r)**6 ) * self._prefactor_vdw(r)
 
+			#total energy terms
+			ec_tot += np.sum(ec)
+			evdw_tot += np.sum(evdw)
+
 			# atinfo
 			keyA = tuple(atinfo[iA])
 
@@ -457,7 +473,7 @@ class atomicFeature(FeatureClass):
 			vdw_data[keyA] = [np.sum(evdw)]
 
 			# print the result
-			if _print_breakdown_:
+			if save_interactions or print_interactions:
 
 				for iB,indexB in enumerate(indsB):
 
@@ -476,8 +492,29 @@ class atomicFeature(FeatureClass):
 
 					line += '\t{: 6.3f}'.format(r[iB])
 					line += '\t{: f}'.format(ec[iB])
-					line += '\t{: e}'.format(evdw[iB])		
-					print(line)
+					line += '\t{: e}'.format(evdw[iB])	
+
+					# print and/or save the interactions
+					if print_interactions:
+						print(line)
+
+					if save_interactions:
+						line += '\n'	
+						f.write(line)
+
+		# print the total interactions
+		if print_interactions or save_interactions:
+			line='\n\n'
+			line += 'Total Evdw  = {:> 12.8f}\n'.format(evdw_tot)
+			line += 'Total Eelec = {:> 12.8f}\n'.format(ec_tot)
+			if print_interactions:
+				print(line)
+			if save_interactions:
+				f.write(line)
+
+		# close export file
+		if save_interactions:
+			f.close()
 
 		# loop over the B atoms
 		for indexB in self.contact_atoms_B:
