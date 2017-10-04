@@ -10,7 +10,10 @@ atfeat = atomicFeature(PDB,
 					   patch_file   = FF + 'patch.top')
 
 atfeat.assign_parameters()
-atfeat.evaluate_pair_interaction()
+
+# only compute the pair interactions here
+atfeat.evaluate_pair_interaction(print_interactions=True)
+
 atfeat.export_data()
 atfeat.sqldb.close()
 print('Done in %f s' %(time.time()-t0))
