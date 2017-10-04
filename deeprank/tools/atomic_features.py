@@ -12,8 +12,56 @@ from deeprank.tools import FeatureClass
 class atomicFeature(FeatureClass):
 
 	'''
-	Sub class that deals with the 
-	electrostatic itneraction between atoms
+	Sub class that deals with the electrostatic interaction 
+	and van der waals interactions between atoms
+
+
+	USAGE
+
+	pdbfile : pdb file of the molecule
+
+	param_charge : force field fiel containing the charges e.g. protein-allhdg5.4_new.top
+	               must be of the format:
+
+	               CYM  atom O   type=O      charge=-0.500 end
+	               ALA    atom N   type=NH1     charge=-0.570 end
+	
+	param_vdw : force field file containing the vdw parameters e.g  protein-allhdg5.4_new.param
+	            must be of the format
+
+	            NONBonded  CYAA    0.105   3.750       0.013    3.750  
+	            NONBonded  CCIS    0.105   3.750       0.013    3.750  
+
+
+	patch_file : valid patch file for the parameters e.g. patch.top
+	             The way we handle the patching is very manual and should be
+	             made more automatic
+
+	contact_distance : the maximum distance between 2 contact atoms
+
+	root_export : root directory where the feature file will be exported
+
+	
+	EXAMPLE
+
+	atfeat = atomicFeature(PDB,
+	                       param_charge = FF + 'protein-allhdg5-4_new.top',
+	                       param_vdw    = FF + 'protein-allhdg5-4_new.param',
+	                       patch_file   = FF + 'patch.top')
+
+	# assign the parameters to the atoms
+	atfeat.assign_parameters()
+
+	# only compute the pair interactions here
+	atfeat.evaluate_pair_interaction(print_interactions=True)
+	
+	# export the data
+	atfeat.export_data()
+
+	# close the sqldb
+	atfeat.sqldb.close() 
+	
+
 	'''
 
 	def __init__(self,pdbfile,param_charge=None,param_vdw=None,patch_file=None,
@@ -371,6 +419,7 @@ class atomicFeature(FeatureClass):
 
 			else:
 				type_.append('None')
+				#print('Warning : atom type %s not found for resType %s or patch type %s' %(at,resName,altResName))
 				vdw_eps.append(0.0)
 				vdw_sigma.append(0.0)
 

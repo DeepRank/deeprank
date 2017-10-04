@@ -1,6 +1,7 @@
 import deeprank.learn
 import torch.optim as optim
 import models3d
+import sys 
 
 ##########################################################################
 #
@@ -15,7 +16,8 @@ database = '../../database/'
 # declare the dataset instance
 data_set = deeprank.learn.DeepRankDataSet(database,
                            filter_dataset = 'decoyID.dat',
-                           select_feature={'AtomicDensities_diff' : ['CA','CB','N']},
+                           select_feature={'AtomicDensities_diff' : ['CA','N','O'],
+                                           'atomicFeature' : ['ELEC','VDW']  },
                            select_target='haddock_score')
 
 # Get the content of the dataset

@@ -524,7 +524,7 @@ class GridToolsSQL(object):
 		return dict_data
 
 	# compute the a given feature on the grid
-	def featgrid(self,center,value,type_='bspline'):
+	def featgrid(self,center,value,type_='gaussian'):
 
 		'''
 		map a given feature (atomic or residue) on the grid
