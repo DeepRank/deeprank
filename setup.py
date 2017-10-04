@@ -1,9 +1,5 @@
-<<<<<<< HEAD
-from distutils.core import setup
-#from setuptools import setup
-=======
+#from distutils.core import setup
 from setuptools import setup
->>>>>>> 06c29226ddf03c767785b49224042764e9ac9e24
 
 setup(
     name='deeprank',
