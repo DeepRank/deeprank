@@ -19,7 +19,9 @@ grid_info = {
 	'atomic_densities_mode' : 'diff',
 	'number_of_points' : [30,30,30],
 	#'residue_feature' : ['PSSM'],
-	'atomic_feature'  : ['ELEC','VDW'],
+#	'atomic_feature'  : ['ELEC','VDW'],
+	'atomic_feature'  : ['CHARGE'],
+	'atomic_feature_mode': 'ind',
 	'resolution' : [1.,1.,1.]
 }
 
