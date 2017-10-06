@@ -51,8 +51,7 @@ def map_features(data_folder, grid_info,reset=False,use_tmpdir=False):
 
 	# determine where to export
 	if use_tmpdir:
-		tmpdir = os.environ['TMPDIR']
-		data_base = tmpdir + '/database/'
+		data_base = os.environ['TMPDIR']
 		os.mkdir(data_base)
 
 	# loop over the data files
