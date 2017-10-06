@@ -81,6 +81,7 @@ class pdb2sql(object):
 	def __init__(self,pdbfile,sqlfile='pdb2sql.db'):
 		self.pdbfile = pdbfile
 		self.sqlfile = sqlfile
+		self.is_valid = True
 		self._create_sql()
 
 	'''
@@ -153,6 +154,12 @@ class pdb2sql(object):
 
 		# read the pdb file
 		data = sp.check_output("awk '/ATOM/' %s" %pdbfile,shell=True).decode('utf8').split('\n')
+
+		# if there is no ATOM in the file
+		if len(data)==1 and data[0]=='':
+			print("-- Error : No ATOM in the pdb file.")
+			self.is_valid = False
+			return
 
 		# hddock chain ID fix
 		del_copy = self.delimiter.copy()

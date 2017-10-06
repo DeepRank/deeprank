@@ -36,7 +36,9 @@ model = deeprank.learn.DeepRankConvNet(data_set,
                         model_type='3d',
                         task='class',
                         tensorboard=False,
+                        cuda=False,
                         outdir='./test_class/')
+
 
 # change the optimizer (optional)
 model.optimizer = optim.SGD(model.net.parameters(),

@@ -374,8 +374,8 @@ class atomicFeature(FeatureClass):
 		'CTN'  : ['all',    ['NT','HT1','HT2'],               [ ]],
 		'CYNH' : ['CYS',    ['1SG'],                          ['2SG']],
 		'DISU' : ['CYS',    ['1SG','2SG'],                    [ ]],
-		'HISE' : ['HIS',    ['ND1','CE1','CD2','NE2','HE2'],  ['HD1']], # Not sure if HISE or HISD
-		'HISE' : ['HIS',    ['ND1','CE1','CD2','NE2'],        ['HE2']]  # Not sure if HISE or HISD
+		'HISE' : ['HIS',    ['ND1','CE1','CD2','NE2','HE2'],  ['HD1']], 
+		'HISD' : ['HIS',    ['ND1','CE1','CD2','NE2','HD1'],  ['HE2']]  
 		}
 
 		# this works fine now 

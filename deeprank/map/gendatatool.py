@@ -5,7 +5,7 @@ import sys
 
 from deeprank.map import gridtool_sql as gt
 
-def map_features(data_folder, grid_info,reset=False):
+def map_features(data_folder, grid_info,reset=False,use_tmpdir=False):
 
 	'''
 	Generate the input/output data on the grids for a series of prot-prot conformations
@@ -25,6 +25,12 @@ def map_features(data_folder, grid_info,reset=False):
 
 	reset
 			Boolean to force the removal of all data
+
+
+	use_tmpdir
+			Use the tmp dir to export the data 
+			to avoid transferring files betwene computing and head nodes
+
 	'''
 
 	# check all the input PDB files
@@ -42,10 +48,17 @@ def map_features(data_folder, grid_info,reset=False):
 	else:
 		atomic_densities_mode = 'sum'
 
+
 	if 'atomic_feature_mode' in grid_info:
 		atomic_feature_mode = grid_info['atomic_feature_mode']
 	else:
 		atomic_feature_mode = 'sum'
+
+	# determine where to export
+	if use_tmpdir:
+		tmpdir = os.environ['TMPDIR']
+		data_base = tmpdir + '/database/'
+		os.mkdir(data_base)
 
 	# loop over the data files
 	for isub,sub_ in enumerate(sub_names):
@@ -53,13 +66,25 @@ def map_features(data_folder, grid_info,reset=False):
 		# molecule name we want
 		sub = sub_.decode('utf-8')
 
-		# remove the data if we wnat to force that
-		if os.path.isdir(sub+'/input') and reset:
-			os.system('rm -rf %s' %(sub+'/input'))
+		# determine where to export
+		if use_tmpdir:
+			export_dir = data_base + sub.split('/')[-1]
+			os.mkdir(export_dir)
+			os.mkdir(export_dir+'/input/')
 
-		if not os.path.isdir(sub+'/input'):
-			os.mkdir(sub+'/input/')
+		else:
+
+			# remove the data if we wnat to force that
+			if os.path.isdir(sub+'/input') and reset:
+				os.system('rm -rf %s' %(sub+'/input'))
+
+			# create the input subfolder
+			if not os.path.isdir(sub+'/input'):
+				os.mkdir(sub+'/input/')
 		
+			# set the export dir
+			export_dir = sub
+
 		# molecule name
 		mol_name = sub + './complex.pdb'
 
@@ -83,6 +108,7 @@ def map_features(data_folder, grid_info,reset=False):
 		else:
 			at_feat = None
 
+
 		# compute the data we want on the grid
 		grid = gt.GridToolsSQL(mol_name=mol_name,
 			             number_of_points = grid_info['number_of_points'],
@@ -92,6 +118,6 @@ def map_features(data_folder, grid_info,reset=False):
 			             residue_feature = res_feat,
 			             atomic_feature = at_feat,
 			             atomic_feature_mode = atomic_feature_mode,
-			             export_path = sub+'/input/')
+			             export_path = export_dir+'/input/')
 
 

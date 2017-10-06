@@ -51,7 +51,7 @@ for PDB in PDB_NAMES:
 
 	atfeat.assign_parameters()
 	atfeat.evaluate_charges()
-	atfeat.evaluate_pair_interaction()
+	atfeat.evaluate_pair_interaction(print_interactions=False)
 	atfeat.export_data()
 	atfeat.sqldb.close()
 
