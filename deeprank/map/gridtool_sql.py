@@ -103,7 +103,7 @@ class GridToolsSQL(object):
 		         number_of_points = [30,30,30], resolution = [1.,1.,1.],
 		         atomic_densities=None, atomic_densities_mode='sum',
 		         residue_feature=None, 
-		         atomic_feature=None,
+		         atomic_feature=None, atomic_feature_mode='sum',
 		         contact_distance = 8.5,
 		         export_path='./'):
 		
@@ -113,7 +113,7 @@ class GridToolsSQL(object):
 		# feature files
 		self.residue_feature = residue_feature
 		self.atomic_feature = atomic_feature
-		
+		self.atomic_feature_mode = atomic_feature_mode
 
 		self.feattype_required = []
 
@@ -295,7 +295,7 @@ class GridToolsSQL(object):
 			dict_data = self.map_features(dict_feature,feature_type)
 
 			# save the data
-			self.pickle_grid_data(dict_data,'%sFeature' %(feature_type))
+			self.pickle_grid_data(dict_data,'%sFeature_%s' %(feature_type, self.atomic_feature_mode))
 
 
 	# add all the atomic densities to the data
@@ -413,7 +413,7 @@ class GridToolsSQL(object):
 	################################################################
 
 	# map residue a feature on the grid
-	def map_features(self,dict_feature,feature_type,mode=None,chain_sign=False):
+	def map_features(self, dict_feature, feature_type, transform=None):
 
 		'''
 		For residue based feature the feature file must be of the format 
@@ -449,20 +449,28 @@ class GridToolsSQL(object):
 			data_test = list(map(float,data_test[ntext:]))
 
 			# define the length of the output
-			if mode == None:
+			if transform == None:
 				nFeat = len(data_test)
-			elif callable(mode):
-				nFeat = len(mode(data_test))
+			elif callable(transform):
+				nFeat = len(transform(data_test))
 			else:
-				print('Error mode in map_feature must be callable')
+				print('Error transform in map_feature must be callable')
 				return None			
 
 			# declare the dict
 			if nFeat == 1:
-				dict_data[feature_name] = np.zeros(self.npts)
+				if self.atomic_feature_mode == 'ind':
+					dict_data[feature_name+'_chainA'] = np.zeros(self.npts)
+					dict_data[feature_name+'_chainB'] = np.zeros(self.npts)
+				else:
+					dict_data[feature_name] = np.zeros(self.npts)
 			else:
 				for iF in range(nFeat):
-					dict_data[feature_name+'_%03d' %iF] = np.zeros(self.npts)
+					if self.atomic_feature_mode == 'ind':
+						dict_data[feature_name+'_chainA_%03d' %iF] = np.zeros(self.npts)
+						dict_data[feature_name+'_chainB_%03d' %iF] = np.zeros(self.npts)
+					else:
+						dict_data[feature_name+'_%03d' %iF] = np.zeros(self.npts)
 
 			# map all the features
 			for line in tqdm(data):
@@ -504,22 +512,24 @@ class GridToolsSQL(object):
 				feat_values = np.array(list(map(float,line[ntext:])))
 
 				# postporcess the data
-				if callable(mode):
-					feat_values = mode(feat_values)
+				if callable(transform):
+					feat_values = transform(feat_values)
 
-				# get the coefficient of the chain
-				if chain_sign:
-					chain_coeff = {'A':1,'B':-1}
-					coeff = chain_coeff[chain]
+				# handle the mode
+				fname = feature_name
+				if self.atomic_feature_mode == "diff":
+					coeff = {'A':1,'B':-1}[chain]
 				else:
-					coeff = 1.0
+					coeff = 1
+				if self.atomic_feature_mode == "ind":
+					fname = feature_name + "_chain" + chain
 
 				# map this feature(s) on the grid(s)
 				if nFeat == 1:
-					dict_data[feature_name] += coeff*self.featgrid(pos,feat_values)
+					dict_data[fname] += coeff*self.featgrid(pos,feat_values)
 				else:
 					for iF in range(nFeat):
-						dict_data[feature_name+'_%03d' %iF] += coeff*self.featgrid(pos,feat_values[iF])
+						dict_data[fname+'_%03d' %iF] += coeff*self.featgrid(pos,feat_values[iF])
 
 		return dict_data
 
@@ -612,4 +622,4 @@ class GridToolsSQL(object):
 ########################################################################################################
 
 
-	
+

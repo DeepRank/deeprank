@@ -42,6 +42,11 @@ def map_features(data_folder, grid_info,reset=False):
 	else:
 		atomic_densities_mode = 'sum'
 
+	if 'atomic_feature_mode' in grid_info:
+		atomic_feature_mode = grid_info['atomic_feature_mode']
+	else:
+		atomic_feature_mode = 'sum'
+
 	# loop over the data files
 	for isub,sub_ in enumerate(sub_names):
 
@@ -86,6 +91,7 @@ def map_features(data_folder, grid_info,reset=False):
 			             atomic_densities_mode = atomic_densities_mode,
 			             residue_feature = res_feat,
 			             atomic_feature = at_feat,
+			             atomic_feature_mode = atomic_feature_mode,
 			             export_path = sub+'/input/')
 
 
