@@ -1,10 +1,11 @@
-import os 
+import os, sys
 import numpy as np 
 import subprocess as sp
 from deeprank.tools import atomicFeature
 
 # the root of the benchmark
 BM4        = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
+BM4        = sys.argv[1]
 
 # dir for writing the data
 dir_elec   = BM4 + 'ELEC/'
@@ -49,8 +50,8 @@ for PDB in PDB_NAMES:
              root_export  = BM4 )
 
 	atfeat.assign_parameters()
-	atfeat.compute_coulomb_interchain_only(contact_only=True)
-	atfeat.compute_vdw_interchain_only(contact_only=True)
+	atfeat.evaluate_charges()
+	atfeat.evaluate_pair_interaction()
 	atfeat.export_data()
 	atfeat.sqldb.close()
 

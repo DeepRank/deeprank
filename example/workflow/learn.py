@@ -14,11 +14,15 @@ import sys
 database = '../../database/'
 
 # declare the dataset instance
+#data_set = deeprank.learn.DeepRankDataSet(database,
+#                           filter_dataset = 'decoyID.dat',
+#                           select_feature={'AtomicDensities_diff' : ['CD','CE','O'],
+#                                           'atomicFeature' : ['ELEC','VDW']  },
+#                           select_target='haddock_score')
 data_set = deeprank.learn.DeepRankDataSet(database,
-                           filter_dataset = 'decoyID.dat',
-                           select_feature={'AtomicDensities_diff' : ['CA','N','O'],
+                           select_feature={'AtomicDensities_diff' : ['CD','CE','O'],
                                            'atomicFeature' : ['ELEC','VDW']  },
-                           select_target='haddock_score')
+                           select_target='binary_class')
 
 # Get the content of the dataset
 #data_set.get_content()
@@ -28,11 +32,11 @@ data_set.load()
 
 # create the network
 model = deeprank.learn.DeepRankConvNet(data_set,
-                        models3d.ConvNet3D_reg,
+                        models3d.ConvNet3D_binclass,
                         model_type='3d',
-                        task='reg',
+                        task='class',
                         tensorboard=False,
-                        outdir='./test_out/')
+                        outdir='./test_class/')
 
 # change the optimizer (optional)
 model.optimizer = optim.SGD(model.net.parameters(),
