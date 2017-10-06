@@ -1,0 +1,24 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=1
+#PBS -N deep
+#PBS -q short
+
+jobID=`uuidgen`
+export TMPDIR=/tmp/$jobID/
+echo $TMPDIR
+
+cd $PBS_O_WORKDIR
+python map.py
+
+cd /tmp/
+tar -zcvf tmp_db.tar.gz $jobID
+
+mv tmp_db.tar.gz $PBS_O_WORKDIR
+rm -rf $jobID
+
+cd $PBS_O_WORKDIR
+tar -xvf tmp_db.tar.gz
+rm tmp_db.tar.gz
+mv $jobID ./database/
+
+

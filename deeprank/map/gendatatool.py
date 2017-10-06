@@ -68,7 +68,7 @@ def map_features(data_folder, grid_info,reset=False,use_tmpdir=False):
 		
 		# determine where to export
 		if use_tmpdir:
-			export_dir = data_base + sub_mol
+			export_dir = data_base + '/' + sub_mol
 			os.mkdir(export_dir)
 			os.mkdir(export_dir+'/input/')
 
