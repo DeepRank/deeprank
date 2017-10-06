@@ -1,0 +1,13 @@
+Byte-compiled / optimized 
+*__pycache__*
+
+# distribution 
+deeprank.egg-info
+database*
+
+# some example file
+example/grid/ELEC
+example/grid/VDW
+example/grid/data_viz
+example/grid/input 
+example/workflow/test_out
