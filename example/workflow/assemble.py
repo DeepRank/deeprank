@@ -1,3 +1,4 @@
+import sys
 import deeprank.assemble
 
 
@@ -9,15 +10,16 @@ import deeprank.assemble
 
 # adress of the BM4 folder
 BM4 = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
-
+BM4 = sys.argv[1]
 
 # sources to assemble the data base
 decoys = BM4 + 'decoys_pdbFLs/'
 natives = BM4 + '/BM4_dimers_bound/pdbFLs_ori'
 
 # the feature we want to have
-features = {'ELEC' : BM4 + '/ELEC',
-			'VDW' : BM4 + '/VDW' }
+features = {'ELEC'  : BM4 + '/ELEC',
+			'VDW'   : BM4 + '/VDW',
+			'CHARGE': BM4 + '/CHARGE'}
 
 # the target we want to have
 targets = {'haddock_score' : BM4 + '/model_qualities/haddockScore/water'}

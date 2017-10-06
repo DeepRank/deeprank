@@ -49,6 +49,11 @@ def map_features(data_folder, grid_info,reset=False,use_tmpdir=False):
 		atomic_densities_mode = 'sum'
 
 
+	if 'atomic_feature_mode' in grid_info:
+		atomic_feature_mode = grid_info['atomic_feature_mode']
+	else:
+		atomic_feature_mode = 'sum'
+
 	# determine where to export
 	if use_tmpdir:
 		data_base = os.environ['TMPDIR']
@@ -111,6 +116,7 @@ def map_features(data_folder, grid_info,reset=False,use_tmpdir=False):
 			             atomic_densities_mode = atomic_densities_mode,
 			             residue_feature = res_feat,
 			             atomic_feature = at_feat,
+			             atomic_feature_mode = atomic_feature_mode,
 			             export_path = export_dir+'/input/')
 
 
