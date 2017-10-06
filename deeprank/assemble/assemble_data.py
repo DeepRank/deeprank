@@ -63,9 +63,17 @@ class DataAssembler(object):
 		# check if we can create a dir here
 		self._check_outdir()
 
-		# get all the natives/decoys
-		self.natives_names = sp.check_output('ls %s/*.pdb' %self.natives,shell=True).decode('utf8').split()
-		self.decoys_names = sp.check_output('find %s -name "*.pdb" ' %self.decoys,shell=True).decode('utf8').split()
+		# get all the natives
+		if self.natives is not None:
+			self.natives_names = sp.check_output('ls %s/*.pdb' %self.natives,shell=True).decode('utf8').split()
+		else:
+			self.natives_names = []
+
+		# get all the decoys
+		if self.decoys is not None:
+			self.decoys_names = sp.check_output('find %s -name "*.pdb" ' %self.decoys,shell=True).decode('utf8').split()
+		else:
+			self.decoys_names = []
 
 		# filter the cplx if required 
 		if self.classID is not None:
@@ -168,7 +176,8 @@ class DataAssembler(object):
 				sp.call('cp %s %s/complex.pdb' %(cplx,cplx_dir_name),shell=True)
 
 				# add the features
-				self._add_feat(cplx_dir_name,mol_name)
+				if self.features is not None:
+					self._add_feat(cplx_dir_name,mol_name)
 
 				# create the target dir and input the binary class target
 				target_dir_name = cplx_dir_name + '/targets/'
@@ -176,7 +185,7 @@ class DataAssembler(object):
 				np.savetxt(target_dir_name + 'binary_class.dat',np.array([cplx_class]),fmt='%d')
 
 				# input the desired targets
-				if cplx_class == 0:
+				if cplx_class == 0 and self.targets is not None:
 					self._add_targ(target_dir_name,mol_name)
 					
 
