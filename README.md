@@ -44,7 +44,7 @@ There are many things that are still needed to further develop the platform. The
 
 Other features can be incorporated, for example the SASA. The feature calculation must be done more generically than we do now
 
-2 *Cuda support* : So far the code only works on CPU. We need to port them on GPUs. We can use GPUs on the gpu node of alcazar. Torch makes it relatively easy to use GPUs but the code need to be modified.
+2 *Cuda performance* : We can now use GPUS by turning the option cuda=True on DeepRankConvNet. The first test are encouraging as the code runs much faster. There might be some tweaking that could still be done
 
 ## Installation 
 
