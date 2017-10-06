@@ -15,7 +15,7 @@ database = '../../database/'
 #see deeprank/map/gridtool_sql.py
 
 grid_info = {
-	'atomic_densities' : {'CD':3.5,'CE':3.5,'O':3.5},
+	'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5},
 	'atomic_densities_mode' : 'diff',
 	'number_of_points' : [30,30,30],
 	#'residue_feature' : ['PSSM'],

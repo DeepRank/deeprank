@@ -15,9 +15,11 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils.data as data_utils
 
+import torch.cuda
+
 from tensorboard import SummaryWriter
 
-class DeepRankConvNet():
+class DeepRankConvNet:
 
 	'''
 	Convolutional Neural Network for DeepRank
@@ -85,7 +87,9 @@ class DeepRankConvNet():
 	'''
 
 	def __init__(self,data_set,model,model_type='3d',proj2d=0,
-		         task=None,tensorboard=True,plot=True,outdir='./'):
+		         task=None,cuda=False,tensorboard=True,plot=True,outdir='./'):
+
+
 
 		#data set and model
 		self.data_set = data_set
@@ -99,6 +103,9 @@ class DeepRankConvNet():
 
 		# task to accomplish 
 		self.task = task
+
+		# CUDA required
+		self.cuda = cuda
 
 		# Set the loss functiom
 		if self.task=='reg':
@@ -131,7 +138,20 @@ class DeepRankConvNet():
 		print('=\t CNN       : %s' %model.__name__)
 		print('=\t features  : %s' %" / ".join([key for key,_ in self.data_set.select_feature.items()]))
 		print('=\t targets   : %s' %self.data_set.select_target)
+		print('=\t CUDA      : %s' %str(self.cuda))
 		print('='*40,'\n')	
+
+
+		# check if CUDA works
+		if self.cuda and not torch.cuda.is_available():
+			print(' --> CUDA not deteceted : Make sure that CUDA is installed and that you are running on GPUs')
+			print(' --> To turn CUDA of set cuda=False in DeepRankConvNet')
+			print(' --> Aborting the experiment \n\n')
+			sys.exit()
+
+		# cuda compatible
+		if self.cuda:
+			self.net = self.net.cuda()
 
 	def train(self,nepoch=50, divide_set=[0.8,0.1,0.1], train_batch_size = 10, preshuffle = True,plot_intermediate=True):
 
@@ -170,6 +190,7 @@ class DeepRankConvNet():
 		self._test(index_test)
 
 		# print the final; scatter plot
+
 		self._plot_scatter(self.outdir+"/final_prediction.png", indexes = [index_train,index_valid,index_test])
 
 		# close the writers	
@@ -506,12 +527,19 @@ class DeepRankConvNet():
 		and classification where they are int.
 		'''
 
-		if self.task == 'reg':
-			return Variable(inputs),Variable(targets).float()
-		elif self.task == 'class':
-			return Variable(inputs),Variable(targets).long()
+		# get the varialbe as float by default
+		inputs,targets = Variable(inputs),Variable(targets).float()
 
+		# change the targets to long for classification
+		if self.task == 'class':
+			targets =  targets.long()
 
+		# if cuda is available
+		if self.cuda:
+			inputs = inputs.cuda()
+			targets = targets.cuda()
+
+		return inputs,targets
 
 	def _plot_scatter_reg(self,figname,loaders=None,indexes=None):
 
@@ -527,6 +555,10 @@ class DeepRankConvNet():
 		indexes should be a list of indexes list of maxsize 3
 		indexes = [index_train,index_valid,index_test]
 		'''
+
+		# abort if we don't want to plot
+		if self.plot == False:
+			return
 
 		# check if we have loaders
 		if loaders is None:
@@ -583,6 +615,9 @@ class DeepRankConvNet():
 		indexes = [index_train,index_valid,index_test]
 		'''
 
+		# abort if we don't want to plot
+		if self.plot == False:
+			return
 
 		# check if we have loaders
 		if loaders is None:

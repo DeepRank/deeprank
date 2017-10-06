@@ -49,8 +49,7 @@ for PDB in PDB_NAMES:
              root_export  = BM4 )
 
 	atfeat.assign_parameters()
-	atfeat.compute_coulomb_interchain_only(contact_only=True)
-	atfeat.compute_vdw_interchain_only(contact_only=True)
+	atfeat.evaluate_pair_interaction(print_interactions=False)
 	atfeat.export_data()
 	atfeat.sqldb.close()
 

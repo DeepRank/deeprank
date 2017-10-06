@@ -32,6 +32,7 @@ model = deeprank.learn.DeepRankConvNet(data_set,
                         model_type='3d',
                         task='reg',
                         tensorboard=False,
+                        cuda=False,
                         outdir='./test_out/')
 
 # change the optimizer (optional)
