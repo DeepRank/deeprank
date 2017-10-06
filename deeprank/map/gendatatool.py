@@ -64,12 +64,14 @@ def map_features(data_folder, grid_info,reset=False,use_tmpdir=False):
 
 		# molecule name we want
 		sub = sub_.decode('utf-8')
-
+		sub_mol = list(filter(None,sub.split('/')))[-1]
+		
 		# determine where to export
 		if use_tmpdir:
-			export_dir = data_base + sub.split('/')[-1]
+			export_dir = data_base + sub_mol
 			os.mkdir(export_dir)
 			os.mkdir(export_dir+'/input/')
+
 
 		else:
 
