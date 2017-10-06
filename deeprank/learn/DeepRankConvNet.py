@@ -107,6 +107,9 @@ class DeepRankConvNet:
 		# CUDA required
 		self.cuda = cuda
 
+		# plot or not plot
+		self.plot = plot
+
 		# Set the loss functiom
 		if self.task=='reg':
 			self.criterion = nn.MSELoss()
