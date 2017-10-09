@@ -180,3 +180,49 @@ class newFeature(FeatureClass):
 
 ```
 
+---
+
+## Atomic Feature
+
+The file atomic_feature.py contains a class named atomicFeature that allows computing the electrostatic interactions, van der Waals interactions and point charge of a complex. To work the class must be given:
+
+  . a pdb file
+  . a file containing atomic charges
+  . a file containing the vdw parameters
+  . evantually a patch file for the force field parameters
+
+An example of use is provided in ./example/grid/atomicfeature.py. 
+
+```python 
+from deeprank.tools import atomicFeature
+  
+PDB = 'complex.pdb'
+FF = './forcefield/'
+
+# init the class isntance
+atfeat = atomicFeature(PDB,
+                       param_charge = FF + 'protein-allhdg5-4_new.top',
+                       param_vdw    = FF + 'protein-allhdg5-4_new.param',
+                       patch_file   = FF + 'patch.top')
+
+# assign the force field parameters in the sqlite db
+atfeat.assign_parameters()
+
+# compute the electrostatic and vdw interactions
+# between contact pairs
+atfeat.evaluate_pair_interaction(print_interactions=True)
+
+# compute the charges
+# here we extand the contact atoms to
+# entire residue containing at least 1 contact atom
+atfeat.evaluate_charges(extend_contact_to_residue=True)
+
+# export the data
+atfeat.export_data()
+
+# close the db
+atfeat.sqldb.close()
+```
+
+
+
