@@ -196,6 +196,9 @@ class GridToolsSQL(object):
 		# print the contact atoms
 		self.export_contact_atoms()
 
+		# print the contact atoms
+		self.export_contact_atoms_pdb()
+
 		# define the grid 
 		self.define_grid_points()
 
@@ -582,6 +585,12 @@ class GridToolsSQL(object):
 		for pos in xyz:
 			f.write('%d %f %f %f\n' %(6,pos[0],pos[1],pos[2]))
 		f.close()
+
+
+	# export a pdb of the contact atoms
+	def export_contact_atoms_pdb(self):
+		fname = self.export_path + 'contact_atoms.pdb'
+		self.sqldb.exportpdb(fname,index=self.contact_atoms)
 
 	# save the data in npy format
 	def save_grid_data(self,dict_data,data_name):

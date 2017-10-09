@@ -456,7 +456,7 @@ class atomicFeature(FeatureClass):
 	#
 	#####################################################################################
 
-	def evaluate_charges(self,print_interactions=False,export_details_dir=None):
+	def evaluate_charges(self):
 
 		print('-- Compute list charge for contact atoms only')
 
@@ -474,16 +474,6 @@ class atomicFeature(FeatureClass):
 		# define the dictionaries
 		charge_data = {}
 
-		# define the matrices
-		natA,natB = len(self.sqldb.get('x',chain='A')),len(self.sqldb.get('x',chain='B'))
-		matrix_charge = np.zeros((natA,natB))
-
-		# handle the export of the interaction breakdown
-		save_interactions = False
-#		if export_details_dir != None:
-#			fname = export_details_dir + '/atomic_pair_interaction.dat'
-#			f = open(fname)
-#			save_interactions = True
 
 		# total energy terms
 		charge_tot = 0
@@ -496,50 +486,6 @@ class atomicFeature(FeatureClass):
 
 			# store in the dicts
 			charge_data[key] = [charge[i]]
-
-			# print the result
-			if save_interactions or print_interactions:
-
-				for iB,indexB in enumerate(indsB):
-
-					line = ''
-					keyB = tuple(atinfo[indexB])
-
-					line += '{:<3s}'.format(keyA[0])
-					line += '\t{:>1s}'.format(keyA[1])
-					line += '\t{:>4d}'.format(keyA[2])
-					line += '\t{:^4s}'.format(keyA[3])
-
-					line += '\t{:<3s}'.format(keyB[0])
-					line += '\t{:>1s}'.format(keyB[1])
-					line += '\t{:>4d}'.format(keyB[2])
-					line += '\t{:^4s}'.format(keyB[3])
-
-					line += '\t{: 6.3f}'.format(r[iB])
-					line += '\t{: f}'.format(ec[iB])
-					line += '\t{: e}'.format(evdw[iB])
-
-					# print and/or save the interactions
-					if print_interactions:
-						print(line)
-
-					if save_interactions:
-						line += '\n'
-						f.write(line)
-
-		# print the total interactions
-#		if print_interactions or save_interactions:
-#			line='\n\n'
-#			line += 'Total Evdw  = {:> 12.8f}\n'.format(evdw_tot)
-#			line += 'Total Eelec = {:> 12.8f}\n'.format(ec_tot)
-#			if print_interactions:
-#				print(line)
-#			if save_interactions:
-#				f.write(line)
-
-		# close export file
-		if save_interactions:
-			f.close()
 
 		# add the electrosatic feature
 		self.feature_data['charge'] = charge_data
