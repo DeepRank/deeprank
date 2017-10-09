@@ -39,6 +39,9 @@ class atomicFeature(FeatureClass):
 
 	contact_distance : the maximum distance between 2 contact atoms
 
+	include_entire_residue : if atom X of resiue M is a contact atom, include all the atoms 
+	                         of resiude M in the contact_atom list
+
 	root_export : root directory where the feature file will be exported
 
 	
@@ -65,7 +68,7 @@ class atomicFeature(FeatureClass):
 	'''
 
 	def __init__(self,pdbfile,param_charge=None,param_vdw=None,patch_file=None,
-		contact_distance=8.5,root_export = './'):
+		contact_distance=8.5, root_export = './'):
 
 		'''
 		subclass the main feature class
@@ -79,6 +82,7 @@ class atomicFeature(FeatureClass):
 		self.param_vdw = param_vdw
 		self.patch_file = patch_file
 		self.contact_distance = contact_distance
+		
 
 		# a few constant
 		self.eps0 = 1
@@ -277,9 +281,47 @@ class atomicFeature(FeatureClass):
 		self.contact_atoms_A = list(set(self.contact_atoms_A))
 		self.contact_atoms_B = list(set(self.contact_atoms_B))
 
+		# if no atoms were found	
 		if len(self.contact_atoms_A)==0:
 			print('Warning : No contact atoms detected in atomicFeature')
 
+
+	# for some feature we might want to include entore residue to the contact atoms
+	# we can get the indexes of all these atoms with this function
+	def _extend_contact_to_residue(self):
+
+		# extract the data
+		dataA = self.sqldb.get('chainId,resName,resSeq',index=self.contact_atoms_A)
+		dataB = self.sqldb.get('chainId,resName,resSeq',index=self.contact_atoms_B)
+
+		# create tuple cause we want to hash through it
+		dataA = list(map(lambda x: tuple(x),dataA))
+		dataB = list(map(lambda x: tuple(x),dataB))
+
+		# extract uniques
+		resA = list(set(dataA))
+		resB = list(set(dataB))
+
+		# init the list
+		index_contact_A,index_contact_B = [],[]
+
+		# contact of chain A
+		for resdata in resA:
+			chainID,resName,resSeq = resdata
+			query = "WHERE chainID='{chainID}' AND resName='{resName}' AND resSeq={resSeq}".format(chainID=chainID,resName=resName,resSeq=resSeq)
+			index_contact_A += self.sqldb.get('rowID',query=query)
+		
+		# contact of chain B
+		for resdata in resB:
+			chainID,resName,resSeq = resdata
+			query = "WHERE chainID='{chainID}' AND resName='{resName}' AND resSeq={resSeq}".format(chainID=chainID,resName=resName,resSeq=resSeq)
+			index_contact_B += self.sqldb.get('rowID',query=query)
+
+		# make sure that we don't have double (maybe optional)
+		index_contact_A = list(set(index_contact_A))
+		index_contact_B = list(set(index_contact_B))
+		
+		return index_contact_A,index_contact_B
 
 
 
@@ -456,7 +498,7 @@ class atomicFeature(FeatureClass):
 	#
 	#####################################################################################
 
-	def evaluate_charges(self):
+	def evaluate_charges(self,extend_contact_to_residue=False):
 
 		print('-- Compute list charge for contact atoms only')
 
@@ -478,8 +520,17 @@ class atomicFeature(FeatureClass):
 		# total energy terms
 		charge_tot = 0
 
+
+		# entire residue or not
+		if extend_contact_to_residue:
+			indA,indB = self._extend_contact_to_residue()
+			index_contact_atoms = indA+indB
+		else:
+			index_contact_atoms = self.contact_atoms_A + self.contact_atoms_B
+
+
 		# loop over the chain A
-		for i in self.contact_atoms_A + self.contact_atoms_B:
+		for i in index_contact_atoms:
 
 			# atinfo
 			key = tuple(atinfo[i])
