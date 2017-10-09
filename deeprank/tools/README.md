@@ -186,10 +186,10 @@ class newFeature(FeatureClass):
 
 The file atomic_feature.py contains a class named atomicFeature that allows computing the electrostatic interactions, van der Waals interactions and point charge of a complex. To work the class must be given:
 
-  . a pdb file
-  . a file containing atomic charges
-  . a file containing the vdw parameters
-  . evantually a patch file for the force field parameters
+  * a pdb file
+  * a file containing atomic charges
+  * a file containing the vdw parameters
+  * evantually a patch file for the force field parameters
 
 An example of use is provided in ./example/grid/atomicfeature.py. 
 
@@ -225,4 +225,4 @@ atfeat.sqldb.close()
 ```
 
 
-
+In this example we compute the pair interactions and the atomic charges of the complex given in the example folder and using the force field parameters also located there. The pair interactions are outputed on the screen. For the charges, the contact atom list is extended to all the residues that contains at least one contact atom. 
