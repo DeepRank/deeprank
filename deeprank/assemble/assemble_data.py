@@ -128,6 +128,47 @@ class DataAssembler(object):
 			self._add_targ(target_dir_name,mol_name)
 
 
+	def add_classID(self):
+
+		'''
+		add a classID to an existing data base
+		only need a class ID and target directory
+		'''
+
+		if not os.path.isdir(self.outdir):
+			print(': %s not found' %self.outdir)
+			sys.exit()
+
+		# get the folder names
+		fnames = sp.check_output('ls -d %s/*/' %self.outdir,shell=True).decode('utf8').split()
+
+		# read the class ID
+		if self.classID is not None:
+
+			f = open(self.classID)
+			data = f.readlines()
+			f.close()
+
+			class_values = [int(data[i].split()[0]) for i in range(len(data))]
+			class_names = [data[i].split()[1] for i in range(len(data))]
+			
+			
+		else:
+			print('Warning: No classID specified.')
+			print('         Assuming <cplx_name>._w<num> are decoys')
+			print('         and <cplx_name> are natives')
+			class_names = [ cplx_name.split('/')[-2] for cplx_name in fnames]
+			class_values = [ int('_w' in name) for name in class_names ]
+			
+
+		for name,value in zip(class_names,class_values):
+
+			# names of the molecule
+			target_dir_name = self.outdir + '/' + name + '/targets/'
+			np.savetxt(target_dir_name + 'binary_class.dat',np.array([value]),fmt='%d')
+
+
+
 #====================================================================================
 
 	def _filter_cplx(self):
