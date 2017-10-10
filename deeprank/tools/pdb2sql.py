@@ -68,7 +68,7 @@ A few SQL querry wrappers have been implemented
 	TO DO 
 
 	- Add more user friendly wrappers to SQL queries
-	- Make use of the ? more often to prevent quting issues and SQL injection attack 
+	- Make use of the ? more often to prevent quoting issues and SQL injection attack 
 
 '''
 
@@ -161,7 +161,12 @@ class pdb2sql(object):
 		self.c.execute(query)
 
 		# read the pdb file
-		data = sp.check_output("awk '/ATOM/' %s" %pdbfile,shell=True).decode('utf8').split('\n')
+		# this is dangerous if there are ATOM written in the comment part 
+		# which happends often
+		#data = sp.check_output("awk '/ATOM/' %s" %pdbfile,shell=True).decode('utf8').split('\n')
+
+		# a safer version consist at matching against the first field
+		data = sp.check_output("awk '$1 ~ /^ATOM/' %s" %pdbfile,shell=True).decode('utf8').split('\n')
 
 		# if there is no ATOM in the file
 		if len(data)==1 and data[0]=='':
@@ -506,27 +511,6 @@ class pdb2sql(object):
 		self.conn.close() 
 		if rmdb:
 			os.system('rm %s' %(self.sqlfile))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
