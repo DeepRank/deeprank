@@ -78,12 +78,18 @@ class pdb2sql(object):
 	CLASS that transsform  PDB file into a sqlite database
 	'''
 
-	def __init__(self,pdbfile,sqlfile='pdb2sql.db',verbose=False):
+	def __init__(self,pdbfile,sqlfile='pdb2sql.db',fix_chainID=True,verbose=False):
 		self.pdbfile = pdbfile
 		self.sqlfile = sqlfile
 		self.is_valid = True
 		self.verbose = verbose
+
+		# create the database
 		self._create_sql()
+
+		# fix the chain ID
+		if fix_chainID:
+			self._fix_chainID()
 
 	'''
 	Main function to create the SQL data base
@@ -163,10 +169,9 @@ class pdb2sql(object):
 			self.is_valid = False
 			return
 
-		# hddock chain ID fix
+		# haddock chain ID fix
 		del_copy = self.delimiter.copy()
 		if data[0][del_copy['chainID'][0]] == ' ':
-			#print('  Old PDB format')
 			del_copy['chainID'] = [72,73]
 
 		# get all the data
@@ -190,7 +195,8 @@ class pdb2sql(object):
 				elif coltype == 'REAL':
 					data = float(data)
 
-				# append
+				# append keep the comma !!
+				# we need proper tuple
 				at +=(data,)
 
 			# append
@@ -201,6 +207,33 @@ class pdb2sql(object):
 
 		# commit the change
 		self.conn.commit()
+
+
+	# replace the chain ID by A,B,C,D, ..... in that order
+	def _fix_chainID(self):
+
+		from string import ascii_uppercase 
+
+		# get the current names
+		chainID = self.get('chainID')
+		natom = len(chainID)
+		chainID = list(set(chainID))
+
+		if len(chainID)>26:
+			print("Warning more than 26 chains have been detected. This is so far not supported")
+			sys.exit()
+
+		# declare the new names
+		newID = [''] * natom
+
+		# fill in the new names
+		for ic,chain in enumerate(chainID):
+			index = self.get('rowID',chain=chain)
+			for ind in index:
+				newID[ind] = ascii_uppercase[ic]
+
+		# update the new name
+		self.update_column('chainID',newID)
 
 
 	# get the names of the columns
