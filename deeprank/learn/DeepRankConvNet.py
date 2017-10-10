@@ -117,7 +117,8 @@ class DeepRankConvNet:
 
 		elif self.task=='class':
 			self.criterion = nn.CrossEntropyLoss()
-			self._plot_scatter = self._plot_scatter_class
+#			self._plot_scatter = self._plot_scatter_class
+			self._plot_scatter = self._plot_boxplot_class
 
 		else:
 			print("Task " + self.task +"not recognized.\nOptions are \n\t 'reg': regression \n\t 'class': classifiation\n\n")
@@ -441,12 +442,12 @@ class DeepRankConvNet:
 			if self.tensorboard:
 				self._export_tensorboard(tensorboard_writer,epoch)
 
+			# talk a bit
+			print('  training loss : %1.3e \t validation loss : %1.3e' %(self.train_loss, self.valid_loss))
+
 			# plot the scatter plots
 			if plot_intermediate and epoch%nprint == nprint-1:
 				self._plot_scatter(self.outdir+"/prediction_%03d.png" %epoch, loaders = [train_loader,valid_loader])
-
-			# talk a bit
-			print('  training loss : %1.3e \t validation loss : %1.3e' %(self.train_loss, self.valid_loss))
 
 
 		return torch.cat([param.data.view(-1) for param in self.net.parameters()],0)
@@ -674,6 +675,64 @@ class DeepRankConvNet:
 					k+=1
 		fig.savefig(figname)
 
+	def _plot_boxplot_class(self,figname,loaders=None,indexes=None):
+
+		'''
+		Plot a boxplot of predictions VS targets useful '
+		to visualize the performance of the training algorithm
+		This is only usefull in classification tasks
+
+		We can plot either from the loaders or from the indexes of the subset
+
+		loaders should be either None or a list of loaders of maxsize 3
+		loaders = [train_loader,valid_loader,test_loader]
+
+		indexes should be a list of indexes list of maxsize 3
+		indexes = [index_train,index_valid,index_test]
+		'''
+
+		# abort if we don't want to plot
+		if self.plot == False:
+			return
+
+		# check if we have loaders
+		if loaders is None:
+
+			# check if we have indexes
+			if indexes is None:
+				print('-> Error during boxplot, you must provide either loaders or indexes')
+				return
+
+			# create the loaders
+			loaders = []
+			for iind in range(len(indexes)):
+				loaders.append(data_utils.DataLoader(self.data_set,sampler=data_utils.sampler.SubsetRandomSampler(indexes[iind])))
+
+		labels = ['Train','Valid','Test']
+
+		fig, ax = plt.subplots(1, 3, sharey=True)
+
+		data = [[], []]
+		print("  Confusion matrices:")
+		for idata,data_loader in enumerate(loaders):
+			confusion=[[0, 0], [0, 0]]
+			for (inputs,targets) in data_loader :
+
+				inputs,targets = self._get_variables(inputs,targets)
+				outputs = self.net(inputs)
+
+				tar = targets.data.numpy()
+				out = outputs.data.numpy()
+
+				for pts,t in zip(out,tar):
+					r = F.softmax(torch.FloatTensor(pts)).data.numpy()
+					data[t].append(r[1])
+					confusion[t][r[1]>0.5] += 1
+			print("  {:5s}: {:s}".format(labels[idata],str(confusion)))
+			ax[idata].boxplot(data)
+			ax[idata].set_xlabel(labels[idata])
+			ax[idata].set_xticklabels(['0', '1'])
+		fig.savefig(figname, bbox_inches='tight')
 
 	def _export_tensorboard(self,tensorboard_writer,epoch):
 
