@@ -30,9 +30,9 @@ database = '../../database/'
 
 #inti the data assembler 
 da = deeprank.assemble.DataAssembler(classID=classID,decoys=decoys,natives=natives,
-                                     features=features,targets=targets,outdir=database)
+                                     features=features,targets=targets,outdir=database,data_augmentation=10)
 
-#create new files
+create new files
 da.create_database()
 
 
@@ -48,4 +48,5 @@ da = deeprank.assemble.DataAssembler(features=features,outdir=database)
 da.add_feature()
 
 
-
+da = deeprank.assemble.DataAssembler(outdir=database)
+da.add_classID()

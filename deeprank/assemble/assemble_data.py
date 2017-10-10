@@ -3,8 +3,8 @@ import sys
 
 import numpy as np
 import subprocess as sp
-
-
+from deeprank.tools import pdb2sql
+import deeprank.tools.transform as transf
 '''
 	Assemble the data set from different sources of  decoys/natives/features/targets
 
@@ -39,18 +39,27 @@ import subprocess as sp
 			dictionnary containing the desires targets example
 			{'haddock_score' : path/to/hadosck/score}
 
+
+	data_augmentation
+
+			None or integers
+			if integers (N), each compound will be copied N times
+			each copy having a different rotation randomly defined
+
+
 '''
 
 class DataAssembler(object):
 
 	def __init__(self,classID=None,decoys=None,natives=None,
-		         features=None,targets=None,outdir=None):
+		         features=None,targets=None, data_augmentation = None, outdir=None):
 
 		self.classID = classID
 		self.decoys  = decoys
 		self.natives = natives 
 		self.features = features
 		self.targets = targets
+		self.data_augmentation = data_augmentation
 		self.outdir = outdir
 
 	def create_database(self):
@@ -100,10 +109,15 @@ class DataAssembler(object):
 
 			# names of the molecule
 			mol_name = cplx_name.split('/')[-2]
-			bare_mol_name = mol_name.split('_')[0]
-			cplx_dir_name = self.outdir + '/' + mol_name
 
-			self._add_feat(cplx_dir_name,bare_mol_name)
+			# check if we have a copy
+			if '_r' in mol_name:
+				ref_mol_name = mol_name.split('_r')[0]
+			else:
+				ref_mol_name = mol_name
+
+			cplx_dir_name = self.outdir + '/' + mol_name
+			self._add_feat(cplx_dir_name,ref_mol_name)
 
 
 	def add_target(self):
@@ -124,8 +138,16 @@ class DataAssembler(object):
 
 			# names of the molecule
 			mol_name = cplx_name.split('/')[-2]
+
+			# check if we have a copy
+			if '_r' in mol_name:
+				ref_mol_name = mol_name.split('_r')[0]
+			else:
+				ref_mol_name = mol_name
+
+			# input the data	
 			target_dir_name = self.outdir + '/' + mol_name + '/targets/'
-			self._add_targ(target_dir_name,mol_name)
+			self._add_targ(target_dir_name,ref_mol_name)
 
 
 	def add_classID(self):
@@ -154,6 +176,7 @@ class DataAssembler(object):
 			
 			
 		else:
+			
 			print('Warning: No classID specified.')
 			print('         Assuming <cplx_name>._w<num> are decoys')
 			print('         and <cplx_name> are natives')
@@ -203,33 +226,83 @@ class DataAssembler(object):
 			# loop over all the complexes
 			for cplx in cplx_types:
 
-				print(': Process complex %s' %(cplx))
-
 				# names of the molecule
 				mol_name = cplx.split('/')[-1][:-4]
 				bare_mol_name = mol_name.split('_')[0]
 
-				# create the subfodler for that molecule
-				cplx_dir_name = self.outdir + '/' + mol_name
-				os.mkdir(cplx_dir_name)
+				print('\n: Process complex %s' %(mol_name))
 
-				# copy the pdb file in it
-				sp.call('cp %s %s/complex.pdb' %(cplx,cplx_dir_name),shell=True)
+				# Assemble the list of subfolder names
+				cplx_dir_name_list = [self.outdir + '/' + mol_name]
 
-				# add the features
-				if self.features is not None:
-					self._add_feat(cplx_dir_name,mol_name)
+				# make the copies if required
+				if self.data_augmentation is not None:
+					cplx_dir_name_list += [self.outdir + '/' + mol_name + '_r%03d' %(idir+1) for idir in range(self.data_augmentation)]
 
-				# create the target dir and input the binary class target
-				target_dir_name = cplx_dir_name + '/targets/'
-				os.mkdir(target_dir_name)
-				np.savetxt(target_dir_name + 'binary_class.dat',np.array([cplx_class]),fmt='%d')
+				# loop over the complexes
+				for icplx, cplx_dir_name in enumerate(cplx_dir_name_list):
 
-				# input the desired targets
-				if cplx_class == 0 and self.targets is not None:
-					self._add_targ(target_dir_name,mol_name)
+					# create the dir
+					os.mkdir(cplx_dir_name)
+
+					# copy the pdb file in it
+					new_cplx_file = '%s/complex.pdb' %cplx_dir_name
+					sp.call('cp %s %s' %(cplx,new_cplx_file),shell=True)
+
+					# make the copy
+					if icplx > 0:
+
+						print(':  --> rotation %03d/%03d' %(icplx,len(cplx_dir_name_list)-1))
+
+						# create tthe sqldb and extract positions
+						sqldb = pdb2sql(new_cplx_file)
+						xyz = sqldb.get('x,y,z')
+
+						# define the transformation axis
+						axis = -1 + 2*np.random.rand(3)
+						axis /= np.linalg.norm(axis)
+
+						# define the axis
+						# uniform distribution on a sphere
+						# http://mathworld.wolfram.com/SpherePointPicking.html
+						u1,u2 = np.random.rand(),np.random.rand()
+						teta,phi = np.arccos(2*u1-1),2*np.pi*u2
+						axis = [np.sin(teta)*np.cos(phi),np.sin(teta)*np.sin(phi),np.cos(teta)]
+
+						# and the rotation angle
+						angle = -np.pi + np.pi*np.random.rand()
+
+						# print rotation data
+						print(':        axis : %s' %' '.join(map('{: 0.3f}'.format,axis)))
+						print(':        angle : % 1.3f\n' %angle)
+
+						# rotate the positions
+						xyz = transf.rotation_around_axis(xyz,axis,angle)
+						
+						# input in the database
+						sqldb.update_column('x',xyz[:,0])
+						sqldb.update_column('y',xyz[:,1])
+						sqldb.update_column('z',xyz[:,2])
+
+						# export the new pdb
+						sqldb.exportpdb(new_cplx_file)
+
+						# close the db
+						sqldb.close()
+
+					# add the features
+					if self.features is not None:
+						self._add_feat(cplx_dir_name,mol_name)
+
+					# create the target dir and input the binary class target
+					target_dir_name = cplx_dir_name + '/targets/'
+					os.mkdir(target_dir_name)
+					np.savetxt(target_dir_name + 'binary_class.dat',np.array([cplx_class]),fmt='%d')
+
+					# input the desired targets
+					if cplx_class == 0 and self.targets is not None:
+						self._add_targ(target_dir_name,mol_name)
 					
-
 
 	def _add_feat(self,cplx_dir_name,mol_name):
 
@@ -279,35 +352,4 @@ class DataAssembler(object):
 
 
 
-if __name__ == "__main__":
 
-	
-	BM4 = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
-
-	decoys = BM4 + 'decoys_pdbFLs/'
-	natives = BM4 + '/BM4_dimers_bound/pdbFLs_ori'
-	features = {'PSSM' : BM4 + '/PSSM_newformat'}
-	targets = {'haddock_score' : BM4 + '/model_qualities/haddockScore/water'}
-	classID = BM4 + '/training_set_IDS/classIDs.lst'
-	outdir = '../training_set/'
-
-	da = DataAssembler(classID=classID,decoys=decoys,natives=natives,
-		              features=features,targets=targets,outdir=outdir)
-
-
-	da.create_database()
-	
-
-	'''
-	targets = {'fnat' : BM4 + '/model_qualities/Fnat/water'}
-	outdir = './training_set/'
-	da = DataAssembler(targets=targets,outdir=outdir)
-	da.add_target()
-	'''
-
-	'''
-	features = {'PSSM_2' : BM4 + '/PSSM'}
-	outdir = './training_set/'
-	da = DataAssembler(features=features,outdir=outdir)
-	da.add_feature()
-	'''

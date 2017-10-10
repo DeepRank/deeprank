@@ -78,10 +78,11 @@ class pdb2sql(object):
 	CLASS that transsform  PDB file into a sqlite database
 	'''
 
-	def __init__(self,pdbfile,sqlfile='pdb2sql.db'):
+	def __init__(self,pdbfile,sqlfile='pdb2sql.db',verbose=False):
 		self.pdbfile = pdbfile
 		self.sqlfile = sqlfile
 		self.is_valid = True
+		self.verbose = verbose
 		self._create_sql()
 
 	'''
@@ -92,7 +93,8 @@ class pdb2sql(object):
 		pdbfile = self.pdbfile
 		sqlfile = self.sqlfile
 
-		print('-- Create SQLite3 database')
+		if self.verbose:
+			print('-- Create SQLite3 database')
 
 		 #name of the table
 		table = 'ATOM'
@@ -241,7 +243,9 @@ class pdb2sql(object):
 
 		# if we have more than one key we kill it
 		if len(keys)>1 :
-			print('You can only specify 1 conditional statement for the pdb2sql.get function')
+			print('Error :You can only specify 1 conditional statement for the pdb2sql.get function')
+			print('For complex query use the query kw-argument of pdb2sql.get()')
+			print("Example : sqldb.get('x,y,z',query='WHERE chainID='A' AND resName='VAL'")
 			return 
 
 		# check if the column exists
@@ -471,16 +475,46 @@ class pdb2sql(object):
 			os.system('rm %s' %(self.sqlfile))
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 if __name__ == '__main__':
 
 	import numpy as np
 
 	# create the sql
 	db = pdb2sql('1AK4_100w.pdb')
-	#db.prettyprint()
+
+	# print the database
+	db.prettyprint()
 
 	# get the names of the columns
-	#db.get_colnames()
+	db.get_colnames()
 
 	# extract the xyz position of the atoms with name CB
 	xyz = db.get('*',index=[0,1,2,3])
