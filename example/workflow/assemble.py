@@ -14,7 +14,7 @@ BM4 = sys.argv[1]
 
 # sources to assemble the data base
 decoys = BM4 + 'decoys_pdbFLs/'
-natives = BM4 + '/BM4_dimers_bound/pdbFLs_ori'
+natives = BM4 + '/BM4_dimers_bound/pdbFLs_refined'
 
 # the feature we want to have
 features = {'ELEC'  : BM4 + '/ELEC',

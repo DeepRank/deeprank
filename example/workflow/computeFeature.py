@@ -16,7 +16,7 @@ FF         = BM4 +'./forcefield/'
 
 # conformation
 decoys     = BM4 + '/decoys_pdbFLs/'
-native     = BM4 + '/BM4_dimers_bound/pdbFLs_ori'
+native     = BM4 + '/BM4_dimers_bound/pdbFLs_refined'
 
 # filter the decoys
 decoyID    = './decoyID.dat'
