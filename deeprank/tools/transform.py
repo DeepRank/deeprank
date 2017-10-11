@@ -6,6 +6,9 @@ molecular coordinate that might be usefull during the
 definition of the data set.
 '''
 
+def translation(xyz,vect):
+	return xyz + vect
+
 def rotation_around_axis(xyz,axis,angle):
 
 	# get the data
@@ -46,3 +49,11 @@ def rotation_euler(xyz,alpha,beta,gamma):
 
 	# apply the rotation
 	return np.dot(rot_mat,(xyz-xyz0).T).T + xyz0
+
+
+def rotation_matrix(xyz,rot_mat,center=True):
+	if center:
+		xyz0 = np.mean(xyz)
+		return np.dot(rot_mat,(xyz-xyz0).T).T + xyz0
+	else:
+		return np.dot(rot_mat,(xyz).T).T

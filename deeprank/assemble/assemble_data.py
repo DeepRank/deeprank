@@ -280,9 +280,7 @@ class DataAssembler(object):
 						xyz = transf.rotation_around_axis(xyz,axis,angle)
 						
 						# input in the database
-						sqldb.update_column('x',xyz[:,0])
-						sqldb.update_column('y',xyz[:,1])
-						sqldb.update_column('z',xyz[:,2])
+						sqldb.update_xyz(xyz)
 
 						# export the new pdb
 						sqldb.exportpdb(new_cplx_file)

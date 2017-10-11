@@ -1,6 +1,7 @@
 import sqlite3
 import subprocess as sp 
 import os
+import numpy as np
 
 '''
 Class that allows to create a SL data base for a PDB file
@@ -56,13 +57,14 @@ A few SQL querry wrappers have been implemented
 							db = pdb2sql(filename)
 							db.add_column('CHARGE')
 							db.put('CHARGE',1.25,index=[1])							
-
+							db.close()
 
 
 	Other queries have been made user friendly
 
 	- self.add_column(column_name,coltype='FLOAT',default=0)
-	- self.update_column(colname,values)
+	- self.update_column(colname,values,index=None)
+	- self.update_xyz(new_xyz,index=None)
 	- self.commit()
 
 	TO DO 
@@ -79,6 +81,7 @@ class pdb2sql(object):
 	'''
 
 	def __init__(self,pdbfile,sqlfile='pdb2sql.db',fix_chainID=True,verbose=False):
+
 		self.pdbfile = pdbfile
 		self.sqlfile = sqlfile
 		self.is_valid = True
@@ -90,6 +93,9 @@ class pdb2sql(object):
 		# fix the chain ID
 		if fix_chainID:
 			self._fix_chainID()
+
+		# backbone type
+		self.backbone_type = ['C','CA','N','O']
 
 	'''
 	Main function to create the SQL data base
@@ -222,7 +228,7 @@ class pdb2sql(object):
 		# get the current names
 		chainID = self.get('chainID')
 		natom = len(chainID)
-		chainID = list(set(chainID))
+		chainID = sorted(set(chainID))
 
 		if len(chainID)>26:
 			print("Warning more than 26 chains have been detected. This is so far not supported")
@@ -360,14 +366,113 @@ class pdb2sql(object):
 		# fix the python <--> sql indexes
 		if atnames == 'rowID':
 			data = [d-1 for d in data]
+			#data = np.sort(np.array(data)).tolist()
 		
 		return data
 
+	# not entirely sure but I think that's useless
 	def get_indexes(self,atnames,index):
 		strind = ','.join(map(str,index))
 		return self.get(atnames,where="rowID in ({ind})".format(ind=strind))
 
+	# get the contact atoms
+	def get_contact_atoms(self,cutoff=8.5,chain1='A',chain2='B',
+		                  extend_to_residue=False,only_backbone_atoms=False,return_contact_pairs=False):
 
+		# xyz of the chains
+		xyz1 = np.array(self.get('x,y,z',chain=chain1))
+		xyz2 = np.array(self.get('x,y,z',chain=chain2))
+
+		# index of b
+		index2 = self.get('rowID',chain=chain2)
+		
+		# resName of the chains
+		resName1 = np.array(self.get('resName',chain=chain1))
+		resName2 = np.array(self.get('resName',chain=chain2))
+
+		# atomnames of the chains
+		atName1 = np.array(self.get('name',chain=chain1))
+		atName2 = np.array(self.get('name',chain=chain2))
+
+
+		# loop through the first chain
+		# TO DO : loop through the smallest chain instead ... 
+		index_contact_1,index_contact_2 = [],[]
+		index_contact_pairs = {}
+
+		for i,x0 in enumerate(xyz1):
+
+			# compute the contact atoms
+			contacts = np.where(np.sqrt(np.sum((xyz2-x0)**2,1)) < cutoff )[0]
+
+			if len(contacts)>0 and any([not only_backbone_atoms, atName1[i] in self.backbone_type]):
+
+				index_contact_1 += [i]
+				index_contact_2 += [index2[k] for k in contacts if any( [atName2[k] in self.backbone_type,  not only_backbone_atoms] )]
+				index_contact_pairs[i] = [index2[k] for k in contacts if any( [atName2[k] in self.backbone_type,  not only_backbone_atoms] )]
+
+		# get uniques
+		index_contact_1 = sorted(set(index_contact_1))
+		index_contact_2 = sorted(set(index_contact_2))
+
+		# if no atoms were found	
+		if len(index_contact_1)==0:
+			print('Warning : No contact atoms detected in pdb2sql')
+
+		if extend_to_residue:
+			index_contact_1,index_contact_2 = self._extend_contact_to_residue(index_contact_1,index_contact_2,only_backbone_atoms)	
+
+		# not sure that's the best way of dealing with that
+		if return_contact_pairs:
+			return index_contact_pairs
+		else:
+			return index_contact_1,index_contact_2
+
+	# extend the contact atoms to the residue
+	def _extend_contact_to_residue(self,index1,index2,only_backbone_atoms):
+
+		# extract the data
+		dataA = self.get('chainId,resName,resSeq',index=index1)
+		dataB = self.get('chainId,resName,resSeq',index=index2)
+
+		# create tuple cause we want to hash through it
+		dataA = list(map(lambda x: tuple(x),dataA))
+		dataB = list(map(lambda x: tuple(x),dataB))
+
+		# extract uniques
+		resA = list(set(dataA))
+		resB = list(set(dataB))
+
+		# init the list
+		index_contact_A,index_contact_B = [],[]
+
+		# contact of chain A
+		for resdata in resA:
+			chainID,resName,resSeq = resdata
+			query = "WHERE chainID='{chainID}' AND resName='{resName}' AND resSeq={resSeq}".format(chainID=chainID,resName=resName,resSeq=resSeq)
+			if only_backbone_atoms:
+				index = self.get('rowID',query=query)
+				name = self.get('name',query=query)
+				index_contact_A += [ ind for ind,n in zip(index,name) if n in self.backbone_type ]
+			else:
+				index_contact_A += self.get('rowID',query=query)
+		
+		# contact of chain B
+		for resdata in resB:
+			chainID,resName,resSeq = resdata
+			query = "WHERE chainID='{chainID}' AND resName='{resName}' AND resSeq={resSeq}".format(chainID=chainID,resName=resName,resSeq=resSeq)
+			if only_backbone_atoms:
+				index = self.get('rowID',query=query)
+				name = self.get('name',query=query)
+				index_contact_B += [ ind for ind,n in zip(index,name) if n in self.backbone_type ]
+			else:
+				index_contact_B += self.get('rowID',query=query)
+
+		# make sure that we don't have double (maybe optional)
+		index_contact_A = sorted(set(index_contact_A))
+		index_contact_B = sorted(set(index_contact_B))
+		
+		return index_contact_A,index_contact_B		
 
 	def add_column(self,colname,coltype='FLOAT',default=0):
 
@@ -384,16 +489,30 @@ class pdb2sql(object):
 		'''
 		values must contain the correct number of elements
 		'''
+
 		if index==None:
 			data = [ [v,i+1] for i,v in enumerate(values) ]
 		else:
-			data = [ [v,ind] for v,ind in zip(values,index)]
+			data = [ [v,ind] for v,ind in zip(values,index)] # shouldn't that be ind+1 ?
 
 		query = 'UPDATE ATOM SET {cn}=? WHERE rowID=?'.format(cn=colname)
 		self.c.executemany(query,data)
-		
+		#self.conn.commit()
 
-		self.conn.commit()
+	def update_xyz(self,xyz,index=None):
+
+		'''
+		update the positions of the atoms selected
+		if index=None the position of all the atoms are changed
+		'''
+
+		if index==None:
+			data = [ [pos[0],pos[1],pos[2],i+1] for i,pos in enumerate(xyz) ]
+		else:
+			data = [ [pos[0],pos[1],pos[2],ind+1] for pos,ind in zip(xyz,index)]
+
+		query = 'UPDATE ATOM SET x=?, y=?, z=? WHERE rowID=?'
+		self.c.executemany(query,data)
 
 	def put(self,colname,value,**kwargs):
 
@@ -511,6 +630,15 @@ class pdb2sql(object):
 		self.conn.close() 
 		if rmdb:
 			os.system('rm %s' %(self.sqlfile))
+
+
+
+
+
+
+
+
+
 
 
 
