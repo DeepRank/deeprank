@@ -748,7 +748,6 @@ class DeepRankConvNet:
 				out = outputs.data.numpy()
 
 				for pts,t in zip(out,tar):
-					print(t)
 					r = F.softmax(torch.FloatTensor(pts)).data.numpy()
 					data[t].append(r[1])
 					confusion[t][r[1]>0.5] += 1
