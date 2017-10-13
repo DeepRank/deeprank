@@ -416,7 +416,7 @@ class DeepRankConvNet:
 		'''
 
 		# printing options
-		nprint = np.max(1,int(nepoch/10))
+		nprint = int(nepoch/10)
 
 		# store the length of the training set
 		ntrain = len(index_train)
