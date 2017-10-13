@@ -178,17 +178,17 @@ class DataAssembler(object):
 		else:
 			
 			print('Warning: No classID specified.')
-			print('         Assuming <cplx_name>._w<num> are decoys')
+			print('         Assuming <cplx_name>_<num>w are decoys')
 			print('         and <cplx_name> are natives')
 			class_names = [ cplx_name.split('/')[-2] for cplx_name in fnames]
-			class_values = [ int('_w' in name) for name in class_names ]
-			
+			class_values = [ int('w' not in name) for name in class_names ]
 
 		for name,value in zip(class_names,class_values):
 
 			# names of the molecule
 			target_dir_name = self.outdir + '/' + name + '/targets/'
 			np.savetxt(target_dir_name + 'binary_class.dat',np.array([value]),fmt='%d')
+			print(name,value)
 
 
 
