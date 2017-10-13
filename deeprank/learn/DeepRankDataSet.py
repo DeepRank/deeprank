@@ -96,20 +96,15 @@ class DeepRankDataSet(data_utils.Dataset):
 		self.features = None
 		self.targets  = None
 
-		self.index_train = None
-		self.index_valid = None
-
-		self.train_sampler = None
-		self.valid_sample = None
-
 		self.input_shape = None
 
 		# load the data
-		print('\n')
-		print('='*40)
-		print('=\t Build data set from folder')
-		print('= \t %s' %data_folder)
-		print('='*40,'\n')
+		if os.path.isdir(data_folder):
+			print('\n')
+			print('='*40)
+			print('=\t Build data set from folder')
+			print('= \t %s' %data_folder)
+			print('='*40,'\n')
 
 		#self.load_dataset()
 

@@ -1,5 +1,6 @@
 import deeprank.learn
 import torch.optim as optim
+import torch
 import models3d
 import sys 
 
@@ -12,6 +13,9 @@ import sys
 
 #adress of the database
 database = '../../database/'
+
+# seed the random generator
+torch.manual_seed(1000)
 
 # declare the dataset instance
 #data_set = deeprank.learn.DeepRankDataSet(database,
@@ -37,6 +41,7 @@ model = deeprank.learn.DeepRankConvNet(data_set,
                         task='class',
                         tensorboard=False,
                         cuda=False,
+                        plot=False,
                         outdir='./test_class/')
 
 
@@ -47,4 +52,4 @@ model.optimizer = optim.SGD(model.net.parameters(),
                             weight_decay=0.005)
 
 # start the training
-model.train(nepoch = 250)
+model.train(nepoch = 2,debug=True)

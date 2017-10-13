@@ -18,6 +18,7 @@ import torch.utils.data as data_utils
 import torch.cuda
 
 from tensorboard import SummaryWriter
+from deeprank.learn import DeepRankDataSet
 
 class DeepRankConvNet:
 
@@ -157,7 +158,7 @@ class DeepRankConvNet:
 		if self.cuda:
 			self.net = self.net.cuda()
 
-	def train(self,nepoch=50, divide_set=[0.8,0.1,0.1], train_batch_size = 10, preshuffle = True,plot_intermediate=True):
+	def train(self,nepoch=50, divide_set=[0.8,0.1,0.1], train_batch_size = 10, preshuffle = True,plot_intermediate=True,debug=False):
 
 		'''
 		Perform a simple training of the model. The data set is divided in training/validation sets
@@ -188,7 +189,7 @@ class DeepRankConvNet:
 		self._plot_scatter(self.outdir+"/initial_prediction.png", indexes = [index_train,index_valid,index_test])
 		
 		# train the model
-		self._train(index_train,index_valid,nepoch=nepoch,train_batch_size=train_batch_size,tensorboard_writer=tbwriter,plot_intermediate=plot_intermediate)
+		self._train(index_train,index_valid,nepoch=nepoch,train_batch_size=train_batch_size,tensorboard_writer=tbwriter,plot_intermediate=plot_intermediate,debug=debug)
 
 		# test the model
 		self._test(index_test)
@@ -398,7 +399,7 @@ class DeepRankConvNet:
 		return indexes_train,indexes_valid
 
 
-	def _train(self,index_train,index_valid,nepoch = 50,train_batch_size = 5,tensorboard_writer = None,plot_intermediate=False):
+	def _train(self,index_train,index_valid,nepoch = 50,train_batch_size = 5,tensorboard_writer = None,plot_intermediate=False,debug=False):
 
 		'''
 		Train the model 
@@ -410,21 +411,43 @@ class DeepRankConvNet:
 		nepoch : number of epochs to be performed
 		train_batch_size : the mini batch size for the training
 		tensorboard_write : the writer for tensor board
+		plot_intermediate : plot itnermediate
+		debug : if TRUE the data set are statically created
 		'''
 
 		# printing options
-		nprint = int(nepoch/10)
+		nprint = np.max(1,int(nepoch/10))
 
 		# store the length of the training set
 		ntrain = len(index_train)
 
-		# create the sampler
-		train_sampler = data_utils.sampler.SubsetRandomSampler(index_train)
-		valid_sampler = data_utils.sampler.SubsetRandomSampler(index_valid)
 
-		#  create the loaders
-		train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler)
-		valid_loader = data_utils.DataLoader(self.data_set,batch_size=1,sampler=valid_sampler)
+		if debug:
+
+			# crete the valid/train data set
+			dataset_train = DeepRankDataSet('')
+			dataset_train.features =  self.data_set.features[:ntrain]
+			dataset_train.targets = self.data_set.targets[:ntrain]
+			dataset_train.input_shape = self.data_set.input_shape
+
+			dataset_valid =  DeepRankDataSet('')
+			dataset_valid.features =  self.data_set.features[ntrain:]
+			dataset_valid.targets = self.data_set.targets[ntrain:]
+			dataset_valid.input_shape = self.data_set.input_shape
+
+			#  create the loaders
+			train_loader = data_utils.DataLoader(dataset_train,batch_size=train_batch_size,shuffle=False)
+			valid_loader = data_utils.DataLoader(dataset_valid,batch_size=1,shuffle=False)
+
+		else:
+
+			# create the sampler
+			train_sampler = data_utils.sampler.SubsetRandomSampler(index_train)
+			valid_sampler = data_utils.sampler.SubsetRandomSampler(index_valid)
+
+			#  create the loaders
+			train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler)
+			valid_loader = data_utils.DataLoader(self.data_set,batch_size=1,sampler=valid_sampler)
 
 
 		# training loop
@@ -725,6 +748,7 @@ class DeepRankConvNet:
 				out = outputs.data.numpy()
 
 				for pts,t in zip(out,tar):
+					print(t)
 					r = F.softmax(torch.FloatTensor(pts)).data.numpy()
 					data[t].append(r[1])
 					confusion[t][r[1]>0.5] += 1
