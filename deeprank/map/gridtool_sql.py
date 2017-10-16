@@ -493,6 +493,7 @@ class GridToolsSQL(object):
 					pos = np.mean(np.array(self.sqldb.get('x,y,z',query=sql_query)),0)
 				else:
 					sql_query = "WHERE chainID='{chain}' AND resSeq='{resNum}' and name='{atName}'".format(chain=chain,resNum=resNum,atName=atName)
+					#print(sql_query)
 					pos = np.array(self.sqldb.get('x,y,z',query=sql_query))[0]
 
 				# check if we the resname correspond
