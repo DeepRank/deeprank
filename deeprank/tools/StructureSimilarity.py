@@ -263,6 +263,9 @@ class StructureSimilarity(object):
 		# normalize
 		Fnat = count/len(data_pair_ref)
 
+		sql_decoy.close()
+		sql_ref.close()
+
 		return Fnat
 
 

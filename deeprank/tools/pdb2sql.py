@@ -80,7 +80,7 @@ class pdb2sql(object):
 	CLASS that transsform  PDB file into a sqlite database
 	'''
 
-	def __init__(self,pdbfile,sqlfile='pdb2sql.db',fix_chainID=True,verbose=False):
+	def __init__(self,pdbfile,sqlfile='pdb2sql.db',fix_chainID=False,verbose=False):
 
 		self.pdbfile = pdbfile
 		self.sqlfile = sqlfile
@@ -172,7 +172,10 @@ class pdb2sql(object):
 		#data = sp.check_output("awk '/ATOM/' %s" %pdbfile,shell=True).decode('utf8').split('\n')
 
 		# a safer version consist at matching against the first field
-		data = sp.check_output("awk '$1 ~ /^ATOM/' %s" %pdbfile,shell=True).decode('utf8').split('\n')
+		# won't work on windows
+		#data = sp.check_output("awk '$1 ~ /^ATOM/' %s" %pdbfile,shell=True).decode('utf8').split('\n')
+		with open(pdbfile,'r') as fi:
+			data = [line.split('\n')[0] for line in fi if line.startswith('ATOM')]
 
 		# if there is no ATOM in the file
 		if len(data)==1 and data[0]=='':
@@ -217,7 +220,7 @@ class pdb2sql(object):
 		self.c.executemany('INSERT INTO ATOM VALUES ({qm})'.format(qm=qm),data_atom)
 
 		# commit the change
-		self.conn.commit()
+		#self.conn.commit()
 
 
 	# replace the chain ID by A,B,C,D, ..... in that order
@@ -276,21 +279,16 @@ class pdb2sql(object):
 		returns an array containing the value of the attributes
 		'''
 		
-		arguments = {'where' : "String e.g 'chainID = 'A''",
-					 'index' : "Array e.g. [27,28,30]",
-					 'chain' : "Char e.g. 'A'",
-					 'name'  : "String e.g 'CA'",
-					 'query' : "SQL query e.g. 'WHERE chainID='B''"}
+		arguments = {'where'   : "String e.g 'chainID = 'A''",
+					 'index'   : "Array e.g. [27,28,30]",
+					 'rowID'   : "Array e.g. [27,28,30]",
+					 'chain'   : "Char e.g. 'A'",
+					 'chainID' : "Char e.g. 'A'",
+					 'name'    : "String e.g 'CA'",
+					 'query'   : "SQL query e.g. 'WHERE chainID='B''"}
 
 		# the asked keys
 		keys = kwargs.keys()			
-
-		# if we have more than one key we kill it
-		if len(keys)>1 :
-			print('Error :You can only specify 1 conditional statement for the pdb2sql.get function')
-			print('For complex query use the query kw-argument of pdb2sql.get()')
-			print("Example : sqldb.get('x,y,z',query='WHERE chainID='A' AND resName='VAL'")
-			return 
 
 		# check if the column exists
 		try:
@@ -304,9 +302,70 @@ class pdb2sql(object):
 		if len(kwargs) == 0:
 			query = 'SELECT {an} FROM ATOM'.format(an=atnames)
 			data = [list(row) for row in self.c.execute(query)]
-			
+		
+		############################################################################
+		# GENERIC QUERY
+		#
+		# might be the only one we need
+		# each keys must be a valid columns
+		# each valu may be a single value or an array
+		# AND is assumed between different keys
+		# OR is assumed for the different values of a given key
+		#
+		# SO FAR ONLY WORKS WHEN WE HAVE MORE THAN 1 KEYWORD
+		# AFTER REPLACING THE OLD CALL WE SHOULD MAKE IT THE
+		# ONLY WAY TO QUERY THE DATABASE
+		##############################################################################
+		elif len(keys) > 1:
 
+			# check that all the keys exists
+			for k in keys:
+				try:
+					self.c.execute("SELECT EXISTS(SELECT {an} FROM ATOM)".format(an=k))
+				except:
+					print('Error column %s not found in the database' %k)
+					self.get_colnames()
+					return
+
+			# form the query and the tuple value
+			query = 'SELECT {an} FROM ATOM WHERE '.format(an=atnames)
+			conditions = []
+			vals = ()
+
+			# iterate through the kwargs
+			for ik,(k,v) in enumerate(kwargs.items()):
+
+				# get if we have an array or a scalar
+				# and build the value tuple for the sql query
+				# deal with the indexing issue if rowID is required
+				if isinstance(v,list):
+					nv = len(v)
+					if k == 'rowID':
+						vals = vals + tuple(v+1)
+					else:
+						vals = vals + tuple(v)
+				else:
+					nv = 1
+					if k == 'rowID':
+						vals = vals + (v+1,)
+					else:
+						vals = vals + (v,)
+
+				# create the condition for that key
+				conditions.append(k + ' in (' + ','.join('?'*nv) + ')')
+
+			# stitch the conditions and append to the query
+			query += ' AND '.join(conditions)	
+
+			# query the sql database and return the answer in a list
+			data = [list(row) for row in self.c.execute(query,vals)]
+
+		###############################################################################
+		# THESE ARE THESE THE OLD COMMANDS
+		# WE SHOULD TRACK DOWN WHERE THEY ARE USED
+		# IN THE CODE AND REPLACE THEM WITH NEW ONES
 		# otherwise we have only one key
+		#################################################################################
 		else:
 
 			key = list(keys)[0]
@@ -317,7 +376,7 @@ class pdb2sql(object):
 				query =  'SELECT {an} FROM ATOM WHERE {c1}'.format(an=atnames,c1=value)
 				data = [list(row) for row in self.c.execute(query)]
 
-			elif key == 'index' :
+			elif key == 'index' or key == 'rowID':
 
 				# we can have a max of 999 value in a SQL QUERY
 				# for larger index range we need to proceed by batch
@@ -335,7 +394,7 @@ class pdb2sql(object):
 					query  =  'SELECT {an} FROM ATOM WHERE rowID in ({qm})'.format(an=atnames,qm=qm)
 					data += [list(row) for row in self.c.execute(query,value_tmp)]
 
-			elif key == 'chain':
+			elif key == 'chain' or key == 'chainID' :
 				query = "SELECT {an} FROM ATOM WHERE chainID=?".format(an=atnames)
 				data = [list(row) for row in self.c.execute(query,value)]
 
@@ -358,16 +417,22 @@ class pdb2sql(object):
 			print('Warning sqldb.get returned an empty')
 			return data
 
+		# fix the python <--> sql indexes
+		# if atnames == 'rowID':
+		if 'rowID' in atnames:
+			index = atnames.split(',').index('rowID')
+			for i in range(len(data)):
+				data[i][index] -= 1
+
 		# postporcess the output of the SQl query
 		# flatten it if each els is of size 1
 		if len(data[0])==1:
 			data = [d[0] for d in data]
 
 		# fix the python <--> sql indexes
-		if atnames == 'rowID':
-			data = [d-1 for d in data]
-			#data = np.sort(np.array(data)).tolist()
-		
+		# if atnames == 'rowID':
+		# 	data = [d-1 for d in data]
+	
 		return data
 
 	# not entirely sure but I think that's useless
@@ -481,7 +546,7 @@ class pdb2sql(object):
 		'''
 		query = "ALTER TABLE ATOM ADD COLUMN '%s' %s DEFAULT %s" %(colname,coltype,str(default))
 		self.c.execute(query)
-		self.conn.commit()
+		#self.conn.commit()
 
 	def update_column(self,colname,values,index=None):
 
@@ -627,11 +692,13 @@ class pdb2sql(object):
 
 	# close the database 
 	def close(self,rmdb = True):
-		self.conn.close() 
+		
 		if rmdb:
+			self.conn.close() 
 			os.system('rm %s' %(self.sqlfile))
-
-
+		else:
+			self.commit()
+			self.conn.close() 
 
 
 

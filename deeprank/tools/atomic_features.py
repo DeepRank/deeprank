@@ -247,7 +247,7 @@ class atomicFeature(FeatureClass):
 		xyz2 = np.array(self.sqldb.get('x,y,z',chain='B'))
 
 		# rowID of the second chain
-		index_b =self.sqldb.get('rowID',chain='B')
+		index_b = self.sqldb.get('rowID',chain='B')
 
 		# resName of the chains
 		resName1 = np.array(self.sqldb.get('resName',chain='A'))
@@ -278,8 +278,8 @@ class atomicFeature(FeatureClass):
 				self.contact_pairs[i] = [index_b[k] for k in contacts if resName2[k] in self.valid_resnames]
 
 		# create a set of unique indexes
-		self.contact_atoms_A = list(set(self.contact_atoms_A))
-		self.contact_atoms_B = list(set(self.contact_atoms_B))
+		self.contact_atoms_A = sorted(set(self.contact_atoms_A))
+		self.contact_atoms_B = sorted(set(self.contact_atoms_B))
 
 		# if no atoms were found	
 		if len(self.contact_atoms_A)==0:
@@ -318,8 +318,8 @@ class atomicFeature(FeatureClass):
 			index_contact_B += self.sqldb.get('rowID',query=query)
 
 		# make sure that we don't have double (maybe optional)
-		index_contact_A = list(set(index_contact_A))
-		index_contact_B = list(set(index_contact_B))
+		index_contact_A = sorted(set(index_contact_A))
+		index_contact_B = sorted(set(index_contact_B))
 		
 		return index_contact_A,index_contact_B
 
