@@ -4,8 +4,8 @@ import os
 import numpy as np
 
 '''
-Class that allows to create a SL data base for a PDB file
-This allows to easily extract information of the PDB using SQL query
+Class that allows to create a SQL data base for a PDB file
+This allows to easily extract information of the PDB using SQL queries
 
 USAGE db = pdb2sql('XXX.pdb')
 
@@ -96,6 +96,12 @@ class pdb2sql(object):
 
 		# backbone type
 		self.backbone_type = ['C','CA','N','O']
+
+	##################################################################################
+	#
+	#	CREATION AND PRINTING
+	#
+	##################################################################################
 
 	'''
 	Main function to create the SQL data base
@@ -270,6 +276,18 @@ class pdb2sql(object):
 		ctmp.execute("SELECT * FROM ATOM")
 		print(ctmp.fetchall())
 
+
+	############################################################################################
+	#
+	#		GET FUNCTIONS
+	#
+	#			get(attribute,selection) -> return the atribute(s) value(s) for the given selection 
+	#			get_index()              -> deprecated 
+	#			get_contact_atoms()		 -> return a list of rowID  for the contact atoms
+	#			get_contact_residue()	 -> return a list of resSeq for the contact residue
+	#
+	###############################################################################################
+
 	# get the properties
 	def get(self,atnames,**kwargs):
 
@@ -442,7 +460,8 @@ class pdb2sql(object):
 
 	# get the contact atoms
 	def get_contact_atoms(self,cutoff=8.5,chain1='A',chain2='B',
-		                  extend_to_residue=False,only_backbone_atoms=False,return_contact_pairs=False):
+		                  extend_to_residue=False,only_backbone_atoms=False,
+		                  excludeH=False,return_contact_pairs=False):
 
 		# xyz of the chains
 		xyz1 = np.array(self.get('x,y,z',chain=chain1))
@@ -468,13 +487,22 @@ class pdb2sql(object):
 		for i,x0 in enumerate(xyz1):
 
 			# compute the contact atoms
-			contacts = np.where(np.sqrt(np.sum((xyz2-x0)**2,1)) < cutoff )[0]
+			contacts = np.where(np.sqrt(np.sum((xyz2-x0)**2,1)) <= cutoff )[0]
+
+			# exclude the H if required
+			if excludeH and atName1[i][0] == 'H':
+				continue
 
 			if len(contacts)>0 and any([not only_backbone_atoms, atName1[i] in self.backbone_type]):
 
+				# the contact atoms
 				index_contact_1 += [i]
-				index_contact_2 += [index2[k] for k in contacts if any( [atName2[k] in self.backbone_type,  not only_backbone_atoms] )]
-				index_contact_pairs[i] = [index2[k] for k in contacts if any( [atName2[k] in self.backbone_type,  not only_backbone_atoms] )]
+				index_contact_2 += [index2[k] for k in contacts if ( any( [atName2[k] in self.backbone_type,  not only_backbone_atoms]) and not (excludeH and atName2[k][0]=='H') ) ]
+				
+				# the pairs
+				pairs = [index2[k] for k in contacts if any( [atName2[k] in self.backbone_type,  not only_backbone_atoms] ) and not (excludeH and atName2[k][0]=='H') ]
+				if len(pairs) > 0:
+					index_contact_pairs[i] = pairs
 
 		# get uniques
 		index_contact_1 = sorted(set(index_contact_1))
@@ -538,6 +566,73 @@ class pdb2sql(object):
 		index_contact_B = sorted(set(index_contact_B))
 		
 		return index_contact_A,index_contact_B		
+
+
+	# get the contact residue
+	def get_contact_residue(self,cutoff=8.5,chain1='A',chain2='B',excludeH=False,
+		                    only_backbone_atoms=False,return_contact_pairs=False):
+
+		# get the contact atoms
+		if return_contact_pairs:
+
+			# declare the dict
+			residue_contact_pairs = {}
+
+			# get the contact atom pairs
+			atom_pairs = self.get_contact_atoms(cutoff=cutoff,chain1=chain1,chain2=chain2,
+				                                only_backbone_atoms=only_backbone_atoms,
+				                                excludeH=excludeH,
+				                                return_contact_pairs=True)
+
+			# loop over the atom pair dict
+			for iat1,atoms2 in atom_pairs.items():
+
+				# get the res info of the current atom
+				data1 = tuple(self.get('chainID,resSeq,resName',rowID=[iat1])[0])
+
+				# create a new entry in the dict if necessary
+				if data1 not in residue_contact_pairs:
+					residue_contact_pairs[data1] = set()
+
+				# get the res info of the atom in the other chain
+				data2 = self.get('chainID,resSeq,resName',rowID=atoms2)
+
+				# store that in the dict without double
+				for resData in data2:
+					residue_contact_pairs[data1].add(tuple(resData))
+
+			for resData in residue_contact_pairs.keys():
+				residue_contact_pairs[resData] = sorted(residue_contact_pairs[resData])
+
+			return residue_contact_pairs
+
+		else:
+
+			# get the contact atoms
+			contact_atoms = self.get_contact_atoms(cutoff=cutoff,chain1=chain1,chain2=chain2,return_contact_pairs=False)
+
+			# get the residue info
+			data1 = self.get('chainID,resSeq,resName',index=contact_atoms[0])
+			data2 = self.get('chainID,resSeq,resName',index=contact_atoms[1])
+
+			# take only unique
+			residue_contact_A = sorted(set([tuple(resData) for resData in data1]))
+			residue_contact_B = sorted(set([tuple(resData) for resData in data2]))
+
+			return residue_contact_A,residue_contact_B
+
+
+	############################################################################################
+	#
+	#		PUT FUNCTONS AND ASSOCIATED
+	#
+	#			add_column()	-> add a column
+	#			update_column() -> update the values of one column
+	#			update_xyz()    -> update_xyz of the pdb
+	#			put()           -> put a value in a column
+	#
+	###############################################################################################
+
 
 	def add_column(self,colname,coltype='FLOAT',default=0):
 
@@ -646,6 +741,14 @@ class pdb2sql(object):
 			for posskey,possvalue in arguments.items():
 				print('\t' + posskey + '\t\t' + possvalue)
 			return
+
+
+
+	############################################################################################
+	#
+	#		COMMIT, EXPORT, CLOSE FUNCTIONS
+	#
+	###############################################################################################
 
 
 	def commit(self):

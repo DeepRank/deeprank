@@ -119,6 +119,8 @@ class DeepRankDataSet(data_utils.Dataset):
 	# Load the dataset
 	def load(self):
 
+		grid_folder = 'grid_data'
+
 		# read the folders name
 		folders_name = sp.check_output("ls %s/*/ -d" %(self.data_folder),shell=True)
 		folders_name = folders_name.decode('utf8').split()
@@ -155,7 +157,7 @@ class DeepRankDataSet(data_utils.Dataset):
 
 			# load the all the features
 			if self.select_feature == 'all' :
-				feature_files  = sp.check_output('ls %s/input/*.pkl' %folder,shell=True).decode('utf-8').split()
+				feature_files  = sp.check_output('ls %s/%s/*.pkl' %(folder,grid_folder),shell=True).decode('utf-8').split()
 				tmp_feat = []
 				for f in feature_files:
 					feat_dict = pickle.load(open(f,'rb'))
@@ -170,12 +172,12 @@ class DeepRankDataSet(data_utils.Dataset):
 
 					# see if the feature exists
 					try:
-						feat_dict = pickle.load(open(folder+'/input/'+feat_name+'.pkl','rb'))
+						feat_dict = pickle.load(open(folder+'/' + grid_folder + '/'+feat_name+'.pkl','rb'))
 						possible_channels = list(feat_dict.keys())
 
 					except:
 						print('Error : Feature name %s not found in %s' %(feat_name,folder))
-						opt = sp.check_output('ls '+ folder+'/input/*.pkl',shell=True).decode('utf8').split()
+						opt = sp.check_output('ls '+ folder+'/' + grid_folder + '/*.pkl',shell=True).decode('utf8').split()
 						opt_names = [name.split('/')[-1][:-4] for name in opt ]
 						print('Error : Possible features are \n\t%s' %'\n\t'.join(opt_names))
 						sys.exit()
@@ -197,14 +199,23 @@ class DeepRankDataSet(data_utils.Dataset):
 				features.append(np.array(tmp_feat))
 
 			# target
-			try:
-				targ_data = np.loadtxt(folder+'/targets/%s.dat' %(self.select_target))
-			except:
+			opt = sp.check_output('ls '+ folder+'/targets/*.*',shell=True).decode('utf8').split()
+			opt_names = [name.split('/')[-1] for name in opt ]
+			
+			fname = list(filter(lambda x: self.select_target in x, opt_names))
+			
+			if len(fname) == 0:
 				print('Error : Target name %s not found in %s' %(self.select_target,folder))
-				opt = sp.check_output('ls '+ folder+'/targets/*.*',shell=True).decode('utf8').split()
-				opt_names = [name.split('/')[-1][:-4] for name in opt ]
 				print('Error : Possible targets are \n\t%s' %'\n\t'.join(opt_names))
 				sys.exit()
+
+			if len(fname)>1:
+				print('Error : Multiple Targets Matching %s Found in %s' %(self.select_target,folder))
+				print('Error : Possible targets are \n\t%s' %'\n\t'.join(opt_names))
+				sys.exit()
+
+			fname = fname[0]
+			targ_data = np.loadtxt(folder+'/targets/%s' %(fname))
 
 			targets.append(targ_data)
 

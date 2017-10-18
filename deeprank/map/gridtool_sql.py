@@ -538,7 +538,7 @@ class GridToolsSQL(object):
 		return dict_data
 
 	# compute the a given feature on the grid
-	def featgrid(self,center,value,type_='gaussian'):
+	def featgrid(self,center,value,type_='fast_gaussian'):
 
 		'''
 		map a given feature (atomic or residue) on the grid
@@ -556,12 +556,67 @@ class GridToolsSQL(object):
 			dd = value*np.exp(-beta*dd)
 			return dd
 
+		# fast gaussian
+		elif type_ == 'fast_gaussian':
+
+			beta = 1.0/np.max(self.res)
+			cutoff = 10.*beta
+
+			dd = np.sqrt( (self.xgrid-x0)**2 + (self.ygrid-y0)**2 + (self.zgrid-z0)**2 )
+			dgrid = np.zeros(self.npts)
+
+			dgrid[dd<cutoff] = np.exp(-beta*dd[dd<cutoff])
+
+			return dgrid
+
 		# Bsline
-		if type_ == 'bspline':
+		elif type_ == 'bspline':
 			spline_order=4
 			spl = bspline( (self.xgrid-x0)/self.res[0],spline_order ) * bspline( (self.ygrid-y0)/self.res[1],spline_order ) * bspline( (self.zgrid-z0)/self.res[2],spline_order )
 			dd = value*spl
 			return dd
+
+		# nearest neighbours
+		elif type_ == 'nearest': 
+
+			# distances
+			dx,dy,dz = np.abs(self.x-x0),np.abs(self.y-y0),np.abs(self.z-z0)
+
+			# index
+			indx = np.argsort(dx)[:2]
+			indy = np.argsort(dy)[:2]
+			indz = np.argsort(dz)[:2]
+
+			# weight
+			wx = dx[indx]
+			wx /= np.sum(wx)
+
+			wy = dy[indy]
+			wy /= np.sum(wy)
+
+			wz = dx[indz]
+			wz /= np.sum(wz)
+
+			# define the points
+			indexes = [indx,indy,indz]
+			points = list(itertools.product(*indexes))
+
+			# define the weight
+			W = [wx,wy,wz]
+			W = list(itertools.product(*W))
+			W = [np.sum(iw) for iw in W]
+
+			# put that on the grid
+			dgrid = np.zeros(self.npts)
+
+			for w,pt in zip(W,points):
+				dgrid[pt[0],pt[1],pt[2]] = w*value
+
+			return dgrid
+
+		# default
+		else:
+			raise ValueError('Options not recognized for the grid',type_)
 
 	################################################################
 	# export the grid points for external calculations of some

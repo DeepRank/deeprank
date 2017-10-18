@@ -1,6 +1,6 @@
 import numpy as np
 from deeprank.tools import transform, pdb2sql 
-import sys
+import sys,os
 
 '''
 Class to compute the
@@ -13,10 +13,10 @@ of a decoy versus a ref
 
 class StructureSimilarity(object):
 
-	def __init__(self,decoy,ref):
+	def __init__(self,decoy,ref,verbose=False):
 		self.decoy = decoy
 		self.ref = ref
-
+		self.verbose = verbose
 
 	# compute the L-RMSD
 	def compute_lrmsd(self,exportpath=None):
@@ -119,7 +119,8 @@ class StructureSimilarity(object):
 		return lrmsd
 
 	# compute the irmsd
-	def compute_irmsd(self,exportpath=None):
+	# we get here the contact of the decoy
+	def compute_irmsd(self,cutoff=10,exportpath=None):
 
 		'''
 		Ref : DockQ: A Quality Measure for Protein-Protein Docking Models
@@ -134,7 +135,6 @@ class StructureSimilarity(object):
 		sql_ref = pdb2sql(self.ref,sqlfile='mol2.db')
 
 		# get the contact atoms
-		cutoff = 10.
 		contact_decoy = sql_decoy.get_contact_atoms(cutoff=cutoff,extend_to_residue=True,only_backbone_atoms=True)
 
 		# make a single list
@@ -178,10 +178,12 @@ class StructureSimilarity(object):
 		chain_ref = list(set(sql_ref.get('chainID',index=index_contact_ref)))
 		error = 1
 		if len(chain_decoy)<2:
-			print('Error in i-rmsd: only one chain represented in contact atoms of the decoy')
+			if self.verbose:
+				print('Error in i-rmsd: only one chain represented in contact atoms of the decoy')
 			error = -1
 		if len(chain_ref)<2:
-			print('Error in i-rmsd: only one chain represented in contact atoms of the ref')
+			if self.verbose:
+				print('Error in i-rmsd: only one chain represented in contact atoms of the ref')
 			error = -1
 
 		# get the translation so that both A chains are centered
@@ -218,24 +220,126 @@ class StructureSimilarity(object):
 
 		return irmsd
 
+
+	# compute the irmsd
+	# we get here the contact of the REFs
+	def compute_irmsd_ref(self,cutoff=10,exportpath=None):
+
+		'''
+		Ref : DockQ: A Quality Measure for Protein-Protein Docking Models
+		      http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879
+		i-RMSD is computed selecting the back bone of the contact residue with a cutoff of 10A
+		in the decoy. Align these as best as possible with their coutner part in the ref
+		and and compute the RMSD
+		'''
+
+		# create thes sql
+		sql_decoy = pdb2sql(self.decoy,sqlfile='mol1.db')
+		sql_ref = pdb2sql(self.ref,sqlfile='mol2.db')
+
+		# get the contact atoms
+		contact_ref = sql_ref.get_contact_atoms(cutoff=cutoff,extend_to_residue=True,only_backbone_atoms=True)
+
+		# make a single list
+		index_contact_ref = contact_ref[0]+contact_ref[1]
+
+
+		# get the xyz and atom identifier of the decoy contact atoms
+		xyz_contact_ref = sql_ref.get('x,y,z',index=index_contact_ref)
+		data_contact_ref = sql_ref.get('chainID,resSeq,resName,name',index=index_contact_ref)
+
+		# get the xyz and atom indeitifier of the reference
+		xyz_decoy = sql_decoy.get('x,y,z')
+		data_decoy = sql_decoy.get('chainID,resSeq,resName,name')
+
+		# loop through the ref label
+		# check if the atom is in the decoy
+		# if yes -> add xyz to xyz_contact_decoy
+		# if no  -> remove the corresponding to xyz_contact_ref
+		xyz_contact_decoy = []
+		index_contact_decoy = []
+		clean_ref = False
+		for iat,atom in enumerate(data_contact_ref):
+
+			try:
+				index = data_decoy.index(atom)
+				index_contact_decoy.append(index)
+				xyz_contact_decoy.append(xyz_decoy[index])
+			except:
+				#print('Warning CHAIN %s RES %d RESNAME %s ATOM %s not found in reference' %(atom[0],atom[1],atom[2],atom[3]))
+				xyz_contact_ref[iat] = None
+				index_contact_ref[iat] = None
+				clean_ref = True
+
+		# clean the xyz
+		if clean_ref:
+			xyz_contact_ref = [xyz for xyz in xyz_contact_ref if xyz is not None]
+			index_contact_ref = [ind for ind in index_contact_ref if ind is not None]
+
+		# check that we still have atoms in both chains
+		chain_decoy = list(set(sql_decoy.get('chainID',index=index_contact_decoy)))
+		chain_ref   = list(set(sql_ref.get('chainID',index=index_contact_ref)))
+		error = 1
+		if len(chain_decoy)<2:
+			if self.verbose:
+				print('Error in i-rmsd: only one chain represented in contact atoms of the decoy')
+			error = -1
+		if len(chain_ref)<2:
+			if self.verbose:
+				print('Error in i-rmsd: only one chain represented in contact atoms of the ref')
+			error = -1
+
+		# get the translation so that both A chains are centered
+		tr_decoy = self.get_trans_vect(xyz_contact_decoy)
+		tr_ref   = self.get_trans_vect(xyz_contact_ref)
+
+		# translate everything 
+		xyz_contact_decoy = transform.translation(xyz_contact_decoy,tr_decoy)
+		xyz_contact_ref   = transform.translation(xyz_contact_ref,tr_ref)
+
+		# get the ideql rotation matrix
+		# to superimpose the A chains
+		U = self.get_rotation_matrix_Kabsh(xyz_contact_decoy,xyz_contact_ref)
+
+		# rotate the entire fragment
+		xyz_contact_decoy = transform.rotation_matrix(xyz_contact_decoy,U,center=False)
+
+		# compute the RMSD
+		irmsd = error * self.get_rmsd(xyz_contact_decoy,xyz_contact_ref)
+
+		# export the pdb for verifiactions
+		if exportpath is not None:
+
+			# update the sql database
+			sql_decoy.update_xyz(xyz_contact_decoy,index=index_contact_decoy)
+			sql_ref.update_xyz(xyz_contact_ref,index=index_contact_ref)
+
+			sql_decoy.exportpdb(exportpath+'/irmsd_decoy.pdb',index=index_contact_decoy)
+			sql_ref.exportpdb(exportpath+'/irmsd_ref.pdb',index=index_contact_ref)
+
+		# close the db
+		sql_decoy.close()
+		sql_ref.close()
+
+		return irmsd
+
 	# compute only Fnat
-	def compute_Fnat(self):
+	def compute_Fnat(self,cutoff=5.0):
 
 		# create the sql
 		sql_decoy = pdb2sql(self.decoy,sqlfile='mol1.db')
 		sql_ref = pdb2sql(self.ref,sqlfile='mol2.db')
 
 		# get the contact atoms
-		cutoff = 10.
 		contact_pairs_decoy = sql_decoy.get_contact_atoms(cutoff=cutoff,
 			                                              extend_to_residue=False,
-			                                              only_backbone_atoms=True,
+			                                              only_backbone_atoms=False,
 			                                              return_contact_pairs=True)
 
 
 		contact_pairs_ref   = sql_ref.get_contact_atoms(cutoff=cutoff,
 			                                            extend_to_residue=False,
-			                                            only_backbone_atoms=True,
+			                                            only_backbone_atoms=False,
 			                                            return_contact_pairs=True)
 
 
@@ -246,19 +350,16 @@ class StructureSimilarity(object):
 		# form the pair data
 		data_pair_decoy = []
 		for indA,indexesB in contact_pairs_decoy.items():
-			data_pair_decoy += [  [data_decoy[indA],data_decoy[indB]] for indB in indexesB   ]
+			data_pair_decoy += [  (tuple(data_decoy[indA]),tuple(data_decoy[indB])) for indB in indexesB   ]
 
 		# form the pair data
 		data_pair_ref = []
 		for indA,indexesB in contact_pairs_ref.items():
-			data_pair_ref += [  [data_ref[indA],data_ref[indB]] for indB in indexesB   ]
+			data_pair_ref += [  (tuple(data_ref[indA]),tuple(data_ref[indB])) for indB in indexesB   ]
 
 		# count the number of pairs 
 		# of the ref present in the decoy
-		count = 0
-		for refpair in data_pair_ref:
-			if refpair in data_pair_decoy:
-				count += 1
+		count =len(set(data_pair_ref).intersection(data_pair_decoy))
 
 		# normalize
 		Fnat = count/len(data_pair_ref)
@@ -267,6 +368,41 @@ class StructureSimilarity(object):
 		sql_ref.close()
 
 		return Fnat
+
+	# compute only Fnat
+	def compute_Fnat_residue(self,cutoff=5.0):
+
+		# create the sql
+		sql_decoy = pdb2sql(self.decoy,sqlfile='mol1.db')
+		sql_ref = pdb2sql(self.ref,sqlfile='mol2.db')
+
+		# get the contact atoms
+		residue_pairs_decoy = sql_decoy.get_contact_residue(cutoff=cutoff,return_contact_pairs=True,excludeH=True)
+		residue_pairs_ref   = sql_ref.get_contact_residue(cutoff=cutoff,return_contact_pairs=True,excludeH=True)
+
+
+		# form the pair data
+		data_pair_decoy = []
+		for resA,resB_list in residue_pairs_decoy.items():
+			data_pair_decoy += [  (resA,resB) for resB in resB_list   ]
+
+		# form the pair data
+		data_pair_ref = []
+		for resA,resB_list in residue_pairs_ref.items():
+			data_pair_ref += [  (resA,resB) for resB in resB_list     ]
+
+
+		# find the umber of residue that ref and decoys hace in common
+		nCommon = len(set(data_pair_ref).intersection(data_pair_decoy))
+
+		# normalize
+		Fnat = nCommon/len(data_pair_ref)
+
+		sql_decoy.close()
+		sql_ref.close()
+
+		return Fnat
+
 
 
 	@staticmethod
@@ -336,17 +472,14 @@ class StructureSimilarity(object):
 		if pshape[0] == qshape[0]:
 			npts = pshape[0]
 		else:
-			print("Matrix don't have the same number of points")
-			print(P.shape,Q.shape)
-			sys.exit()
+			raise ValueError("Matrix don't have the same number of points",P.shape,Q.shape)
+			
 
 
 		p0,q0 = np.abs(np.mean(P,0)),np.abs(np.mean(Q,0))
 		eps = 1E-6
 		if any(p0 > eps) or any(q0 > eps):
-			print('Center the fragments first')
-			print(p0,q0)
-			sys.exit()
+			raise ValueErrir('You must center the fragment first',p0,q0)
 
 
 		# form the covariance matrix
@@ -372,6 +505,48 @@ class StructureSimilarity(object):
 
 		return U
 
+#####################################################################################
+#
+#	THE MAIN FUNCTION CALLED IN THE INTERNAL TARGET CALCULATOR
+#
+#####################################################################################
+
+def __compute_target__(decoy,outdir='./'):
+
+	mol_name = decoy.split('/')[-1][:-4]
+	export_file = outdir + '/' + mol_name
+
+	# get the reference
+	ref = os.path.dirname(os.path.realpath(decoy)) + '/ref.pdb'
+
+	# if the two files are the same and contains the same data
+	# we have a native file
+	if os.path.getsize(decoy) == os.path.getize(ref):
+		if open(decoy,'r').read() == open(ref,'r').read():
+
+			# lrmsd = irmsd = 0 | fnat = dockq = 1
+			np.savetxt(export_file+'.LRMSD',[0.0])
+			np.savetxt(export_file+'.IRMSD',[0.0])
+			np.savetxt(export_file+'.FNAT',[1.0])
+			np.savetxt(export_file+'.DOCKQ',[1.0])
+
+	# or it's a decoy
+	else:
+
+		# init the class
+		sim = StructureSimilarity(decoy,ref)
+
+		lrmsd = sim.compute_lrmsd()
+		np.savetxt(export_file+'.LRMSD',[lrmsd])
+
+		irmsd = sim.compute_irmsd()
+		np.savetxt(export_file+'.IRMSD',[irmsd])
+
+		Fnat = sim.compute_Fnat()
+		np.savetxt(export_file+'.FNAT',[Fnat])
+
+		dockQ = sim.compute_DockQScore(Fnat,lrmsd,irmsd)
+		np.savetxt(export_file+'.DOCKQ',[dockQ])
 
 
 if __name__ == '__main__':
@@ -379,13 +554,13 @@ if __name__ == '__main__':
 	#test_points()
 
 	BM4 = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
-	mol1 = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_100w.pdb'
-	mol2 = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_1w.pdb'
+	decoy = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_100w.pdb'
+	ref = BM4 + 'BM4_dimers_bound/pdbFLs_refined/1AK4.pdb'
 
-	CAPRI = '/home/nico/Documents/projects/deeprank/data/CAPRI/'
-	decoy = CAPRI + 'T29/complex_0024.pdb'
+	#CAPRI = '/home/nico/Documents/projects/deeprank/data/CAPRI/'
+	#decoy = CAPRI + 'T29/complex_0024.pdb'
 	#decoy = CAPRI + 'T29/2vdu_chainFD.pdb'
-	ref = CAPRI + 'T29/2vdu_chainEB.pdb'
+	#ref = CAPRI + 'T29/2vdu_chainEB.pdb'
 
 	sim = StructureSimilarity(decoy,ref)
 

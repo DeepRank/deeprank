@@ -68,21 +68,22 @@ class atomicFeature(FeatureClass):
 	'''
 
 	def __init__(self,pdbfile,param_charge=None,param_vdw=None,patch_file=None,
-		contact_distance=8.5, root_export = './'):
+		contact_distance=8.5, root_export = './',individual_directory=False,verbose=False):
 
 		'''
 		subclass the main feature class
 		'''
 		super().__init__("Atomic")
 
-		# set a few thongs
+		# set a few things
 		self.pdbfile = pdbfile
 		self.sqlfile = '_mol.db'
 		self.param_charge = param_charge
 		self.param_vdw = param_vdw
 		self.patch_file = patch_file
 		self.contact_distance = contact_distance
-		
+		self.individual_directory = individual_directory
+		self.verbose = verbose
 
 		# a few constant
 		self.eps0 = 1
@@ -340,7 +341,9 @@ class atomicFeature(FeatureClass):
 		'''
 
 		# get all the resnumbers
-		print('-- Assign force field parameters')
+		if self.verbose:
+			print('-- Assign force field parameters')
+
 		data = self.sqldb.get('chainID,resSeq,resName')
 		natom = len(data)
 		data = np.unique(np.array(data),axis=0)
@@ -500,7 +503,8 @@ class atomicFeature(FeatureClass):
 
 	def evaluate_charges(self,extend_contact_to_residue=False):
 
-		print('-- Compute list charge for contact atoms only')
+		if self.verbose:
+			print('-- Compute list charge for contact atoms only')
 
 		if len(self.contact_atoms_A) == 0:
 			self.feature_data['charge'] = {}
@@ -540,7 +544,10 @@ class atomicFeature(FeatureClass):
 
 		# add the electrosatic feature
 		self.feature_data['charge'] = charge_data
-		self.export_directories['charge'] = self.root_export+'/CHARGE/'
+		if self.individual_directory:
+			self.export_directories['charge'] = self.root_export+'/CHARGE/'
+		else:
+			self.export_directories['charge'] = self.root_export 
 
 	#####################################################################################
 	#
@@ -550,7 +557,8 @@ class atomicFeature(FeatureClass):
 
 	def evaluate_pair_interaction(self,print_interactions=False,export_details_dir=None):
 
-		print('-- Compute interaction energy for contact pairs only')
+		if self.verbose:
+			print('-- Compute interaction energy for contact pairs only')
 		
 		if len(self.contact_atoms_A) == 0:
 			self.feature_data['coulomb'] = {}
@@ -676,11 +684,17 @@ class atomicFeature(FeatureClass):
 
 		# add the electrosatic feature
 		self.feature_data['coulomb'] = electro_data
-		self.export_directories['coulomb'] = self.root_export+'/ELEC/'
+		if self.individual_directory:
+			self.export_directories['coulomb'] = self.root_export+'/ELEC/'
+		else:
+			self.export_directories['coulomb'] = self.root_export
 
 		# add the vdw feature
 		self.feature_data['vdwaals'] = vdw_data
-		self.export_directories['vdwaals'] = self.root_export+'/VDW/'
+		if self.individual_directory:
+			self.export_directories['vdwaals'] = self.root_export+'/VDW/'
+		else:
+			self.export_directories['vdwaals'] = self.root_export
 
 
 	#####################################################################################
@@ -691,7 +705,8 @@ class atomicFeature(FeatureClass):
 
 	def compute_coulomb_interchain_only(self,dosum=True,contact_only=False):
 
-		print('-- Compute coulomb energy interchain only')
+		if self.verbose:
+			print('-- Compute coulomb energy interchain only')
 
 		if contact_only:
 
@@ -757,8 +772,10 @@ class atomicFeature(FeatureClass):
 
 		# add the feature to the dictionary of features
 		self.feature_data['coulomb'] = electro_data
-		self.export_directories['coulomb'] = self.root_export+'/ELEC/'
-
+		if self.individual_directory:
+			self.export_directories['coulomb'] = self.root_export+'/ELEC/'
+		else:
+			self.export_directories['coulomb'] = self.root_export
 
 
 	#####################################################################################
@@ -770,8 +787,8 @@ class atomicFeature(FeatureClass):
 
 	def compute_vdw_interchain_only(self,dosum=True,contact_only=False):
 
-
-		print('-- Compute vdw energy interchain only')
+		if self.verbose:
+			print('-- Compute vdw energy interchain only')
 
 		if contact_only:
 
@@ -846,7 +863,10 @@ class atomicFeature(FeatureClass):
 
 		# add the feature to the dictionary of features
 		self.feature_data['vdwaals'] = vdw_data
-		self.export_directories['vdwaals'] = self.root_export+'/VDW/'
+		if self.individual_directory:
+			self.export_directories['vdwaals'] = self.root_export+'/VDW/'
+		else:
+			self.export_directories['vdwaals'] = self.root_export
 
 	def _prefactor_vdw(self,r):
 		r_off,r_on = 8.5,6.5
@@ -865,3 +885,36 @@ class atomicFeature(FeatureClass):
 	def export_data(self):
 		bare_mol_name = self.pdbfile.split('/')[-1][:-4]
 		super().export_data(bare_mol_name)
+
+
+#####################################################################################
+#
+#	THE MAIN FUNCTION CALLED IN THE INTERNAL FEATURE CALCULATOR
+#
+#####################################################################################
+
+def __compute_feature__(pdb,outdir='./'):
+
+	path = os.path.dirname(os.path.realpath(__file__))
+	FF = path + '/forcefield/'
+
+	atfeat = atomicFeature(pdb,
+		                   param_charge = FF + 'protein-allhdg5-4_new.top',
+						   param_vdw    = FF + 'protein-allhdg5-4_new.param',
+						   patch_file   = FF + 'patch.top',
+						   root_export = outdir,
+						   individual_directory=False)
+
+	atfeat.assign_parameters()
+
+	# only compute the pair interactions here
+	atfeat.evaluate_pair_interaction(print_interactions=False)
+
+	# compute the charges
+	# here we extand the contact atoms to
+	# entire residue containing at least 1 contact atom
+	atfeat.evaluate_charges(extend_contact_to_residue=True)
+
+	atfeat.export_data()
+	atfeat.sqldb.close()
+	
