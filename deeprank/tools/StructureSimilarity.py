@@ -28,7 +28,7 @@ class StructureSimilarity(object):
 		and computing the RMSD of the shortest chain between decoy and ref
 		'''
 
-		# create teh sql
+		# create the sql
 		sql_decoy = pdb2sql(self.decoy,sqlfile='decoy.db')
 		sql_ref = pdb2sql(self.ref,sqlfile='ref.db')
 
