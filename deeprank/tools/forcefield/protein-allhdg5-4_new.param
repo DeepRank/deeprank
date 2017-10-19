@@ -1,0 +1,200 @@
+#---Line 1393 -
+#NONBonded  C       0.0903   3.2072      0.0903   3.2072
+#NONBonded  CCIS    0.0903   3.2072      0.0903   3.2072
+#NONBonded  CR1E    0.0903   3.2072      0.0903   3.2072
+#NONBonded  CF      0.0903   3.2072      0.0903   3.2072
+#NONBonded  CY      0.0903   3.2072      0.0903   3.2072
+#NONBonded  CY2     0.0903   3.2072      0.0903   3.2072
+#NONBonded  CR1W    0.0903   3.2072      0.0903   3.2072
+#NONBonded  CW      0.0903   3.2072      0.0903   3.2072
+#NONBonded  C5W     0.0903   3.2072      0.0903   3.2072
+#NONBonded  CN      0.0903   3.2072      0.0903   3.2072
+#NONBonded  C5      0.0903   3.2072      0.0903   3.2072
+#NONBonded  CH1E    0.0903   3.2072      0.0903   3.2072
+#NONBonded  CH2E    0.0903   3.2072      0.0903   3.2072
+#NONBonded  CH3E    0.0903   3.2072      0.0903   3.2072
+#NONBonded  CH2G    0.0903   3.2072      0.0903   3.2072
+#NONBonded  CH2P    0.0903   3.2072      0.0903   3.2072
+#NONBonded  CH1P    0.0903   3.2072      0.0903   3.2072
+#NONBonded  CRH     0.0903   3.2072      0.0903   3.2072
+#NONBonded  CR1H    0.0903   3.2072      0.0903   3.2072
+#NONBonded  CRHH    0.0903   3.2072      0.0903   3.2072
+#NONBonded  H       0.0498   1.4254      0.0498   1.4254
+#NONBonded  HA      0.0045   2.6157      0.0045   2.6157
+#NONBonded  HC      0.0498   1.4254      0.0498   1.4254
+#NONBonded  N       0.1592   2.7618      0.1592   2.7618
+#NONBonded  NR      0.1592   2.7618      0.1592   2.7618
+#NONBonded  NH1     0.1592   2.7618      0.1592   2.7618
+#NONBonded  NH2     0.1592   2.7618      0.1592   2.7618
+#NONBonded  NH3     0.1592   2.7618      0.1592   2.7618
+#NONBonded  NC2     0.1592   2.7618      0.1592   2.7618
+#NONBonded  NC3     0.1592   2.7618      0.1592   2.7618
+#NONBonded  NC4     0.1592   2.7618      0.1592   2.7618
+#NONBonded  O       0.2342   2.6406      0.2342   2.6406
+#NONBonded  OC      1.0244   2.6406      1.0244   2.6406
+#NONBonded  OH1     0.2342   2.6406      0.2342   2.6406
+#NONBonded  OHP     0.2342   2.6406      0.2342   2.6406
+#NONBonded  OUF     0.2342   2.6406      0.2342   2.6406
+#NONBonded  S       0.0239   3.3854      0.0239   3.3854
+#NONBonded  SM      0.0239   3.3854      0.0239   3.3854
+#NONBonded  SH1E    0.0239   3.3854      0.0239   3.3854
+#NONBonded  SUF     0.0239   3.3854      0.0239   3.3854
+#-- Line  1466
+NONBonded  C       0.105   3.750       0.013    3.750  
+NONBonded  CYAA    0.105   3.750       0.013    3.750  
+NONBonded  CCIS    0.105   3.750       0.013    3.750  
+# NONBonded  C       0.110   3.750       0.014    3.750
+NONBonded  CY2     0.105   3.750       0.013    3.750  
+NONBonded  CF      0.110   3.750       0.014    3.750  
+NONBonded  CY      0.110   3.750       0.014    3.750  
+NONBonded  CW      0.145   3.750       0.018    3.750  
+# NONBonded  CW      0.130   3.750       0.016    3.750
+NONBonded  CR1E    0.110   3.750       0.014    3.750  
+# NONBonded  CR1E    0.130   3.750       0.016    3.750
+NONBonded  CR1H    0.145   3.750       0.018    3.750  
+NONBonded  CR1W    0.110   3.750       0.014    3.750  
+NONBonded  CH1E    0.080   3.800       0.010    3.800  
+# NONBonded  CH1E    0.080   3.850       0.010    3.850
+NONBonded  CRHH    0.145   3.750       0.018    3.750  
+NONBonded  C5W     0.145   3.750       0.018    3.750  
+NONBonded  CH2G    0.118   3.800       0.015    3.800  
+NONBonded  CH2P    0.118   3.905       0.015    3.905  
+NONBonded  CH1P    0.118   3.905       0.015    3.905  
+# NONBonded  CH2P    0.118   3.800       0.015    3.800 
+NONBonded  CH2E    0.118   3.905       0.015    3.905  
+# NONBonded  CH3E    0.118   3.905       0.015    3.905  
+NONBonded  CH3E    0.160   3.910       0.020    3.910  
+# NONBonded  CH3E    0.175   3.905       0.022    3.905
+# NONBonded  CH3E    0.170   3.800       0.021    3.800
+NONBonded  C5      0.145   3.750       0.145    3.750  
+NONBonded  CRH     0.145   3.750       0.145    3.750  
+
+NONBonded  H       0.05     0.50        0.004     0.50
+NONBonded  HA      0.05     0.50        0.004     0.50
+NONBonded  HC      0.05     0.50        0.004     0.50
+
+# dummy atom
+NONBonded  DD      0.01     0.01        0.01     0.01
+
+NONBonded  N       0.170    3.250       0.021    3.250
+NONBonded  NR      0.170    3.250       0.021    3.250
+NONBonded  NH1     0.170    3.250       0.021    3.250
+NONBonded  NH2     0.170    3.250       0.021    3.250
+NONBonded  NH3     0.170    3.250       0.021    3.250
+NONBonded  NC2     0.170    3.250       0.021    3.250
+NONBonded  NC3     0.170    3.250       0.021    3.250
+NONBonded  NC4     0.170    3.250       0.021    3.250
+
+NONBonded  O       0.210    2.960       0.021    2.960
+NONBonded  OC      0.210    2.960       0.021    2.960
+NONBonded  OP1     0.210    2.960       0.021    2.960
+NONBonded  OR3     0.210    2.960       0.021    2.960
+NONBonded  OH1     0.170    3.070       0.021    3.070
+NONBonded  OHP     0.170    3.070       0.021    3.070
+NONBonded  OUF     0.170    3.070       0.021    3.070
+NONBonded  PP      0.2000   3.738       0.085    3.738
+NONBonded  S       0.250    3.550       0.031    3.550
+NONBonded  SM      0.250    3.550       0.031    3.550
+NONBonded  SH1E    0.250    3.550       0.031    3.550
+NONBonded  SUF     0.250    3.550       0.031    3.550
+# next two for iron-sulphur cluster
+NONBonded  SF      0.250    3.550       0.031    3.550 
+NONBonded  FS      0.010    2.270       0.010    2.270 
+
+##---- Line 1554
+#NONBonded  H       0.0498   1.4254      0.0498   1.4254
+#NONBonded  HA      0.0498   1.4254      0.0450   2.6157 #- charged group.
+#NONBonded  HC      0.0498   1.0691      0.0498   1.0691 #   Reduced vdw radius
+##
+#NONBonded  C       0.1200   3.7418      0.1000   3.3854 # carbonyl carbon
+#NONBonded  CCIS    0.1200   3.7418      0.1000   3.3854 # carbonyl carbon
+#NONBonded  C5      0.1200   3.7418      0.1000   3.3854 # carbonyl carbon
+#NONBonded  C5W     0.1200   3.7418      0.1000   3.3854 # carbonyl carbon
+#NONBonded  CF      0.1200   3.7418      0.1000   3.3854 # carbonyl carbon
+#NONBonded  CW      0.1200   3.7418      0.1000   3.3854 # carbonyl carbon
+#NONBonded  CY      0.1200   3.7418      0.1000   3.3854 # carbonyl carbon
+#NONBonded  CY2     0.1200   3.7418      0.1000   3.3854 # carbonyl carbon
+#NONBonded  CH1E    0.0486   4.2140      0.1000   3.3854 # \
+#NONBonded  CH2E    0.1142   3.9823      0.1000   3.3854 #  extended carbons
+#NONBonded  CH2G    0.1142   3.9823      0.1000   3.3854 #  extended carbons
+#NONBonded  CH2P    0.1142   3.9823      0.1000   3.3854 #  extended carbons
+#NONBonded  CH1P    0.1142   3.9823      0.1000   3.3854 #  extended carbons
+#NONBonded  CH3E    0.1811   3.8576      0.1000   3.3854 # /
+## NONBonded  CM      0.0262   4.4367      0.1000   3.3854
+#NONBonded  CR1E    0.1200   3.7418      0.1000   3.3854 #  ring carbons
+#NONBonded  CR1H    0.1200   3.7418      0.1000   3.3854 #  ring carbons
+#NONBonded  CR1W    0.1200   3.7418      0.1000   3.3854 #  ring carbons
+#NONBonded  CRHH    0.1200   3.7418      0.1000   3.3854 #  ring carbons
+#NONBonded  CRH     0.1200   3.7418      0.1000   3.3854 #  ring carbons
+## NONBonded  CT      0.0262   4.4367      0.1000   3.3854
+##
+#NONBonded  N       0.2384   2.8509      0.2384   2.8509
+#NONBonded  NC2     0.2384   2.8509      0.2384   2.8509
+#NONBonded  NC3     0.2384   2.8509      0.2384   2.8509
+#NONBonded  NC4     0.2384   2.8509      0.2384   2.8509
+#NONBonded  NH1     0.2384   2.8509      0.2384   2.8509
+#NONBonded  NH2     0.2384   2.8509      0.2384   2.8509
+#NONBonded  NH3     0.2384   2.8509      0.2384   2.8509
+#NONBonded  NP      0.2384   2.8509      0.2384   2.8509
+#NONBonded  NR      0.2384   2.8509      0.2384   2.8509
+##
+#NONBonded  O       0.1591   2.8509      0.1591   2.8509
+#NONBonded  OC      0.6469   2.8509      0.6469   2.8509
+#NONBonded  OH1     0.1591   2.8509      0.1591   2.8509
+#NONBonded  OHP     0.1591   2.8509      0.1591   2.8509
+#NONBonded  OUF     0.1591   2.8509      0.1591   2.8509
+## NONBonded  OM      0.1591   2.8509      0.1591   2.8509
+#NONBonded  OS      0.1591   2.8509      0.1591   2.8509
+##
+#NONBonded  S       0.0430   3.3676      0.0430   3.3676
+#NONBonded  SM      0.0430   3.3676      0.0430   3.3676
+#NONBonded  SH1E    0.0430   3.3676      0.0430   3.3676
+#NONBonded  SUF    0.0430   3.3676      0.0430   3.3676
+##
+## NONBONDED FE        0.0000    1.1582      0.0000 1.1582
+#
+#
+#--- Line  1624
+#
+#NONBonded  C       0.0903   3.3409      0.0903   3.3409
+#NONBonded  CCIS    0.0903   3.3409      0.0903   3.3409
+#NONBonded  CR1E      0.1200   3.3409      0.1200   3.3409
+#NONBonded  CF      0.1200   3.3409      0.1200   3.3409
+#NONBonded  CY      0.1200   3.3409      0.1200   3.3409
+#NONBonded  CY2      0.1200   3.3409      0.1200   3.3409
+#NONBonded  CR1W      0.1200   3.3409      0.1200   3.3409
+#NONBonded  CW      0.1450   3.3409      0.1450   3.3409
+#NONBonded  C5W      0.1450   3.3409      0.1450   3.3409
+#NONBonded  CN      0.1450   3.3409      0.1450   3.3409
+#NONBonded  C5      0.1200   3.3409      0.1200   3.3409
+#NONBonded  CH1E      0.0903   3.3409      0.0903   3.3409
+#NONBonded  CH2E      0.0903   3.3409      0.0903   3.3409
+#NONBonded  CH3E      0.0903   3.3409      0.0903   3.3409
+#NONBonded  CH2G      0.0903   3.3409      0.0903   3.3409
+#NONBonded  CH2P      0.1450   3.3409      0.1450   3.3409
+#NONBonded  CH1P      0.1450   3.3409      0.1450   3.3409
+#NONBonded  CRH      0.1200   3.3409      0.1200   3.3409
+#NONBonded  CR1H      0.1200   3.3409      0.1200   3.3409
+#NONBonded  CRHH      0.1200   3.3409      0.1200   3.3409
+#NONBonded  H       0.0498   2.2272      0.0498   2.2272
+#NONBonded  HA      0.0045   2.2272      0.0045   2.2272
+#NONBonded  HC      0.0498   2.2272      0.0498   2.2272
+#NONBonded  N       0.1592   3.0068      0.1592   3.0068
+#NONBonded  NR      0.1592   3.0068      0.1592   3.0068
+#NONBonded  NH1      0.1592   3.0068      0.1592   3.0068
+#NONBonded  NH2     0.1592   3.0068      0.1592   3.0068
+#NONBonded  NH3     0.1592   3.0068      0.1592   3.0068
+#NONBonded  NC2     0.1592   3.0068      0.1592   3.0068
+#NONBonded  NC3     0.1592   3.0068      0.1592   3.0068
+#NONBonded  NC4     0.1592   3.0068      0.1592   3.0068
+#NONBonded  O       0.2342   2.7755      0.2342   2.7755
+#NONBonded  OC      1.0244   2.7755      1.0244   2.7755
+#NONBonded  OH1      0.2342   2.7755      0.2342   2.7755
+#NONBonded  OHP      0.2342   2.7755      0.2342   2.7755
+#NONBonded  OUF      0.2342   2.7755      0.2342   2.7755
+#NONBonded  S        0.0239   3.7458      0.0239   3.7458
+#NONBonded  SM       0.0239   3.7458      0.0239   3.7458
+#NONBonded  SH1E       0.0239   3.7458      0.0239   3.7458
+#NONBonded  SUF       0.0239   3.7458      0.0239   3.7458
+#
+#
