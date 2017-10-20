@@ -1,6 +1,6 @@
 import numpy as np
 from deeprank.tools import transform, pdb2sql 
-import sys,os,time
+import sys,os,time,pickle
 
 '''
 	Replacement of ProFit by an internal module for simpler worflow
@@ -28,7 +28,8 @@ import sys,os,time
 
 	FNAT Calculation
 
-			compute_Fnat
+			compute_Fnat_fast
+			compute_Fnat_pdb2sql
 
 	DockQ calculation
 
@@ -38,6 +39,7 @@ import sys,os,time
 
 			compute_izone
 			compute_lzone
+
 '''
 
 class StructureSimilarity(object):
@@ -152,6 +154,9 @@ class StructureSimilarity(object):
 		data_test = [tuple(data) for data in sql_ref.get('chainID,resSeq',chainID=long_chain)]
 		data_test = sorted(set(data_test))
 
+		# close the sql
+		sql_ref.close()
+
 		if save_file:
 			if filename is None:
 				f = open(self.ref.split('.')[0]+'.lzone','w')
@@ -251,7 +256,7 @@ class StructureSimilarity(object):
 
 
 
-	def compute_izone(self,cutoff,save_file=True,filename=None):
+	def compute_izone(self,cutoff=5.0,save_file=True,filename=None):
 
 		sql_ref = pdb2sql(self.ref)
 		contact_ref = sql_ref.get_contact_atoms(cutoff=cutoff,extend_to_residue=True,return_only_backbone_atoms=True)
@@ -261,6 +266,9 @@ class StructureSimilarity(object):
 		xyz_contact_ref = sql_ref.get('x,y,z',index=index_contact_ref)
 		data_test = [tuple(data) for data in sql_ref.get('chainID,resSeq',index=index_contact_ref)]
 		data_test = sorted(set(data_test))
+
+		# close the sql
+		sql_ref.close()
 
 		if save_file:
 
@@ -286,6 +294,96 @@ class StructureSimilarity(object):
 					resData[chain] = []
 				resData[chain].append(num)
 			return resData
+
+	################################################################################################
+	#
+	#	ROUTINE TO COMPUTE THE FNAT QUICKLY
+	#
+	#################################################################################################
+
+	def compute_Fnat_fast(self,ref_pairs=None,cutoff=10):
+
+
+		# read the izone file
+		if ref_pairs is None:
+			residue_pairs_ref = self.compute_residue_pairs_ref(cutoff,save_file=False)
+
+		elif not os.path.isfile(ref_pairs):
+			self.compute_residue_pairs_ref(cutoff,save_file=True,filename=ref_pairs)
+			residue_pairs_ref = pickle.load(open(ref_pairs,'rb'))
+
+		else:
+			residue_pairs_ref = pickle.load(open(ref_pairs,'rb'))
+
+		# create a dict of the ecoy data
+		with open(self.decoy,'r') as f:
+			data_decoy = f.readlines()
+
+		# read the decoy data
+		atom_decoy, xyz_decoy = [],[]
+		residue_xyz = {}
+		residue_name = {}
+		for line in data_decoy:
+
+			if line.startswith('ATOM'):
+
+				chainID = line[21]
+				if chainID == ' ':
+					chainID = line[72]
+
+				resSeq = int(line[22:26])
+				resName = line[17:20].strip()
+				name = line[12:16].strip()
+
+				x = float(line[30:38])
+				y = float(line[38:46])
+				z = float(line[46:54])
+
+				key = (chainID,resSeq,resName)
+
+				if key not in residue_xyz.keys():
+					residue_xyz[key] = []
+					residue_name[key] = []
+
+				if name in ['CA','C','N','O']:
+					residue_xyz[key].append([x,y,z])
+					residue_name[key].append(name)
+
+		# loop over the residue pairs of the 
+		nCommon,nTotal = 0,0
+		for resA,resB_list in residue_pairs_ref.items():
+			xyzA = residue_xyz[resA]
+			for resB in resB_list:
+				if resB in residue_xyz.keys():
+					xyzB = residue_xyz[resB]
+					dist_min = np.array([  np.sqrt(np.sum((np.array(p1)-np.array(p2))**2)) for p1 in xyzA for p2 in xyzB  ]).min()
+					if dist_min<cutoff:
+						nCommon += 1
+				nTotal += 1
+
+		# normalize
+		return nCommon/nTotal
+
+	# compute the residue pair of the reference
+	def compute_residue_pairs_ref(self,cutoff=10,save_file=True,filename=None):
+
+		sql_ref = pdb2sql(self.ref,sqlfile='mol2.db')
+		residue_pairs_ref   = sql_ref.get_contact_residue(cutoff=cutoff,return_contact_pairs=True,excludeH=True)
+		sql_ref.close()
+
+		if save_file:
+			if filename is None:
+				f = open(self.ref.split('.')[0]+'residue_contact_pairs.pckl','wb')
+			else:
+				f = open(filename,'wb')
+
+			# save as pickle
+			pickle.dump(residue_pairs_ref,f)
+			return
+		else:
+			return residue_pairs_ref
+
+
 
 	################################################################################################
 	#
@@ -569,7 +667,7 @@ class StructureSimilarity(object):
 	#
 	#################################################################################################
 
-	def compute_Fnat(self,cutoff=5.0):
+	def compute_Fnat_pdb2sql(self,cutoff=5.0):
 
 		# create the sql
 		sql_decoy = pdb2sql(self.decoy,sqlfile='mol1.db')
