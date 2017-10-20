@@ -11,3 +11,10 @@ example/grid/VDW
 example/grid/data_viz
 example/grid/input 
 example/workflow/test_out
+
+# datafile
+*.pdb
+*.CHARGE
+*.db
+*.COULOMB
+*.VDWAALS

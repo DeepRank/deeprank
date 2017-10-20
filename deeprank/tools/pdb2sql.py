@@ -458,10 +458,22 @@ class pdb2sql(object):
 		strind = ','.join(map(str,index))
 		return self.get(atnames,where="rowID in ({ind})".format(ind=strind))
 
+	############################################################################3
+	#
 	# get the contact atoms
+	# this is getting out of hand
+	# there are too many options and this
+	# should NOT be part of the main class.
+	# 
+	# we should have a entire module called pdb2sql
+	# with a submodule pdb2sql.interface that finds contact atoms/residues
+	# and possbily other submodules to do other things
+	# that will leave only the get / put methods in the main class
+	#
+	#############################################################################
 	def get_contact_atoms(self,cutoff=8.5,chain1='A',chain2='B',
 		                  extend_to_residue=False,only_backbone_atoms=False,
-		                  excludeH=False,return_contact_pairs=False):
+		                  excludeH=False,return_only_backbone_atoms=False,return_contact_pairs=False):
 
 		# xyz of the chains
 		xyz1 = np.array(self.get('x,y,z',chain=chain1))
@@ -512,8 +524,30 @@ class pdb2sql(object):
 		if len(index_contact_1)==0:
 			print('Warning : No contact atoms detected in pdb2sql')
 
+		# extend the list to entire residue
 		if extend_to_residue:
 			index_contact_1,index_contact_2 = self._extend_contact_to_residue(index_contact_1,index_contact_2,only_backbone_atoms)	
+
+
+		# filter only the backbone atoms
+		if return_only_backbone_atoms and not only_backbone_atoms:
+
+			# get all the names
+			# there are better ways to do that !
+			atNames = np.array(self.get('name'))
+
+			# change the index_contacts
+			index_contact_1 = [  ind for ind in index_contact_1 if atNames[ind] in self.backbone_type ]
+			index_contact_2 = [  ind for ind in index_contact_2 if atNames[ind] in self.backbone_type ]
+
+			# change the contact pairs
+			tmp_dict = {}
+			for ind1,ind2_list in index_contact_pairs.items():
+
+				if atNames[ind1] in self.backbone_type:
+					tmp_dict[ind1] = [ind2 for ind2 in ind2_list if atNames[ind2] in self.backbone_type]
+
+			index_contact_pairs = tmp_dict
 
 		# not sure that's the best way of dealing with that
 		if return_contact_pairs:
