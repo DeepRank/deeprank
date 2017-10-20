@@ -1,25 +1,303 @@
 import numpy as np
 from deeprank.tools import transform, pdb2sql 
-import sys,os
+import sys,os,time
 
 '''
-Class to compute the
-	L-RMS
-	I-RMS
-	Fnat
-	DockQ score
-of a decoy versus a ref
+	Replacement of ProFit by an internal module for simpler worflow
+
+	ARGUMENTS
+
+	decoy
+			path to a decoy pdb file
+
+	ref
+			path to a native pdb file
+
+
+	METHODS
+
+	LRMSD Calculation
+
+			compute_lrmsd_fast 			
+			compute_lrmsd_pdb2sql
+
+	IRMSD Calculation 
+
+			compute_irmsd_fast 			
+			compute_irmsd_pdb2sql
+
+	FNAT Calculation
+
+			compute_Fnat
+
+	DockQ calculation
+
+			compute_DockQScore
+
+	zone calculation
+
+			compute_izone
+			compute_lzone
 '''
 
 class StructureSimilarity(object):
 
 	def __init__(self,decoy,ref,verbose=False):
+
 		self.decoy = decoy
 		self.ref = ref
 		self.verbose = verbose
 
+
+	################################################################################################
+	#
+	#	FAST ROUTINE TO COMPUTE THE L-RMSD
+	# 	Require the precalculation of the lzone 
+	#	A dedicated routine is implemented to comoute the lzone
+	#	if lzone is not given in argument the routine will compute them automatically
+	#
+	#################################################################################################
+
 	# compute the L-RMSD
-	def compute_lrmsd(self,exportpath=None,method='svd'):
+	def compute_lrmsd_fast(self,lzone=None,method='svd',check=True):
+
+		'''
+		Ref : DockQ: A Quality Measure for Protein-Protein Docking Models
+		      http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879
+		L-RMSD is computed by aligning the longest chain of the decoy to the one of the reference
+		and computing the RMSD of the shortest chain between decoy and ref
+		'''
+
+		# create/read the lzone file
+		if lzone is None:
+			resData = self.compute_lzone(save_file=False)
+		elif not os.path.isfile(lzone):
+			self.compute_lzone(save_file=True,filename=lzone)
+			resData = self.read_zone(lzone)
+		else:	
+			resData = self.read_zone(lzone)
+
+		if check:
+
+			data_decoy_long, data_decoy_short  = self.read_data_zone(self.decoy,resData,return_not_in_zone=True)
+			data_ref_long,   data_ref_short    = self.read_data_zone(self.ref,resData,return_not_in_zone=True)
+
+			atom_decoy_long = [ data[:3] for data in data_decoy_long ]
+			atom_ref_long   = [ data[:3] for data in data_ref_long ]
+
+			xyz_decoy_long, xyz_ref_long = [],[]
+			for ind_decoy, at in enumerate(atom_decoy_long):
+				try:
+					ind_ref = atom_ref_long.index(at)
+					xyz_decoy_long.append(data_decoy_long[ind_decoy][3:])
+					xyz_ref_long.append(data_ref_long[ind_ref][3:])
+				except:
+					pass
+
+			atom_decoy_short = [data[:3] for data in data_decoy_short]
+			atom_ref_short   = [data[:3] for data in data_ref_short]
+
+			xyz_decoy_short, xyz_ref_short = [],[]
+			for ind_decoy, at in enumerate(atom_decoy_short):
+				try:
+					ind_ref = atom_ref_short.index(at)
+					xyz_decoy_short.append(data_decoy_short[ind_decoy][3:])
+					xyz_ref_short.append(data_ref_short[ind_ref][3:])
+				except:
+					pass
+
+
+		# extract the xyz
+		else:
+
+			xyz_decoy_long,xyz_decoy_short  = self.read_xyz_zone(self.decoy,resData,return_not_in_zone=True)
+			xyz_ref_long,xyz_ref_short  = self.read_xyz_zone(self.ref,resData,return_not_in_zone=True)
+
+		# get the translation so that both A chains are centered
+		tr_decoy = self.get_trans_vect(xyz_decoy_long)
+		tr_ref = self.get_trans_vect(xyz_ref_long)
+
+		# translate everything for 1
+		xyz_decoy_short = transform.translation(xyz_decoy_short,tr_decoy)
+		xyz_decoy_long = transform.translation(xyz_decoy_long,tr_decoy)
+
+		# translate everuthing for 2
+		xyz_ref_short = transform.translation(xyz_ref_short,tr_ref)
+		xyz_ref_long = transform.translation(xyz_ref_long,tr_ref)
+
+		# get the ideql rotation matrix
+		# to superimpose the A chains
+		U = self.get_rotation_matrix(xyz_decoy_long,xyz_ref_long,method=method)
+
+		# rotate the entire fragment
+		xyz_decoy_short = transform.rotation_matrix(xyz_decoy_short,U,center=False)
+
+		# compute the RMSD
+		return self.get_rmsd(xyz_decoy_short,xyz_ref_short)
+
+
+	# compute the lzone file
+	def compute_lzone(self,save_file=True,filename=None):
+
+		sql_ref = pdb2sql(self.ref,sqlfile='ref.db')
+		nA = len(sql_ref.get('x,y,z',chain='A'))
+		nB = len(sql_ref.get('x,y,z',chain='B'))
+
+		# detect which chain is the longest
+		long_chain = 'A'
+		if nA<nB:
+			long_chain = 'B'
+		
+		# extract data about the residue
+		data_test = [tuple(data) for data in sql_ref.get('chainID,resSeq',chainID=long_chain)]
+		data_test = sorted(set(data_test))
+
+		if save_file:
+			if filename is None:
+				f = open(self.ref.split('.')[0]+'.lzone','w')
+			else:
+				f = open(filename,'w')
+			for res in data_test:
+				chain = res[0]
+				num = res[1]
+				f.write('zone %s%d-%s%d\n' %(chain,num,chain,num) )
+			f.close()
+			return
+
+		else:
+			resData = {}
+			for res in data_test:
+				chain = res[0]
+				num = res[1]
+
+				if chain not in resData.keys():
+					resData[chain] = []
+				resData[chain].append(num)
+			return resData
+
+
+	
+
+	################################################################################################
+	#
+	#	FAST ROUTINE TO COMPUTE THE I-RMSD
+	# 	Require the precalculation of the izone 
+	#	A dedicated routine is implemented to comoute the izone
+	#	if izone is not given in argument the routine will compute them autimatcally
+	#
+	#################################################################################################
+
+	def compute_irmsd_fast(self,izone=None,method='svd',cutoff=10,check=True):
+
+		'''
+		Ref : DockQ: A Quality Measure for Protein-Protein Docking Models
+		      http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879
+		i-RMSD is computed selecting the back bone of the contact residue with a cutoff of 10A
+		in the decoy. Align these as best as possible with their coutner part in the ref
+		and and compute the RMSD
+		'''
+
+		# read the izone file
+		if izone is None:
+			resData = self.compute_izone(cutoff,save_file=False)
+		elif not os.path.isfile(izone):
+			self.compute_izone(cutoff,save_file=True,filename=izone)
+			resData = self.read_zone(izone)
+		else:
+			resData = self.read_zone(izone)
+
+
+		if check:
+
+			data_decoy  = self.read_data_zone(self.decoy,resData,return_not_in_zone=False)
+			data_ref    = self.read_data_zone(self.ref,resData,return_not_in_zone=False)
+
+			atom_decoy = [ data[:3] for data in data_decoy]
+			atom_ref   = [ data[:3] for data in data_ref ]
+
+			xyz_contact_decoy, xyz_contact_ref = [],[]
+			for ind_decoy, at in enumerate(atom_decoy):
+				try:
+					ind_ref = atom_ref.index(at)
+					xyz_contact_decoy.append(data_decoy[ind_decoy][3:])
+					xyz_contact_ref.append(data_ref[ind_ref][3:])
+				except:
+					pass
+
+		# extract the xyz
+		else:
+
+			xyz_contact_decoy = self.read_xyz_zone(self.decoy,resData)
+			xyz_contact_ref   = self.read_xyz_zone(self.ref,resData)
+
+	
+		# get the translation so that both A chains are centered
+		tr_decoy = self.get_trans_vect(xyz_contact_decoy)
+		tr_ref   = self.get_trans_vect(xyz_contact_ref)
+
+		# translate everything 
+		xyz_contact_decoy = transform.translation(xyz_contact_decoy,tr_decoy)
+		xyz_contact_ref   = transform.translation(xyz_contact_ref,tr_ref)
+
+		# get the ideql rotation matrix
+		# to superimpose the A chains
+		U = self.get_rotation_matrix(xyz_contact_decoy,xyz_contact_ref,method=method)
+
+		# rotate the entire fragment
+		xyz_contact_decoy = transform.rotation_matrix(xyz_contact_decoy,U,center=False)
+
+		# return the RMSD
+		return self.get_rmsd(xyz_contact_decoy,xyz_contact_ref)
+
+
+
+	def compute_izone(self,cutoff,save_file=True,filename=None):
+
+		sql_ref = pdb2sql(self.ref)
+		contact_ref = sql_ref.get_contact_atoms(cutoff=cutoff,extend_to_residue=True,return_only_backbone_atoms=True)
+		index_contact_ref = contact_ref[0]+contact_ref[1]
+
+		# get the xyz and atom identifier of the decoy contact atoms
+		xyz_contact_ref = sql_ref.get('x,y,z',index=index_contact_ref)
+		data_test = [tuple(data) for data in sql_ref.get('chainID,resSeq',index=index_contact_ref)]
+		data_test = sorted(set(data_test))
+
+		if save_file:
+
+			if filename is None:
+				f = open(self.ref.split('.')[0]+'.izone','w')
+			else:
+				f = open(filename,'w')
+
+			for res in data_test:
+				chain = res[0]
+				num = res[1]
+				f.write('zone %s%d-%s%d\n' %(chain,num,chain,num) )
+			f.close()
+			return
+
+		else:
+			resData = {}
+			for res in data_test:
+				chain = res[0]
+				num = res[1]
+
+				if chain not in resData.keys():
+					resData[chain] = []
+				resData[chain].append(num)
+			return resData
+
+	################################################################################################
+	#
+	#	ROUTINE TO COMPUTE THE L-RMSD USING PDB2SQL
+	# 	DOES NOT REQUIRE THE PRECALCULATION OF ANYTHONG
+	#	CAN OUTPUT THE SUPERIMPOSED STRUCTURES
+	#	MUCH SLOWER THAN THE FAST ROUTINES BUT EASIER TO USE
+	#
+	#################################################################################################
+
+	# compute the L-RMSD
+	def compute_lrmsd_pdb2sql(self,exportpath=None,method='svd'):
 
 		'''
 		Ref : DockQ: A Quality Measure for Protein-Protein Docking Models
@@ -43,11 +321,9 @@ class StructureSimilarity(object):
 
 		# check the lengthes
 		if len(xyz_decoy_A) != len(xyz_ref_A):
-			#print('Clean the xyz of chain A')
 			xyz_decoy_A, xyz_ref_A = self.get_identical_atoms(sql_decoy,sql_ref,'A')
 
 		if len(xyz_decoy_B) != len(xyz_ref_B):
-			#print('Clean the xyz of chain B')
 			xyz_decoy_B, xyz_ref_B = self.get_identical_atoms(sql_decoy,sql_ref,'B')
 		
 
@@ -118,12 +394,42 @@ class StructureSimilarity(object):
 
 		return lrmsd
 
-	
+	# RETURN THE ATOMS THAT ARE SHARED BY THE TWO DB 
+	# FOR A GIVEN CHAINID
+	@staticmethod
+	def get_identical_atoms(db1,db2,chain):
 
-	# compute the irmsd
-	# we get here the contact of the REFs
-	# and align the contact of the DECOY to it
-	def compute_irmsd(self,cutoff=10,exportpath=None,method='svd'):
+		# get data
+		data1 = db1.get('chainID,resSeq,name',chain=chain)
+		data2 = db2.get('chainID,resSeq,name',chain=chain)
+
+		# tuplify
+		data1 = [tuple(d1) for d1 in data1]
+		data2 = [tuple(d2) for d2 in data2]
+
+		# get the intersection
+		shared_data = list(set(data1).intersection(data2))
+
+		# get the xyz
+		xyz1,xyz2 = [],[]
+		for data in shared_data:
+			query = 'SELECT x,y,z from ATOM WHERE chainID=? AND resSeq=? and name=?'
+			xyz1.append(list(list(db1.c.execute(query,data))[0]))
+			xyz2.append(list(list(db2.c.execute(query,data))[0]))
+
+		return xyz1,xyz2
+
+	################################################################################################
+	#
+	#	ROUTINE TO COMPUTE THE I-RMSD USING PDB2SQL
+	# 	DOES NOT REQUIRE THE PRECALCULATION OF ANYTHiNG
+	# 	BUT CAN READ AN IZONE FILE AS WELL
+	#	CAN OUTPUT THE SUPERIMPOSED STRUCTURES
+	#	MUCH SLOWER THAN THE FAST ROUTINES BUT EASIER TO USE
+	#
+	#################################################################################################
+
+	def compute_irmsd_pdb2sql(self,cutoff=10,method='svd',izone=None,exportpath=None):
 
 		'''
 		Ref : DockQ: A Quality Measure for Protein-Protein Docking Models
@@ -138,16 +444,17 @@ class StructureSimilarity(object):
 		sql_ref = pdb2sql(self.ref,sqlfile='mol2.db')
 
 		# get the contact atoms
-		contact_ref = sql_ref.get_contact_atoms(cutoff=cutoff,extend_to_residue=True,only_backbone_atoms=True)
-
-		# make a single list
-		index_contact_ref = contact_ref[0]+contact_ref[1]
+		if izone is None:
+			contact_ref = sql_ref.get_contact_atoms(cutoff=cutoff,extend_to_residue=True,return_only_backbone_atoms=True)
+			index_contact_ref = contact_ref[0]+contact_ref[1]
+		else:
+			index_contact_ref = self.get_izone_rowID(sql_ref,izone,return_only_backbone_atoms=True)
 
 
 		# get the xyz and atom identifier of the decoy contact atoms
 		xyz_contact_ref = sql_ref.get('x,y,z',index=index_contact_ref)
 		data_contact_ref = sql_ref.get('chainID,resSeq,resName,name',index=index_contact_ref)
-
+		
 		# get the xyz and atom indeitifier of the reference
 		xyz_decoy = sql_decoy.get('x,y,z')
 		data_decoy = sql_decoy.get('chainID,resSeq,resName,name')
@@ -166,7 +473,6 @@ class StructureSimilarity(object):
 				index_contact_decoy.append(index)
 				xyz_contact_decoy.append(xyz_decoy[index])
 			except:
-				#print('Warning CHAIN %s RES %d RESNAME %s ATOM %s not found in reference' %(atom[0],atom[1],atom[2],atom[3]))
 				xyz_contact_ref[iat] = None
 				index_contact_ref[iat] = None
 				clean_ref = True
@@ -176,18 +482,14 @@ class StructureSimilarity(object):
 			xyz_contact_ref = [xyz for xyz in xyz_contact_ref if xyz is not None]
 			index_contact_ref = [ind for ind in index_contact_ref if ind is not None]
 
+
 		# check that we still have atoms in both chains
 		chain_decoy = list(set(sql_decoy.get('chainID',index=index_contact_decoy)))
 		chain_ref   = list(set(sql_ref.get('chainID',index=index_contact_ref)))
-		error = 1
-		if len(chain_decoy)<2:
-			if self.verbose:
-				print('Error in i-rmsd: only one chain represented in contact atoms of the decoy')
-			error = -1
-		if len(chain_ref)<2:
-			if self.verbose:
-				print('Error in i-rmsd: only one chain represented in contact atoms of the ref')
-			error = -1
+		
+		if len(chain_decoy)<1 or len(chain_ref)<1:
+			raise ValueError('Error in i-rmsd: only one chain represented in one chain')
+			
 
 		# get the translation so that both A chains are centered
 		tr_decoy = self.get_trans_vect(xyz_contact_decoy)
@@ -205,7 +507,9 @@ class StructureSimilarity(object):
 		xyz_contact_decoy = transform.rotation_matrix(xyz_contact_decoy,U,center=False)
 
 		# compute the RMSD
-		irmsd = error * self.get_rmsd(xyz_contact_decoy,xyz_contact_ref)
+		irmsd = self.get_rmsd(xyz_contact_decoy,xyz_contact_ref)
+
+
 
 		# export the pdb for verifiactions
 		if exportpath is not None:
@@ -224,7 +528,47 @@ class StructureSimilarity(object):
 		return irmsd
 
 
-	# compute only Fnat
+	# get the rowID of all the atoms 
+	def get_izone_rowID(self,sql,izone,return_only_backbone_atoms=True):
+
+		# read the file
+		if not os.path.isfile(izone):
+			raise FileNotFoundError('i-zone file not found',izone)
+
+		with open(izone,'r') as f:
+			data=f.readlines()
+
+		# get the data out of it
+		resData = {}
+		for line in data:
+
+			res = line.split()[1].split('-')[0]
+			chainID,resSeq = res[0],int(res[1:])
+			
+
+			if chainID not in resData.keys():
+				resData[chainID] = []
+
+			resData[chainID].append(resSeq)
+			
+		# get the rowID
+		index_contact = []
+		
+		for chainID,resSeq in resData.items():	
+			if return_only_backbone_atoms:
+				index_contact += sql.get('rowID',chainID=chainID,resSeq=resSeq,name=['C','CA','N','O'])
+			else:
+				index_contact += sql.get('rowID',chainID=chainID,resSeq=resSeq)
+
+		return index_contact
+
+
+	################################################################################################
+	#
+	#	ROUTINE TO COMPUTE THE FNAT USING PDB2SQL
+	#
+	#################################################################################################
+
 	def compute_Fnat(self,cutoff=5.0):
 
 		# create the sql
@@ -260,6 +604,136 @@ class StructureSimilarity(object):
 
 
 
+	################################################################################################
+	#
+	#	HELPER ROUTINES TO HANDLE THE ZONE FILES
+	#
+	#################################################################################################
+
+
+	@staticmethod
+	def read_xyz_zone(pdb_file,resData,return_not_in_zone=False):
+
+		# read the ref file
+		with open(pdb_file,'r') as f:
+			data = f.readlines()
+
+		# get the xyz of the 
+		xyz_in_zone = []
+		xyz_not_in_zone = []
+
+		for line in data:
+
+			if line.startswith('ATOM'):
+
+				chainID = line[21]
+				if chainID == ' ':
+					chainID = line[72]
+
+				resSeq = int(line[22:26])
+				name = line[12:16].strip()
+
+				x = float(line[30:38])
+				y = float(line[38:46])
+				z = float(line[46:54])
+
+				if chainID in resData.keys():
+
+					if resSeq in resData[chainID] and name in ['C','CA','N','O']:
+						xyz_in_zone.append([x,y,z])
+
+					elif resSeq not in resData[chainID] and name in ['C','CA','N','O']:
+						xyz_not_in_zone.append([x,y,z])
+
+				else:
+					if name in ['C','CA','N','O']:
+						xyz_not_in_zone.append([x,y,z])
+
+		if return_not_in_zone:
+			return xyz_in_zone,xyz_not_in_zone
+
+		else:
+			return xyz_in_zone
+
+
+	@staticmethod
+	def read_data_zone(pdb_file,resData,return_not_in_zone=False):
+
+		# read the ref file
+		with open(pdb_file,'r') as f:
+			data = f.readlines()
+
+		# get the xyz of the 
+		data_in_zone = []
+		data_not_in_zone = []
+
+		for line in data:
+
+			if line.startswith('ATOM'):
+
+				chainID = line[21]
+				if chainID == ' ':
+					chainID = line[72]
+
+				resSeq = int(line[22:26])
+				name = line[12:16].strip()
+
+				x = float(line[30:38])
+				y = float(line[38:46])
+				z = float(line[46:54])
+
+				if chainID in resData.keys():
+
+					if resSeq in resData[chainID] and name in ['C','CA','N','O']:
+						data_in_zone.append([chainID,resSeq,name,x,y,z])
+
+					elif resSeq not in resData[chainID] and name in ['C','CA','N','O']:
+						data_not_in_zone.append([chainID,resSeq,name,x,y,z])
+
+				else:
+					if name in ['C','CA','N','O']:
+						data_not_in_zone.append([chainID,resSeq,name,x,y,z])
+
+		if return_not_in_zone:
+			return data_in_zone,data_not_in_zone
+
+		else:
+			return data_in_zone
+
+
+	@staticmethod
+	def read_zone(zone_file):
+
+		# read the izone file
+		if not os.path.isfile(zone_file):
+			raise FileNotFoundError('i-zone file not found',zone_file)
+
+		with open(zone_file,'r') as f:
+			data=f.readlines()
+
+		# get the data out of it
+		resData = {}
+		for line in data:
+
+			res = line.split()[1].split('-')[0]
+			chainID,resSeq = res[0],int(res[1:])
+			
+
+			if chainID not in resData.keys():
+				resData[chainID] = []
+
+			resData[chainID].append(resSeq)
+
+		return resData
+
+
+	################################################################################################
+	#
+	#	ROUTINES TO ACTUALY ALIGN THE MOLECULES
+	#
+	#################################################################################################
+
+	# compute the DockQ score from the different elements
 	@staticmethod
 	def compute_DockQScore(Fnat,lrmsd,irmsd,d1=8.5,d2=1.5):
 
@@ -269,72 +743,21 @@ class StructureSimilarity(object):
 		return 1./3 * (  Fnat + scale_rms(lrmsd,d1) + scale_rms(irmsd,d2) ) 
 
 
-	@staticmethod
-	def get_identical_atoms(db1,db2,chain):
-
-		# get data
-		data1 = db1.get('chainID,resSeq,name',chain=chain)
-		data2 = db2.get('chainID,resSeq,name',chain=chain)
-
-		# tuplify
-		data1 = [tuple(d1) for d1 in data1]
-		data2 = [tuple(d2) for d2 in data2]
-
-		# get the intersection
-		shared_data = list(set(data1).intersection(data2))
-
-		# get the xyz
-		xyz1,xyz2 = [],[]
-		for data in shared_data:
-			query = 'SELECT x,y,z from ATOM WHERE chainID=? AND resSeq=? and name=?'
-			xyz1.append(list(list(db1.c.execute(query,data))[0]))
-			xyz2.append(list(list(db2.c.execute(query,data))[0]))
-
-		return xyz1,xyz2
-
-
+	# compute the RMSD of two sets of points
 	@staticmethod 
 	def get_rmsd(P,Q):
 		n = len(P)
 		return np.sqrt(1./n*np.sum((P-Q)**2))
 
 
-	
-	def align_Kabsch(self,P,Q):
-
-		# translate the points
-		P = transform.translation(P,get_trans_vect(P))
-		Q = transform.translation(Q,get_trans_vect(Q))
-
-		# get the matrix
-		U = self.get_rotation_matrix_Kabsh(P,Q)
-
-		# form the new ones
-		P = np.dot(U,P.T).T
-
-		return P,Q
-
-	
-	def align_quaternion(self,P,Q):
-
-		# translate the points
-		P = transform.translation(P,get_trans_vect(P))
-		Q = transform.translation(Q,get_trans_vect(Q))
-
-		# get the matrix
-		U = self.get_rotation_matrix_quaternion(P,Q)
-
-		# form the new ones
-		P = np.dot(U,P.T).T
-
-		return P,Q
-
+	# compute the translation vector to center a set of points
 	@staticmethod 
 	def get_trans_vect(P):
 		return  -np.mean(P,0)
 
 
-	
+	# main switch for the rotation matrix
+	# add new methods here if necessary
 	def get_rotation_matrix(self,P,Q,method='svd'):
 
 		# get the matrix with Kabsh method
@@ -348,6 +771,8 @@ class StructureSimilarity(object):
 		else:
 			raise ValueError('%s is not a valid method for rmsd alignement.\n Options are svd or quaternions' %method)
 
+	# get the rotation matrix via a SVD
+	# decomposition of the correlation matrix
 	@staticmethod 		
 	def get_rotation_matrix_Kabsh(P,Q):
 
@@ -396,6 +821,8 @@ class StructureSimilarity(object):
 
 		return U
 
+	# get the rotation amtrix via the quaternion approach
+	# doesn't work great so far
 	@staticmethod
 	def get_rotation_matrix_quaternion(P,Q):
 
@@ -512,43 +939,48 @@ def __compute_target__(decoy,outdir='./'):
 
 if __name__ == '__main__':
 
-	#test_points()
+
 	import time
 	BM4 = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
 	decoy = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_3w.pdb'
 	ref = BM4 + 'BM4_dimers_bound/pdbFLs_ori/1AK4.pdb'
 
-	#CAPRI = '/home/nico/Documents/projects/deeprank/data/CAPRI/'
-	#decoy = CAPRI + 'T29/complex_0024.pdb'
-	#decoy = CAPRI + 'T29/2vdu_chainFD.pdb'
-	#ref = CAPRI + 'T29/2vdu_chainEB.pdb'
-
 	sim = StructureSimilarity(decoy,ref)
+	sim.compute_lzone()
+	sim.compute_izone()
 
 	t0 = time.time()
-	lrmsd_svd = sim.compute_lrmsd(exportpath='./',method='svd')
+	irmsd_fast = sim.compute_irmsd_fast(method='svd',izone='1AK4.izone')
 	t1 = time.time()-t0
+
+	print('IRMSD TIME FAST %f in %f sec' %(irmsd_fast,t1))
 
 	t0 = time.time()
-	lrmsd_quat = sim.compute_lrmsd(exportpath='./',method='quaternion')
-	t2 = time.time()-t0
-
-	print('LRMSD TIME %f (svd) %f (quat)' %(t1,t2))
-
-	time.time()
-	irmsd_svd = sim.compute_irmsd(exportpath='./',method='svd')
+	irmsd = sim.compute_irmsd_pdb2sql(method='svd',izone='1AK4.izone')
 	t1 = time.time()-t0
 
-	t0= time.time()
-	irmsd_quat = sim.compute_irmsd(exportpath='./',method='quaternion')
-	t2 = time.time()-t0
+	print('IRMSD TIME SQL %f in %f sec' %(irmsd,t1))
 
-	print('IRMSD TIME %f (svd) %f (quat)' %(t1,t2))
+	t0 = time.time()
+	lrmsd_fast = sim.compute_lrmsd_fast(method='svd',lzone='1AK4.lzone',check=True)
+	t1 = time.time()-t0
+
+	print('LRMSD TIME FAST %f in %f sec' %(lrmsd_fast,t1))
+
+	t0 = time.time()
+	lrmsd = sim.compute_lrmsd_pdb2sql(exportpath=None,method='svd')
+	t1 = time.time()-t0
+
+	print('LRMSD TIME SQL %f in %f sec' %(lrmsd,t1))
+
+
 
 	Fnat = sim.compute_Fnat()
-	dockQ = sim.compute_DockQScore(Fnat,lrmsd_svd,irmsd_svd)
+	dockQ = sim.compute_DockQScore(Fnat,lrmsd,irmsd)
 
-	print('L-RMSD = ', lrmsd_svd, lrmsd_quat )
-	print('I-RMSD = ', irmsd_svd, irmsd_quat )
+
+	print('L-RMSD = ', lrmsd_svd )
+	print('I-RMSD = ', irmsd_svd )
 	print('Fnat   = ', Fnat  )
 	print('DockQ  = ', dockQ )
+	
