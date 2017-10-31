@@ -616,8 +616,13 @@ class DeepRankConvNet:
 
 				inputs,targets = self._get_variables(inputs,targets)
 				outputs = self.net(inputs)
-				plot_out +=  outputs.data.numpy().tolist()
-				plot_targ += targets.data.numpy().tolist()
+
+				if self.cuda:
+					plot_out +=  outputs.data.cpu().numpy().tolist()
+					plot_targ += targets.data.cpu().numpy().tolist()
+				else:
+					plot_out +=  outputs.data.numpy().tolist()
+					plot_targ += targets.data.numpy().tolist()
 
 			ax.scatter(plot_targ,plot_out,c = color_plot[idata],label=labels[idata])	
 
@@ -688,9 +693,13 @@ class DeepRankConvNet:
 				inputs,targets = self._get_variables(inputs,targets)
 				outputs = self.net(inputs)
 
-				tar = targets.data.numpy()
-				out = outputs.data.numpy()
-
+				if self.cuda:
+					tar = targets.data.cpu().numpy()
+					out = outputs.data.cpu().numpy()
+				else:
+					tar = targets.data.numpy()
+					out = outputs.data.numpy()
+					
 				for pts,t in zip(out,tar):
 					col = color_plot[int(t)]
 					angle = angles[k]
@@ -745,8 +754,12 @@ class DeepRankConvNet:
 				inputs,targets = self._get_variables(inputs,targets)
 				outputs = self.net(inputs)
 
-				tar = targets.data.numpy()
-				out = outputs.data.numpy()
+				if self.cuda:
+					tar = targets.data.cpu().numpy()
+					out = outputs.data.cpu().numpy()
+				else:
+					tar = targets.data.numpy()
+					out = outputs.data.numpy()
 
 				for pts,t in zip(out,tar):
 					r = F.softmax(torch.FloatTensor(pts)).data.numpy()
