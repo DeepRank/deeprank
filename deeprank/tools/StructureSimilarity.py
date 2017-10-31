@@ -141,7 +141,7 @@ class StructureSimilarity(object):
 	# compute the lzone file
 	def compute_lzone(self,save_file=True,filename=None):
 
-		sql_ref = pdb2sql(self.ref,sqlfile='ref.db')
+		sql_ref = pdb2sql(self.ref)
 		nA = len(sql_ref.get('x,y,z',chain='A'))
 		nB = len(sql_ref.get('x,y,z',chain='B'))
 
@@ -301,7 +301,7 @@ class StructureSimilarity(object):
 	#
 	#################################################################################################
 
-	def compute_Fnat_fast(self,ref_pairs=None,cutoff=10):
+	def compute_Fnat_fast(self,ref_pairs=None,cutoff=5):
 
 
 		# read the izone file
@@ -365,7 +365,7 @@ class StructureSimilarity(object):
 		return nCommon/nTotal
 
 	# compute the residue pair of the reference
-	def compute_residue_pairs_ref(self,cutoff=10,save_file=True,filename=None):
+	def compute_residue_pairs_ref(self,cutoff=5.0,save_file=True,filename=None):
 
 		sql_ref = pdb2sql(self.ref,sqlfile='mol2.db')
 		residue_pairs_ref   = sql_ref.get_contact_residue(cutoff=cutoff,return_contact_pairs=True,excludeH=True)
@@ -453,7 +453,7 @@ class StructureSimilarity(object):
 		xyz_ref_short = transform.translation(xyz_ref_short,tr_ref)
 		xyz_ref_long = transform.translation(xyz_ref_long,tr_ref)
 
-		# get the ideql rotation matrix
+		# get the ideal rotation matrix
 		# to superimpose the A chains
 		U = self.get_rotation_matrix(xyz_decoy_long,xyz_ref_long,method=method)
 
@@ -538,8 +538,8 @@ class StructureSimilarity(object):
 		'''
 
 		# create thes sql
-		sql_decoy = pdb2sql(self.decoy,sqlfile='mol1.db')
-		sql_ref = pdb2sql(self.ref,sqlfile='mol2.db')
+		sql_decoy = pdb2sql(self.decoy)
+		sql_ref = pdb2sql(self.ref)
 
 		# get the contact atoms
 		if izone is None:
@@ -670,8 +670,8 @@ class StructureSimilarity(object):
 	def compute_Fnat_pdb2sql(self,cutoff=5.0):
 
 		# create the sql
-		sql_decoy = pdb2sql(self.decoy,sqlfile='mol1.db')
-		sql_ref = pdb2sql(self.ref,sqlfile='mol2.db')
+		sql_decoy = pdb2sql(self.decoy)
+		sql_ref = pdb2sql(self.ref)
 
 		# get the contact atoms
 		residue_pairs_decoy = sql_decoy.get_contact_residue(cutoff=cutoff,return_contact_pairs=True,excludeH=True)
@@ -889,7 +889,6 @@ class StructureSimilarity(object):
 			raise ValueError("Matrix don't have the same number of points",P.shape,Q.shape)
 			
 
-
 		p0,q0 = np.abs(np.mean(P,0)),np.abs(np.mean(Q,0))
 		eps = 1E-6
 		if any(p0 > eps) or any(q0 > eps):
@@ -997,7 +996,7 @@ class StructureSimilarity(object):
 #
 #####################################################################################
 
-def __compute_target__(decoy,outdir='./'):
+def __compute_target__(decoy,outdir='./',lzone=None,izone=None,ref_pairs=None):
 
 	mol_name = decoy.split('/')[-1][:-4]
 	export_file = outdir + '/' + mol_name
@@ -1007,14 +1006,15 @@ def __compute_target__(decoy,outdir='./'):
 
 	# if the two files are the same and contains the same data
 	# we have a native file
-	if os.path.getsize(decoy) == os.path.getize(ref):
-		if open(decoy,'r').read() == open(ref,'r').read():
+	if os.path.isfile(ref):
+		if os.path.getsize(decoy) == os.path.getsize(ref):
+			if open(decoy,'r').read() == open(ref,'r').read():
 
-			# lrmsd = irmsd = 0 | fnat = dockq = 1
-			np.savetxt(export_file+'.LRMSD',[0.0])
-			np.savetxt(export_file+'.IRMSD',[0.0])
-			np.savetxt(export_file+'.FNAT',[1.0])
-			np.savetxt(export_file+'.DOCKQ',[1.0])
+				# lrmsd = irmsd = 0 | fnat = dockq = 1
+				np.savetxt(export_file+'.LRMSD',[0.0])
+				np.savetxt(export_file+'.IRMSD',[0.0])
+				np.savetxt(export_file+'.FNAT',[1.0])
+				np.savetxt(export_file+'.DOCKQ',[1.0])
 
 	# or it's a decoy
 	else:
@@ -1022,13 +1022,13 @@ def __compute_target__(decoy,outdir='./'):
 		# init the class
 		sim = StructureSimilarity(decoy,ref)
 
-		lrmsd = sim.compute_lrmsd()
+		lrmsd = sim.compute_lrmsd_fast(method='svd',lzone=lzone)
 		np.savetxt(export_file+'.LRMSD',[lrmsd])
 
-		irmsd = sim.compute_irmsd()
+		irmsd = sim.compute_irmsd_fast(method='svd',izone=izone)
 		np.savetxt(export_file+'.IRMSD',[irmsd])
 
-		Fnat = sim.compute_Fnat()
+		Fnat = sim.compute_Fnat_fast(ref_pairs=ref_pairs)
 		np.savetxt(export_file+'.FNAT',[Fnat])
 
 		dockQ = sim.compute_DockQScore(Fnat,lrmsd,irmsd)
@@ -1044,41 +1044,46 @@ if __name__ == '__main__':
 	ref = BM4 + 'BM4_dimers_bound/pdbFLs_ori/1AK4.pdb'
 
 	sim = StructureSimilarity(decoy,ref)
-	sim.compute_lzone()
-	sim.compute_izone()
 
+	#----------------------------------------------------------------------
+	
 	t0 = time.time()
 	irmsd_fast = sim.compute_irmsd_fast(method='svd',izone='1AK4.izone')
 	t1 = time.time()-t0
-
-	print('IRMSD TIME FAST %f in %f sec' %(irmsd_fast,t1))
+	print('\nIRMSD TIME FAST %f in %f sec' %(irmsd_fast,t1))
 
 	t0 = time.time()
 	irmsd = sim.compute_irmsd_pdb2sql(method='svd',izone='1AK4.izone')
 	t1 = time.time()-t0
-
 	print('IRMSD TIME SQL %f in %f sec' %(irmsd,t1))
+
+	#----------------------------------------------------------------------
 
 	t0 = time.time()
 	lrmsd_fast = sim.compute_lrmsd_fast(method='svd',lzone='1AK4.lzone',check=True)
 	t1 = time.time()-t0
-
-	print('LRMSD TIME FAST %f in %f sec' %(lrmsd_fast,t1))
+	print('\nLRMSD TIME FAST %f in %f sec' %(lrmsd_fast,t1))
 
 	t0 = time.time()
 	lrmsd = sim.compute_lrmsd_pdb2sql(exportpath=None,method='svd')
 	t1 = time.time()-t0
-
 	print('LRMSD TIME SQL %f in %f sec' %(lrmsd,t1))
 
+	#----------------------------------------------------------------------
+
+	t0 = time.time()
+	Fnat = sim.compute_Fnat_pdb2sql()
+	t1 = time.time()-t0
+	print('\nFNAT TIME SQL %f in %f sec' %(Fnat,t1))
 
 
-	Fnat = sim.compute_Fnat()
-	dockQ = sim.compute_DockQScore(Fnat,lrmsd,irmsd)
+	t0 = time.time()
+	Fnat_fast = sim.compute_Fnat_fast(ref_pairs='1AK4.ref_pairs')
+	t1 = time.time()-t0
+	print('LRMSD TIME FAST %f in %f sec' %(Fnat_fast,t1))
 
+	#----------------------------------------------------------------------
 
-	print('L-RMSD = ', lrmsd_svd )
-	print('I-RMSD = ', irmsd_svd )
-	print('Fnat   = ', Fnat  )
-	print('DockQ  = ', dockQ )
+	dockQ = sim.compute_DockQScore(Fnat_fast,lrmsd_fast,irmsd_fast)
+	print('\nDockQ  %f' %dockQ )
 	

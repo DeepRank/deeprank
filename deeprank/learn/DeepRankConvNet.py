@@ -158,7 +158,8 @@ class DeepRankConvNet:
 		if self.cuda:
 			self.net = self.net.cuda()
 
-	def train(self,nepoch=50, divide_set=[0.8,0.1,0.1], train_batch_size = 10, preshuffle = True,plot_intermediate=True,debug=False):
+	def train(self,nepoch=50, divide_set=[0.8,0.1,0.1], train_batch_size = 10, 
+		      preshuffle = True,plot_intermediate=True,debug=False):
 
 		'''
 		Perform a simple training of the model. The data set is divided in training/validation sets

@@ -531,9 +531,11 @@ class GridToolsSQL(object):
 				# map this feature(s) on the grid(s)
 				if nFeat == 1:
 					dict_data[fname] += coeff*self.featgrid(pos,feat_values)
+					#dict_data[fname] += coeff*self.densgrid(pos,3.5)
 				else:
 					for iF in range(nFeat):
 						dict_data[fname+'_%03d' %iF] += coeff*self.featgrid(pos,feat_values[iF])
+						
 
 		return dict_data
 

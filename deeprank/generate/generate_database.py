@@ -304,8 +304,8 @@ class DataGenerator(object):
 	def _check_outdir(self):
 
 		if os.path.isdir(self.outdir):
-			print(': Output directory %s already exists' %(self.outdir))
-			sys.exit()
+			print(': Database  %s already exists' %(self.outdir))
+			print(': Adding new data to existing one')
 		else:
 			print(': New output directory created at %s' %(self.outdir))
 			os.mkdir(self.outdir)
@@ -349,7 +349,9 @@ class DataGenerator(object):
 				ref = list(filter(lambda x: ref_name in x,self.all_pdb))
 				if len(ref)>1:
 					raise LookupError('Multiple native complexes found for',mol_name)
-				ref = ref[0]
+					ref = ref[0]
+				if len(ref) == 0:
+					ref = None
 
 			# talk a bit
 			if verbose:
@@ -373,8 +375,9 @@ class DataGenerator(object):
 				sp.call('cp %s %s' %(cplx,new_cplx_file),shell=True)
 
 				# copy the reference file into it 
-				new_ref_file = '%s/ref.pdb' %cplx_dir_name
-				sp.call('cp %s %s' %(ref,new_ref_file),shell=True)
+				if ref is not None:
+					new_ref_file = '%s/ref.pdb' %cplx_dir_name
+					sp.call('cp %s %s' %(ref,new_ref_file),shell=True)
 
 				# make the copy
 				if icplx > 0:
@@ -465,17 +468,21 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-	def _add_external_targets(self,targ_dict,mol_name,target_dir_name):
+	def _add_external_targets(self,targ_dict,mol_name,target_dir_name,rename=False):
 
 		for targ_name,targ_dir in targ_dict.items():
 
-			# find the correct value and print it
-			try:
-				tar_val = sp.check_output('grep -w %s %s/*.*' %(mol_name,targ_dir),shell=True).decode('utf8').split()[-1]
-				np.savetxt(target_dir_name + targ_name + '.dat',np.array([float(tar_val)]))
-			except:
-				pass 
-				#print('%s target file not found for %s' %(targ_name,mol_name))
+			if targ_name == 'copy':
+				sp.call('cp %s/%s*  %s' %(targ_dir,mol_name,target_dir_name),shell=True)
+
+			else:
+				# find the correct value and print it
+				try:
+					tar_val = sp.check_output('grep -w %s %s/*.*' %(mol_name,targ_dir),shell=True).decode('utf8').split()[-1]
+					np.savetxt(target_dir_name + targ_name + '.dat',np.array([float(tar_val)]))
+				except:
+					pass
+
 
 
 	def _add_internal_targets(self,targ_list,pdb,target_dir_name):

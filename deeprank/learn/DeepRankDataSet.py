@@ -247,7 +247,7 @@ class DeepRankDataSet(data_utils.Dataset):
 		folder_name = sp.check_output("ls %s/*/ -d" %(self.data_folder),shell=True).decode('utf-8').split()[0]
 		
 		# get the pickle file names
-		feature_files  = sp.check_output('ls %s/input/*.pkl' %folder_name,shell=True).decode('utf-8').split()
+		feature_files  = sp.check_output('ls %s/grid_data/*.pkl' %folder_name,shell=True).decode('utf-8').split()
 
 		# loop over all the files
 		for f in feature_files:

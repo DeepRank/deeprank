@@ -2,6 +2,7 @@ import sqlite3
 import subprocess as sp 
 import os
 import numpy as np
+from time import time
 
 '''
 Class that allows to create a SQL data base for a PDB file
@@ -80,7 +81,7 @@ class pdb2sql(object):
 	CLASS that transsform  PDB file into a sqlite database
 	'''
 
-	def __init__(self,pdbfile,sqlfile='pdb2sql.db',fix_chainID=False,verbose=False):
+	def __init__(self,pdbfile,sqlfile=None,fix_chainID=False,verbose=False):
 
 		self.pdbfile = pdbfile
 		self.sqlfile = sqlfile
@@ -89,6 +90,7 @@ class pdb2sql(object):
 
 		# create the database
 		self._create_sql()
+
 
 		# fix the chain ID
 		if fix_chainID:
@@ -151,12 +153,19 @@ class pdb2sql(object):
 		ncol = len(self.col)
 		ndel = len(self.delimiter)
 
-		# remove the database if necessary
-		if os.path.isfile(sqlfile):
-			sp.call('rm %s' %sqlfile,shell=True)
 
-	    # open the data base
-		self.conn = sqlite3.connect(sqlfile)
+	    # open the data base 
+	    # if we do not specify a db name 
+	    # the db is only in RAM
+	    # there might be little advantage to use memory
+	    # https://stackoverflow.com/questions/764710/sqlite-performance-benchmark-why-is-memory-so-slow-only-1-5x-as-fast-as-d
+		if self.sqlfile is None:
+			self.conn = sqlite3.connect(':memory:')
+		# or we create a new db file
+		else:
+			if os.path.isfile(sqlfile):
+				sp.call('rm %s' %sqlfile,shell=True)
+			self.conn = sqlite3.connect(sqlfile)
 		self.c = self.conn.cursor()
 
 		# intialize the header/placeholder
@@ -171,6 +180,7 @@ class pdb2sql(object):
 		# create the table
 		query = 'CREATE TABLE ATOM ({hd})'.format(hd=header)
 		self.c.execute(query)
+		
 
 		# read the pdb file
 		# this is dangerous if there are ATOM written in the comment part 
@@ -180,8 +190,13 @@ class pdb2sql(object):
 		# a safer version consist at matching against the first field
 		# won't work on windows
 		#data = sp.check_output("awk '$1 ~ /^ATOM/' %s" %pdbfile,shell=True).decode('utf8').split('\n')
+
+		# a pure python way
+		# RMK we go through the data twice here. Once to read the ATOM line and once to parse the data ... 
+		# we could do better than that. But the most time consuming step seems to be the CREATE TABLE query
 		with open(pdbfile,'r') as fi:
 			data = [line.split('\n')[0] for line in fi if line.startswith('ATOM')]
+
 
 		# if there is no ATOM in the file
 		if len(data)==1 and data[0]=='':
@@ -222,12 +237,10 @@ class pdb2sql(object):
 			# append
 			data_atom.append(at)
 
+
 		# push in the database
 		self.c.executemany('INSERT INTO ATOM VALUES ({qm})'.format(qm=qm),data_atom)
-
-		# commit the change
-		#self.conn.commit()
-
+	
 
 	# replace the chain ID by A,B,C,D, ..... in that order
 	def _fix_chainID(self):
@@ -326,7 +339,7 @@ class pdb2sql(object):
 		#
 		# might be the only one we need
 		# each keys must be a valid columns
-		# each valu may be a single value or an array
+		# each value may be a single value or an array
 		# AND is assumed between different keys
 		# OR is assumed for the different values of a given key
 		#
@@ -359,7 +372,7 @@ class pdb2sql(object):
 				if isinstance(v,list):
 					nv = len(v)
 					if k == 'rowID':
-						vals = vals + tuple(v+1)
+						vals = vals + tuple([iv+1 for iv in v])
 					else:
 						vals = vals + tuple(v)
 				else:
@@ -446,10 +459,6 @@ class pdb2sql(object):
 		# flatten it if each els is of size 1
 		if len(data[0])==1:
 			data = [d[0] for d in data]
-
-		# fix the python <--> sql indexes
-		# if atnames == 'rowID':
-		# 	data = [d-1 for d in data]
 	
 		return data
 
@@ -458,7 +467,7 @@ class pdb2sql(object):
 		strind = ','.join(map(str,index))
 		return self.get(atnames,where="rowID in ({ind})".format(ind=strind))
 
-	############################################################################3
+	############################################################################
 	#
 	# get the contact atoms
 	# this is getting out of hand
@@ -830,12 +839,17 @@ class pdb2sql(object):
 	# close the database 
 	def close(self,rmdb = True):
 		
-		if rmdb:
-			self.conn.close() 
-			os.system('rm %s' %(self.sqlfile))
+		if self.sqlfile is None:
+			self.conn.close()
+
 		else:
-			self.commit()
-			self.conn.close() 
+
+			if rmdb:
+				self.conn.close() 
+				os.system('rm %s' %(self.sqlfile))
+			else:
+				self.commit()
+				self.conn.close() 
 
 
 
