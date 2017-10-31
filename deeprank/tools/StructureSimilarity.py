@@ -1004,9 +1004,11 @@ def __compute_target__(decoy,outdir='./',lzone=None,izone=None,ref_pairs=None):
 	# get the reference
 	ref = os.path.dirname(os.path.realpath(decoy)) + '/ref.pdb'
 
-	# if the two files are the same and contains the same data
-	# we have a native file
+	# check that the ref exists
 	if os.path.isfile(ref):
+
+		# if the two files are the same and contains the same data
+		# we have a native file
 		if os.path.getsize(decoy) == os.path.getsize(ref):
 			if open(decoy,'r').read() == open(ref,'r').read():
 
@@ -1016,25 +1018,28 @@ def __compute_target__(decoy,outdir='./',lzone=None,izone=None,ref_pairs=None):
 				np.savetxt(export_file+'.FNAT',[1.0])
 				np.savetxt(export_file+'.DOCKQ',[1.0])
 
-	# or it's a decoy
+		# or it's a decoy
+		else:
+
+			# init the class
+			sim = StructureSimilarity(decoy,ref)
+
+			lrmsd = sim.compute_lrmsd_fast(method='svd',lzone=lzone)
+			np.savetxt(export_file+'.LRMSD',[lrmsd])
+
+			irmsd = sim.compute_irmsd_fast(method='svd',izone=izone)
+			np.savetxt(export_file+'.IRMSD',[irmsd])
+
+			Fnat = sim.compute_Fnat_fast(ref_pairs=ref_pairs)
+			np.savetxt(export_file+'.FNAT',[Fnat])
+
+			dockQ = sim.compute_DockQScore(Fnat,lrmsd,irmsd)
+			np.savetxt(export_file+'.DOCKQ',[dockQ])
+
+	# if we have nor ref
 	else:
-
-		# init the class
-		sim = StructureSimilarity(decoy,ref)
-
-		lrmsd = sim.compute_lrmsd_fast(method='svd',lzone=lzone)
-		np.savetxt(export_file+'.LRMSD',[lrmsd])
-
-		irmsd = sim.compute_irmsd_fast(method='svd',izone=izone)
-		np.savetxt(export_file+'.IRMSD',[irmsd])
-
-		Fnat = sim.compute_Fnat_fast(ref_pairs=ref_pairs)
-		np.savetxt(export_file+'.FNAT',[Fnat])
-
-		dockQ = sim.compute_DockQScore(Fnat,lrmsd,irmsd)
-		np.savetxt(export_file+'.DOCKQ',[dockQ])
-
-
+		raise FileNotFoundError('native file not found')
+		
 if __name__ == '__main__':
 
 
