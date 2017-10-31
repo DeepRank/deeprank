@@ -996,7 +996,7 @@ class StructureSimilarity(object):
 #
 #####################################################################################
 
-def __compute_target__(decoy,outdir='./',lzone=None,izone=None,ref_pairs=None):
+def __compute_target__(decoy,outdir):
 
 	mol_name = decoy.split('/')[-1][:-4]
 	export_file = outdir + '/' + mol_name
@@ -1020,6 +1020,12 @@ def __compute_target__(decoy,outdir='./',lzone=None,izone=None,ref_pairs=None):
 
 		# or it's a decoy
 		else:
+
+			# compute the izone/lzone/ref_pairs
+			mol_name = os.path.dirname(os.path.realpath(decoy)).split('/')[-1].split('_')[0]
+			lzone = mol_name+'.lzone'
+			izone = mol_name+'.izone'
+			ref_pairs = mol_name + '.ref_pairs'
 
 			# init the class
 			sim = StructureSimilarity(decoy,ref)
