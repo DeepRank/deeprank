@@ -97,7 +97,7 @@ class DataGenerator(object):
 		add a feature file to an existing folder arboresence
 		only need an output dir and a feature dictionary
 		'''
-
+		print(': Add features')
 
 		if not os.path.isdir(self.outdir):
 			raise NotADirectoryError('%s is not a directory')
@@ -105,18 +105,16 @@ class DataGenerator(object):
 		# get the folder names
 		fnames = sp.check_output('ls -d %s/*/' %self.outdir,shell=True).decode('utf8').split()
 
-		print(': Add features')
 
-		for cplx_name in tqdm(fnames):
+		# get the non rotated ones
+		fnames_original = list( filter(lambda x: '_r' not in x, fnames) )
+		fnames_augmented = list( filter(lambda x: '_r' in x, fnames) )
+
+		# computes the features of the original
+		for cplx_name in tqdm(fnames_original):
 
 			# names of the molecule
 			mol_name = cplx_name.split('/')[-2]
-
-			# check if we have a copy
-			if '_r' in mol_name:
-				ref_mol_name = mol_name.split('_r')[0]
-			else:
-				ref_mol_name = mol_name
 
 			# directory of the complex
 			feat_dir_name = self.outdir + '/' + mol_name + '/features/'
@@ -129,6 +127,21 @@ class DataGenerator(object):
 			if internal is not None:
 				mol = cplx_name + '/complex.pdb'
 				self._add_internal_features(internal,mol,feat_dir_name)
+
+		# copy the data from the original to the augmented
+		for cplx_name in fnames_augmented:
+
+			# names of the molecule
+			mol_name = cplx_name.split('/')[-2]
+			ref_mol_name = mol_name.split('_r')[0]
+			
+			# input the data	
+			target_dir_name = self.outdir + '/' + mol_name + '/features/'
+			ref_dir_name = self.outdir + '/' + ref_mol_name + '/features/'	
+
+			# copy the data
+			sp.call('cp %s/* %s' %(ref_dir_name,target_dir_name),shell=True)	
+
 
 	def add_target(self,internal=None,external=None):
 
@@ -145,16 +158,15 @@ class DataGenerator(object):
 		# get the folder names
 		fnames = sp.check_output('ls -d %s/*/' %self.outdir,shell=True).decode('utf8').split()
 
-		for cplx_name in tqdm(fnames):
+		# get the non rotated ones
+		fnames_original = list( filter(lambda x: '_r' not in x, fnames) )
+		fnames_augmented = list( filter(lambda x: '_r' in x, fnames) )
+
+		# compute the features of the original
+		for cplx_name in tqdm(fnames_original):
 
 			# names of the molecule
 			mol_name = cplx_name.split('/')[-2]
-
-			# check if we have a copy
-			if '_r' in mol_name:
-				ref_mol_name = mol_name.split('_r')[0]
-			else:
-				ref_mol_name = mol_name
 
 			# input the data	
 			target_dir_name = self.outdir + '/' + mol_name + '/targets/'
@@ -167,7 +179,19 @@ class DataGenerator(object):
 				mol = cplx_name + '/complex.pdb'
 				self._add_internal_targets(internal,mol,target_dir_name)
 
+		# copy the targets of the original to the rotated
+		for cplx_name in fnames_augmented:
 
+			# names of the molecule
+			mol_name = cplx_name.split('/')[-2]
+			ref_mol_name = mol_name.split('_r')[0]
+			
+			# input the data	
+			target_dir_name = self.outdir + '/' + mol_name + '/targets/'
+			ref_dir_name = self.outdir + '/' + ref_mol_name + '/targets/'	
+
+			# copy the data
+			sp.call('cp %s/* %s' %(ref_dir_name,target_dir_name),shell=True)	
 
 #====================================================================================
 #
@@ -382,7 +406,7 @@ class DataGenerator(object):
 				# make the copy
 				if icplx > 0:
 
-					print(':  --> rotation %03d/%03d' %(icplx,len(cplx_dir_name_list)-1))
+					#print(':  --> rotation %03d/%03d' %(icplx,len(cplx_dir_name_list)-1))
 
 					# create tthe sqldb and extract positions
 					sqldb = pdb2sql(new_cplx_file)
