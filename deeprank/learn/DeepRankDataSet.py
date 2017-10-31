@@ -233,9 +233,10 @@ class DeepRankDataSet(data_utils.Dataset):
 			self.targets /= self.targets.max()
 
 		if self.normalize_features:
-			self.features -= features.min()
-			self.features /= features.max()*0.5
-			self.features -= 1.
+			for iC in range(self.features.shape[1]):
+				self.features[:,iC,:,:,:] = (self.features[:,iC,:,:,:]-self.features[:,iC,:,:,:].mean())/self.features[:,iC,:,:,:].std()
+
+
 
 
 	# print the content of the data in the data folder
