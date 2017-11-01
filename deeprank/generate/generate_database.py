@@ -3,6 +3,7 @@ import sys
 import importlib
 import numpy as np
 import subprocess as sp
+import h5py
 
 from deeprank.tools import pdb2sql
 import deeprank.tools.transform as transf
@@ -43,12 +44,14 @@ except:
 
 class DataGenerator(object):
 
-	def __init__(self,pdb_select=None,pdb_source=None,data_augmentation=None, outdir=None):
+	def __init__(self,pdb_select=None,pdb_source=None,
+		         data_augmentation=None, hdf5=None,outdir=None):
 
 		self.pdb_select  = pdb_select
 		self.pdb_source  = pdb_source
 		self.data_augmentation = data_augmentation
 		self.outdir = outdir
+		self.hdf5 = hdf5 
 
 		self.all_pdb = []
 		self.pdb_path = []
@@ -152,6 +155,11 @@ class DataGenerator(object):
 
 		print(': Add targets')
 
+
+		# name of the hdf5 file
+		if self.hdf5 is not None:
+			file_hdf5 = h5py.File(self.hdf5,'a')
+			
 		if not os.path.isdir(self.outdir):
 			raise NotADirectoryError('%s is not a directory',self.outdir) 
 			
@@ -162,7 +170,7 @@ class DataGenerator(object):
 		fnames_original = list( filter(lambda x: '_r' not in x, fnames) )
 		fnames_augmented = list( filter(lambda x: '_r' in x, fnames) )
 
-		# compute the features of the original
+		# compute the targets  of the original
 		for cplx_name in tqdm(fnames_original):
 
 			# names of the molecule
@@ -179,6 +187,9 @@ class DataGenerator(object):
 				mol = cplx_name + '/complex.pdb'
 				self._add_internal_targets(internal,mol,target_dir_name)
 
+			if self.hdf5 is not None:
+				self._add_targets_hdf5(file_hdf5,mol_name,target_dir_name)
+
 		# copy the targets of the original to the rotated
 		for cplx_name in fnames_augmented:
 
@@ -193,6 +204,12 @@ class DataGenerator(object):
 			# copy the data
 			sp.call('cp %s/* %s' %(ref_dir_name,target_dir_name),shell=True)	
 
+			if self.hdf5 is not None:
+				self._add_targets_hdf5(file_hdf5,mol_name,target_dir_name)
+
+		# close the file
+		if self.hdf5 is not None:
+			file_hdf5.close()
 #====================================================================================
 #
 #		MAP THE FEATURES TO THE GRID
@@ -224,7 +241,7 @@ class DataGenerator(object):
 
 		use_tmpdir
 				Use the tmp dir to export the data 
-				to avoid transferring files betwene computing and head nodes
+				to avoid transferring files between computing and head nodes
 
 		'''
 
@@ -235,6 +252,10 @@ class DataGenerator(object):
 		# name of the dir where the pckl files are stores
 		outname = '/grid_data'
 
+		# name of the hdf5 file
+		if self.hdf5 is not None:
+			file_hdf5 = h5py.File(self.hdf5,'a')
+			
 		# determine the atomic densities parametres
 		if 'atomic_densities' in grid_info:
 			atomic_densities = grid_info['atomic_densities']
@@ -266,7 +287,7 @@ class DataGenerator(object):
 			
 			# determine where to export
 			if use_tmpdir:
-				export_dir = data_base + '/' + sub_mol
+				export_dir = data_base  + sub_mol
 				os.mkdir(export_dir)
 				os.mkdir(export_dir + outname )
 
@@ -285,7 +306,7 @@ class DataGenerator(object):
 				export_dir = sub
 
 			# molecule name
-			mol_name = sub + './complex.pdb'
+			mol_name = sub + 'complex.pdb'
 
 			# create the residue feature dictionnary
 			if 'residue_feature' in grid_info:
@@ -317,7 +338,12 @@ class DataGenerator(object):
 				             residue_feature = res_feat,
 				             atomic_feature = at_feat,
 				             atomic_feature_mode = atomic_feature_mode,
+				             hdf5_file = file_hdf5,
 				             export_path = export_dir+outname)
+
+		# close he hdf5 file
+		if self.hdf5 is not None:
+			file_hdf5.close()
 
 #====================================================================================
 #
@@ -485,6 +511,22 @@ class DataGenerator(object):
 			else:
 				print('Error: no %s file found %s' %(feat_name,mol_name))
 
+	def _add_targets_hdf5(self,hdf5,mol,target_dir):
+
+		# open the group 
+		tgrp = hdf5.require_group(mol+'/targets/')
+		 
+		# get all the targets
+		targets = sp.check_output('ls %s/*' %target_dir,shell=True).split()
+
+		for tar in targets:
+			name = os.path.basename(tar)
+			data = np.loadtxt(tar)
+			if name not in tgrp:
+				tgrp.create_dataset(name,data=data)
+			else:
+				t = tgrp[name]
+				t[...] = data
 
 #====================================================================================
 #

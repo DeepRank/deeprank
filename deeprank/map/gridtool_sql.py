@@ -13,6 +13,8 @@ except:
 	def tqdm(x):
 		return x 
 
+
+
 # the main gridtool class
 class GridToolsSQL(object):
 
@@ -105,6 +107,7 @@ class GridToolsSQL(object):
 		         residue_feature=None, 
 		         atomic_feature=None, atomic_feature_mode='sum',
 		         contact_distance = 8.5,
+		         hdf5_file=None,
 		         export_path='./'):
 		
 		# mol file	
@@ -126,9 +129,17 @@ class GridToolsSQL(object):
 
 		# find the base name of the molecule
 		# remove all the path and the extension
-		self.mol_basename = self.mol.split('/')[-1][:-4]
+		#self.mol_basename = self.mol.split('/')[-1][:-4]
+		self.mol_basename = os.path.dirname(self.mol).split('/')[-1]
+		
+		# hdf5 file
+		self.hdf5 = hdf5_file
 
-		# export path
+		# export to HDF5 file
+		if self.hdf5 is not None:
+			self.hdf5.require_group(self.mol_basename+'/features/')
+
+		# export path for other files
 		self.export_path = export_path
 		if self.export_path != '' and self.export_path[-1] != '/':
 			self.export_path += '/'
@@ -171,12 +182,19 @@ class GridToolsSQL(object):
 
 		# if we already have an output containing the grid
 		# we update the existing features
-		if  os.path.exists(self.export_path+'/grid_points.npz'):
-			print('\n= Updating grid data for %s' %(self.mol))
-			self.update_feature()
+		_update_ = False	
+		if os.path.exists(self.export_path+'/grid_points.npz'):
+			_update_ = True
 
+		if self.hdf5 is not None:
+			if self.mol_basename+'/grid_points' in self.hdf5:
+				_update_ = True
+
+		if _update_:
+				print('\n= Updating grid data for %s' %(self.mol))
+				self.update_feature()
 		else:
-			print('\n= Creating grid and grid data for %s' %(self.mol))
+			print('\n= Creating grid and grid data for %s' %(self.mol))	
 			if not os.path.isdir(self.export_path):
 				os.mkdir(self.export_path)
 			self.create_new_data()
@@ -222,9 +240,17 @@ class GridToolsSQL(object):
 		# get the position/atom type .. of the complex
 		self.read_pdb()
 
-		# read the grid points
-		grid = np.load(self.export_path+'/grid_points.npz')
-		self.x,self.y,self.z = grid['x'], grid['y'], grid['z']
+		# read the grid from the hdf5
+		if self.hdf5 is not None:
+			grid = self.hdf5.get(self.mol_basename+'/grid_points/')
+			self.x,self.y,self.z = grid['x'][()],grid['y'][()],grid['z'][()]
+
+		# or read the grid points from file
+		else:
+			grid = np.load(self.export_path+'/grid_points.npz')
+			self.x,self.y,self.z = grid['x'], grid['y'], grid['z']
+
+		# create the grid
 		self.ygrid,self.xgrid,self.zgrid = np.meshgrid(self.y,self.x,self.z)
 		
 		# set the resolution/dimension
@@ -246,7 +272,7 @@ class GridToolsSQL(object):
 
 	def read_pdb(self):
 
-		self.sqldb = pdb2sql(self.mol,sqlfile='_mol.db')
+		self.sqldb = pdb2sql(self.mol)
 		self.sqldb.exportpdb(self.export_path + '/monomer1.pdb',chain='A')
 		self.sqldb.exportpdb(self.export_path + '/monomer2.pdb',chain='B')
 
@@ -297,9 +323,16 @@ class GridToolsSQL(object):
 			# map the residue features
 			dict_data = self.map_features(dict_feature,feature_type)
 
-			# save the data
-			self.pickle_grid_data(dict_data,'%sFeature_%s' %(feature_type, self.atomic_feature_mode))
 
+			# save to hdf5 if specfied
+			if self.hdf5 is not None:
+				self.hdf5_grid_data(dict_data,'%sFeature_%s' %(feature_type, self.atomic_feature_mode))
+
+			# or to the folder
+			else:
+				self.pickle_grid_data(dict_data,'%sFeature_%s' %(feature_type, self.atomic_feature_mode))
+
+	
 
 	# add all the atomic densities to the data
 	def add_all_atomic_densities(self):
@@ -310,9 +343,15 @@ class GridToolsSQL(object):
 			# compute the atomic densities
 			self.map_atomic_densities()
 
-			# export the densities for visuzaliation
-			self.pickle_grid_data(self.atdens,'AtomicDensities_%s' %(self.atomic_densities_mode))
+			# save to hdf5 if specified
+			if self.hdf5 is not None:
+				self.hdf5_grid_data(self.atdens,'AtomicDensities_%s' %(self.atomic_densities_mode))
 
+			# or to the folder
+			else:
+				self.pickle_grid_data(self.atdens,'AtomicDensities_%s' %(self.atomic_densities_mode))
+
+			
 
 	################################################################
 	# define the grid points
@@ -626,8 +665,18 @@ class GridToolsSQL(object):
 	################################################################
 
 	def export_grid_points(self):
-		fname = self.export_path + '/grid_points'
-		np.savez(fname,x=self.x,y=self.y,z=self.z)
+
+		# or to the the hdf5
+		if self.hdf5 is not None:
+			grd = self.hdf5.require_group(self.mol_basename+'/grid_points')
+			grd.create_dataset('x',data=self.x)
+			grd.create_dataset('y',data=self.y)
+			grd.create_dataset('z',data=self.z)
+
+		# write to disc
+		else:
+			fname = self.export_path + '/grid_points'
+			np.savez(fname,x=self.x,y=self.y,z=self.z)
 
 
 	# export the contact atoms for verification
@@ -669,9 +718,10 @@ class GridToolsSQL(object):
 		print('-- Export %s data to %s' %(data_name,self.export_path))
 
 		# export a 4D matrix for the 3DConvNet 
-		data_array = []
-		for key,value in dict_data.items():	
-			data_array.append(dict_data[key])
+		#data_array = []
+		#for key,value in dict_data.items():	
+		#	data_array.append(dict_data[key])
+
 		mol = self.export_path
 		fname = mol + '/' + data_name + '.pkl'
 
@@ -684,6 +734,17 @@ class GridToolsSQL(object):
 
 		# pickle it
 		pickle.dump(dict_data,open(fname,'wb'))
+
+	# save the data in the hdf5 file
+	def hdf5_grid_data(self,dict_data,data_name):
+
+		feat_group = self.hdf5.create_group(self.mol_basename+'/features/'+data_name)
+		for key,value in dict_data.items():
+			if key not in feat_group:
+				feat_group.create_dataset(key,data=value)
+			else:
+				tmp = feat_group[key]
+				tmp[...] = value
 
 					
 ########################################################################################################

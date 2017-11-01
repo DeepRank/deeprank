@@ -5,6 +5,7 @@ import torch.utils.data as data_utils
 import subprocess as sp
 import numpy as np
 import pickle 
+import h5py
 
 try:
 	from tqdm import tqdm
@@ -116,6 +117,107 @@ class DeepRankDataSet(data_utils.Dataset):
 		return self.features[index],self.targets[index]
 
 
+	# load the dataset from a h5py file
+	def load_hdf5(self):
+
+		fh5 = h5py.File(self.data_folder,'r')
+		mol_names = list(fh5.keys())
+
+		# get a subset
+		if self.filter_dataset != None:
+
+			# get a random subset if integers
+			if isinstance(self.filter_dataset,int):
+				np.random.shuffle(mol_names)
+				mol_names = mol_names[:self.filter_dataset]
+
+			# select based on name of file
+			if os.path.isfile(self.filter_dataset):
+				tmp_folder = []
+				with open(self.filter_dataset) as f:
+					for line in f:
+						if len(line.split())>0:
+							name = line.split()[0]
+							tmp_folder += list(filter(lambda x: name in x,mol_names))
+				f.close()
+				mol_names = tmp_folder
+
+		#	
+		# load the data
+		# the format of the features must be
+		# Nconf x Nchanels x Nx x Ny x Nz
+		# 
+		# for each folder we create a tmp_feat of size Nchanels x Nx x Ny x Nz
+		# that we then append to the feature list
+		#
+		features, targets = [], []
+		for mol in tqdm(mol_names):
+
+			# get the mol
+			mol_data = fh5.get(mol)
+
+			# load all the features
+			if self.select_feature == 'all':
+				# loop through the features
+				tmp_feat = []
+				for feat_name, feat_values in mol_data.get('features/').items():
+					# loop through all the feature keys
+					for name,data in feata_values.items():
+						tmp_feat.append(data[()])
+				features.append(tmp_feat)
+
+			# load selected features
+			else:
+				tmp_feat = []
+				for feat_name,feat_channels in self.select_feature.items():
+
+					# see if the feature exists
+					feat_dict = mol_data.get('features/'+feat_name)						
+					
+					if feat_dict is None:
+						print('Error : Feature name %s not found in %s' %(feat_name,mol))
+						opt_names = list(mol_data.get('features/').keys())
+						print('Error : Possible features are \n\t%s' %'\n\t'.join(opt_names))
+						sys.exit()
+
+					# get the possible channels
+					possible_channels = list(feat_dict.keys())
+
+					# make sure that all the featchanels are in the file
+					if feat_channels != 'all':
+						for fc in feat_channels:
+							if fc not in possible_channels:
+								print("Error : required key %s for feature %s not in the database" %(fc,feat_name))
+								print('Error : Possible features are \n\t%s' %'\n\t'.join(possible_channels))
+								sys.exit()
+
+					# load the feature channels
+					for chanel_name,channel_value in feat_dict.items():
+						if feat_channels == 'all' or chanel_name in feat_channels:
+							tmp_feat.append(channel_value[()])
+
+				# append to the list of features
+				features.append(np.array(tmp_feat))
+
+
+			# target
+			opt_names = list(mol_data.get('targets/').keys())			
+			fname = list(filter(lambda x: self.select_target in x, opt_names))
+			
+			if len(fname) == 0:
+				print('Error : Target name %s not found in %s' %(self.select_target,folder))
+				print('Error : Possible targets are \n\t%s' %'\n\t'.join(opt_names))
+				sys.exit()
+
+			if len(fname)>1:
+				print('Error : Multiple Targets Matching %s Found in %s' %(self.select_target,folder))
+				print('Error : Possible targets are \n\t%s' %'\n\t'.join(opt_names))
+				sys.exit()
+
+			fname = fname[0]
+			targ_data = mol_data.get('targets/'+fname)		
+			targets.append(targ_data[()])
+
 	# Load the dataset
 	def load(self):
 
@@ -216,12 +318,12 @@ class DeepRankDataSet(data_utils.Dataset):
 
 			fname = fname[0]
 			targ_data = np.loadtxt(folder+'/targets/%s' %(fname))
-
 			targets.append(targ_data)
+
+	def preprocess(self):
 
 		# get the number of channels and points along each axis
 		self.input_shape = features[0].shape
-		
 
 		# transform the data in torch Tensor
 		self.features = torch.FloatTensor(np.array(features))
@@ -235,8 +337,6 @@ class DeepRankDataSet(data_utils.Dataset):
 		if self.normalize_features:
 			for iC in range(self.features.shape[1]):
 				self.features[:,iC,:,:,:] = (self.features[:,iC,:,:,:]-self.features[:,iC,:,:,:].mean())/self.features[:,iC,:,:,:].std()
-
-
 
 
 	# print the content of the data in the data folder
