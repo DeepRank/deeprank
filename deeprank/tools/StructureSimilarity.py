@@ -345,9 +345,9 @@ class StructureSimilarity(object):
 					residue_xyz[key] = []
 					residue_name[key] = []
 
-				if name in ['CA','C','N','O']:
-					residue_xyz[key].append([x,y,z])
-					residue_name[key].append(name)
+				#if name in ['CA','C','N','O']:
+				residue_xyz[key].append([x,y,z])
+				residue_name[key].append(name)
 
 		# loop over the residue pairs of the 
 		nCommon,nTotal = 0,0
@@ -1051,8 +1051,9 @@ if __name__ == '__main__':
 
 	import time
 	BM4 = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
-	decoy = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_3w.pdb'
+	decoy = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_324w.pdb'
 	ref = BM4 + 'BM4_dimers_bound/pdbFLs_ori/1AK4.pdb'
+
 
 	sim = StructureSimilarity(decoy,ref)
 
