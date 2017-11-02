@@ -218,6 +218,12 @@ class DeepRankDataSet(data_utils.Dataset):
 			targ_data = mol_data.get('targets/'+fname)		
 			targets.append(targ_data[()])
 
+		# preprocess the data
+		self.preprocess(features,targets)
+
+		# close
+		fh5.close()
+
 	# Load the dataset
 	def load(self):
 
@@ -320,7 +326,10 @@ class DeepRankDataSet(data_utils.Dataset):
 			targ_data = np.loadtxt(folder+'/targets/%s' %(fname))
 			targets.append(targ_data)
 
-	def preprocess(self):
+		# preprocess the data
+		self.preprocess(features,targets)
+
+	def preprocess(self,features,targets):
 
 		# get the number of channels and points along each axis
 		self.input_shape = features[0].shape
