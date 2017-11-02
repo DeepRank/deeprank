@@ -88,7 +88,7 @@ class DeepRankConvNet:
 	'''
 
 	def __init__(self,data_set,model,model_type='3d',proj2d=0,
-		         task=None,cuda=False,tensorboard=True,plot=True,outdir='./'):
+		         task=None,cuda=False,ngpu=0,tensorboard=True,plot=True,outdir='./'):
 
 
 
@@ -107,6 +107,14 @@ class DeepRankConvNet:
 
 		# CUDA required
 		self.cuda = cuda
+		self.ngpu = ngpu
+
+		# handles GPU/CUDA
+		if self.ngpu > 0:
+			self.cuda = True
+
+		if self.ngpu == 0 and self.cuda is not None:
+			self.ngpu = 1
 
 		# plot or not plot
 		self.plot = plot
@@ -118,7 +126,6 @@ class DeepRankConvNet:
 
 		elif self.task=='class':
 			self.criterion = nn.CrossEntropyLoss()
-#			self._plot_scatter = self._plot_scatter_class
 			self._plot_scatter = self._plot_boxplot_class
 
 		else:
@@ -144,6 +151,8 @@ class DeepRankConvNet:
 		print('=\t features  : %s' %" / ".join([key for key,_ in self.data_set.select_feature.items()]))
 		print('=\t targets   : %s' %self.data_set.select_target)
 		print('=\t CUDA      : %s' %str(self.cuda))
+		if self.ngpu is  not None:
+			print('=\t nGPU      : %d' %self.cuda)
 		print('='*40,'\n')	
 
 
@@ -153,6 +162,11 @@ class DeepRankConvNet:
 			print(' --> To turn CUDA of set cuda=False in DeepRankConvNet')
 			print(' --> Aborting the experiment \n\n')
 			sys.exit()
+
+		#multi-gpu
+		if self.ngpu>1:
+			ids = [i for i in range(self.ngpu)]
+			self.net = torch.nn.DataParallel(self.net,device_ids=ids)
 
 		# cuda compatible
 		if self.cuda:
@@ -182,6 +196,10 @@ class DeepRankConvNet:
 			tbwriter = SummaryWriter('runs/'+datetime.now().strftime('%B%d  %H:%M:%S'))
 		else:
 			tbwriter = None
+
+		# multi-gpu 
+		if self.ngpu > 1:
+			train_batch_size *= self.ngpu
 
 		# divide the set in train+ valid and test
 		index_train,index_valid,index_test = self._divide_dataset(divide_set,preshuffle)
@@ -422,6 +440,11 @@ class DeepRankConvNet:
 		# store the length of the training set
 		ntrain = len(index_train)
 
+		# pin memory for cuda
+		pin = False
+		if self.cuda:
+			pin = True
+
 
 		if debug:
 
@@ -447,8 +470,8 @@ class DeepRankConvNet:
 			valid_sampler = data_utils.sampler.SubsetRandomSampler(index_valid)
 
 			#  create the loaders
-			train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler)
-			valid_loader = data_utils.DataLoader(self.data_set,batch_size=1,sampler=valid_sampler)
+			train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler,pin_memory=pin)
+			valid_loader = data_utils.DataLoader(self.data_set,batch_size=1,sampler=valid_sampler,pin_memory=pin)
 
 
 		# training loop

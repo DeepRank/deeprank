@@ -205,12 +205,12 @@ class DeepRankDataSet(data_utils.Dataset):
 			fname = list(filter(lambda x: self.select_target in x, opt_names))
 			
 			if len(fname) == 0:
-				print('Error : Target name %s not found in %s' %(self.select_target,folder))
+				print('Error : Target name %s not found in %s' %(self.select_target,mol))
 				print('Error : Possible targets are \n\t%s' %'\n\t'.join(opt_names))
 				sys.exit()
 
 			if len(fname)>1:
-				print('Error : Multiple Targets Matching %s Found in %s' %(self.select_target,folder))
+				print('Error : Multiple Targets Matching %s Found in %s' %(self.select_target,mol))
 				print('Error : Possible targets are \n\t%s' %'\n\t'.join(opt_names))
 				sys.exit()
 
