@@ -99,9 +99,6 @@ class DeepRankConvNet:
 		if model_type == '2d':
 			data_set.convert_dataset_to2d(proj2d=proj2d)
 
-		# load the model
-		self.net = model(data_set.input_shape)
-
 		# task to accomplish 
 		self.task = task
 
@@ -132,8 +129,6 @@ class DeepRankConvNet:
 			print("Task " + self.task +"not recognized.\nOptions are \n\t 'reg': regression \n\t 'class': classifiation\n\n")
 			sys.exit()
 
-		# set the optimizer
-		self.optimizer = optim.SGD(self.net.parameters(),lr=0.005,momentum=0.9,weight_decay=0.001)
 
 		# options for outputing the results
 		self.tensorboard = tensorboard
@@ -152,7 +147,7 @@ class DeepRankConvNet:
 		print('=\t targets   : %s' %self.data_set.select_target)
 		print('=\t CUDA      : %s' %str(self.cuda))
 		if self.ngpu is  not None:
-			print('=\t nGPU      : %d' %self.cuda)
+			print('=\t nGPU      : %d' %self.ngpu)
 		print('='*40,'\n')	
 
 
@@ -163,14 +158,21 @@ class DeepRankConvNet:
 			print(' --> Aborting the experiment \n\n')
 			sys.exit()
 
+
+		# load the model
+		self.net = model(data_set.input_shape)
+
 		#multi-gpu
 		if self.ngpu>1:
 			ids = [i for i in range(self.ngpu)]
-			self.net = torch.nn.DataParallel(self.net,device_ids=ids)
+			self.net = nn.DataParallel(self.net,device_ids=ids).cuda()
 
 		# cuda compatible
-		if self.cuda:
+		elif self.cuda:
 			self.net = self.net.cuda()
+
+		# set the optimizer
+		self.optimizer = optim.SGD(self.net.parameters(),lr=0.005,momentum=0.9,weight_decay=0.001)
 
 	def train(self,nepoch=50, divide_set=[0.8,0.1,0.1], train_batch_size = 10, 
 		      preshuffle = True,plot_intermediate=True,debug=False):
@@ -578,17 +580,18 @@ class DeepRankConvNet:
 		and classification where they are int.
 		'''
 
+		# if cuda is available
+		if self.cuda:
+			inputs = inputs.cuda(async=True)
+			targets = targets.cuda(async=True)
+
+
 		# get the varialbe as float by default
 		inputs,targets = Variable(inputs),Variable(targets).float()
 
 		# change the targets to long for classification
 		if self.task == 'class':
 			targets =  targets.long()
-
-		# if cuda is available
-		if self.cuda:
-			inputs = inputs.cuda()
-			targets = targets.cuda()
 
 		return inputs,targets
 
