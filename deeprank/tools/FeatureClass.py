@@ -1,5 +1,5 @@
 import os
-
+import numpy as np
 
 class FeatureClass(object):
 
@@ -62,3 +62,64 @@ class FeatureClass(object):
 				f.write(feat)
 
 			f.close()
+
+
+
+	# export hdf5 as line text
+	def export_data_hdf5(self,featgrp):
+
+		# loop through the datadict and name
+		for name,data in self.feature_data.items():	
+
+			ds = []
+			for key,value in data.items():
+
+				# residue based feature
+				if len(key) == 3:
+
+					# tags
+					feat = '{:>4}{:>10}{:>10}'.format(key[0],key[1],key[2])
+
+				# atomic based features
+				elif len(key) == 4:
+
+					# tags
+					feat = '{:>4}{:>10}{:>10}{:>10}'.format(key[0],key[1],key[2],key[3])
+
+				# values
+				for v in value:
+					feat += '    {: 1.6E}'.format(v)	
+
+				# append
+				ds.append(feat)
+
+			# put in the hdf5 file
+			ds = np.array(ds).astype('|S'+str(len(ds[0])))
+
+			# create the dataset
+			featgrp.create_dataset(name,data=ds)			
+
+	# export the data to hdf5 group
+	def export_data_hdf5_compund(self,featgrp):
+
+		# loop through the datadict and name
+		for name,data in self.feature_data.items():
+
+			# determine the data dype
+			k = data.keys()[0]
+			nv = len(data.values()[0])
+			if len(k) == 3:
+				dtype = np.dtype([ ('chainID', np.str,4), ('resSeq',np.str,10), ('resName',np.str,10),('data',np.float,nv) ])
+			if len(k) == 4:
+				dtype = np.dtype([ ('chainID', np.str,4), ('resSeq',np.str,10), ('resName',np.str,10), ('name',np.str,10),('data',np.float,nv) ])
+
+			# create the data
+			ds=[]
+			for key,value in data.items():
+				ds.append( key + (value,) )
+
+			# pass to array 
+			ds = np.array(ds,dtype=dtype)
+
+			# create the dataset
+			featgrp.create_dataset(name,data=ds)

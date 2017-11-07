@@ -17,7 +17,7 @@ import torch.utils.data as data_utils
 
 import torch.cuda
 
-from tensorboard import SummaryWriter
+#from tensorboard import SummaryWriter
 from deeprank.learn import DeepRankDataSet
 
 class DeepRankConvNet:

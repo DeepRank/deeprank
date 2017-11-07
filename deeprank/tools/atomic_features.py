@@ -77,7 +77,6 @@ class atomicFeature(FeatureClass):
 
 		# set a few things
 		self.pdbfile = pdbfile
-		self.sqlfile = '_mol.db'
 		self.param_charge = param_charge
 		self.param_vdw = param_vdw
 		self.patch_file = patch_file
@@ -93,7 +92,7 @@ class atomicFeature(FeatureClass):
 		self.root_export = root_export
 
 		# read the pdb as an sql
-		self.sqldb = pdb2sql(self.pdbfile,sqlfile=self.sqlfile)
+		self.sqldb = pdb2sql(self.pdbfile)
 
 		# read the force field
 		self.read_charge_file()
@@ -886,6 +885,8 @@ class atomicFeature(FeatureClass):
 		bare_mol_name = self.pdbfile.split('/')[-1][:-4]
 		super().export_data(bare_mol_name)
 
+	def export_data_hdf5(self,featgrp):
+		super().export_data_hdf5(featgrp)
 
 #####################################################################################
 #

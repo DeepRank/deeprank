@@ -316,9 +316,12 @@ class StructureSimilarity(object):
 			residue_pairs_ref = pickle.load(open(ref_pairs,'rb'))
 
 		# create a dict of the ecoy data
-		with open(self.decoy,'r') as f:
-			data_decoy = f.readlines()
-
+		if isinstance(self.decoy,str) and o.path.isfile(self.decoy): 
+			with open(self.decoy,'r') as f:
+				data_decoy = f.readlines()
+		elif isinstance(self.decoy,np.ndarray):
+			data_decoy = [l.decode('utf-8') for l in self.decoy]
+			
 		# read the decoy data
 		atom_decoy, xyz_decoy = [],[]
 		residue_xyz = {}
@@ -758,8 +761,11 @@ class StructureSimilarity(object):
 	def read_data_zone(pdb_file,resData,return_not_in_zone=False):
 
 		# read the ref file
-		with open(pdb_file,'r') as f:
-			data = f.readlines()
+		if isinstance(pdb_file,str) and os.path.isfile(pdb_file):
+			with open(pdb_file,'r') as f:
+				data = f.readlines()
+		elif isinstance(pdb_file,np.ndarray):
+			data =  [l.decode('utf-8') for l in pdb_file]
 
 		# get the xyz of the 
 		data_in_zone = []

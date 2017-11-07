@@ -194,9 +194,21 @@ class pdb2sql(object):
 		# a pure python way
 		# RMK we go through the data twice here. Once to read the ATOM line and once to parse the data ... 
 		# we could do better than that. But the most time consuming step seems to be the CREATE TABLE query
-		with open(pdbfile,'r') as fi:
-			data = [line.split('\n')[0] for line in fi if line.startswith('ATOM')]
+		# if we path a file we read it
+		if isinstance(pdbfile,str):
+			if os.path.isfile(pdbfile):
+				with open(pdbfile,'r') as fi:
+					data = [line.split('\n')[0] for line in fi if line.startswith('ATOM')]
 
+		# if we pass a list as for h5py read/write
+		# we directly use that
+		elif isinstance(pdbfile,np.ndarray):
+			data =  [l.decode('utf-8') for l in pdbfile.tolist()]
+
+		# if we cant read it
+		else:
+			print(pdbfile)
+			raise ValueError('PDB data not recognized')
 
 		# if there is no ATOM in the file
 		if len(data)==1 and data[0]=='':
@@ -835,6 +847,8 @@ class pdb2sql(object):
 
 		# close
 		f.close()
+
+
 
 	# close the database 
 	def close(self,rmdb = True):
