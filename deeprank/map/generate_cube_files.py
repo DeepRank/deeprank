@@ -5,8 +5,10 @@ import argparse
 import subprocess as sp 
 import os
 import pickle 
+import h5py 
+from deeprank.tools import pdb2sql 
 
-def generate_viz_files(mol_dir):
+def generate_viz_files(mol_dir=None,hdf5=None,mol_name=None):
 
 
 	'''
@@ -32,6 +34,66 @@ def generate_viz_files(mol_dir):
 	vmd -e <feature_name>.vmd
 	'''
 
+	if all([mol_dir is None, hdf5 is None]):
+		raise ValueError('You must provide a diretory OR a hdf5 file')
+
+	if all([mol_dir is not None, hdf5 is not None]):
+		raise ValueError('You can only provide a diretory OR a hdf5 file not both')
+
+	if hdf5 is not None and mol_name is None: 
+		raise ValueError('You mst specify which molecule to load in the hdf5 _gen_from_pkl_files')
+
+	if mol_dir is not None:
+		_gen_from_pkl_files(mol_dir)
+
+	elif hdf5 is not None:
+		_gen_from_hdf5_file(hdf5,mol_name)
+
+
+def _gen_from_hdf5_file(hdf5,mol_name):
+
+	outdir = './'
+	try:
+		f5 = h5py.File(hdf5,'r')
+	except:
+		raise FileNotFoundError('HDF5 file %s could not be opened' %hdf5)
+
+	try:
+		molgrp = f5[mol_name]
+	except:
+		raise LookupError('Molecule %s not found in %s' %(mol_name,hdf5))
+
+	# create the pdb file
+	sqldb = pdb2sql(molgrp['complex'].value)
+	sqldb.exportpdb(outdir + './complex.pdb')
+	sqldb.close()
+
+	# get the grid
+	grid = {}
+	grid['x'] = molgrp['grid_points/x'].value
+	grid['y'] = molgrp['grid_points/y'].value
+	grid['z'] = molgrp['grid_points/z'].value
+
+	# deals with the features
+	mapgrp = molgrp['mapped_features']
+
+	# loop through all the features
+	for data_name in mapgrp.keys():
+
+		# create a dict of the feature {name : value}
+		featgrp = mapgrp[data_name]
+		data_dict = {}
+		for ff in featgrp.keys():
+			data_dict[ff] =  featgrp[ff].value 
+
+		# export the cube file
+		export_cube_files(data_dict,data_name,grid,outdir)
+
+	f5.close()
+
+
+def _gen_from_pkl_files(mol_dir):
+
 	# create the output directory
 	outdir = mol_dir+'/data_viz/'
 	if not os.path.isdir(outdir):
@@ -45,7 +107,6 @@ def generate_viz_files(mol_dir):
 	grid = np.load(mol_dir+'/input/grid_points.npz')
 
 	# get all the data file in the directory
-	#fnames_npy = sp.check_output('ls %s/input/*.npy' %(mol_dir),shell=True).decode('utf8').split()
 	fnames_pkl = sp.check_output('ls %s/input/*.pkl' %(mol_dir),shell=True).decode('utf8').split()
 
 	# loop over all the data files
@@ -115,7 +176,7 @@ def export_cube_files(data_dict,data_name,grid,export_path):
 		f.write('mol rename top ' + data_name)
 
 		# load the complex
-		write_molspec_vmd(f,'complex.pdb','Cartoon','SegName')		
+		write_molspec_vmd(f,'complex.pdb','Cartoon','Chain')		
 
 		f.close()
 
@@ -134,10 +195,14 @@ if __name__ == "__main__":
 	import argparse
 
 	parser = argparse.ArgumentParser(description='export the grid data in cube format')
-	parser.add_argument('mol_dir',help="Directory of the molecule")
+	parser.add_argument('-mol_dir',help="Directory of the molecule",default=None)
+	parser.add_argument('-hdf5', help="hdf5 file storing the data set",default=None)
+	parser.add_argument('-mol_name',help="name of the molecule in the hdf5",defualt=None)
 	args = parser.parse_args()
 
 	# shortcut
 	mol_dir = args.mol_dir
+	hdf5 = args.hdf5
+	mol_name = arge.mol_name
 
-	generate_viz_files(mol_dir)
+	generate_viz_files(mol_dir=mol_dir,hdf5=hdf5,mol_name=mol_name)
