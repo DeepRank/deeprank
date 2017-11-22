@@ -7,11 +7,11 @@ python:
   - "3.6"
 
 before_install:
-  - pip3 install -q nose
-  - pip3 install -qr .travis.requirements.txt
+  - pip install -q nose
+  - pip install -qr .travis.requirements.txt
 
 install:
-  - pip3 install -e .
+  - pip install -e .
 
 script:
-  - nosetests test/
+  - nosetests -w test/
