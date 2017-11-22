@@ -10,7 +10,7 @@ before_install:
   - pip3 install -qr .travis.requirements.txt
 
 install:
-  - python setup.py install
+  - pip3 install -e .
 
 script:
   - nosetests -w test/
