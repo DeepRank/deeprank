@@ -14,4 +14,4 @@ install:
   - pip install -e .
 
 script:
-  - nosetests -w test/
+  - nosetests stupid_test.py
