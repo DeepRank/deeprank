@@ -1,5 +1,7 @@
 # DeepRank Machinery Version 0.0
 
+<a href='https://travis-ci.org/DeepRank/deeprank_v0.0'><img src='https://secure.travis-ci.org/DeepRank/deeprank_v0.0.png?branch=master'></a>
+
 These module allows to :
 
    * compute some features such as electrostatic interactions and van der Waals interaction 
