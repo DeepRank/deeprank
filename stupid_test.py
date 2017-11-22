@@ -1,3 +1,6 @@
+import deeprank
+
+
 def test():
 	x = 0
 	assert x == 0 
