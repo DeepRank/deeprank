@@ -15,4 +15,4 @@ install:
   - pip install -qe .
 
 script:
-  - nosetests stupid_test.py
+  - nosetests -w test/ test_atomic_features.py
