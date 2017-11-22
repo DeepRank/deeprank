@@ -1,0 +1,10 @@
+language: python
+python:
+  - "3.6"
+install:
+  - pip
+script:
+  - python ./test/atomic/test_atomic_features.py
+  - python ./test/rmsd/test_rmsd.py
+  - python ./test/generte/generate.py
+  - python ./test/learn/learn.py
