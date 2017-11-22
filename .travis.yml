@@ -8,7 +8,7 @@ python:
 
 before_install:
   - pip install -q nose
-  - pip install coverage<4
+  - pip install 'coverage<4'
   - pip install -qr .travis.requirements.txt
 
 install:
