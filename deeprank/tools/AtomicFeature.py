@@ -308,13 +308,11 @@ class AtomicFeature(FeatureClass):
 		# contact of chain A
 		for resdata in resA:
 			chainID,resName,resSeq = resdata
-			#query = "WHERE chainID='{chainID}' AND resName='{resName}' AND resSeq={resSeq}".format(chainID=chainID,resName=resName,resSeq=resSeq)
 			index_contact_A += self.sqldb.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq)
 		
 		# contact of chain B
 		for resdata in resB:
 			chainID,resName,resSeq = resdata
-			#query = "WHERE chainID='{chainID}' AND resName='{resName}' AND resSeq={resSeq}".format(chainID=chainID,resName=resName,resSeq=resSeq)
 			index_contact_B += self.sqldb.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq)
 
 		# make sure that we don't have double (maybe optional)
