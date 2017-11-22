@@ -8,10 +8,11 @@ python:
 
 before_install:
   - pip install -q nose
+  - pip install coverage<4
   - pip install -qr .travis.requirements.txt
 
 install:
-  - pip install -e .
+  - pip install -qe .
 
 script:
-  - nosetests stupid_test.py
+  - nosetests --with-coverage --cover-package=deeprank
