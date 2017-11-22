@@ -1,7 +1,16 @@
+sudo: false
+distr : "trusy"
+
 language: python
+
 python:
   - "3.6"
+
+before_install:
+  - pip3 install -r .travis.requirements.txt
+
 install:
-  - pip install -r .travis.requirements.txt
+  - python setup.py
+
 script:
   - nosetests -w test/
