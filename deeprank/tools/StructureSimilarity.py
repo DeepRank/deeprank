@@ -1,5 +1,5 @@
 import numpy as np
-from deeprank.tools import transform, pdb2sql 
+from deeprank.tools import pdb2sql 
 import sys,os,time,pickle
 
 '''
@@ -120,19 +120,19 @@ class StructureSimilarity(object):
 		tr_ref = self.get_trans_vect(xyz_ref_long)
 
 		# translate everything for 1
-		xyz_decoy_short = transform.translation(xyz_decoy_short,tr_decoy)
-		xyz_decoy_long = transform.translation(xyz_decoy_long,tr_decoy)
+		xyz_decoy_short = self.translation(xyz_decoy_short,tr_decoy)
+		xyz_decoy_long = self.translation(xyz_decoy_long,tr_decoy)
 
 		# translate everuthing for 2
-		xyz_ref_short = transform.translation(xyz_ref_short,tr_ref)
-		xyz_ref_long = transform.translation(xyz_ref_long,tr_ref)
+		xyz_ref_short = self.translation(xyz_ref_short,tr_ref)
+		xyz_ref_long = self.translation(xyz_ref_long,tr_ref)
 
 		# get the ideql rotation matrix
 		# to superimpose the A chains
 		U = self.get_rotation_matrix(xyz_decoy_long,xyz_ref_long,method=method)
 
 		# rotate the entire fragment
-		xyz_decoy_short = transform.rotation_matrix(xyz_decoy_short,U,center=False)
+		xyz_decoy_short = self.rotation_matrix(xyz_decoy_short,U,center=False)
 
 		# compute the RMSD
 		return self.get_rmsd(xyz_decoy_short,xyz_ref_short)
@@ -142,8 +142,8 @@ class StructureSimilarity(object):
 	def compute_lzone(self,save_file=True,filename=None):
 
 		sql_ref = pdb2sql(self.ref)
-		nA = len(sql_ref.get('x,y,z',chain='A'))
-		nB = len(sql_ref.get('x,y,z',chain='B'))
+		nA = len(sql_ref.get('x,y,z',chainID='A'))
+		nB = len(sql_ref.get('x,y,z',chainID='B'))
 
 		# detect which chain is the longest
 		long_chain = 'A'
@@ -241,15 +241,15 @@ class StructureSimilarity(object):
 		tr_ref   = self.get_trans_vect(xyz_contact_ref)
 
 		# translate everything 
-		xyz_contact_decoy = transform.translation(xyz_contact_decoy,tr_decoy)
-		xyz_contact_ref   = transform.translation(xyz_contact_ref,tr_ref)
+		xyz_contact_decoy = self.translation(xyz_contact_decoy,tr_decoy)
+		xyz_contact_ref   = self.translation(xyz_contact_ref,tr_ref)
 
 		# get the ideql rotation matrix
 		# to superimpose the A chains
 		U = self.get_rotation_matrix(xyz_contact_decoy,xyz_contact_ref,method=method)
 
 		# rotate the entire fragment
-		xyz_contact_decoy = transform.rotation_matrix(xyz_contact_decoy,U,center=False)
+		xyz_contact_decoy = self.rotation_matrix(xyz_contact_decoy,U,center=False)
 
 		# return the RMSD
 		return self.get_rmsd(xyz_contact_decoy,xyz_contact_ref)
@@ -263,8 +263,8 @@ class StructureSimilarity(object):
 		index_contact_ref = contact_ref[0]+contact_ref[1]
 
 		# get the xyz and atom identifier of the decoy contact atoms
-		xyz_contact_ref = sql_ref.get('x,y,z',index=index_contact_ref)
-		data_test = [tuple(data) for data in sql_ref.get('chainID,resSeq',index=index_contact_ref)]
+		xyz_contact_ref = sql_ref.get('x,y,z',rowID=index_contact_ref)
+		data_test = [tuple(data) for data in sql_ref.get('chainID,resSeq',rowID=index_contact_ref)]
 		data_test = sorted(set(data_test))
 
 		# close the sql
@@ -316,56 +316,67 @@ class StructureSimilarity(object):
 			residue_pairs_ref = pickle.load(open(ref_pairs,'rb'))
 
 		# create a dict of the ecoy data
-		if isinstance(self.decoy,str) and o.path.isfile(self.decoy): 
+		if isinstance(self.decoy,str) and os.path.isfile(self.decoy): 
 			with open(self.decoy,'r') as f:
 				data_decoy = f.readlines()
 		elif isinstance(self.decoy,np.ndarray):
 			data_decoy = [l.decode('utf-8') for l in self.decoy]
-			
+		else:
+			raise ValueError('Decoy not found')
+
 		# read the decoy data
 		atom_decoy, xyz_decoy = [],[]
 		residue_xyz = {}
 		residue_name = {}
+
+		# go through all the lines 
+		# that starts with ATOM
 		for line in data_decoy:
 
 			if line.startswith('ATOM'):
 
+				# chain ID
 				chainID = line[21]
 				if chainID == ' ':
 					chainID = line[72]
 
+				# atom info
 				resSeq = int(line[22:26])
 				resName = line[17:20].strip()
 				name = line[12:16].strip()
 
-				x = float(line[30:38])
-				y = float(line[38:46])
-				z = float(line[46:54])
+				# position
+				x,y,z = float(line[30:38]), float(line[38:46]), float(line[46:54])
 
+				# dict entry
 				key = (chainID,resSeq,resName)
 
+				# create the dict entry if necessary
 				if key not in residue_xyz.keys():
 					residue_xyz[key] = []
 					residue_name[key] = []
 
-				#if name in ['CA','C','N','O']:
-				residue_xyz[key].append([x,y,z])
-				residue_name[key].append(name)
+				# we exclude the Hydrogens from the search
+				if name[0] != 'H':
+					residue_xyz[key].append([x,y,z])
+					residue_name[key].append(name)
 
 		# loop over the residue pairs of the 
+		# and increment common if an atom pair is close enough
 		nCommon,nTotal = 0,0
 		for resA,resB_list in residue_pairs_ref.items():
 			xyzA = residue_xyz[resA]
 			for resB in resB_list:
 				if resB in residue_xyz.keys():
 					xyzB = residue_xyz[resB]
-					dist_min = np.array([  np.sqrt(np.sum((np.array(p1)-np.array(p2))**2)) for p1 in xyzA for p2 in xyzB  ]).min()
-					if dist_min<cutoff:
-						nCommon += 1
+					dist_min = np.min(np.array([  np.sqrt(np.sum((np.array(p1)-np.array(p2))**2)) for p1 in xyzA for p2 in xyzB  ]))
+					if dist_min<=cutoff:
+						nCommon += 1						
 				nTotal += 1
 
 		# normalize
 		return nCommon/nTotal
+		
 
 	# compute the residue pair of the reference
 	def compute_residue_pairs_ref(self,cutoff=5.0,save_file=True,filename=None):
@@ -412,12 +423,12 @@ class StructureSimilarity(object):
 		sql_ref = pdb2sql(self.ref,sqlfile='ref.db')
 
 		# extract the pos of chains A
-		xyz_decoy_A = np.array(sql_decoy.get('x,y,z',chain='A'))
-		xyz_ref_A = np.array(sql_ref.get('x,y,z',chain='A'))
+		xyz_decoy_A = np.array(sql_decoy.get('x,y,z',chainID='A'))
+		xyz_ref_A = np.array(sql_ref.get('x,y,z',chainID='A'))
 
 		# extract the pos of chains B
-		xyz_decoy_B = np.array(sql_decoy.get('x,y,z',chain='B'))
-		xyz_ref_B = np.array(sql_ref.get('x,y,z',chain='B'))
+		xyz_decoy_B = np.array(sql_decoy.get('x,y,z',chainID='B'))
+		xyz_ref_B = np.array(sql_ref.get('x,y,z',chainID='B'))
 
 
 		# check the lengthes
@@ -449,19 +460,19 @@ class StructureSimilarity(object):
 		tr_ref = self.get_trans_vect(xyz_ref_long)
 
 		# translate everything for 1
-		xyz_decoy_short = transform.translation(xyz_decoy_short,tr_decoy)
-		xyz_decoy_long = transform.translation(xyz_decoy_long,tr_decoy)
+		xyz_decoy_short = self.translation(xyz_decoy_short,tr_decoy)
+		xyz_decoy_long = self.translation(xyz_decoy_long,tr_decoy)
 
 		# translate everuthing for 2
-		xyz_ref_short = transform.translation(xyz_ref_short,tr_ref)
-		xyz_ref_long = transform.translation(xyz_ref_long,tr_ref)
+		xyz_ref_short = self.translation(xyz_ref_short,tr_ref)
+		xyz_ref_long = self.translation(xyz_ref_long,tr_ref)
 
 		# get the ideal rotation matrix
 		# to superimpose the A chains
 		U = self.get_rotation_matrix(xyz_decoy_long,xyz_ref_long,method=method)
 
 		# rotate the entire fragment
-		xyz_decoy_short = transform.rotation_matrix(xyz_decoy_short,U,center=False)
+		xyz_decoy_short = self.rotation_matrix(xyz_decoy_short,U,center=False)
 
 
 		# compute the RMSD
@@ -475,11 +486,11 @@ class StructureSimilarity(object):
 			xyz_ref = np.array(sql_ref.get('x,y,z'))
 
 			# translate
-			xyz_ref = transform.translation(xyz_ref,tr_ref)
-			xyz_decoy = transform.translation(xyz_decoy,tr_decoy)
+			xyz_ref = self.translation(xyz_ref,tr_ref)
+			xyz_decoy = self.translation(xyz_decoy,tr_decoy)
 			
 			# rotate decoy
-			xyz_decoy= transform.rotation_matrix(xyz_decoy,U,center=False)
+			xyz_decoy= self.rotation_matrix(xyz_decoy,U,center=False)
 
 			# update the sql database
 			sql_decoy.update_xyz(xyz_decoy)
@@ -501,8 +512,8 @@ class StructureSimilarity(object):
 	def get_identical_atoms(db1,db2,chain):
 
 		# get data
-		data1 = db1.get('chainID,resSeq,name',chain=chain)
-		data2 = db2.get('chainID,resSeq,name',chain=chain)
+		data1 = db1.get('chainID,resSeq,name',chainID=chain)
+		data2 = db2.get('chainID,resSeq,name',chainID=chain)
 
 		# tuplify
 		data1 = [tuple(d1) for d1 in data1]
@@ -553,8 +564,8 @@ class StructureSimilarity(object):
 
 
 		# get the xyz and atom identifier of the decoy contact atoms
-		xyz_contact_ref = sql_ref.get('x,y,z',index=index_contact_ref)
-		data_contact_ref = sql_ref.get('chainID,resSeq,resName,name',index=index_contact_ref)
+		xyz_contact_ref = sql_ref.get('x,y,z',rowID=index_contact_ref)
+		data_contact_ref = sql_ref.get('chainID,resSeq,resName,name',rowID=index_contact_ref)
 		
 		# get the xyz and atom indeitifier of the reference
 		xyz_decoy = sql_decoy.get('x,y,z')
@@ -585,8 +596,8 @@ class StructureSimilarity(object):
 
 
 		# check that we still have atoms in both chains
-		chain_decoy = list(set(sql_decoy.get('chainID',index=index_contact_decoy)))
-		chain_ref   = list(set(sql_ref.get('chainID',index=index_contact_ref)))
+		chain_decoy = list(set(sql_decoy.get('chainID',rowID=index_contact_decoy)))
+		chain_ref   = list(set(sql_ref.get('chainID',rowID=index_contact_ref)))
 		
 		if len(chain_decoy)<1 or len(chain_ref)<1:
 			raise ValueError('Error in i-rmsd: only one chain represented in one chain')
@@ -597,15 +608,15 @@ class StructureSimilarity(object):
 		tr_ref   = self.get_trans_vect(xyz_contact_ref)
 
 		# translate everything 
-		xyz_contact_decoy = transform.translation(xyz_contact_decoy,tr_decoy)
-		xyz_contact_ref   = transform.translation(xyz_contact_ref,tr_ref)
+		xyz_contact_decoy = self.translation(xyz_contact_decoy,tr_decoy)
+		xyz_contact_ref   = self.translation(xyz_contact_ref,tr_ref)
 
 		# get the ideql rotation matrix
 		# to superimpose the A chains
 		U = self.get_rotation_matrix(xyz_contact_decoy,xyz_contact_ref,method=method)
 
 		# rotate the entire fragment
-		xyz_contact_decoy = transform.rotation_matrix(xyz_contact_decoy,U,center=False)
+		xyz_contact_decoy = self.rotation_matrix(xyz_contact_decoy,U,center=False)
 
 		# compute the RMSD
 		irmsd = self.get_rmsd(xyz_contact_decoy,xyz_contact_ref)
@@ -694,7 +705,7 @@ class StructureSimilarity(object):
 
 		# find the umber of residue that ref and decoys hace in common
 		nCommon = len(set(data_pair_ref).intersection(data_pair_decoy))
-
+	
 		# normalize
 		Fnat = nCommon/len(data_pair_ref)
 
@@ -996,61 +1007,63 @@ class StructureSimilarity(object):
 
 		return U
 
-#####################################################################################
-#
-#	THE MAIN FUNCTION CALLED IN THE INTERNAL TARGET CALCULATOR
-#
-#####################################################################################
 
-def __compute_target__(decoy,outdir):
+	@staticmethod
+	def translation(xyz,vect):
+		return xyz + vect
 
-	mol_name = decoy.split('/')[-1][:-4]
-	export_file = outdir + '/' + mol_name
+	@staticmethod
+	def rotation_around_axis(xyz,axis,angle):
 
-	# get the reference
-	ref = os.path.dirname(os.path.realpath(decoy)) + '/ref.pdb'
+		# get the data
+		ct,st = np.cos(angle),np.sin(angle)
+		ux,uy,uz = axis
 
-	# check that the ref exists
-	if os.path.isfile(ref):
+		# get the center of the molecule
+		xyz0 = np.mean(xyz,0)
 
-		# if the two files are the same and contains the same data
-		# we have a native file
-		if os.path.getsize(decoy) == os.path.getsize(ref):
-			if open(decoy,'r').read() == open(ref,'r').read():
+		# definition of the rotation matrix
+		# see https://en.wikipedia.org/wiki/Rotation_matrix
+		rot_mat = np.array([
+		[ct + ux**2*(1-ct),			ux*uy*(1-ct) - uz*st,		ux*uz*(1-ct) + uy*st],
+		[uy*ux*(1-ct) + uz*st,    	ct + uy**2*(1-ct),			uy*uz*(1-ct) - ux*st],
+		[uz*ux*(1-ct) - uy*st,		uz*uy*(1-ct) + ux*st,   	ct + uz**2*(1-ct)   ]])
 
-				# lrmsd = irmsd = 0 | fnat = dockq = 1
-				np.savetxt(export_file+'.LRMSD',[0.0])
-				np.savetxt(export_file+'.IRMSD',[0.0])
-				np.savetxt(export_file+'.FNAT',[1.0])
-				np.savetxt(export_file+'.DOCKQ',[1.0])
+		# apply the rotation
+		return np.dot(rot_mat,(xyz-xyz0).T).T + xyz0
 
-		# or it's a decoy
+	@staticmethod			
+	def rotation_euler(xyz,alpha,beta,gamma):
+
+		# precomte the trig
+		ca,sa = np.cos(alpha),np.sin(alpha)
+		cb,sb = np.cos(beta),np.sin(beta)
+		cg,sg = np.cos(gamma),np.sin(gamma)
+
+
+		# get the center of the molecule
+		xyz0 = np.mean(xyz,0)
+
+		# rotation matrices
+		rx = np.array([[1,0,0],[0,ca,-sa],[0,sa,ca]])
+		ry = np.array([[cb,0,sb],[0,1,0],[-sb,0,cb]])
+		rz = np.array([[cg,-sg,0],[sg,cs,0],[0,0,1]])
+
+		rot_mat = np.dot(rz,np.dot(ry,rz))
+
+		# apply the rotation
+		return np.dot(rot_mat,(xyz-xyz0).T).T + xyz0
+
+
+	@staticmethod
+	def rotation_matrix(xyz,rot_mat,center=True):
+		if center:
+			xyz0 = np.mean(xyz)
+			return np.dot(rot_mat,(xyz-xyz0).T).T + xyz0
 		else:
+			return np.dot(rot_mat,(xyz).T).T
 
-			# compute the izone/lzone/ref_pairs
-			mol_name = os.path.dirname(os.path.realpath(decoy)).split('/')[-1].split('_')[0]
-			lzone = mol_name+'.lzone'
-			izone = mol_name+'.izone'
-			ref_pairs = mol_name + '.ref_pairs'
 
-			# init the class
-			sim = StructureSimilarity(decoy,ref)
-
-			lrmsd = sim.compute_lrmsd_fast(method='svd',lzone=lzone)
-			np.savetxt(export_file+'.LRMSD',[lrmsd])
-
-			irmsd = sim.compute_irmsd_fast(method='svd',izone=izone)
-			np.savetxt(export_file+'.IRMSD',[irmsd])
-
-			Fnat = sim.compute_Fnat_fast(ref_pairs=ref_pairs)
-			np.savetxt(export_file+'.FNAT',[Fnat])
-
-			dockQ = sim.compute_DockQScore(Fnat,lrmsd,irmsd)
-			np.savetxt(export_file+'.DOCKQ',[dockQ])
-
-	# if we have nor ref
-	else:
-		raise FileNotFoundError('native file not found')
 		
 if __name__ == '__main__':
 

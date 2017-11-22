@@ -1,3 +1,3 @@
 # deep learning
-from .DeepRankDataSet import DeepRankDataSet
-from .DeepRankConvNet import DeepRankConvNet
+from .DataSet import DataSet
+from .ConvNet import ConvNet

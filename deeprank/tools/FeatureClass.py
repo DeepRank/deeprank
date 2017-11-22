@@ -99,27 +99,3 @@ class FeatureClass(object):
 			# create the dataset
 			featgrp.create_dataset(name,data=ds)			
 
-	# export the data to hdf5 group
-	def export_data_hdf5_compund(self,featgrp):
-
-		# loop through the datadict and name
-		for name,data in self.feature_data.items():
-
-			# determine the data dype
-			k = data.keys()[0]
-			nv = len(data.values()[0])
-			if len(k) == 3:
-				dtype = np.dtype([ ('chainID', np.str,4), ('resSeq',np.str,10), ('resName',np.str,10),('data',np.float,nv) ])
-			if len(k) == 4:
-				dtype = np.dtype([ ('chainID', np.str,4), ('resSeq',np.str,10), ('resName',np.str,10), ('name',np.str,10),('data',np.float,nv) ])
-
-			# create the data
-			ds=[]
-			for key,value in data.items():
-				ds.append( key + (value,) )
-
-			# pass to array 
-			ds = np.array(ds,dtype=dtype)
-
-			# create the dataset
-			featgrp.create_dataset(name,data=ds)

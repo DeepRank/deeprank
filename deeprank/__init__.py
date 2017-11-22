@@ -1,10 +1,5 @@
-
-# shortcut for all the classes we want directly available
-#from .assemble.assemble_data import DataAssembler
-from .assemble import *
-
-# generate and visualize the data
-from .map import *
+# generate the data
+from .generate import *
 
 # deep learning
 from .learn import *

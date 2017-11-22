@@ -1,4 +1,7 @@
 from .pdb2sql import pdb2sql
 from .FeatureClass import FeatureClass
-from .atomic_features import atomicFeature
+from .AtomicFeature import AtomicFeature
 from .StructureSimilarity import StructureSimilarity
+
+from .features import *
+from .targets import *

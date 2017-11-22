@@ -273,7 +273,7 @@ class pdb2sql(object):
 
 		# fill in the new names
 		for ic,chain in enumerate(chainID):
-			index = self.get('rowID',chain=chain)
+			index = self.get('rowID',chainID=chain)
 			for ind in index:
 				newID[ind] = ascii_uppercase[ic]
 
@@ -307,7 +307,6 @@ class pdb2sql(object):
 	#		GET FUNCTIONS
 	#
 	#			get(attribute,selection) -> return the atribute(s) value(s) for the given selection 
-	#			get_index()              -> deprecated 
 	#			get_contact_atoms()		 -> return a list of rowID  for the contact atoms
 	#			get_contact_residue()	 -> return a list of resSeq for the contact residue
 	#
@@ -318,17 +317,9 @@ class pdb2sql(object):
 
 		'''
 		Exectute a simple SQL query that extracts values of attributes for certain condition
-		Ex  db.get('x,y,z',where="chainIN=='A'")
+		Ex  db.get('x,y,z',chainID='A', name = ['C','CA'])
 		returns an array containing the value of the attributes
 		'''
-		
-		arguments = {'where'   : "String e.g 'chainID = 'A''",
-					 'index'   : "Array e.g. [27,28,30]",
-					 'rowID'   : "Array e.g. [27,28,30]",
-					 'chain'   : "Char e.g. 'A'",
-					 'chainID' : "Char e.g. 'A'",
-					 'name'    : "String e.g 'CA'",
-					 'query'   : "SQL query e.g. 'WHERE chainID='B''"}
 
 		# the asked keys
 		keys = kwargs.keys()			
@@ -349,17 +340,14 @@ class pdb2sql(object):
 		############################################################################
 		# GENERIC QUERY
 		#
-		# might be the only one we need
+		# the only one we need
 		# each keys must be a valid columns
 		# each value may be a single value or an array
 		# AND is assumed between different keys
 		# OR is assumed for the different values of a given key
 		#
-		# SO FAR ONLY WORKS WHEN WE HAVE MORE THAN 1 KEYWORD
-		# AFTER REPLACING THE OLD CALL WE SHOULD MAKE IT THE
-		# ONLY WAY TO QUERY THE DATABASE
 		##############################################################################
-		elif len(keys) > 1:
+		else:
 
 			# check that all the keys exists
 			for k in keys:
@@ -402,58 +390,6 @@ class pdb2sql(object):
 
 			# query the sql database and return the answer in a list
 			data = [list(row) for row in self.c.execute(query,vals)]
-
-		###############################################################################
-		# THESE ARE THESE THE OLD COMMANDS
-		# WE SHOULD TRACK DOWN WHERE THEY ARE USED
-		# IN THE CODE AND REPLACE THEM WITH NEW ONES
-		# otherwise we have only one key
-		#################################################################################
-		else:
-
-			key = list(keys)[0]
-			value = kwargs[key]
-
-			# select which key we have
-			if key == 'where':
-				query =  'SELECT {an} FROM ATOM WHERE {c1}'.format(an=atnames,c1=value)
-				data = [list(row) for row in self.c.execute(query)]
-
-			elif key == 'index' or key == 'rowID':
-
-				# we can have a max of 999 value in a SQL QUERY
-				# for larger index range we need to proceed by batch
-
-				SQL_LIMIT = 999
-				nbatch = int(len(value)/999)+1
-				data = []
-				for ibatch in range(nbatch):
-
-					start,end = ibatch*SQL_LIMIT,(ibatch+1)*SQL_LIMIT
-
-					value_tmp = tuple([v+1 for v in value[start:end]])
-					qm = ','.join(['?' for i in range(len(value_tmp))])
-
-					query  =  'SELECT {an} FROM ATOM WHERE rowID in ({qm})'.format(an=atnames,qm=qm)
-					data += [list(row) for row in self.c.execute(query,value_tmp)]
-
-			elif key == 'chain' or key == 'chainID' :
-				query = "SELECT {an} FROM ATOM WHERE chainID=?".format(an=atnames)
-				data = [list(row) for row in self.c.execute(query,value)]
-
-			elif key == 'name':
-				query = "SELECT {an} FROM ATOM WHERE name='{name}'".format(an=atnames,name=value)
-				data = [list(row) for row in self.c.execute(query)]
-			
-			elif key == 'query' :	
-				query = 'SELECT {an} FROM ATOM {c1}'.format(an=atnames,c1=value)
-				data = [list(row) for row in self.c.execute(query)]
-
-			else:
-				print('Error arguments %s not supported in pdb2sql.get()\nOptions are:\n' %(key))
-				for posskey,possvalue in arguments.items():
-					print('\t' + posskey + '\t\t' + possvalue)
-				return
 		
 		# empty data
 		if len(data)==0:
@@ -474,17 +410,9 @@ class pdb2sql(object):
 	
 		return data
 
-	# not entirely sure but I think that's useless
-	def get_indexes(self,atnames,index):
-		strind = ','.join(map(str,index))
-		return self.get(atnames,where="rowID in ({ind})".format(ind=strind))
-
 	############################################################################
 	#
 	# get the contact atoms
-	# this is getting out of hand
-	# there are too many options and this
-	# should NOT be part of the main class.
 	# 
 	# we should have a entire module called pdb2sql
 	# with a submodule pdb2sql.interface that finds contact atoms/residues
@@ -497,19 +425,19 @@ class pdb2sql(object):
 		                  excludeH=False,return_only_backbone_atoms=False,return_contact_pairs=False):
 
 		# xyz of the chains
-		xyz1 = np.array(self.get('x,y,z',chain=chain1))
-		xyz2 = np.array(self.get('x,y,z',chain=chain2))
+		xyz1 = np.array(self.get('x,y,z',chainID=chain1))
+		xyz2 = np.array(self.get('x,y,z',chainID=chain2))
 
 		# index of b
-		index2 = self.get('rowID',chain=chain2)
+		index2 = self.get('rowID',chainID=chain2)
 		
 		# resName of the chains
-		resName1 = np.array(self.get('resName',chain=chain1))
-		resName2 = np.array(self.get('resName',chain=chain2))
+		resName1 = np.array(self.get('resName',chainID=chain1))
+		resName2 = np.array(self.get('resName',chainID=chain2))
 
 		# atomnames of the chains
-		atName1 = np.array(self.get('name',chain=chain1))
-		atName2 = np.array(self.get('name',chain=chain2))
+		atName1 = np.array(self.get('name',chainID=chain1))
+		atName2 = np.array(self.get('name',chainID=chain2))
 
 
 		# loop through the first chain
@@ -580,8 +508,8 @@ class pdb2sql(object):
 	def _extend_contact_to_residue(self,index1,index2,only_backbone_atoms):
 
 		# extract the data
-		dataA = self.get('chainId,resName,resSeq',index=index1)
-		dataB = self.get('chainId,resName,resSeq',index=index2)
+		dataA = self.get('chainId,resName,resSeq',rowID=index1)
+		dataB = self.get('chainId,resName,resSeq',rowID=index2)
 
 		# create tuple cause we want to hash through it
 		dataA = list(map(lambda x: tuple(x),dataA))
@@ -597,24 +525,20 @@ class pdb2sql(object):
 		# contact of chain A
 		for resdata in resA:
 			chainID,resName,resSeq = resdata
-			query = "WHERE chainID='{chainID}' AND resName='{resName}' AND resSeq={resSeq}".format(chainID=chainID,resName=resName,resSeq=resSeq)
+			
 			if only_backbone_atoms:
-				index = self.get('rowID',query=query)
-				name = self.get('name',query=query)
-				index_contact_A += [ ind for ind,n in zip(index,name) if n in self.backbone_type ]
+				index_contact_A += self.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq,name=self.backbone_type)
 			else:
-				index_contact_A += self.get('rowID',query=query)
+				index_contact_A += self.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq)
 		
 		# contact of chain B
 		for resdata in resB:
 			chainID,resName,resSeq = resdata
-			query = "WHERE chainID='{chainID}' AND resName='{resName}' AND resSeq={resSeq}".format(chainID=chainID,resName=resName,resSeq=resSeq)
+			
 			if only_backbone_atoms:
-				index = self.get('rowID',query=query)
-				name = self.get('name',query=query)
-				index_contact_B += [ ind for ind,n in zip(index,name) if n in self.backbone_type ]
+				index_contact_B += self.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq,name=self.backbone_type)
 			else:
-				index_contact_B += self.get('rowID',query=query)
+				index_contact_B += self.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq)
 
 		# make sure that we don't have double (maybe optional)
 		index_contact_A = sorted(set(index_contact_A))
@@ -667,8 +591,8 @@ class pdb2sql(object):
 			contact_atoms = self.get_contact_atoms(cutoff=cutoff,chain1=chain1,chain2=chain2,return_contact_pairs=False)
 
 			# get the residue info
-			data1 = self.get('chainID,resSeq,resName',index=contact_atoms[0])
-			data2 = self.get('chainID,resSeq,resName',index=contact_atoms[1])
+			data1 = self.get('chainID,resSeq,resName',rowID=contact_atoms[0])
+			data2 = self.get('chainID,resSeq,resName',rowID=contact_atoms[1])
 
 			# take only unique
 			residue_contact_A = sorted(set([tuple(resData) for resData in data1]))
@@ -697,6 +621,73 @@ class pdb2sql(object):
 		query = "ALTER TABLE ATOM ADD COLUMN '%s' %s DEFAULT %s" %(colname,coltype,str(default))
 		self.c.execute(query)
 		#self.conn.commit()
+
+	def update(self,attribute,values,**kwargs):
+
+		# the asked keys
+		keys = kwargs.keys()			
+
+		# check if the column exists
+		try:
+			self.c.execute("SELECT EXISTS(SELECT {an} FROM ATOM)".format(an=attribute))
+		except:
+			print('Error column %s not found in the database' %attribute)
+			self.get_colnames()
+			return
+
+		# handle the multi model cases 
+		if 'model' not in keys and self.nModel > 0:
+			for iModel in range(self.nModel):
+				kwargs['model'] = iModel
+				self.update(attribute,values,**kwargs)
+			return 
+
+		# parse the attribute
+		if ',' in attribute:
+			attribute = attribute.split(',')
+
+		if not isinstance(attribute,list):
+			attribute = [attribute]
+
+
+		# check the size
+		natt = len(attribute)
+		nrow = len(values)
+		ncol = len(values[0])
+
+		if natt != ncol:
+			raise ValueError('Number of attribute incompatible with the number of columns in the data')
+
+
+
+		# get the row ID of the selection
+		rowID = self.get('rowID',**kwargs)
+		nselect = len(rowID)
+
+		if nselect != nrow:
+			raise ValueError('Number of data values incompatible with the given conditions')
+
+		# prepare the query
+		query = 'UPDATE ATOM SET '
+		query = query + ', '.join(map(lambda x: x+'=?',attribute))
+		if len(kwargs)>0:
+			query = query + ' WHERE rowID=?'
+			
+
+		# prepare the data
+		data = []
+		for i,val in enumerate(values):
+
+			tmp_data = [ v for v in val ]
+
+			if len(kwargs)>0:
+
+				# here the conversion of the indexes is a bit annoying
+				tmp_data += [rowID[i]+1]
+
+			data.append(tmp_data)
+
+		self.c.executemany(query,data)
 
 	def update_column(self,colname,values,index=None):
 
@@ -805,11 +796,11 @@ class pdb2sql(object):
 	#
 	###############################################################################################
 
-
+	# comit changes 
 	def commit(self):
 		self.conn.commit()
 
-
+	# export to pdb file
 	def exportpdb(self,fname,**kwargs):
 
 		'''
@@ -849,7 +840,6 @@ class pdb2sql(object):
 		f.close()
 
 
-
 	# close the database 
 	def close(self,rmdb = True):
 		
@@ -865,12 +855,77 @@ class pdb2sql(object):
 				self.commit()
 				self.conn.close() 
 
+	############################################################################
+	#
+	# Transform the position of the molecule
+	#
+	##############################################################################
 
 
+	def translation(self,vect,**kwargs):
+		xyz = self.get('x,y,z',**kwargs)
+		xyz += vect
+		self.update('x,y,z',xyz,**kwargs)
+
+	def rotation_around_axis(self,axis,angle,**kwargs):
+
+		xyz = self.get('x,y,z',**kwargs)
+
+		# get the data
+		ct,st = np.cos(angle),np.sin(angle)
+		ux,uy,uz = axis
+
+		# get the center of the molecule
+		xyz0 = np.mean(xyz,0)
+
+		# definition of the rotation matrix
+		# see https://en.wikipedia.org/wiki/Rotation_matrix
+		rot_mat = np.array([
+		[ct + ux**2*(1-ct),			ux*uy*(1-ct) - uz*st,		ux*uz*(1-ct) + uy*st],
+		[uy*ux*(1-ct) + uz*st,    	ct + uy**2*(1-ct),			uy*uz*(1-ct) - ux*st],
+		[uz*ux*(1-ct) - uy*st,		uz*uy*(1-ct) + ux*st,   	ct + uz**2*(1-ct)   ]])
+
+		# apply the rotation
+		xyz = np.dot(rot_mat,(xyz-xyz0).T).T + xyz0
+
+		self.update('x,y,z',xyz,**kwargs)
+
+			
+	def rotation_euler(self,alpha,beta,gamma,**kwargs):
+
+		xyz = self.get('x,y,z',**kwargs)
+
+		# precomte the trig
+		ca,sa = np.cos(alpha),np.sin(alpha)
+		cb,sb = np.cos(beta),np.sin(beta)
+		cg,sg = np.cos(gamma),np.sin(gamma)
 
 
+		# get the center of the molecule
+		xyz0 = np.mean(xyz,0)
 
+		# rotation matrices
+		rx = np.array([[1,0,0],[0,ca,-sa],[0,sa,ca]])
+		ry = np.array([[cb,0,sb],[0,1,0],[-sb,0,cb]])
+		rz = np.array([[cg,-sg,0],[sg,cs,0],[0,0,1]])
 
+		rot_mat = np.dot(rz,np.dot(ry,rz))
+
+		# apply the rotation
+		xyz = np.dot(rot_mat,(xyz-xyz0).T).T + xyz0
+
+		self.update('x,y,z',xyz,**kwargs)
+
+	def rotation_matrix(self,rot_mat,center=True,**kwargs):
+
+		xyz = self.get('x,y,z',**kwargs)
+
+		if center:
+			xyz0 = np.mean(xyz)
+			xyz = np.dot(rot_mat,(xyz-xyz0).T).T + xyz0
+		else:
+			xyz = np.dot(rot_mat,(xyz).T).T
+		self.update('x,y,z',xyz,**kwargs)
 
 
 
