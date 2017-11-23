@@ -47,8 +47,9 @@ class ConvNet3D(nn.Module):
 ##################################
 
 
-
-def test_learn():
+# all the import torch fails on TRAVIS
+# so we can only exectute this test locally
+def localonly_learn():
 
   #adress of the database
   database = '1ak4.hdf5'
@@ -80,4 +81,4 @@ def test_learn():
   model.train(nepoch = 5,divide_set=[0.8,0.1,0.1], train_batch_size = 5)
 
 if __name__ == "__main__":
-  test_learn()
+  localonly_learn()
