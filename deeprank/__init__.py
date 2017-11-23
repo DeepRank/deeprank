@@ -2,7 +2,7 @@
 from .generate import *
 
 # deep learning
-from .learn import *
+#from .learn import *
 
 # tools
 from .tools import *
