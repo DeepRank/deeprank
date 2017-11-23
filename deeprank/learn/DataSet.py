@@ -1,7 +1,7 @@
 import os
 import sys
 import h5py
-import torch
+from torch import FloatTensor
 import torch.utils.data as data_utils
 import subprocess as sp
 import numpy as np
@@ -229,8 +229,8 @@ class DataSet(data_utils.Dataset):
 		self.input_shape = features[0].shape
 
 		# transform the data in torch Tensor
-		self.features = torch.FloatTensor(np.array(features))
-		self.targets = torch.FloatTensor(np.array(targets))
+		self.features = FloatTensor(np.array(features))
+		self.targets = FloatTensor(np.array(targets))
 
 		# normalize the targets/featurs
 		if self.normalize_targets:
