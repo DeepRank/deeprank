@@ -17,7 +17,6 @@ import torch.utils.data as data_utils
 
 import torch.cuda
 
-#from tensorboard import SummaryWriter
 from deeprank.learn import DataSet
 
 class ConvNet:
@@ -88,7 +87,7 @@ class ConvNet:
 	'''
 
 	def __init__(self,data_set,model,model_type='3d',proj2d=0,
-		         task=None,cuda=False,ngpu=0,tensorboard=True,plot=True,outdir='./'):
+		         task=None,cuda=False,ngpu=0,tensorboard=False,plot=True,outdir='./'):
 
 
 
