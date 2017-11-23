@@ -320,7 +320,7 @@ class DataGenerator(object):
 #====================================================================================
 
 
-	def map_features(self,grid_info,reset=False,use_tmpdir=False):
+	def map_features(self,grid_info,cuda=False,gpu_block=None,reset=False,use_tmpdir=False):
 
 		'''
 		Generate the input/output data on the grids for a series of prot-prot conformations
@@ -373,6 +373,11 @@ class DataGenerator(object):
 			if m not in grid_info:
 				grid_info[m] = 'sum'
 
+		# sanity check for cuda
+		if cuda and gpu_block is None:
+			print('Warning GPU block automatically set to 8 x 8 x 8')
+			print('You can sepcify the block size with gpu_block=[n,m,k]')
+			gpu_block = [8,8,8]
 
 		# loop over the data files
 		for mol in mol_names:
@@ -386,10 +391,37 @@ class DataGenerator(object):
 				             residue_feature = grid_info['residue_feature'],
 				             atomic_feature = grid_info['atomic_feature'],
 				             atomic_feature_mode = grid_info['atomic_feature_mode'],
+				             cuda = cuda,
+				             gpu_block=gpu_block,
 				             hdf5_file = f5)
 
 		# close he hdf5 file
 		f5.close()
+
+#====================================================================================
+#
+#		Simply tune the kernel
+#
+#====================================================================================
+
+	def tune_cuda_kernel(self,grid_info):
+
+		
+		# fills in the grid data if not provided : default = NONE
+		grinfo = ['number_of_points','resolution']
+		for gr  in grinfo:
+			if gr not in grid_info:
+				raise ValueError('%s must be specified to tune the kernel')
+			
+		# compute the data we want on the grid
+		grid = gt.GridTools(molgrp=None,
+				             number_of_points = grid_info['number_of_points'],
+				             resolution = grid_info['resolution'],
+				             cuda = True,tune_kernel=True)
+
+		# close he hdf5 file
+		f5.close()
+
 
 #====================================================================================
 #

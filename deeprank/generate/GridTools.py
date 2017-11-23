@@ -107,7 +107,7 @@ class GridTools(object):
 				residue_feature =None, residue_feature_mode ='sum',
 				atomic_feature  =None, atomic_feature_mode  ='sum',
 				contact_distance = 8.5, hdf5_file=None,
-				cuda=False, gpu_block=[8,8,8]):
+				cuda=False, gpu_block=None, tune_kernel=False):
 		
 		# mol file	
 		self.molgrp = molgrp
@@ -128,16 +128,16 @@ class GridTools(object):
 		if self.atomic_feature != None:
 			self.feattype_required.append('atomic')
 
-
 		# find the base name of the molecule
 		# remove all the path and the extension
-		self.mol_basename = molgrp.name
-		
-		# hdf5 file
-		self.hdf5 = hdf5_file
+		if not tune_kernel:
+			self.mol_basename = molgrp.name
+			
+			# hdf5 file
+			self.hdf5 = hdf5_file
 
-		# export to HDF5 file
-		self.hdf5.require_group(self.mol_basename+'/features/')
+			# export to HDF5 file
+			self.hdf5.require_group(self.mol_basename+'/features/')
 
 		# parameter of the grid
 		if number_of_points is not None:
@@ -175,18 +175,26 @@ class GridTools(object):
 		# contact distance to locate the interface
 		self.contact_distance = contact_distance
 
-		# if we already have an output containing the grid
-		# we update the existing features
-		_update_ = False	
-		if self.mol_basename+'/grid_points' in self.hdf5:
-			_update_ = True
+		# if we only want to tune the kernel
+		if tune_kernel:
+			self.tune_kernel()
 
-		if _update_:
-			print('\n= Updating grid data for %s' %(self.mol_basename))
-			self.update_feature()
+		# or we do the full thing
 		else:
-			print('\n= Creating grid and grid data for %s' %(self.mol_basename))	
-			self.create_new_data()
+
+			# if we already have an output containing the grid
+			# we update the existing features
+			_update_ = False	
+			if self.mol_basename+'/grid_points' in self.hdf5:
+				_update_ = True
+
+			if _update_:
+				print('\n= Updating grid data for %s' %(self.mol_basename))
+				self.update_feature()
+			else:
+				print('\n= Creating grid and grid data for %s' %(self.mol_basename))	
+				self.create_new_data()
+		
 
 
 
@@ -575,7 +583,7 @@ class GridTools(object):
 					if nFeat == 1:
 						x0,y0,z0 = pos
 						alpha = coeff*feat_values
-						addgrid(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu)
+						addgrid(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,block=tupe(self.gpu_block),grid=tuple(self.gpu_grid))
 					else:
 						raise ValueError('CUDA only possible for single-valued features so far')
 
@@ -718,6 +726,10 @@ class GridTools(object):
 		except:
 			print('Install the Kernel Tuner : \n \t\t pip install kernel_tuner')
 			print('http://benvanwerkhoven.github.io/kernel_tuner/')
+
+
+		# define the grid
+		self.define_grid_points()
 
 		# create the dictionary containing the tune parameters
 		tune_params = OrderedDict()
