@@ -1,10 +1,7 @@
 sudo: false
 distr : "trusy"
 
-language: python
-
-python:
-  - "3.6"
+language: generic 
 
 before_install:
 
@@ -23,7 +20,7 @@ before_install:
   - conda install pytorch torchvision cuda80 -c soumith 
 
 install:
-  - pip install -qe .
+  - pip install -qe .[test]
 
 script:
   - nosetests -w test/ test_atomic_features.py --with-coverage --cover-package=deeprank

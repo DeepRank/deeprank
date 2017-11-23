@@ -14,7 +14,11 @@ setup(
         'scipy',
         'h5py',
         'tqdm',
-        'matplotlib' ]
+        'matplotlib' ],
+
+    extras_require= {
+        'test': ['nose', 'coverage'],
+    }
 )
 
 
