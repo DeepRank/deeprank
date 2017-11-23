@@ -23,6 +23,4 @@ install:
   - pip install -qe .[test]
 
 script:
-  - nosetests -w test/ test_atomic_features.py --with-coverage --cover-package=deeprank
-  - nosetests -w test/ test_rmsd.py --with-coverage --cover-package=deeprank
-  - nosetests -w test/ test_generate.py --with-coverage --cover-package=deeprank
+  - nosetests -w test/  --with-coverage --cover-package=deeprank
