@@ -23,4 +23,4 @@ install:
   - pip install -qe .[test]
 
 script:
-  - nosetests -w test/ --ignore_files='test_learn.py' --with-coverage --cover-package=deeprank
+  - nosetests -w test/ --ignore-files='test_learn.py' --with-coverage --cover-package=deeprank
