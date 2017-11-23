@@ -1,11 +1,11 @@
 import os
 import sys
+import h5py
 import torch
 import torch.utils.data as data_utils
 import subprocess as sp
 import numpy as np
-import pickle 
-import h5py
+
 
 try:
 	from tqdm import tqdm

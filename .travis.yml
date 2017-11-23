@@ -1,5 +1,5 @@
 sudo: false
-distr : "trusy"
+distr : "trusty"
 
 language: generic 
 
