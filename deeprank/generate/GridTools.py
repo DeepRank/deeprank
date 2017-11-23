@@ -3,7 +3,7 @@ import subprocess as sp
 import os, sys 
 import itertools
 from scipy.signal import bspline
-import pickle 
+from collections import OrderedDict
 
 from deeprank.tools import pdb2sql
 
@@ -106,7 +106,8 @@ class GridTools(object):
 				atomic_densities=None, atomic_densities_mode='sum',
 				residue_feature =None, residue_feature_mode ='sum',
 				atomic_feature  =None, atomic_feature_mode  ='sum',
-				contact_distance = 8.5, hdf5_file=None,cuda=False):
+				contact_distance = 8.5, hdf5_file=None,
+				cuda=False, gpu_block=[8,8,8]):
 		
 		# mol file	
 		self.molgrp = molgrp
@@ -147,6 +148,8 @@ class GridTools(object):
 
 		# cuda support 
 		self.cuda = cuda
+		if self.cuda:
+			self.init_cuda(gpu_block)
 
 		# parameter of the atomic system
 		self.atom_xyz = None
@@ -437,39 +440,20 @@ class GridTools(object):
 		# prepare cuda if we need to
 		if self.cuda:
 
-			import pycuda.autoinit
-			from pycuda import driver, compiler, gpuarray, tools
-
+			# book memp on the gpu
 			x_gpu = gpuarray.to_gpu(self.x.astype(npfloat32))
 			y_gpu = gpuarray.to_gpu(self.y.astype(npfloat32))
 			z_gpu = gpuarray.to_gpu(self.z.astype(npfloat32))
 			grid_gpu = gpuarray.zeros(self.npts,np.float32)
 
-			kernel_code_template = """
-			#include <math.h>
-			__global__ void AddGrid(float alpha, float x0, float y0, float z0, float *xvect, float *yvect, float *zvect, float *out)
-			{
-				
-				// 3D thread 
-			    int tx = threadIdx.x + blockDim.x * blockIdx.x;
-			    int ty = threadIdx.y + blockDim.y * blockIdx.y;
-			    int tz = threadIdx.z + blockDim.z * blockIdx.z;
+			# get the kernel
+			kernel_code_template = self.get_cuda_kernel()
+			kernel_code = kernel_code_template % {'nx' : self.npts[0],  'ny' : self.npts[1], 'nz' : self.npts[2], 'RES' : np.max(self.res) }
 
-			    float beta = 1.0/%(RES)s;
+			# inpt the block size
+			kernel_code = self.prepare_kernel(kernel_code)
 
-			    if ( ( tx < %(MATRIX_SIZE)s ) && (ty < %(MATRIX_SIZE)s) && (tz < %(MATRIX_SIZE)s) )
-			    {
-
-			    	float dx = xvect[tx] - x0;
-			    	float dy = yvect[ty] - y0;
-			    	float dz = zvect[tz] - z0;
-			    	float d = sqrt(dx*dx + dy*dy + dz*dz);
-			    	out[ty * %(MATRIX_SIZE)s * %(MATRIX_SIZE)s + tx * %(MATRIX_SIZE)s + tz] += alpha*exp(-beta*d);
-			    }
-			}
-			"""
-
-			kernel_code = kernel_code_template % {'MATRIX_SIZE' : self.npts[0], 'RES' : np.max(self.res) }
+			# compile and get the function
 			mod = compiler.SourceModule(kernel_code)
 			addgrid = mod.get_function('AddGrid')
 
@@ -522,6 +506,10 @@ class GridTools(object):
 						dict_data[feature_name+'_chainB_%03d' %iF] = np.zeros(self.npts)
 					else:
 						dict_data[feature_name+'_%03d' %iF] = np.zeros(self.npts)
+
+			# rest the grid
+			if self.cuda:
+				grid_gpu *= 0
 
 			# map all the features
 			for line in tqdm(data):
@@ -676,6 +664,99 @@ class GridTools(object):
 		# default
 		else:
 			raise ValueError('Options not recognized for the grid',type_)
+
+
+
+	##########################################################	
+	#	Init the CUDA parameters
+	##########################################################
+	def init_cuda(block):
+
+		from pycuda import driver, compiler, gpuarray, tools
+		import pycuda.autoinit
+	
+		self.gpu_block = block
+		self.gpu_grid = [ int(np.ceil(n/b)) for b,n in zip(self.gpu_block,self.npts)]
+
+	##########################################################	
+	#	Get the CUDA KERNEL
+	##########################################################
+	def get_cuda_kernel():
+
+		return """
+		#include <math.h>
+		__global__ void AddGrid(float alpha, float x0, float y0, float z0, float *xvect, float *yvect, float *zvect, float *out)
+		{
+			
+			// 3D thread 
+		    int tx = threadIdx.x + block_size_x * blockIdx.x;
+		    int ty = threadIdx.y + block_size_y * blockIdx.y;
+		    int tz = threadIdx.z + block_size_z * blockIdx.z;
+
+		    float beta = 1.0/%(RES)s;
+
+		    if ( ( tx < %(nx)s ) && (ty < %(ny)s) && (tz < %(nz)s) )
+		    {
+
+		    	float dx = xvect[tx] - x0;
+		    	float dy = yvect[ty] - y0;
+		    	float dz = zvect[tz] - z0;
+		    	float d = sqrt(dx*dx + dy*dy + dz*dz);
+		    	out[ty * %(nx)s * %(nz)s + tx * %(nz)s + tz] += alpha*exp(-beta*d);
+		    }
+		}
+		"""
+
+
+	#################################################################
+	#	Tune the kernel
+	#################################################################
+	def tune_kernel():
+
+		try:
+			from kernel_tuner import tune_kernel
+		except:
+			print('Install the Kernel Tuner : \n \t\t pip install kernel_tuner')
+			print('http://benvanwerkhoven.github.io/kernel_tuner/')
+
+		# create the dictionary containing the tune parameters
+		tune_params = OrderedDict()
+		tune_params['block_size_x'] = [2,4,8,16,32]
+		tune_params['block_size_y'] = [2,4,8,16,32]
+		tune_params['block_size_z'] = [2,4,8,16,32]
+
+		# define the final grid
+		grid = np.zeros_like(self.xgrid)
+
+		# arguments of the CUDA function
+		x0,y0,z0 = np.float32(0),np.float32(0),np.float32(0)
+		args = [x0,y0,z0,self.x,self.y,self.z,grid]
+
+		# dimensionality
+		problem_size = self.npts
+
+		# get the kernel
+		kernel_code_template = get_cuda_kernel()
+		kernel_code = kernel_code_template % {'nx' : self.npst[0], 'ny': self.npst[1], 'nz' : self.npst[2], 'RES' : np.max(self.res)}
+
+		# tune
+		result = tune_kernel('AddGrid', kernel_code,problem_size,args,tune_params)
+
+	##########################################################	
+	#	prepare the kernel
+	##########################################################
+	def prepare_kernel(kernel_code):
+
+		# change the values of the block sizes in the kernel
+		fixed_params = OrderedDict()
+		fixed_params['block_size_x'] = self.gpu_block[0]
+		fixed_params['block_size_y'] = self.gpu_block[1]
+		fixed_params['block_size_z'] = self.gpu_block[2]
+
+		for k,v in fixed_params.items():
+		    kernel_code = kernel_code.replace(k,str(v))
+
+		return kernel_code
 
 	################################################################
 	# export the grid points for external calculations of some
