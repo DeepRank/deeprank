@@ -1,4 +1,5 @@
 import os
+
 import torch.optim as optim
 import torch
 from torch.autograd import Variable
@@ -6,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as data_utils
 
-import deeprank.learn
+import deeprank.learn 
 
 ###################################
 # define the CNN
@@ -49,7 +50,7 @@ class ConvNet3D(nn.Module):
 
 # all the import torch fails on TRAVIS
 # so we can only exectute this test locally
-def localonly_learn():
+def test_learn():
 
   #adress of the database
   database = '1ak4.hdf5'
@@ -81,4 +82,4 @@ def localonly_learn():
   model.train(nepoch = 5,divide_set=[0.8,0.1,0.1], train_batch_size = 5)
 
 if __name__ == "__main__":
-  localonly_learn()
+  test_learn()
