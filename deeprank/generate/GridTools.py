@@ -678,13 +678,14 @@ class GridTools(object):
 	##########################################################	
 	#	Init the CUDA parameters
 	##########################################################
-	def init_cuda(block):
+	def init_cuda(self,block):
 
 		from pycuda import driver, compiler, gpuarray, tools
 		import pycuda.autoinit
 	
 		self.gpu_block = block
-		self.gpu_grid = [ int(np.ceil(n/b)) for b,n in zip(self.gpu_block,self.npts)]
+		if self.gpu_block is not None:
+			self.gpu_grid = [ int(np.ceil(n/b)) for b,n in zip(self.gpu_block,self.npts)]
 
 	##########################################################	
 	#	Get the CUDA KERNEL

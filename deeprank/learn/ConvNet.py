@@ -6,7 +6,6 @@ import sys
 import os
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 #import torch
 from torch.autograd import Variable
@@ -114,6 +113,11 @@ class ConvNet:
 
 		# plot or not plot
 		self.plot = plot
+
+		# import matplotlib only if we 
+		if self.plot:
+			import matplotlib.pyplot as plt
+
 
 		# Set the loss functiom
 		if self.task=='reg':
