@@ -15,7 +15,7 @@ def test_generate():
 	                                           )
 
 	#create new files
-	database.create_database()
+	#database.create_database()
 
 	# map the features
 	grid_info = {
@@ -27,7 +27,8 @@ def test_generate():
 		'resolution' : [1.,1.,1.]
 	}
 
-	database.map_features(grid_info)
+	database.tune_kernel()
+	#database.map_features(grid_info)
 
 
 if __name__ == "__main__":
