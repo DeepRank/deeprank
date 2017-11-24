@@ -25,10 +25,14 @@ def test_generate():
 		'atomic_feature'  : ['vdwaals','coulomb','charge'],
 		'atomic_feature_mode': 'sum',
 		'resolution' : [1.,1.,1.]
+		''
 	}
 
-	#database.tune_cuda_kernel(grid_info)
-	database.map_features(grid_info)
+	# tune the kernel 
+	database.tune_cuda_kernel(grid_info)
+
+	# map the features
+	database.map_features(grid_info,cuda=True,gpu_block=[2,32,8])
 
 
 if __name__ == "__main__":
