@@ -818,9 +818,16 @@ class GridTools(object):
 		mod = compiler.SourceModule(kernel_code)
 		addgrid = mod.get_function('AddGrid')
 
-		x0,y0,z0 = np.float32(0),np.float32(0),np.float32(0)
-		addgrid(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,
-			block=tuple(self.gpu_block),grid=tuple(self.gpu_grid))
+
+		print('GPU BLOCK :', self.gpu_block)
+		print('GPU GRID  :', self.gpu_grid)
+
+		xyz_center = np.random.rand(500,3)
+		alpha = np.float32(1)
+		for xyz in tqdm(xyz_center):
+			x0,y0,z0 = xyz
+			addgrid(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,
+					block=tuple(self.gpu_block),grid=tuple(self.gpu_grid))
 
 	################################################################
 	# export the grid points for external calculations of some
