@@ -452,11 +452,11 @@ class GridTools(object):
 				import pycuda.autoinit
 			except:
 				raise ImportError("Pycuda not found")
-				
+
 			# book memp on the gpu
-			x_gpu = gpuarray.to_gpu(self.x.astype(npfloat32))
-			y_gpu = gpuarray.to_gpu(self.y.astype(npfloat32))
-			z_gpu = gpuarray.to_gpu(self.z.astype(npfloat32))
+			x_gpu = gpuarray.to_gpu(self.x.astype(np.float32))
+			y_gpu = gpuarray.to_gpu(self.y.astype(np.float32))
+			z_gpu = gpuarray.to_gpu(self.z.astype(np.float32))
 			grid_gpu = gpuarray.zeros(self.npts,np.float32)
 
 			# get the kernel

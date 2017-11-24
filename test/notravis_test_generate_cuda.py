@@ -25,7 +25,6 @@ def test_generate():
 		'atomic_feature'  : ['vdwaals','coulomb','charge'],
 		'atomic_feature_mode': 'sum',
 		'resolution' : [1.,1.,1.]
-		''
 	}
 
 	# tune the kernel 
