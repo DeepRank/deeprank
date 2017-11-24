@@ -28,10 +28,10 @@ def test_generate():
 	}
 
 	# tune the kernel 
-	#database.tune_cuda_kernel(grid_info)
-
+	database.tune_cuda_kernel(grid_info)
+	database.test_cuda()
 	# map the features
-	database.map_features(grid_info,cuda=True,gpu_block=[2,32,8])
+	#database.map_features(grid_info,cuda=True,gpu_block=[2,32,8])
 
 
 if __name__ == "__main__":

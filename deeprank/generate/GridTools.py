@@ -105,7 +105,7 @@ class GridTools(object):
 				residue_feature =None, residue_feature_mode ='sum',
 				atomic_feature  =None, atomic_feature_mode  ='sum',
 				contact_distance = 8.5, hdf5_file=None,
-				cuda=False, gpu_block=None, tune_kernel=False):
+				cuda=False, gpu_block=None, tune_kernel=False,debug_cuda=False):
 		
 		# mol file	
 		self.molgrp = molgrp
@@ -128,7 +128,7 @@ class GridTools(object):
 
 		# find the base name of the molecule
 		# remove all the path and the extension
-		if not tune_kernel:
+		if not tune_kernel and not debug_cuda:
 			self.mol_basename = molgrp.name
 			
 			# hdf5 file
@@ -175,7 +175,16 @@ class GridTools(object):
 
 		# if we only want to tune the kernel
 		if tune_kernel:
+			if not self.cuda:
+				self.init_cuda()
+				self.cuda = True
 			self.tune_kernel()
+
+		elif debug_cuda:
+			if not self.cuda:
+				self.init_cuda()
+				self.cuda = True
+			self.test_cuda()
 
 		# or we do the full thing
 		else:
@@ -747,7 +756,8 @@ class GridTools(object):
 
 		# arguments of the CUDA function
 		x0,y0,z0 = np.float32(0),np.float32(0),np.float32(0)
-		args = [x0,y0,z0,self.x,self.y,self.z,grid]
+		alpha = np.float32(0)
+		args = [alpha,x0,y0,z0,self.x,self.y,self.z,grid]
 
 		# dimensionality
 		problem_size = self.npts
@@ -774,6 +784,43 @@ class GridTools(object):
 		    kernel_code = kernel_code.replace(k,str(v))
 
 		return kernel_code
+
+	################################################################
+	#	test cuda
+	################################################################
+	def test_cuda(self):
+
+		# define the grid
+		self.center_contact = np.zeros(3)
+		self.define_grid_points()
+
+		# try to import pycuda
+		try:
+			from pycuda import driver, compiler, gpuarray, tools
+			import pycuda.autoinit
+		except:
+			raise ImportError("Pycuda not found")
+
+		# book memp on the gpu
+		x_gpu = gpuarray.to_gpu(self.x.astype(np.float32))
+		y_gpu = gpuarray.to_gpu(self.y.astype(np.float32))
+		z_gpu = gpuarray.to_gpu(self.z.astype(np.float32))
+		grid_gpu = gpuarray.zeros(self.npts,np.float32)
+
+		# get the kernel
+		kernel_code_template = self.get_cuda_kernel()
+		kernel_code = kernel_code_template % {'nx' : self.npts[0],  'ny' : self.npts[1], 'nz' : self.npts[2], 'RES' : np.max(self.res) }
+
+		# inpt the block size
+		kernel_code = self.prepare_kernel(kernel_code)
+
+		# compile and get the function
+		mod = compiler.SourceModule(kernel_code)
+		addgrid = mod.get_function('AddGrid')
+
+		x0,y0,z0 = np.float32(0),np.float32(0),np.float32(0)
+		addgrid(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,
+			block=tuple(self.gpu_block),grid=tuple(self.gpu_grid))
 
 	################################################################
 	# export the grid points for external calculations of some

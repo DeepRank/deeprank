@@ -420,6 +420,21 @@ class DataGenerator(object):
 				             cuda = True,tune_kernel=True)
 
 
+	def test_cuda(self,grid_info,gpu_block):
+
+		
+		# fills in the grid data if not provided : default = NONE
+		grinfo = ['number_of_points','resolution']
+		for gr  in grinfo:
+			if gr not in grid_info:
+				raise ValueError('%s must be specified to tune the kernel')
+			
+		# compute the data we want on the grid
+		grid = gt.GridTools(molgrp=None,
+				             number_of_points = grid_info['number_of_points'],
+				             resolution = grid_info['resolution'],
+				             cuda = True,debug_cuda=True,gpu_block=gpu_block)
+
 
 #====================================================================================
 #
