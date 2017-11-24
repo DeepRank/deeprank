@@ -762,7 +762,7 @@ class GridTools(object):
 	##########################################################	
 	#	prepare the kernel
 	##########################################################
-	def prepare_kernel(kernel_code):
+	def prepare_kernel(sefl,kernel_code):
 
 		# change the values of the block sizes in the kernel
 		fixed_params = OrderedDict()
