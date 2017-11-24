@@ -588,7 +588,7 @@ class GridTools(object):
 					if nFeat == 1:
 						x0,y0,z0 = pos
 						alpha = coeff*feat_values
-						addgrid(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,block=tupe(self.gpu_block),grid=tuple(self.gpu_grid))
+						addgrid(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,block=tuple(self.gpu_block),grid=tuple(self.gpu_grid))
 					else:
 						raise ValueError('CUDA only possible for single-valued features so far')
 
