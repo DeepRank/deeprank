@@ -690,6 +690,7 @@ class GridTools(object):
 	##########################################################	
 	#	Get the CUDA KERNEL
 	##########################################################
+	@staticmethod
 	def get_cuda_kernel():
 
 		return """
@@ -720,7 +721,7 @@ class GridTools(object):
 	#################################################################
 	#	Tune the kernel
 	#################################################################
-	def tune_kernel():
+	def tune_kernel(self):
 
 		try:
 			from kernel_tuner import tune_kernel
@@ -730,6 +731,7 @@ class GridTools(object):
 
 
 		# define the grid
+		self.center_contact = np.zeros(3)
 		self.define_grid_points()
 
 		# create the dictionary containing the tune parameters
@@ -749,8 +751,8 @@ class GridTools(object):
 		problem_size = self.npts
 
 		# get the kernel
-		kernel_code_template = get_cuda_kernel()
-		kernel_code = kernel_code_template % {'nx' : self.npst[0], 'ny': self.npst[1], 'nz' : self.npst[2], 'RES' : np.max(self.res)}
+		kernel_code_template = self.get_cuda_kernel()
+		kernel_code = kernel_code_template % {'nx' : self.npts[0], 'ny': self.npts[1], 'nz' : self.npts[2], 'RES' : np.max(self.res)}
 
 		# tune
 		result = tune_kernel('AddGrid', kernel_code,problem_size,args,tune_params)

@@ -419,8 +419,6 @@ class DataGenerator(object):
 				             resolution = grid_info['resolution'],
 				             cuda = True,tune_kernel=True)
 
-		# close he hdf5 file
-		f5.close()
 
 
 #====================================================================================

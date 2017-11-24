@@ -27,7 +27,7 @@ def test_generate():
 		'resolution' : [1.,1.,1.]
 	}
 
-	database.tune_kernel()
+	database.tune_cuda_kernel()
 	#database.map_features(grid_info)
 
 
