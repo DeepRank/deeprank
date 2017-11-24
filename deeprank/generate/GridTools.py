@@ -595,8 +595,8 @@ class GridTools(object):
 				# try to use cuda to speed it up		
 				else:
 					if nFeat == 1:
-						x0,y0,z0 = pos
-						alpha = coeff*feat_values
+						x0,y0,z0 = pos.astype(np.float32)
+						alpha = np.float32(coeff*feat_values)
 						addgrid(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,block=tuple(self.gpu_block),grid=tuple(self.gpu_grid))
 					else:
 						raise ValueError('CUDA only possible for single-valued features so far')
@@ -822,7 +822,7 @@ class GridTools(object):
 		print('GPU BLOCK :', self.gpu_block)
 		print('GPU GRID  :', self.gpu_grid)
 
-		xyz_center = np.random.rand(500,3)
+		xyz_center = np.random.rand(500,3).astype(np.float32)
 		alpha = np.float32(1)
 		for xyz in tqdm(xyz_center):
 			x0,y0,z0 = xyz
