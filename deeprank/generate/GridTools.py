@@ -13,8 +13,6 @@ except:
 	def tqdm(x):
 		return x 
 
-
-
 # the main gridtool class
 class GridTools(object):
 
@@ -448,6 +446,13 @@ class GridTools(object):
 		# prepare cuda if we need to
 		if self.cuda:
 
+			# try to import pycuda
+			try:
+				from pycuda import driver, compiler, gpuarray, tools
+				import pycuda.autoinit
+			except:
+				raise ImportError("Pycuda not found")
+				
 			# book memp on the gpu
 			x_gpu = gpuarray.to_gpu(self.x.astype(npfloat32))
 			y_gpu = gpuarray.to_gpu(self.y.astype(npfloat32))
@@ -679,9 +684,6 @@ class GridTools(object):
 	#	Init the CUDA parameters
 	##########################################################
 	def init_cuda(self,block):
-
-		from pycuda import driver, compiler, gpuarray, tools
-		import pycuda.autoinit
 	
 		self.gpu_block = block
 		if self.gpu_block is not None:
