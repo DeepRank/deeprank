@@ -4,7 +4,7 @@
 from datetime import datetime
 import sys
 import os
-
+import matplotlib.pyplot as plt
 import numpy as np
 
 #import torch
@@ -441,7 +441,7 @@ class ConvNet:
 		'''
 
 		# printing options
-		nprint = int(nepoch/10)
+		nprint = int(nepoch/50)
 
 		# store the length of the training set
 		ntrain = len(index_train)
@@ -661,7 +661,7 @@ class ConvNet:
 		ax.set_xlabel('Targets')
 		ax.set_ylabel('Predictions')
 		fig.savefig(figname)
-
+		plt.close()
 
 	def _plot_scatter_class(self,figname,loaders=None,indexes=None):
 

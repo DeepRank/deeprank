@@ -3,10 +3,11 @@ import subprocess as sp
 import os, sys 
 import itertools
 from scipy.signal import bspline
+import scipy.sparse as spsp
 from collections import OrderedDict
 
 from deeprank.tools import pdb2sql
-
+from deeprank.tools import sparse
 try:
 	from tqdm import tqdm
 except:
@@ -629,7 +630,7 @@ class GridTools(object):
 		elif type_ == 'fast_gaussian':
 
 			beta = 1.0/np.max(self.res)
-			cutoff = 10.*beta
+			cutoff = 5.*beta
 
 			dd = np.sqrt( (self.xgrid-x0)**2 + (self.ygrid-y0)**2 + (self.zgrid-z0)**2 )
 			dgrid = np.zeros(self.npts)
@@ -846,14 +847,32 @@ class GridTools(object):
 	# save the data in the hdf5 file
 	def hdf5_grid_data(self,dict_data,data_name):
 
-		feat_group = self.hdf5.create_group(self.mol_basename+'/mapped_features/'+data_name)
-		for key,value in dict_data.items():
-			if key not in feat_group:
-				feat_group.create_dataset(key,data=value)
-			else:
-				tmp = feat_group[key]
-				tmp[...] = value
+		# get the group og the feature
+		feat_group = self.hdf5.require_group(self.mol_basename+'/mapped_features/'+data_name)
 
+		# gothrough all the feature elements
+		for key,value in dict_data.items():
+
+			# check if the grid is sparse or not
+			spg = sparse.FLANgrid()
+			spg.from_dense(value,beta=1E-2)
+
+			# remove old subgroup
+			if key in feat_group:
+				del feat_group[key]
+
+			# create new one
+			sub_feat_group = feat_group.create_group(key)
+
+			# if we have a sparse matrix
+			if spg.sparse:
+				sub_feat_group.attrs['sparse'] = spg.sparse
+				sub_feat_group.create_dataset('index',data=spg.index,compression='gzip',compression_opts=9)
+				sub_feat_group.create_dataset('value',data=spg.value,compression='gzip',compression_opts=9)
+
+			else:
+				sub_feat_group.attrs['sparse'] = spg.sparse
+				sub_feat_group.create_dataset('value',data=spg.value,compression='gzip',compression_opts=9)				
 					
 ########################################################################################################
 

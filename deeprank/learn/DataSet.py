@@ -6,6 +6,7 @@ import torch.utils.data as data_utils
 import subprocess as sp
 import numpy as np
 
+from deeprank.tools import sparse
 
 try:
 	from tqdm import tqdm
@@ -152,15 +153,26 @@ class DataSet(data_utils.Dataset):
 
 			# get the mol
 			mol_data = fh5.get(mol)
+			nx = mol_data['grid_points']['x'].shape[0]
+			ny = mol_data['grid_points']['y'].shape[0]
+			nz = mol_data['grid_points']['z'].shape[0]
+			shape=(nx,ny,nz)
 
 			# load all the features
 			if self.select_feature == 'all':
 				# loop through the features
 				tmp_feat = []
-				for feat_name, feat_values in mol_data.get(featgrp_name).items():
+				for feat_name, feat_members in mol_data.get(featgrp_name).items():
 					# loop through all the feature keys
-					for name,data in feata_values.items():
-						tmp_feat.append(data[()])
+					for name,data in feat_members.items():
+						if data.attrs['sparse']:
+							spg = sparse.FLANgrid(sparse=True,
+								                 index=data['index'].value,
+								                 value=data['value'].value,
+								                 shape=shape)
+							tmp_feat.append(spg.to_dense())
+						else:
+							tmp_feat.append(data['value'].value)
 				features.append(tmp_feat)
 
 			# load selected features
@@ -190,9 +202,17 @@ class DataSet(data_utils.Dataset):
 								sys.exit()
 
 					# load the feature channels
-					for chanel_name,channel_value in feat_dict.items():
+					for chanel_name,channel_data in feat_dict.items():
 						if feat_channels == 'all' or chanel_name in feat_channels:
-							tmp_feat.append(channel_value.value)
+							if channel_data.attrs['sparse']:
+								spg = sparse.FLANgrid(sparse=True,
+									                  index=channel_data['index'].value,
+									                  value=channel_data['value'].value,
+									                  shape=shape)
+								tmp_feat.append(spg.to_dense())
+							else:
+								tmp_feat.append(channel_data['value'].value)
+							
 
 				# append to the list of features
 				features.append(np.array(tmp_feat))

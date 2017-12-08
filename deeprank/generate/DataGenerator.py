@@ -259,6 +259,8 @@ class DataGenerator(object):
 			mol_name = molgrp.name.split('_r')[0]
 			molgrp.copy('features',self.f5[mol_name+'/features/'])
 
+		# close the file
+		f5.close()
 
 #====================================================================================
 #
@@ -422,7 +424,6 @@ class DataGenerator(object):
 
 	def test_cuda(self,grid_info,gpu_block):
 
-		
 		# fills in the grid data if not provided : default = NONE
 		grinfo = ['number_of_points','resolution']
 		for gr  in grinfo:
