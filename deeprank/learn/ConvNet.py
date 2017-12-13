@@ -86,7 +86,7 @@ class ConvNet:
 	'''
 
 	def __init__(self,data_set,model,model_type='3d',proj2d=0,
-		         task=None,cuda=False,ngpu=0,tensorboard=False,plot=True,outdir='./'):
+		         task='reg',cuda=False,ngpu=0,tensorboard=False,plot=True,outdir='./'):
 
 
 
@@ -108,7 +108,7 @@ class ConvNet:
 		if self.ngpu > 0:
 			self.cuda = True
 
-		if self.ngpu == 0 and self.cuda is not None:
+		if self.ngpu == 0 and not self.cuda :
 			self.ngpu = 1
 
 		# plot or not plot
@@ -147,10 +147,13 @@ class ConvNet:
 		print('=\t Convolution Neural Network')
 		print('=\t model     : %s' %model_type)
 		print('=\t CNN       : %s' %model.__name__)
-		print('=\t features  : %s' %" / ".join([key for key,_ in self.data_set.select_feature.items()]))
+		if self.data_set.select_feature == 'all':
+			print('=\t features  : all')
+		else:
+			print('=\t features  : %s' %" / ".join([key for key,_ in self.data_set.select_feature.items()]))
 		print('=\t targets   : %s' %self.data_set.select_target)
 		print('=\t CUDA      : %s' %str(self.cuda))
-		if self.ngpu is  not None:
+		if self.cuda:
 			print('=\t nGPU      : %d' %self.ngpu)
 		print('='*40,'\n')	
 
@@ -217,7 +220,7 @@ class ConvNet:
 		self._train(index_train,index_valid,nepoch=nepoch,train_batch_size=train_batch_size,tensorboard_writer=tbwriter,plot_intermediate=plot_intermediate,debug=debug)
 
 		# test the model
-		self._test(index_test)
+		self.test_loss = self._test(index_test)
 
 		# print the final; scatter plot
 
@@ -226,6 +229,7 @@ class ConvNet:
 		# close the writers	
 		if self.tensorboard:
 			tbwriter.close()
+
 
 
 	def train_montecarlo(self,nmc=2,nepoch=50, divide_set=[0.8,0.1,0.1], train_batch_size = 10, preshuffle = True):
@@ -514,7 +518,7 @@ class ConvNet:
 		test_loader = data_utils.DataLoader(self.data_set,batch_size=1,sampler=test_sampler)
 		test_loss = self._epoch(test_loader,train_model=False)
 		print('\n-->\n-->\t\t Test loss : %1.3e\n-->' %test_loss)
-
+		return test_loss
 
 	def _epoch(self,data_loader,train_model=True):
 

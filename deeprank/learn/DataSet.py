@@ -83,8 +83,8 @@ class DataSet(data_utils.Dataset):
 	'''
 
 	def __init__(self,data_folder,filter_dataset=None,
-				 select_feature='all',select_target='binary_class',
-		         normalize_features=False,normalize_targets=True):
+				 select_feature='all',select_target='DOCKQ',
+		         normalize_features=True,normalize_targets=True):
 
 
 		self.data_folder = data_folder
@@ -173,7 +173,7 @@ class DataSet(data_utils.Dataset):
 							tmp_feat.append(spg.to_dense())
 						else:
 							tmp_feat.append(data['value'].value)
-				features.append(tmp_feat)
+				features.append(np.array(tmp_feat))
 
 			# load selected features
 			else:
