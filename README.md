@@ -256,7 +256,7 @@ In this minimal example we simply specify which dataset to use and wich model to
 
 We can then modify the default value for the optimizer used during the training and train the model for 250 epochs. By default the code will generate some scatter plot illustrsting the accuracy of the prediction. 
 
-![alt-text](https://github.com/DeepRank/deeprank/blob/master/pics/dockq.png)
+![alt-text](https://github.com/DeepRank/deeprank/blob/master/pics/docq.png)
 
 
 #### Model Generator
