@@ -1,10 +1,10 @@
-
+import numpy as np
 #################################
 #	CNN layer
 #################################
 class conv(object):
 
-	def __init__(self,input_size=None,output_size=None,kernel_size=None,post=None):
+	def __init__(self,input_size=-1,output_size=None,kernel_size=None,post=None):
 
 		self.__name__ = 'conv'
 		self.input_size = input_size
@@ -114,7 +114,7 @@ class dropout(object):
 #################################
 class fc(object):
 
-	def __init__(self,input_size=None,output_size=None,post=None):
+	def __init__(self,input_size=-1,output_size=None,post=None):
 
 		self.__name__ = 'fc'
 		self.input_size = input_size
@@ -167,14 +167,48 @@ class NetworkGenerator(object):
 		# filename
 		self.fname = fname
 
-		# structure of the convolutional steps
+		# structure of the convolutional/fc layers
 		self.conv_layers = conv_layers
-
-		# structure of the fully connected steps
 		self.fc_layers = fc_layers
-		
 
-	# write the file containinf the model
+		# dimension of the final fc layer
+		self.final_dim = 1
+
+		# possible number of randomly generated conv/fc layers
+		self.num_conv_layers = range(1,11)
+		self.num_fc_layers = range(1,5)
+
+		# possible types of conv layers
+		self.conv_types = ['conv','dropout','pool']
+
+		# conv parameters
+		self.conv_params = {}
+		self.conv_params['output_size'] = range(1,10)
+		self.conv_params['kernel_size'] = range(2,5)
+
+		# pool parameters
+		self.pool_params = {}
+		self.pool_params['kernel_size'] = range(2,5)
+
+		# params of the dropout layers
+		self.dropout_params = {}
+		self.dropout_params['percent'] = np.linspace(0.1,0.9,9)
+
+		# params for the automatic generation of fc layers
+		self.fc_params = {}
+		self.fc_params['output_size'] = [2**i for i in range(4,11)]	
+
+		# types of post processing
+		# must be in torch.nn.functional
+		self.post_types = [None,'relu']
+
+	#######################################
+	#
+	# Routines used to write dow the 
+	# file containing the model
+	#
+	#######################################
+
 	def write(self):
 
 		f = open(self.fname,'w')
@@ -185,7 +219,6 @@ class NetworkGenerator(object):
 		self._write_forward_feature(f)
 		self._write_forward(f)
 		f.close()
-
 
 	@staticmethod
 	# import statement
@@ -274,8 +307,6 @@ import torch.utils.data as data_utils
 		fhandle.write('\t\treturn x\n')
 		fhandle.write('\n')
 
-
-
 	# print the definition of the network to screen
 	def print(self):
 		ndash = 70
@@ -289,18 +320,127 @@ import torch.utils.data as data_utils
 			print('%s' %layer.__human_readable_str__(ilayer))
 		print('#'+'-'*ndash+'\n')
 
+	#########################################
+	#
+	# get a new random model
+	#
+	#########################################
+	def get_new_random_model(self):
+
+		# number of conv/fc layers
+		nconv = np.random.choice(self.num_conv_layers)	
+		nfc   = np.random.choice(self.num_fc_layers)	
+
+		# generate the conv layers
+		self.conv_layers = []
+		for ilayer in range(nconv):
+			self._init_conv_layer_random(ilayer)
+
+		# generate the fc layers
+		self.fc_layers = []
+		for ilayer in range(nfc):
+			self._init_fc_layer_random(ilayer)
+
+		# fix the final dimension
+		self.fc_layers[-1].output_size = self.final_dim
+
+
+	# pick a layer type
+	def _init_conv_layer_random(self,ilayer):
+
+		# determine wih type of layer we want
+		# first layer is a conv
+		# we can't have 2 pool in a row
+		if ilayer == 0:
+			name = self.conv_types[0]
+
+		# if rpevious layer is pool, next can't be pool
+		elif self.conv_layers[ilayer-1].__name__ == 'pool':
+			name = np.random.choice(self.conv_types[:-1])
+
+		# else it can be anything
+		else: 
+			name = np.random.choice(self.conv_types)
+
+		# init the parms of the layer
+		# each layer type has its own params
+		# the output/input size matching is done automatically
+		if name == 'conv':
+			params = {}
+			params['name'] = name
+
+			if ilayer == 0:
+				params['input_size'] = -1 #fixed by input shape
+			else:
+				for isearch in range(ilayer-1,-1,-1):
+					if self.conv_layers[isearch].__name__ == 'conv':
+						params['input_size'] = self.conv_layers[isearch].output_size
+						break
+
+			params['output_size'] = np.random.choice(self.conv_params['output_size'])
+			params['kernel_size'] = np.random.choice(self.conv_params['kernel_size'])
+			params['post'] = np.random.choice(self.post_types)
+			
+		if name == 'pool':
+			params = {}
+			params['name'] = name
+			params['kernel_size'] = np.random.choice(self.pool_params['kernel_size'])
+			params['post'] = np.random.choice(self.post_types)
+
+
+		if name == 'dropout':
+			params = {}
+			params['name'] = name
+			params['percent'] = np.random.choice(self.dropout_params['percent'])
+
+		# create the current layer class instance
+		# and initialize if with the __init_from_dict__() method
+		current_layer = eval(params['name'])()
+		current_layer.__init_from_dict__(params)
+		self.conv_layers.append(current_layer)
+
+	def _init_fc_layer_random(self,ilayer):
+
+		# init the parms of the layer
+		# each layer type has its own params
+		# the output/input size matching is done automatically
+		name = 'fc' # so far only fc layer here
+		params = {}
+		params['name'] = name
+		if ilayer == 0:
+			params['input_size'] = -1 # fixed by the conv layers
+		else:
+			params['input_size'] = self.fc_layers[ilayer-1].output_size
+
+		params['output_size'] = np.random.choice(self.fc_params['output_size'])
+		params['post'] = np.random.choice(self.post_types)
+
+
+		current_layer = eval(params['name'])()
+		current_layer.__init_from_dict__(params)
+		self.fc_layers.append(current_layer)
+
+
+
 
 if __name__== '__main__':
 
+
 	conv_layers = []
 	conv_layers.append(conv(output_size=4,kernel_size=2,post='relu'))
-	conv_layers.append(pool(kernel_size=(2,2,2)))
+	conv_layers.append(pool(kernel_size=2))
 	conv_layers.append(conv(input_size=4,output_size=5,kernel_size=2,post='relu'))
-	conv_layers.append(pool(kernel_size=(2,2,2)))
+	conv_layers.append(pool(kernel_size=2))
 
 	fc_layers = []
 	fc_layers.append(fc(output_size=84,post='relu'))
 	fc_layers.append(fc(input_size=84,output_size=1))
 
 	MG = NetworkGenerator(name='cnntest',fname='modeltest.py',conv_layers=conv_layers,fc_layers=fc_layers)
+	MG.print()
 	MG.write()
+
+	MGR = NetworkGenerator(name='cnnrand',fname='modelrandom.py')
+	MGR.get_new_random_model()
+	MGR.print()
+	MGR.write()
