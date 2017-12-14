@@ -315,6 +315,44 @@ class DataGenerator(object):
 		# close the file
 		file_hdf5.close()
 
+
+#====================================================================================
+#
+#		REMOVE DATA FROM THE DATA SET
+#
+#====================================================================================
+
+	def remove(self,feature=True,pdb=True,points=True,grid=False):
+
+		print(': remove features')
+
+		# name of the hdf5 file
+		f5 = h5py.File(self.hdf5,'a')
+						
+		# get the folder names
+		mol_names = f5.keys()
+
+		for name in mol_names:
+			
+			mol_grp = f5[name]
+
+			if feature and 'features' in mol_grp:
+				del mol_grp['features']
+			if pdb and 'complex' in mol_grp and 'native' in mol_grp:
+				del mol_grp['complex']
+				del mol_grp['native']
+			if points and 'grid_points' in mol_grp:
+				del mol_grp['grid_points']
+			if grid and 'mapped_features' in mol_grp:
+				del mol_grp['mapped_features']
+
+		f5.close()
+
+		# reclaim the space
+		os.system('h5repack %s _tmp.h5py' %self.hdf5)
+		os.system('mv _tmp.h5py %s' %self.hdf5)
+
+
 #====================================================================================
 #
 #		MAP THE FEATURES TO THE GRID
