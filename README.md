@@ -201,6 +201,8 @@ vmd -e AtomicDensities_diff.vmd
 
 This will open VMD and load all the data and you should obtain somehting similar to the picture below:
 
+![alt-text](https://github.com/DeepRank/deeprank/blob/master/pics/interface.jpeg)
+
 #### Removing data from the HDF5 file
 
 Storing all the data (structures/pdbs/grids) is great for debugging but the hdf5 file quickly becomes quite large. You can remove some data using the command lie utility `deeprank/tools/cleandata.py`. As before copy it or make the original in your path and then simply type:
@@ -253,6 +255,8 @@ We then create the ConvNet object that is defined in `/deeprank/learn/ConvNet.py
 In this minimal example we simply specify which dataset to use and wich model to use. This model is here defined in the file `model3d.py` by a class called cnn (see below). We also here turn off CUDA meaning that the training will only use CPUs. To use GPUs when available simply switch to `cuda=True`. Multiple GPUs can also be used through the options `ngpu=n`. 
 
 We can then modify the default value for the optimizer used during the training and train the model for 250 epochs. By default the code will generate some scatter plot illustrsting the accuracy of the prediction. 
+
+![alt-text](https://github.com/DeepRank/deeprank/blob/master/pics/dockq.png)
 
 
 #### Model Generator
