@@ -1,67 +1,51 @@
-# DeepRank Machinery Version 0.0
+# DeepRank
 
 <a href='https://travis-ci.org/DeepRank/deeprank_v0.0'><img src='https://secure.travis-ci.org/DeepRank/deeprank_v0.0.png?branch=master'></a>
 
 These module allows to :
 
-   * compute some features such as electrostatic interactions and van der Waals interaction 
+   * Create one/multiple HDF5 files containing all the data (structures,features,mapped features,targets) required to use deep learning.
 
-   * assemble data from different sources (PDB,PSSM,Scores,....) in a comprehensible data base where each conformation has its own folder. In each folder are stored the conformation, features and targets.
-
-   * Map the features to a grid. The type of features as well as the grid parameters can be freely chosen. New features can be mapped without having to recompute old ones.
-
-   * Use a 3d or 2d CNN to predict possible targets (binary class, haddock-score ...) from the data set
+   * Train convolutional neural networks to predict possible targets (binary class, haddock-score ...) from the mapped feataures
 
 
-## Quick introdution
+## 1 . Installation
 
-Minimal information to use the module 
+Minimal information to install the module 
 
-  * clone the repository `git clone https://github.com/DeepRank/deeprank_v0.0.git`
-  * go there `cd deeprank_v0.0`
-  * install the module `python setup.py install`
-  * download the BM4 from aclazar (/home/deep/HADDOCK-decoys/BM4_dimers)
-  * go in the example folder `cd ./example/workflow/`
-  * change the path to the BM4 folder in computeFeature.py
-  * compute the electrostatic and VDW interactions `python computeFeature.py`
-  * change the path to the BM4 folder in assemble.py
-  * assemble the data base `python assemble.py`
-  * map the features to the grid `python map.py`
-  * use deep learning `python learn.py`
-
-## To Do list
-
-There are many things that are still needed to further develop the platform. The two most important ones are:
-
-1 *Feature Mapping* : So far we can only use
-
-   AtomicDensities (computed on the fly)
-
-   Atom-pair electrostatic interactions (precomputed by tools/atomicFeatures.py)
-
-   Atom-pair van der Waals interactions (precomputed by tools/atomicFeatures.py)
-
-   Residue PSSM (precomputed by BLAST and reformated by tools/reformat_pssm.py)
+  * clone the repository `git clone https://github.com/DeepRank/deeprank.git`
+  * go there             `cd deeprank`
+  * install the module   `pip install -e ./`
 
 
-Other features can be incorporated, for example the SASA. The feature calculation must be done more generically than we do now
+## 2 . Test
 
-2 *Cuda performance* : We can now use GPUS by turning the option cuda=True on DeepRankConvNet. The first test are encouraging as the code runs much faster. There might be some tweaking that could still be done
-
-## Installation 
-
-You should be able to install the module with
+To test the module go to the test folder `cd ./test` and execute the following test
 
 ```
-python setup.py install
-```
-If you need dependencies check the pre-requisite section. To test the installation open a python console and type
+# compute atomic features (electrostatic and vdw)
+python test_atomic_features.py
 
-```python
-import deeprank
-```
+# compute RMSD and dockQ score
+python test_rmsd.py
 
-## Pre-requisite
+# generation of the data
+python test_generate.py
+
+# if you have CUDA installed 
+# you can try the CUDA version
+python notravis_test_generate_cuda.py
+
+# do a bit of learning
+python notravis_test_learn.py
+
+```
+ 
+These tests (except the notravis_* ones) are automatically run on Travis CI at each new push. So if the *build* button display *passing* they should work !
+
+## 3 . Dependencies
+
+### A . Requiried Dependencies
 
 The code is written in Python3. Several packages are required to run the code but most are pretty standard. Here is an non-exhaustive list of dependencies
 
@@ -70,6 +54,8 @@ The code is written in Python3. Several packages are required to run the code bu
   * [Scipy](https://www.scipy.org/)
 
   * [PyTorch](http://pytorch.org)
+
+  * [h5py](http://www.h5py.org/)
 
 
 
@@ -80,358 +66,174 @@ To install pytorch with anaconda
 conda install pytorch torchvision cuda80 -c soumith
 ```
 
+### B . Optional dependencies
+
+#### Network visualization
+
   * [tensorboard](https://github.com/lanpa/tensorboard-pytorch)
 
-To install pytorch-tensorboard with pip
-
-
-```
-pip install tensorboard-pytorch
-```
-
-This package depends on tensorflow-tensorboard. If you don't have tensorflow installed you can get it with
+It is possible to visualize the parameters of the CNN using tensorboard. This is not required but could help in finding better architectures. You first have to install tensorflow and then install pytorch-tensorboard with pip
 
 ```
 pip install tensorflow-tensorboard
+pip install tensorboard-pytorch
 ```
 
-## Visualization of the features
-
-The visuzalisation of the features on the grid can be done quite easily with VMD
+### Feature visualization 
 
   * [VMD](http://www.ks.uiuc.edu/Research/vmd/)
 
-We can develop other stategies using pyMol or other softwares in the future. All the features are exported as .cube files which are pretty standard. 
+The code can output visualization file of the mapped features that can be used in VMD We can develop other stategies using pyMol or other softwares in the future. All the features are exported as .cube files which is pretty standard format. The code also outputs VMD script that automatically load all the data. 
 
 ---
 
-## Feature Calculation 
+## 4 . Example
 
-In the folder example/grid/ you can find all teh files necessary to test the calculation of new features and their mapping on the grid. It uses the atmicFeature class in tools/atomic_feature.py. That class makes use of the pdb2sql method present in tools/
+The `example` folder contains some script using the library. The two most important files are `generate.py` and `learn.py`.
+
+### A . Generate the data set
+
+The file `generate.py` contains the following:
 
 
 ```python
-import time
-from deeprank.tools import atomicFeature
+from deeprank.generate import *
 
-t0 = time.time()
-PDB = 'complex.pdb'
-FF = './forcefield/'
-atfeat = atomicFeature(PDB,
-                       param_charge = FF + 'protein-allhdg5-4_new.top',
-                       param_vdw    = FF + 'protein-allhdg5-4_new.param',
-                       patch_file   = FF + 'patch.top')
+# adress of the BM4 folder
+BM4 = '/path/to/BM4/data/'
 
-atfeat.assign_parameters()
-atfeat.sqldb.prettyprint()
+# sources to assemble the data base
+pdb_source     = [BM4 + 'decoys_pdbFLs/1AK4/water/']
+pdb_native     = [BM4 + 'BM4_dimers_bound/pdbFLs_ori']
 
-# compute pair interations
-atfeat.evaluate_pair_interaction(print_interactions=True)
+#init the data assembler 
+database = DataGenerator(pdb_source=pdb_source,
+                        pdb_native=pdb_native,
+                        data_augmentation=None,
+                        compute_targets  = ['deeprank.tools.targets.dockQ'],
+                        compute_features = ['deeprank.tools.features.atomic'],
+                        hdf5='./1ak4.hdf5',
+                        )
 
-atfeat.export_data()
-atfeat.sqldb.close()
-print('Done in %f s' %(time.time()-t0))
+#create new files
+database.create_database()
+
+# map the features
+grid_info = {
+  'number_of_points' : [30,30,30],
+  'resolution' : [1.,1.,1.],
+  'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
+  'atomic_densities_mode' : 'diff',
+  'atomic_feature'  : ['vdwaals','coulomb','charge'],
+  'atomic_feature_mode': 'sum'
+}
+
+database.map_features(grid_info)
 ```
 
-This script outputs two files in two separated directories that contains respectively the electrostatic and vdw interactions between the contact atom of the two chains in the complex. 
 
-## Feature Mapping and Grid Generator
+In  the first part of the script we define the path where to find the PDBs of the decoys and natives that we want to have in the dataset. All the .pdb files present in *pdb_source* will be used in the dataset. We need to specify where to find the native conformations to be able to compute RMSD and the dockQ score. For each pdb file detected in *pdb_source*, the code will try to find a native conformation in *pdb_native*.
 
- The file map/gridtool_sql.py contains the main class for generating the grid points from the PDB file and for the mapping of the features on the grid. The header of the file explains all the class attributes. One important thing is that if there is already grid points stored in the export directory, these points will be used to map the features. Hence using the class on an existing directory allows to add new features.
+We then initialize the `DataGenerator` object. This object (defined in `deeprank/generate/DataGenerator.py`) needs a few input parameters:
+
+  * pdb_source : where to find the pdb to include in the dataset
+  * pdb_native : where to find the corresponding native conformations
+  * data_augmentation : None or Int. If Int=N, each molecule is duplicated N times
+  * compute_targets : list of modules. Modules used to compute the targets
+  * compute_features : list of modules. Modules used to compute the features
+  * hdf5 : Name of the HDF5 file to store the data set
+
+We then create the data base with the command `database.create_database()`. This function autmatically create an HDF5 files where each pdb has its own group. In each group we can find the pdb of the complex and its native form, the calculated features and the calculated targets.
+
+We can now mapped the features to a grid. This is done via the command `database.map_features()`. As you can see this method requires a dictionary as input. The dictionary contains the instruction to map the data.
+
+  * number_of_points: the number of points in each direction
+  * resolution : the resolution in Angs
+  * atomic_densities : {'atom_name' : vvdw_radius} the atomic densities required
+  * atomic_densties_mode : the mapping mode of the atomic densities
+  * atomic_features : the names of the atomic features we want to map
+  * atomic_feature_mode : the mapping mode of the atomic features
 
 Several features can be mapped to a grid for use as input of the deep learning phase.
 
 **Atomic densities** The atomic densities are mapped following the [protein-ligand paper](https://arxiv.org/abs/1612.02751). 3 modes can be used to map the density of a given atom type to the grid. This can be specified through the grid **GridToolsSQL.attribute atomic_densities_mode**
   * 'diff' : density_chain_A - density_chain_B --> one grid
   * 'sum'  : density_chain_A + density_chain_B --> one grid
-  * 'ind'  : density_chain_A --> one grid
-             density_chain_B --> one grid
+  * 'ind'  : density_chain_A --> one grid | density_chain_B --> one grid
 
-**Atomic features** So far we only have the electrostatic and vdw interactions as atomic features. For each atom the value of the feature is mapped to the grid points using a bspline of degree 4. The center of the spline is the position of the atom
+**Atomic features** So far we only have the electrostatic and vdw interactions as atomic features. For each atom the value of the feature is mapped to the grid points using a Gaussian function (other modes are possible but somehow hard coded). The center of the Gaussian is the position of the atom
 
-**Residue features** So far we only have the PSSM as residue features. For each residue the value of the feature is mapped to the grid points using a bspline of degree 4. The center of the spline is the average position of the atoms in the residue
+**Residue features** For each residue the value of the feature is mapped to the grid points using a Gaussian. The center of the Gaussian is the average position of the atoms in the residue. This is not tested throughly yet since we do not have residue features
 
+#### Mapping with CUDA
 
-The file example/grid/grid.py shows how to map the feature of one given complex to the grid. 
-
-```python
-import deeprank.map
-
-grid = deeprank.map.GridToolsSQL(mol_name='./complex.pdb',
-                     number_of_points = [30,30,30],
-                     resolution = [1.,1.,1.],
-                     atomic_densities={'CA':3.5, 'CB':3.5},
-                     #residue_feature={
-                     #'PSSM' : './PSSM/1AK4.PSSM'},
-                     atomic_feature={
-                     'coulomb' : './ELEC/complex.dat',
-                     'vdw' : './VDW/complex.dat'
-                     },
-                     export_path = './input/')
-
-#visualize the data of one complex
-deeprank.map.generate_viz_files('./')
-
-```
-
-This will generates the grid and map the atomic densities and atomic features of the complex. The cube files and VMD script are also generated and stored in the ./data_viz subfolder. 
-
-Once the cube files generated it easy to visualize them with VMD and a few files that are automatically generated by generate_cube_files.py. To visualize them with VMD :
-
-```
-cd ./data_viz/
-vmd -e AtomicDensities.vmd
-```
-
-The data are stored in pickle files _AtomicDensity_mode.pkl_, atomicFeature.pkl and residueFeature.pkl_. Using pickle allows to easily update and/or select some data from the file using the keys of the data. 
-
----
-
-## Overview of the DeepRank Worflow
-
-The (manual) workflow contains three main stages 
-
-0 Compute new feature if necessary
-
-1 Assemble the database from a collection of sources
-
-2 Map the features of each conformation in the database on a grid
-
-3 Create a torch dataset from the database and use a CNN to predict a pre-defined target
-
-The code for each stage are contained in the own folder : **_assemble/ map/ learn/_**
-Examples of use for the three stages are contained in the example folder. They are detailled in the folowing as well. Some general tools are contained in **_ tools_**. The most important one is pdb2sql.py that allows manipulating PDB files using sqlite3 queries. 
-
-## Download the data set
-
-The docking bench mark 4 (BM4) is located on alcazar at 
-
-```
-BM4=/home/deep/HADDOCK-decoys/BM4_dimers
-```
-
-All the files needed in the following are there
-
-  * decoys pdb : $BM4/decoys_pdbFLs
-
-  * native pdb : $BM4/BM4_dimers_bound/pdbFLs_ori (or refined ...)
-
-  * PSSM       : $BM4/PSSM_newformat
-
-  * targets    : $BM4/model_qualities/XXX/water   (XXX=haddockscore, i-rmsd, Fnat, ....)
-
-  * classID    : $BM4/training_set_IDS/classIDs.lst
-
-  * Forcefield : $BM4/forcefield/
-
-We can later on add more features, and more targets.
-The classIDs.lst contains the IDs of 228 complexes (114 natives / 114 decoys) preselected for training. The decoys were selected for their very low i-rmsd, i.e. they are very bad decoys.
-
-Dowload the $BM4 folder (maybe zip it before as it is pretty big !)
-
-## Compute new features
-
-New features can be calculated from the pdbs. One simple example is given in **example/worflow/computeFeature.py**. This file simply select the pdbs that are used in the DL part and compute their electrostaic and vdw features.
-
-```python 
-import os
-import numpy as np
-import subprocess as sp
-from deeprank.tools import atomicFeature
-
-# the root of the benchmark
-BM4        = 'path/to/BM4/folder/'
-
-# dir for writing the data
-dir_elec   = BM4 + 'electrostatic/'
-dir_vdw    = BM4 + 'vanDerWaals/'
-
-# forcefield
-FF         = BM4 +'./forcefield/'
-
-# conformation
-decoys     = BM4 + '/decoys_pdbFLs/'
-native     = BM4 + '/BM4_dimers_bound/pdbFLs_ori'
-
-# filter the decoys
-decoyID    = './decoyID.dat'
-
-# get the names of all the decoy pdb files in the benchmark
-decoyName = sp.check_output('find %s -name  "*.pdb"' %decoys,shell=True).decode('utf-8').split()
-
-# get the decoy ID we want to keep
-decoyID = list(np.loadtxt(decoyID,str))
-
-# filter the decy name
-decoyName = [name for name in decoyName if name.split('/')[-1][:-4] in decoyID]
-
-
-#get the natives names
-nativeName = sp.check_output('find %s -name "*.pdb"' %native,shell=True).decode('utf-8').split()
-
-# all the pdb we want
-PDB_NAMES = nativeName + decoyName
-
-
-# loop over the files
-for PDB in PDB_NAMES:
-
-        print('\nCompute Atomic Feature for %s' %(PDB.split('/')[-1][:-4]))
-        atfeat = atomicFeature(
-                         PDB,
-             param_charge = FF + 'protein-allhdg5-4_new.top',
-             param_vdw    = FF + 'protein-allhdg5-4_new.param',
-             patch_file   = FF + 'patch.top',
-             root_export  = BM4 )
-
-        atfeat.assign_parameters()
-        atfeat.evaluate_pair_interaction(print_interactions=False)
-        atfeat.export_data()
-        atfeat.sqldb.close()
-```
-
-
-## Assemble the database
-
-The file assemble/assemble_data.py allows to collect data and to create a clean database. The data can contain natives pdbs, decoy pdbs, different features, different targets. In the output directory of the database, each conformation  has its own subfolder containing its pdb, features files and target data.
-
-
-The example **example/worflow/assemble.py** demonstrate how to use the module to create the database. 
+We have recently implemented a simple CUDA kernel to use GPGPU during the mapping of the features. CUDA can therefore be enabled when mapping the features using 
 
 ```python
-import deeprank.assemble
-
-BM4 = 'path/to/BM4/database/'
-
-# sources to assemble the data base
-decoys  = BM4 + '/decoys_pdbFLs/'
-natives = BM4 + '/BM4_dimers_bound/pdbFLs_ori'
-
-# the feature we want to have
-features = {'ELEC' : BM4 + '/ELEC',
-            'VDW'  : BM4 + '/VDW' }
-
-# the target we want to have
-targets = {'haddock_score' : BM4 + '/model_qualities/haddockScore/water'}
-classID = BM4 + '/training_set_IDS/classIDs.lst'
-
-# adress of the database
-database = '../../database/'
-
-#inti the data assembler 
-da = deeprank.assemble.DataAssembler(classID=classID,decoys=decoys,natives=natives,
-                                   features=features,targets=targets,outdir=database)
-
-#create new files
-da.create_database()
-
-# add a new target
-targets = {'fnat' : BM4 + '/model_qualities/Fnat/water'}
-da = deeprank.assemble.DataAssembler(targets=targets,outdir=database)
-da.add_target()
-
-# add a new feature
-features = {'PSSM' : BM4 + '/PSSM_newformat'}
-da = deeprank.assemble.DataAssembler(features=features,outdir=database)
-da.add_feature()
-
+database.map_features(grid_info,cuda=True,gpu_block=[k,m,n])
 ```
 
-## Map the features of all the database
+By default the gpu_block is set to [8,8,8]. The Kernel Tuner can also be used to optimize the block size on the machine. This can be done with
 
-The file **map/gendatatool.py** allows to map all the features of all the conformations contained in the database. The example file **example/worflow/map.py** shows how to use the module to do that
+```python
+database.tune_cuda_kernel(grid_info)
+```
+
+Finally the CUDA implementation can be tested with 
+
+```python
+database.test_cuda(grid_info,gpu_block)
+```
+
+#### Visualization of the mapped features
+
+You can find in `deeprank/tools/` a little command line utility called `visualize3dData.py` that can be used to visualize all the data mapped on the grid for a given complex. After either copyong this file in your local folder or making the original available in your path you can type
+
+```
+./visualize3Ddata.py -hdf5 1ak4.hdf5 -mol_name '1AK4_100w'
+```
+
+This will create a folder called `1AK4_100w` containing all the files needed to visualize the mapped data in VMD. Go in that folder `cd 1AK4_100w` and type
+
+```
+vmd -e AtomicDensities_diff.vmd
+```
+
+This will open VMD and load all the data and you should obtain somehting similar to the picture below:
+
+#### Removing data from the HDF5 file
+
+Storing all the data (structures/pdbs/grids) is great for debugging but the hdf5 file quickly becomes quite large. You can remove some data using the command lie utility `deeprank/tools/cleandata.py`. As before copy it or make the original in your path and then simply type:
+
+```
+cleandata.py 1ak4.hdf5
+```
+
+This will remove all the data non necessary for the deep learning. Hence only the mapped features and the targets values will remain in the data set. 
+
+### 2 . Deep Learning
+
+An example on how to use deep learning is given in `learn.py`. This file contains 
 
 
 ```python
-import deeprank.map
-
-
-# adress of the database
-database = '../../database/'
-
-#define the dictionary for the grid
-#many more options are available
-#see deeprank/map/gridtool_sql.py
-
-grid_info = {
-  'atomic_densities' : {'CA':3.5,'CB':3.5,'N':3.5},
-  'atomic_densities_mode' : 'diff',
-  'number_of_points' : [30,30,30],
-  #'residue_feature' : ['PSSM'],
-  'atomic_feature'  : ['ELEC','VDW'],
-  'resolution' : [1.,1.,1.]
-}
-
-
-#map the features
-deeprank.map.map_features(database,grid_info)
-
-#visualize the data of one complex
-deeprank.map.generate_viz_files(database+'/1AK4')
-```
-
-In this file we map the atomic densities of CA, CB and N using a diff mode (i.e. grid = A-B). We also map the electrostatic and vdw interaction. After completion of the script you can visualize the atomic densities with
-
-```
-cd ./training_set/1AK4/data_viz
-vmd -e AtomicDensities.vmd
-```
-
-You should get something that looks like that
-
-![alt-text](https://github.com/DeepRank/deeprank_v0.0/blob/master/pics/grid.jpeg)
-
-## Deep Learning
-
-The main file for the deeplearning phase is learn/DeepRankConvNet.py and learn/DeepRankDataSet. A lot of options are available here. The headers f=of both file contains information about the arguments of both classes and their use. 
-
-DeepRankDataSet allows to create a Torch data set from the database. During this process it is possible to select :
-
-  * to select a subset of the database either with an integer or by providing a list of IDs. 
-   
-  * to select only some features from the database and exclude others
-
-  * to select the target among the ones contained in the database
-
-  * normalize the features and/or the targets
-
-DeepRankConvnet is the class in charge of the deep learning. During the initialisation you need to provide a torch dataset outputed by DeepRankDataSet and a model, i.e. the definition of a Neural Network. Examples of such NN are provided in models2d.py and models3d.py. You can also
-
-  * choose to use a 2d or a 3d CNN. This must match the definition of the CNN used. If a 2d CNN is chosen we can pick the plane orientation
-
-  * choose the type of task between regression (reg) and classification (class). Depending on the task, the loss function and the plotting routines will be autmaticall adjusted.
-
- 
-The example file **example/worflow/learn.py** shows how to use the module to perform deep learning
-
-```python
-import deeprank.learn
+from deeprank.learn import *
+import model3d
 import torch.optim as optim
-import models3d
-
-#adress of the database
-database = '../../database/'
 
 # declare the dataset instance
-data_set = deeprank.learn.DeepRankDataSet(database,
-                           filter_dataset = 'decoyID.dat',
-                           select_feature={'AtomicDensities_diff' : ['CA','CB','N'], 
-                                          'atomicFeature' : ['ELEC','VDW']},
-                           select_target='haddock_score')
+database = './1ak4.hdf5'
+data_set = DataSet(database,
+                  select_feature={'AtomicDensities_diff' : ['C','CA','O','N'], 
+                                  'atomicFeature_sum' : ['coulomb','vdwaals','charge'] },
+                  select_target='DOCKQ')
 
-# Get the content of the dataset
-#data_set.get_content()
 
 # load the data set
 data_set.load()
 
 # create the network
-model = deeprank.learn.DeepRankConvNet(data_set,
-                        models3d.ConvNet3D_reg,
-                        model_type='3d',
-                        task='reg',
-                        tensorboard=False,
-                        outdir='./test_out/')
+model = ConvNet(data_set, model3d.cnn,cuda=False)
 
 # change the optimizer (optional)
 model.optimizer = optim.SGD(model.net.parameters(),
@@ -441,28 +243,130 @@ model.optimizer = optim.SGD(model.net.parameters(),
 
 # start the training
 model.train(nepoch = 250)
-````
+```
 
-The file decoysID.dat contains only the ID of the decoys. We use this file here to filter the database. The features are all the atomic densities and the target the haddock score. 
-Using this data set we perform a regression using a 3D CNN defined models3d.py. We here change the optimizer and perform only 250 epoch. After completion you should obtain a picture that looks like that
 
-![alt-text](https://github.com/DeepRank/deeprank_v0.0/blob/master/pics/haddock_prediction.png)
 
-To perform a regression on the binary_class using all the comformation in the database, we can modify the script as follow. Note that we use different CNN for regression and classification. The only difference is in the final layer that has 1 or  2 output.
+The first part of the script create a Torch database. The dfinition of this class is in `/deeprank/learn/DataSet.py` To do though we nee to pecify which .hdf5 file we want to use and wich features/targets included in this file we want to use during the deep learning phase. Here we specify that we want to use the the C, CA, O, and N grids included in AtomicDensities_diff and the grids coulomb,vdwaals and charge of the atomicFeature_sum. We also spcify that we want to use the DOCKQ score to train the network. More options are available to create the data set and you can read the header of the file `/deeprank/learn/DataSet.py`
+
+We then create the ConvNet object that is defined in `/deeprank/learn/ConvNet.py`
+In this minimal example we simply specify which dataset to use and wich model to use. This model is here defined in the file `model3d.py` by a class called cnn (see below). We also here turn off CUDA meaning that the training will only use CPUs. To use GPUs when available simply switch to `cuda=True`. Multiple GPUs can also be used through the options `ngpu=n`. 
+
+We can then modify the default value for the optimizer used during the training and train the model for 250 epochs. By default the code will generate some scatter plot illustrsting the accuracy of the prediction. 
+
+
+#### Model Generator
+
+The definition of the CNN is done in `model3d.py`.
 
 ```python
-data_set = deeprank.learn.DeepRankDataSet(database,
-                           select_feature={'AtomicDensities' : 'all'},
-                           select_target='binary_class')
+import torch
+from torch.autograd import Variable
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+import torch.utils.data as data_utils
 
-# create the network
-model = deeprank.learn.DeepRankConvNet(data_set,
-                        models3d.ConvNet3D_binclass,
-                        model_type='3d',
-                        task='class',
-                        tensorboard=False,
-                        outdir='./test_out/')
+
+class cnn(nn.Module):
+
+  def __init__(self,input_shape):
+    super(cnn,self).__init__()
+
+    self.conv1 = nn.Conv3d(input_shape[0],4,kernel_size=2)
+    self.pool  = nn.MaxPool3d((2,2,2))
+    self.conv2 = nn.Conv3d(4,5,kernel_size=2)
+
+    size = self._get_conv_output(input_shape)
+
+    self.fc1   = nn.Linear(size,84)
+    self.fc2   = nn.Linear(84,1)
+
+  def _get_conv_output(self,shape):
+    inp = Variable(torch.rand(1,*shape))
+    out = self._forward_features(inp)
+    return out.data.view(1,-1).size(1)
+
+  def _forward_features(self,x):
+    x = self.pool(F.relu(self.conv1(x)))
+    x = self.pool(F.relu(self.conv2(x)))
+    return x
+
+  def forward(self,x):
+    x = self._forward_features(x)
+    x = x.view(x.size(0),-1)
+    x = F.relu(self.fc1(x))
+    x = self.fc2(x)
+    return x
 ```
-After completion you should have a picture looking like that. The blue/red dots are native/deoys. The dots are in center if the CNN thinks that they are decoys and at the border if it thinks they are natives. The stars are training set, triangles validation set and circle test set. This is probably not the best way of visualizing this. Suggestions are welcome !
 
-![alt-text](https://github.com/DeepRank/deeprank_v0.0/blob/master/pics/class_prediction.png)
+
+As you can see it's not trivial really. To faciliate the generation of this file we have implemented a simple model generator in `deeprank/learn/modelGenerator.py`. You can use this generator as follows:
+
+```python
+from deeprank.learn import *
+
+conv_layers = []
+conv_layers.append(conv(output_size=4,kernel_size=2,post='relu'))
+conv_layers.append(pool(kernel_size=2))
+conv_layers.append(conv(input_size=4,output_size=5,kernel_size=2,post='relu'))
+conv_layers.append(pool(kernel_size=2))
+
+fc_layers = []
+fc_layers.append(fc(output_size=84,post='relu'))
+fc_layers.append(fc(input_size=84,output_size=1))
+
+MG = NetworkGenerator(name='cnn',fname='model.py',conv_layers=conv_layers,fc_layers=fc_layers)
+MG.print()
+MG.write()
+```
+
+that outputs on the screen
+
+```
+#----------------------------------------------------------------------
+# Network Structure
+#----------------------------------------------------------------------
+#conv layer   0: conv | input -1  output  4  kernel  2  post relu
+#conv layer   1: pool | kernel  2  post None
+#conv layer   2: conv | input  4  output  5  kernel  2  post relu
+#conv layer   3: pool | kernel  2  post None
+#fc   layer   0: fc   | input -1  output  84  post relu
+#fc   layer   1: fc   | input  84  output  1  post None
+#----------------------------------------------------------------------
+```
+
+This defines a sinple CNN containing all the layers defined in the two list. So we first have the convolutional block that here contains a series of conv3d and pool3d and then two fully connected layers. This will automatically write a file called model.py and containing the cnn class that can be used in the training.
+
+#### Random Model Generator
+
+You can also get a randomly generated network with 
+
+```python
+from deeprank.learn import *
+MGR = NetworkGenerator(name='cnnrand',fname='modelrandom.py')
+MGR.get_new_random_model()
+MGR.print()
+MGR.write()
+```
+
+Here is an example of autmoatically generated network and of course the corresponding python file is also written.
+
+```
+#----------------------------------------------------------------------
+# Network Structure
+#----------------------------------------------------------------------
+#conv layer   0: conv | input -1  output  9  kernel  4  post relu
+#conv layer   1: drop | percent 0.3
+#conv layer   2: drop | percent 0.4
+#conv layer   3: drop | percent 0.1
+#conv layer   4: pool | kernel  3  post None
+#conv layer   5: conv | input  9  output  9  kernel  2  post relu
+#conv layer   6: pool | kernel  2  post relu
+#conv layer   7: drop | percent 0.8
+#conv layer   8: conv | input  9  output  6  kernel  3  post relu
+#fc   layer   0: fc   | input -1  output  1  post relu
+#----------------------------------------------------------------------
+```
+
+Automatically generating models will be used for automatic hyperparameters definition in the future. 
