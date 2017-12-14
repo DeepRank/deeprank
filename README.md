@@ -305,6 +305,7 @@ As you can see it's not trivial really. To faciliate the generation of this file
 
 ```python
 from deeprank.learn import *
+from deeprank.learn.modelGenerator import *
 
 conv_layers = []
 conv_layers.append(conv(output_size=4,kernel_size=2,post='relu'))
