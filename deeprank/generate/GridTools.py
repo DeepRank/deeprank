@@ -593,9 +593,9 @@ class GridTools(object):
 			if self.cuda:
 				dict_data[fname] = grid_gpu.get()
 
-			print('Process time %f ms' tprocess/len(data)*1000)
-			print('Grid    time %f ms' tgrid/len(data)*1000)
-			
+			print('Process time %f ms' %(tprocess/len(data)*1000))
+			print('Grid    time %f ms' %(tgrid/len(data)*1000))
+
 		return dict_data
 
 	# compute the a given feature on the grid
