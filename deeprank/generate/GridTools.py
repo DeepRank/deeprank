@@ -106,7 +106,7 @@ class GridTools(object):
 				residue_feature =None, residue_feature_mode ='sum',
 				atomic_feature  =None, atomic_feature_mode  ='sum',
 				contact_distance = 8.5, hdf5_file=None,
-				cuda=False, gpu_block=None, tune_kernel=False,debug_cuda=False):
+				cuda=False, gpu_block=None, cuda_func=None):
 		
 		# mol file	
 		self.molgrp = molgrp
@@ -127,16 +127,14 @@ class GridTools(object):
 		if self.atomic_feature != None:
 			self.feattype_required.append('atomic')
 
-		# find the base name of the molecule
-		# remove all the path and the extension
-		if not tune_kernel and not debug_cuda:
-			self.mol_basename = molgrp.name
-			
-			# hdf5 file
-			self.hdf5 = hdf5_file
+		# base name of the molecule
+		self.mol_basename = molgrp.name
+		
+		# hdf5 file
+		self.hdf5 = hdf5_file
 
-			# export to HDF5 file
-			self.hdf5.require_group(self.mol_basename+'/features/')
+		# export to HDF5 file
+		self.hdf5.require_group(self.mol_basename+'/features/')
 
 		# parameter of the grid
 		if number_of_points is not None:
@@ -148,7 +146,8 @@ class GridTools(object):
 		# cuda support 
 		self.cuda = cuda
 		if self.cuda:
-			self.init_cuda(gpu_block)
+			self.gpu_grid = [ int(np.ceil(n/b)) for b,n in zip(self.gpu_block,self.npts)]
+			
 
 		# parameter of the atomic system
 		self.atom_xyz = None
@@ -159,6 +158,9 @@ class GridTools(object):
 		self.x = None
 		self.y = None
 		self.z = None
+
+		# cuda 
+		self.cuda_func = cuda_func
 
 		# grids for calculation of atomic densities
 		self.xgrid = None
@@ -174,34 +176,18 @@ class GridTools(object):
 		# contact distance to locate the interface
 		self.contact_distance = contact_distance
 
-		# if we only want to tune the kernel
-		if tune_kernel:
-			if not self.cuda:
-				self.init_cuda()
-				self.cuda = True
-			self.tune_kernel()
+		# if we already have an output containing the grid
+		# we update the existing features
+		_update_ = False	
+		if self.mol_basename+'/grid_points' in self.hdf5:
+			_update_ = True
 
-		elif debug_cuda:
-			if not self.cuda:
-				self.init_cuda()
-				self.cuda = True
-			self.test_cuda()
-
-		# or we do the full thing
+		if _update_:
+			print('\n= Updating grid data for %s' %(self.mol_basename))
+			self.update_feature()
 		else:
-
-			# if we already have an output containing the grid
-			# we update the existing features
-			_update_ = False	
-			if self.mol_basename+'/grid_points' in self.hdf5:
-				_update_ = True
-
-			if _update_:
-				print('\n= Updating grid data for %s' %(self.mol_basename))
-				self.update_feature()
-			else:
-				print('\n= Creating grid and grid data for %s' %(self.mol_basename))	
-				self.create_new_data()
+			print('\n= Creating grid and grid data for %s' %(self.mol_basename))	
+			self.create_new_data()
 		
 
 
@@ -453,7 +439,7 @@ class GridTools(object):
 		# declare the total dictionary
 		dict_data = {}
 
-		# prepare cuda if we need to
+		# prepare the cuda memory
 		if self.cuda:
 
 			# try to import pycuda
@@ -461,24 +447,14 @@ class GridTools(object):
 				from pycuda import driver, compiler, gpuarray, tools
 				import pycuda.autoinit
 			except:
-				raise ImportError("Pycuda not found")
+				raise ImportError("Error when importing pyCuda in GridTools")
+
 
 			# book memp on the gpu
 			x_gpu = gpuarray.to_gpu(self.x.astype(np.float32))
 			y_gpu = gpuarray.to_gpu(self.y.astype(np.float32))
 			z_gpu = gpuarray.to_gpu(self.z.astype(np.float32))
 			grid_gpu = gpuarray.zeros(self.npts,np.float32)
-
-			# get the kernel
-			kernel_code_template = self.get_cuda_kernel()
-			kernel_code = kernel_code_template % {'nx' : self.npts[0],  'ny' : self.npts[1], 'nz' : self.npts[2], 'RES' : np.max(self.res) }
-
-			# inpt the block size
-			kernel_code = self.prepare_kernel(kernel_code)
-
-			# compile and get the function
-			mod = compiler.SourceModule(kernel_code)
-			addgrid = mod.get_function('AddGrid')
 
 		# number of features
 		if feature_type == 'residue':
@@ -530,9 +506,9 @@ class GridTools(object):
 					else:
 						dict_data[feature_name+'_%03d' %iF] = np.zeros(self.npts)
 
-			# rest the grid
+			# rest the grid and get the x y z values
 			if self.cuda:
-				grid_gpu *= 0
+				self.grid_gpu *= 0
 
 			# map all the features
 			for line in tqdm(data):
@@ -598,7 +574,7 @@ class GridTools(object):
 					if nFeat == 1:
 						x0,y0,z0 = pos.astype(np.float32)
 						alpha = np.float32(coeff*feat_values)
-						addgrid(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,block=tuple(self.gpu_block),grid=tuple(self.gpu_grid))
+						self.cuda_func(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,block=tuple(self.gpu_block),grid=tuple(self.gpu_grid))
 					else:
 						raise ValueError('CUDA only possible for single-valued features so far')
 
@@ -688,147 +664,6 @@ class GridTools(object):
 		else:
 			raise ValueError('Options not recognized for the grid',type_)
 
-
-
-	##########################################################	
-	#	Init the CUDA parameters
-	##########################################################
-	def init_cuda(self,block):
-	
-		self.gpu_block = block
-		if self.gpu_block is not None:
-			self.gpu_grid = [ int(np.ceil(n/b)) for b,n in zip(self.gpu_block,self.npts)]
-
-	##########################################################	
-	#	Get the CUDA KERNEL
-	##########################################################
-	@staticmethod
-	def get_cuda_kernel():
-
-		return """
-		#include <math.h>
-		__global__ void AddGrid(float alpha, float x0, float y0, float z0, float *xvect, float *yvect, float *zvect, float *out)
-		{
-			
-			// 3D thread 
-		    int tx = threadIdx.x + block_size_x * blockIdx.x;
-		    int ty = threadIdx.y + block_size_y * blockIdx.y;
-		    int tz = threadIdx.z + block_size_z * blockIdx.z;
-
-		    float beta = 1.0/%(RES)s;
-
-		    if ( ( tx < %(nx)s ) && (ty < %(ny)s) && (tz < %(nz)s) )
-		    {
-
-		    	float dx = xvect[tx] - x0;
-		    	float dy = yvect[ty] - y0;
-		    	float dz = zvect[tz] - z0;
-		    	float d = sqrt(dx*dx + dy*dy + dz*dz);
-		    	out[ty * %(nx)s * %(nz)s + tx * %(nz)s + tz] += alpha*exp(-beta*d);
-		    }
-		}
-		"""
-
-
-	#################################################################
-	#	Tune the kernel
-	#################################################################
-	def tune_kernel(self):
-
-		try:
-			from kernel_tuner import tune_kernel
-		except:
-			print('Install the Kernel Tuner : \n \t\t pip install kernel_tuner')
-			print('http://benvanwerkhoven.github.io/kernel_tuner/')
-
-
-		# define the grid
-		self.center_contact = np.zeros(3)
-		self.define_grid_points()
-
-		# create the dictionary containing the tune parameters
-		tune_params = OrderedDict()
-		tune_params['block_size_x'] = [2,4,8,16,32]
-		tune_params['block_size_y'] = [2,4,8,16,32]
-		tune_params['block_size_z'] = [2,4,8,16,32]
-
-		# define the final grid
-		grid = np.zeros_like(self.xgrid)
-
-		# arguments of the CUDA function
-		x0,y0,z0 = np.float32(0),np.float32(0),np.float32(0)
-		alpha = np.float32(0)
-		args = [alpha,x0,y0,z0,self.x,self.y,self.z,grid]
-
-		# dimensionality
-		problem_size = self.npts
-
-		# get the kernel
-		kernel_code_template = self.get_cuda_kernel()
-		kernel_code = kernel_code_template % {'nx' : self.npts[0], 'ny': self.npts[1], 'nz' : self.npts[2], 'RES' : np.max(self.res)}
-
-		# tune
-		result = tune_kernel('AddGrid', kernel_code,problem_size,args,tune_params)
-
-	##########################################################	
-	#	prepare the kernel
-	##########################################################
-	def prepare_kernel(self,kernel_code):
-
-		# change the values of the block sizes in the kernel
-		fixed_params = OrderedDict()
-		fixed_params['block_size_x'] = self.gpu_block[0]
-		fixed_params['block_size_y'] = self.gpu_block[1]
-		fixed_params['block_size_z'] = self.gpu_block[2]
-
-		for k,v in fixed_params.items():
-		    kernel_code = kernel_code.replace(k,str(v))
-
-		return kernel_code
-
-	################################################################
-	#	test cuda
-	################################################################
-	def test_cuda(self):
-
-		# define the grid
-		self.center_contact = np.zeros(3)
-		self.define_grid_points()
-
-		# try to import pycuda
-		try:
-			from pycuda import driver, compiler, gpuarray, tools
-			import pycuda.autoinit
-		except:
-			raise ImportError("Pycuda not found")
-
-		# book memp on the gpu
-		x_gpu = gpuarray.to_gpu(self.x.astype(np.float32))
-		y_gpu = gpuarray.to_gpu(self.y.astype(np.float32))
-		z_gpu = gpuarray.to_gpu(self.z.astype(np.float32))
-		grid_gpu = gpuarray.zeros(self.npts,np.float32)
-
-		# get the kernel
-		kernel_code_template = self.get_cuda_kernel()
-		kernel_code = kernel_code_template % {'nx' : self.npts[0],  'ny' : self.npts[1], 'nz' : self.npts[2], 'RES' : np.max(self.res) }
-
-		# inpt the block size
-		kernel_code = self.prepare_kernel(kernel_code)
-
-		# compile and get the function
-		mod = compiler.SourceModule(kernel_code)
-		addgrid = mod.get_function('AddGrid')
-
-
-		print('GPU BLOCK :', self.gpu_block)
-		print('GPU GRID  :', self.gpu_grid)
-
-		xyz_center = np.random.rand(500,3).astype(np.float32)
-		alpha = np.float32(1)
-		for xyz in tqdm(xyz_center):
-			x0,y0,z0 = xyz
-			addgrid(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,
-					block=tuple(self.gpu_block),grid=tuple(self.gpu_grid))
 
 	################################################################
 	# export the grid points for external calculations of some

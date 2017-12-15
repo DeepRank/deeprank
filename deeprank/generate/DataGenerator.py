@@ -360,7 +360,10 @@ class DataGenerator(object):
 #====================================================================================
 
 
-	def map_features(self,grid_info,cuda=False,gpu_block=None,reset=False,use_tmpdir=False):
+	def map_features(self,grid_info,
+		             cuda=False,gpu_block=None,
+		             cuda_kernel='/kernel_map.c',
+		             reset=False,use_tmpdir=False):
 
 		'''
 		Generate the input/output data on the grids for a series of prot-prot conformations
@@ -387,7 +390,8 @@ class DataGenerator(object):
 				to avoid transferring files between computing and head nodes
 
 		'''
-
+		# default CUDA
+		cuda_func = None
 
 		# name of the hdf5 file
 		f5 = h5py.File(self.hdf5,'a')
@@ -419,6 +423,20 @@ class DataGenerator(object):
 			print('You can sepcify the block size with gpu_block=[n,m,k]')
 			gpu_block = [8,8,8]
 
+		# initialize cuda
+		if cuda:
+
+			try:
+				from pycuda import driver, compiler, gpuarray, tools
+				import pycuda.autoinit 
+			except:
+				raise ImportError("Pycuda not found")
+
+			# get the cuda function
+			npts = grid_info['number_of_points']
+			res = grid_info['resolution']
+			cuda_func = self.get_cuda_function(cuda_kernel,gpu_block,npts,res)
+
 		# loop over the data files
 		for mol in mol_names:
 					
@@ -432,47 +450,153 @@ class DataGenerator(object):
 				             atomic_feature = grid_info['atomic_feature'],
 				             atomic_feature_mode = grid_info['atomic_feature_mode'],
 				             cuda = cuda,
-				             gpu_block=gpu_block,
+				             gpu_block = gpu_block,
+				             cuda_func = cuda_func,
 				             hdf5_file = f5)
 
 		# close he hdf5 file
 		f5.close()
 
+
 #====================================================================================
 #
-#		Simply tune the kernel
+#		Simply tune or test the kernel
 #
 #====================================================================================
 
-	def tune_cuda_kernel(self,grid_info):
-
-		
-		# fills in the grid data if not provided : default = NONE
-		grinfo = ['number_of_points','resolution']
-		for gr  in grinfo:
-			if gr not in grid_info:
-				raise ValueError('%s must be specified to tune the kernel')
+	def tune_cuda_kernel(self,grid_info,cuda_kernel='/kernel_map.c',tuned_func='AddGrid'):
 			
-		# compute the data we want on the grid
-		grid = gt.GridTools(molgrp=None,
-				             number_of_points = grid_info['number_of_points'],
-				             resolution = grid_info['resolution'],
-				             cuda = True,tune_kernel=True)
-
-
-	def test_cuda(self,grid_info,gpu_block):
+		try:
+			from kernel_tuner import tune_kernel
+		except:
+			print('Install the Kernel Tuner : \n \t\t pip install kernel_tuner')
+			print('http://benvanwerkhoven.github.io/kernel_tuner/')
 
 		# fills in the grid data if not provided : default = NONE
 		grinfo = ['number_of_points','resolution']
 		for gr  in grinfo:
 			if gr not in grid_info:
 				raise ValueError('%s must be specified to tune the kernel')
-			
-		# compute the data we want on the grid
-		grid = gt.GridTools(molgrp=None,
-				             number_of_points = grid_info['number_of_points'],
-				             resolution = grid_info['resolution'],
-				             cuda = True,debug_cuda=True,gpu_block=gpu_block)
+
+		# define the grid
+		center_contact = np.zeros(3)
+		nx,ny,nz = grinfo['number_of_points']
+		dx,dy,dz = grinfo['resolution']
+		lx,ly,lz = nx*dx,ny*dy,nz*dz
+
+		x = np.linspace(0,lx,nx)
+		y = np.linspace(0,ly,ny)
+		z = np.linspace(0,lz,nz)
+
+		# create the dictionary containing the tune parameters
+		tune_params = OrderedDict()
+		tune_params['block_size_x'] = [2,4,8,16,32]
+		tune_params['block_size_y'] = [2,4,8,16,32]
+		tune_params['block_size_z'] = [2,4,8,16,32]
+
+		# define the final grid
+		grid = np.zeros(grinfo['number_of_points'])
+
+		# arguments of the CUDA function
+		x0,y0,z0 = np.float32(0),np.float32(0),np.float32(0)
+		alpha = np.float32(0)
+		args = [alpha,x0,y0,z0,x,y,z,grid]
+
+		# dimensionality
+		problem_size = grinfo['number_of_points']
+
+		# get the kernel
+		kernel = os.path.dirname(os.path.abspath(__file__)) + '/' + cuda_kernel
+		kernel_code_template = open(kernel, 'r').read()
+
+		npts = grinfo['number_of_points']
+		res = grinfo['resolution']
+		kernel_code = kernel_code_template % {'nx' : npts[0], 'ny': npts[1], 'nz' : npts[2], 'RES' : np.max(res)}
+		tunable_kernel = self._tunable_kernel(kernel_code)
+
+		# tune
+		result = tune_kernel(tuned_func, tunable_kernel,problem_size,args,tune_params)
+
+
+#====================================================================================
+#
+#		Simply test the kernel
+#
+#====================================================================================
+
+	def test_cuda(self,grid_info,gpu_block=[8,8,8],cuda_kernel='/kernel_map.c'):
+
+		# fills in the grid data if not provided : default = NONE
+		grinfo = ['number_of_points','resolution']
+		for gr  in grinfo:
+			if gr not in grid_info:
+				raise ValueError('%s must be specified to tune the kernel')
+
+		try:
+			from pycuda import driver, compiler, gpuarray, tools
+			import pycuda.autoinit 
+		except:
+			raise ImportError("Pycuda not found")
+
+		# get the cuda function
+		cuda_func = self.get_cuda_function(cuda_kernel,gpu_block,grinfo['number_of_points'],grinfo['resolution'])
+
+		# define the grid
+		center_contact = np.zeros(3)
+		nx,ny,nz = grinfo['number_of_points']
+		dx,dy,dz = grinfo['resolution']
+		lx,ly,lz = nx*dx,ny*dy,nz*dz
+
+		# create the coordinate
+		x = np.linspace(0,lx,nx)
+		y = np.linspace(0,ly,ny)
+		z = np.linspace(0,lz,nz)
+
+		# book memp on the gpu
+		x_gpu = gpuarray.to_gpu(x.astype(np.float32))
+		y_gpu = gpuarray.to_gpu(y.astype(np.float32))
+		z_gpu = gpuarray.to_gpu(z.astype(np.float32))
+		grid_gpu = gpuarray.zeros(grinfo['number_of_points'],np.float32)
+
+		#  get the grid
+		gpu_grid = [ int(np.ceil(n/b)) for b,n in zip(gpu_block,grinfo['number_of_points'])]
+		print('GPU BLOCK :', gpu_block)
+		print('GPU GRID  :', gpu_grid)
+
+		xyz_center = np.random.rand(500,3).astype(np.float32)
+		alpha = np.float32(1)
+		for xyz in tqdm(xyz_center):
+			x0,y0,z0 = xyz
+			cuda_func(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,
+					block=tuple(gpu_block),grid=tuple(gpu_grid))
+
+
+#====================================================================================
+#
+#		Routines needed to handle CUDA
+#
+#====================================================================================
+
+	@staticmethod
+	def get_cuda_function(cuda_kernel,gpu_block,npts,res):
+
+		# get the cuda kernel path
+		kernel = os.path.dirname(os.path.abspath(__file__)) + '/' + cuda_kernel
+		kernel_code_template = open(kernel, 'r').read()
+		kernel_code = kernel_code_template % {'nx' : npts[0], 'ny': npts[1], 'nz' : npts[2], 'RES' : np.max(res)}
+
+		# compile the kernel
+		mod = compiler.SourceModule(kernel_code)
+		addgrid = mod.get_function('AddGrid')
+		return addgrid
+
+	# tranform the kernel to a tunable one
+	@staticmethod
+	def _tunable_kernel(kernel):
+		switch_name = { 'blockDim.x' : 'block_size_x', 'blockDim.y' : 'block_size_y','blockDim.z' : 'block_size_z' }
+		for old,new in switch_name.items():
+			kernel = kernel.replace(old,new)
+		return kernel
 
 
 #====================================================================================
