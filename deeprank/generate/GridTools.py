@@ -509,7 +509,7 @@ class GridTools(object):
 
 			# rest the grid and get the x y z values
 			if self.cuda:
-				self.grid_gpu *= 0
+				grid_gpu *= 0
 
 			# map all the features
 			for line in tqdm(data):
