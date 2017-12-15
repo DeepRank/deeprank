@@ -4,6 +4,7 @@ import importlib
 import numpy as np
 import subprocess as sp
 import h5py
+from collections import OrderedDict
 
 from deeprank.tools import pdb2sql
 from deeprank.generate import GridTools as gt
