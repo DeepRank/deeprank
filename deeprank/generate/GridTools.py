@@ -5,6 +5,7 @@ import itertools
 from scipy.signal import bspline
 import scipy.sparse as spsp
 from collections import OrderedDict
+from time import time
 
 from deeprank.tools import pdb2sql
 from deeprank.tools import sparse
@@ -514,6 +515,7 @@ class GridTools(object):
 			# map all the features
 			for line in tqdm(data):
 
+				t0 = time()
 				line = line.decode('utf-8').split()
 
 				# get the position of the resnumber
@@ -561,7 +563,9 @@ class GridTools(object):
 					coeff = 1
 				if self.atomic_feature_mode == "ind":
 					fname = feature_name + "_chain" + chain
+				print('\n process = %f' %(time()-t0))
 
+				t0 =time()
 				# map this feature(s) on the grid(s)
 				if not self.cuda:
 					if nFeat == 1:
@@ -578,6 +582,8 @@ class GridTools(object):
 						self.cuda_func(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,block=tuple(self.gpu_block),grid=tuple(self.gpu_grid))
 					else:
 						raise ValueError('CUDA only possible for single-valued features so far')
+
+				print(' grid = %f' %(time()-t0))
 
 			if self.cuda:
 				dict_data[fname] = grid_gpu.get()
