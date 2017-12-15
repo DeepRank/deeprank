@@ -146,6 +146,7 @@ class GridTools(object):
 		# cuda support 
 		self.cuda = cuda
 		if self.cuda:
+			self.gpu_block = gpu_block
 			self.gpu_grid = [ int(np.ceil(n/b)) for b,n in zip(self.gpu_block,self.npts)]
 			
 
