@@ -7,6 +7,7 @@ import os
 import pickle 
 import h5py 
 from deeprank.tools import pdb2sql 
+from deeprank.tools import sparse
 
 def visualize3Ddata(hdf5=None,mol_name=None,out='./'):
 
@@ -16,23 +17,29 @@ def visualize3Ddata(hdf5=None,mol_name=None,out='./'):
 	data in VMD
 
 	Usage
-	./visualize3Ddata.py -hdf5 <hdf5name> -mol_name <molname> -out <outdir> 
+	python generate_cube_files.py <mol_dir_name>
+	e.g. python generate_cube_files.py 1AK4
 
-	a new folder <outdir> will be created and will contains the *.cube files
-	as well as a pdb of the molecule and a few vmd scripts
+	or within a python script
 
-	The VMD scripts can be used for
+	import deeprank.map
+	deeprank.map.generate_viz_files(mol_dir_name)
+
+	A new subfolder data_viz will be created in <mol_dir_name>
+	with all the cube files representing the features contained in 
+	the files <mol_dir_name>/input/*.npy
+
+	A script called <feature_name>.vmd is also outputed et allow for 
 	quick vizualisation of the data by typing
 
 	vmd -e <feature_name>.vmd
-	
 	'''
 
 		
 	outdir = out
 	if outdir[-1] != '/':
 		outdir = outdir + '/'
-
+		
 	if not os.path.isdir(outdir):
 		os.mkdir(outdir)
 
@@ -56,6 +63,7 @@ def visualize3Ddata(hdf5=None,mol_name=None,out='./'):
 	grid['x'] = molgrp['grid_points/x'].value
 	grid['y'] = molgrp['grid_points/y'].value
 	grid['z'] = molgrp['grid_points/z'].value
+	shape = (len(grid['x']),len(grid['y']),len(grid['z']))
 
 	# deals with the features
 	mapgrp = molgrp['mapped_features']
@@ -67,8 +75,13 @@ def visualize3Ddata(hdf5=None,mol_name=None,out='./'):
 		featgrp = mapgrp[data_name]
 		data_dict = {}
 		for ff in featgrp.keys():
-			data_dict[ff] =  featgrp[ff].value 
-
+			subgrp = featgrp[ff]
+			if not subgrp.attrs['sparse']:
+				data_dict[ff] =  subgrp['value'].value 
+			else:
+				spg = sparse.FLANgrid(sparse=True,index=subgrp['index'].value,value=subgrp['value'].value,shape=shape)
+				data_dict[ff] =  spg.to_dense()
+				
 		# export the cube file
 		export_cube_files(data_dict,data_name,grid,outdir)
 

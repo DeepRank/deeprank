@@ -505,6 +505,7 @@ class AtomicFeature(FeatureClass):
 
 		if len(self.contact_atoms_A) == 0:
 			self.feature_data['charge'] = {}
+			self.feature_data_xyz['charge'] = {}
 			self.export_directories['charge'] = self.root_export+'/CHARGE/'
 			return
 
@@ -516,7 +517,7 @@ class AtomicFeature(FeatureClass):
 
 		# define the dictionaries
 		charge_data = {}
-
+		charge_data_xyz = {}
 
 		# total energy terms
 		charge_tot = 0
@@ -538,9 +539,13 @@ class AtomicFeature(FeatureClass):
 
 			# store in the dicts
 			charge_data[key] = [charge[i]]
+			charge_data_xyz[tuple(xyz[i,:])] = [charge[i]]
 
 		# add the electrosatic feature
 		self.feature_data['charge'] = charge_data
+		self.feature_data_xyz['charge'] = charge_data_xyz
+
+		# is that obsolte ?
 		if self.individual_directory:
 			self.export_directories['charge'] = self.root_export+'/CHARGE/'
 		else:
@@ -559,6 +564,7 @@ class AtomicFeature(FeatureClass):
 		
 		if len(self.contact_atoms_A) == 0:
 			self.feature_data['coulomb'] = {}
+			self.feature_data_xyz['culomb'] = {}
 			self.export_directories['coulomb'] = self.root_export+'/ELEC/'
 			return
 
@@ -571,8 +577,15 @@ class AtomicFeature(FeatureClass):
 		eps,sig = vdw[:,0],vdw[:,1]
 			
 		# define the dictionaries
+		# these holds data like 
+		# chainID resname resSeq,name values
 		electro_data = {}
 		vdw_data = {}
+
+		# define the dict that hold
+		#  x y z values
+		electro_data_xyz = {}
+		vdw_data_xyz = {}
 
 		# define the matrices 
 		natA,natB = len(self.sqldb.get('x',chainID='A')),len(self.sqldb.get('x',chainID='B'))
@@ -625,6 +638,10 @@ class AtomicFeature(FeatureClass):
 			# store in the dicts
 			electro_data[keyA] = [np.sum(ec)]
 			vdw_data[keyA] = [np.sum(evdw)]
+
+			# store in the xyz dict
+			electro_data_xyz[tuple(xyz[iA,:])] = [np.sum(ec)]
+			vdw_data_xyz[tuple(xyz[iA,:])] = [np.sum(evdw)]
 
 			# print the result
 			if _save_ or print_interactions:
@@ -684,15 +701,26 @@ class AtomicFeature(FeatureClass):
 			electro_data[keyB] = [np.sum(ec)]
 			vdw_data[keyB] = [np.sum(evdw)]			
 
+			# store the xyz dict
+			electro_data_xyz[tuple(xyz[indexB,:])] = [np.sum(ec)]
+			vdw_data_xyz[tuple(xyz[indexB,:])] = [np.sum(evdw)]
+
 		# add the electrosatic feature
 		self.feature_data['coulomb'] = electro_data
+		self.feature_data_xyz['coulomb'] = electro_data_xyz
+
+		# add the vdw feature
+		self.feature_data['vdwaals'] = vdw_data
+		self.feature_data_xyz['vdwaals'] = vdw_data_xyz
+
+
+		# dict for export
+		# I think that's obsolete
 		if self.individual_directory:
 			self.export_directories['coulomb'] = self.root_export+'/ELEC/'
 		else:
 			self.export_directories['coulomb'] = self.root_export
 
-		# add the vdw feature
-		self.feature_data['vdwaals'] = vdw_data
 		if self.individual_directory:
 			self.export_directories['vdwaals'] = self.root_export+'/VDW/'
 		else:

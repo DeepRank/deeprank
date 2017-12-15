@@ -451,8 +451,7 @@ class GridTools(object):
 			except:
 				raise ImportError("Error when importing pyCuda in GridTools")
 
-
-			# book memp on the gpu
+			# book mem on the gpu
 			x_gpu = gpuarray.to_gpu(self.x.astype(np.float32))
 			y_gpu = gpuarray.to_gpu(self.y.astype(np.float32))
 			z_gpu = gpuarray.to_gpu(self.z.astype(np.float32))
@@ -480,9 +479,17 @@ class GridTools(object):
 				print('Error Feature not found \n\tPossible features : ' + ' | '.join(featgrp.keys()) )
 				raise ValueError('feature %s  not found in the file' %(feature_name))
 			
+			# detect if we have a xyz format
+			if isinstance(data[0],np.ndarray):
+				feature_type = 'xyz'
+				ntext = 3
+
 			# get the data on the first line
-			data_test = data[0].split()
-			data_test = list(map(float,data_test[ntext:]))
+			if feature_type != 'xyz':
+				data_test = data[0].split()
+				data_test = list(map(float,data_test[ntext:]))
+			else:
+				data_test = data[0,ntext:]
 
 			# define the length of the output
 			if transform == None:
@@ -512,7 +519,6 @@ class GridTools(object):
 			if self.cuda:
 				grid_gpu *= 0
 
-
 			# timing
 			tprocess = 0
 			tgrid = 0
@@ -521,40 +527,47 @@ class GridTools(object):
 			for line in tqdm(data):
 
 				t0 = time()
-				line = line.decode('utf-8').split()
+				if feature_type == 'xyz':
+					pos = line[:ntext]
+					feat_values = np.array(line[ntext:])
 
-				# get the position of the resnumber
-				chain,resName,resNum = line[0],line[1],line[2]
-
-				# get the atom name for atomic data
-				if feature_type == 'atomic':
-					atName = line[3]
-
-				# get the position
-				if feature_type == 'residue':
-					pos = np.mean(np.array(self.sqldb.get('x,y,z',chainID=chain,resSeq=resNum)),0)
-					sql_resName = list(set(self.sqldb.get('resName',chainID=chain,resSeq=resNum)))
 				else:
-					pos = np.array(self.sqldb.get('x,y,z',chainID=chain,resSeq=resNum,name=atName))[0]
-					sql_resName = list(set(self.sqldb.get('resName',chainID=chain,resSeq=resNum,name=atName)))
 
-				# check if  the resname correspond
-				if len(sql_resName) == 0:
-					print('Error : SQL query returned empty list')
-					print('Tip   : Make sure the parameter file %s' %(feature_file))
-					print('Tip   : corresponds to the pdb file %s' %(self.sqldb.pdbfile))
-					sys.exit()
-				else:
-					sql_resName = sql_resName[0]
+					# decode the line
+					line = line.decode('utf-8').split()
 
-				if resName != sql_resName:
-					print('Residue Name Error in the Feature file %s' %(feature_file))
-					print('Feature File : chain %s resNum %s  resName %s' %(chain,resNum, resName))
-					print('SQL data     : chain %s resNum %s  resName %s' %(chain,resNum, sql_resName))
-					sys.exit()
+					# get the position of the resnumber
+					chain,resName,resNum = line[0],line[1],line[2]
 
-				# get the values of the feature(s) for thsi residue
-				feat_values = np.array(list(map(float,line[ntext:])))
+					# get the atom name for atomic data
+					if feature_type == 'atomic':
+						atName = line[3]
+
+					# get the position
+					if feature_type == 'residue':
+						pos = np.mean(np.array(self.sqldb.get('x,y,z',chainID=chain,resSeq=resNum)),0)
+						sql_resName = list(set(self.sqldb.get('resName',chainID=chain,resSeq=resNum)))
+					else:
+						pos = np.array(self.sqldb.get('x,y,z',chainID=chain,resSeq=resNum,name=atName))[0]
+						sql_resName = list(set(self.sqldb.get('resName',chainID=chain,resSeq=resNum,name=atName)))
+
+					# check if  the resname correspond
+					if len(sql_resName) == 0:
+						print('Error : SQL query returned empty list')
+						print('Tip   : Make sure the parameter file %s' %(feature_file))
+						print('Tip   : corresponds to the pdb file %s' %(self.sqldb.pdbfile))
+						sys.exit()
+					else:
+						sql_resName = sql_resName[0]
+
+					if resName != sql_resName:
+						print('Residue Name Error in the Feature file %s' %(feature_file))
+						print('Feature File : chain %s resNum %s  resName %s' %(chain,resNum, resName))
+						print('SQL data     : chain %s resNum %s  resName %s' %(chain,resNum, sql_resName))
+						sys.exit()
+
+					# get the values of the feature(s) for thsi residue
+					feat_values = np.array(list(map(float,line[ntext:])))
 
 				# postporcess the data
 				if callable(transform):
@@ -570,7 +583,7 @@ class GridTools(object):
 					fname = feature_name + "_chain" + chain
 				tprocess += time()-t0
 
-				t0 =time()
+				t0 = time()
 				# map this feature(s) on the grid(s)
 				if not self.cuda:
 					if nFeat == 1:
@@ -593,7 +606,7 @@ class GridTools(object):
 			if self.cuda:
 				dict_data[fname] = grid_gpu.get()
 				driver.Context.synchronize()
-				
+
 			print('Process time %f ms' %(tprocess/len(data)*1000))
 			print('Grid    time %f ms' %(tgrid/len(data)*1000))
 
