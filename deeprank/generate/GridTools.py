@@ -512,6 +512,11 @@ class GridTools(object):
 			if self.cuda:
 				grid_gpu *= 0
 
+
+			# timing
+			tprocess = 0
+			tgrid = 0
+
 			# map all the features
 			for line in tqdm(data):
 
@@ -563,7 +568,7 @@ class GridTools(object):
 					coeff = 1
 				if self.atomic_feature_mode == "ind":
 					fname = feature_name + "_chain" + chain
-				print('\n process = %f' %(time()-t0))
+				tprocess += time()-t0
 
 				t0 =time()
 				# map this feature(s) on the grid(s)
@@ -583,11 +588,14 @@ class GridTools(object):
 					else:
 						raise ValueError('CUDA only possible for single-valued features so far')
 
-				print(' grid = %f' %(time()-t0))
+				tgrid += time(-t0)
 
 			if self.cuda:
 				dict_data[fname] = grid_gpu.get()
 
+			print('Process time %f ms' tprocess/len(data)*1000)
+			print('Grid    time %f ms' tgrid/len(data)*1000)
+			
 		return dict_data
 
 	# compute the a given feature on the grid
