@@ -496,7 +496,7 @@ class DataGenerator(object):
 		tune_params['block_size_z'] = [2,4,8,16,32]
 
 		# define the final grid
-		grid = np.zeros(grinfo['number_of_points'])
+		grid = np.zeros(grid_info['number_of_points'])
 
 		# arguments of the CUDA function
 		x0,y0,z0 = np.float32(0),np.float32(0),np.float32(0)
@@ -504,14 +504,14 @@ class DataGenerator(object):
 		args = [alpha,x0,y0,z0,x,y,z,grid]
 
 		# dimensionality
-		problem_size = grinfo['number_of_points']
+		problem_size = grid_info['number_of_points']
 
 		# get the kernel
 		kernel = os.path.dirname(os.path.abspath(__file__)) + '/' + cuda_kernel
 		kernel_code_template = open(kernel, 'r').read()
 
-		npts = grinfo['number_of_points']
-		res = grinfo['resolution']
+		npts = grid_info['number_of_points']
+		res = grid_info['resolution']
 		kernel_code = kernel_code_template % {'nx' : npts[0], 'ny': npts[1], 'nz' : npts[2], 'RES' : np.max(res)}
 		tunable_kernel = self._tunable_kernel(kernel_code)
 
@@ -540,7 +540,7 @@ class DataGenerator(object):
 			raise ImportError("Pycuda not found")
 
 		# get the cuda function
-		cuda_func = self.get_cuda_function(cuda_kernel,gpu_block,grinfo['number_of_points'],grinfo['resolution'])
+		cuda_func = self.get_cuda_function(cuda_kernel,gpu_block,grid_info['number_of_points'],grid_info['resolution'])
 
 		# define the grid
 		center_contact = np.zeros(3)
@@ -557,10 +557,10 @@ class DataGenerator(object):
 		x_gpu = gpuarray.to_gpu(x.astype(np.float32))
 		y_gpu = gpuarray.to_gpu(y.astype(np.float32))
 		z_gpu = gpuarray.to_gpu(z.astype(np.float32))
-		grid_gpu = gpuarray.zeros(grinfo['number_of_points'],np.float32)
+		grid_gpu = gpuarray.zeros(grid_info['number_of_points'],np.float32)
 
 		#  get the grid
-		gpu_grid = [ int(np.ceil(n/b)) for b,n in zip(gpu_block,grinfo['number_of_points'])]
+		gpu_grid = [ int(np.ceil(n/b)) for b,n in zip(gpu_block,grid_info['number_of_points'])]
 		print('GPU BLOCK :', gpu_block)
 		print('GPU GRID  :', gpu_grid)
 
