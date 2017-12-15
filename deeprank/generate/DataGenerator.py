@@ -15,6 +15,13 @@ except:
 	def tqdm(x):
 		return x
 
+try:
+	from pycuda import driver, compiler, gpuarray, tools
+	import pycuda.autoinit 
+except:
+	print("Pycuda not found")
+
+
 '''
 	Assemble the data set from different sources of  decoys/natives/features/targets
 
@@ -427,12 +434,6 @@ class DataGenerator(object):
 		# initialize cuda
 		if cuda:
 
-			try:
-				from pycuda import driver, compiler, gpuarray, tools
-				import pycuda.autoinit 
-			except:
-				raise ImportError("Pycuda not found")
-
 			# get the cuda function
 			npts = grid_info['number_of_points']
 			res = grid_info['resolution']
@@ -532,12 +533,6 @@ class DataGenerator(object):
 		for gr  in grinfo:
 			if gr not in grid_info:
 				raise ValueError('%s must be specified to tune the kernel')
-
-		try:
-			from pycuda import driver, compiler, gpuarray, tools
-			import pycuda.autoinit 
-		except:
-			raise ImportError("Pycuda not found")
 
 		# get the cuda function
 		cuda_func = self.get_cuda_function(cuda_kernel,gpu_block,grid_info['number_of_points'],grid_info['resolution'])
