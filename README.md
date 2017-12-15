@@ -79,7 +79,7 @@ pip install tensorflow-tensorboard
 pip install tensorboard-pytorch
 ```
 
-### Feature visualization 
+#### Feature visualization 
 
   * [VMD](http://www.ks.uiuc.edu/Research/vmd/)
 
@@ -187,7 +187,21 @@ database.test_cuda(grid_info,gpu_block)
 
 #### Visualization of the mapped features
 
-You can find in `deeprank/tools/` a little command line utility called `visualize3dData.py` that can be used to visualize all the data mapped on the grid for a given complex. After either copyong this file in your local folder or making the original available in your path you can type
+You can find in `deeprank/tools/` a little command line utility called `visualize3dData.py` that can be used to visualize all the data mapped on the grid for a given complex. Here is the help function of the command
+
+```
+usage: visualize3Ddata.py [-h] [-hdf5 HDF5] [-mol_name MOL_NAME] [-out OUT]
+
+export the grid data in cube format
+
+optional arguments:
+  -h, --help          show this help message and exit
+  -hdf5 HDF5          hdf5 file storing the data set
+  -mol_name MOL_NAME  name of the molecule in the hdf5
+  -out OUT            name of the directory where to output the files
+```
+
+As you can see you need to specify an hdf5 file, hte name of the molecule in the hdf5 you want to visualize and optionally the name of the output directory (by default it will be the name of the molecule). After either copying this file in your local folder or making the original available in your path you can type
 
 ```
 ./visualize3Ddata.py -hdf5 1ak4.hdf5 -mol_name '1AK4_100w'
@@ -205,7 +219,27 @@ This will open VMD and load all the data and you should obtain somehting similar
 
 #### Removing data from the HDF5 file
 
-Storing all the data (structures/pdbs/grids) is great for debugging but the hdf5 file quickly becomes quite large. You can remove some data using the command lie utility `deeprank/tools/cleandata.py`. As before copy it or make the original in your path and then simply type:
+Storing all the data(structures/pdbs/grids) is great for debugging but the hdf5 file quickly becomes quite large. You can remove some data using the command lie utility `deeprank/tools/cleandata.py`. Here is the help of the command
+
+```
+usage: cleandata.py [-h] [--keep_feature] [--keep_pdb] [--keep_pts]
+                    [--rm_grid]
+                    hdf5
+
+remove data from a hdf5 data set
+
+positional arguments:
+  hdf5            hdf5 file storing the data set
+
+optional arguments:
+  -h, --help      show this help message and exit
+  --keep_feature  keep the features
+  --keep_pdb      keep the pdbs
+  --keep_pts      keep the coordinates of the grid points
+  --rm_grid       remove the mapped feaures on the grids
+```
+
+As you can see you must specify the name of the hdf5 file you want to clean. There are a few options, but by default the command will remove everything except the mapped features and the target values. As before copy it or make the original in your path and then simply type:
 
 ```
 cleandata.py 1ak4.hdf5
@@ -254,14 +288,14 @@ The first part of the script create a Torch database. The dfinition of this clas
 We then create the ConvNet object that is defined in `/deeprank/learn/ConvNet.py`
 In this minimal example we simply specify which dataset to use and wich model to use. This model is here defined in the file `model3d.py` by a class called cnn (see below). We also here turn off CUDA meaning that the training will only use CPUs. To use GPUs when available simply switch to `cuda=True`. Multiple GPUs can also be used through the options `ngpu=n`. 
 
-We can then modify the default value for the optimizer used during the training and train the model for 250 epochs. By default the code will generate some scatter plot illustrsting the accuracy of the prediction. 
+We can then modify the default value for the optimizer used during the training and train the model for 250 epochs. By default the code will generate some scatter plot illustrsting the accuracy of the prediction. Below is an example of the final prediction for 400 confrormations of 1AK4 after 250 epochs.
 
 ![alt-text](https://github.com/DeepRank/deeprank/blob/master/pics/docq.png)
 
 
-#### Model Generator
+#### Model
 
-The definition of the CNN is done in `model3d.py`.
+An exanple of CNN is given in `model3d.py`. 
 
 ```python
 import torch
@@ -305,7 +339,18 @@ class cnn(nn.Module):
 ```
 
 
-As you can see it's not trivial really. To faciliate the generation of this file we have implemented a simple model generator in `deeprank/learn/modelGenerator.py`. You can use this generator as follows:
+As you can see it's not trivial. Every model used in deeprank should be define that way. As usual each layer must be defined in the init of the class. The model is divided in two part : the convolutional layers and the fully connected layers. The size of the first fully connected layer is here automatically defined by the `_get_connv_output()` method. That way we do not need to worry about it. But we need the `_forward_features()`function that defines the forward action of the convolutional block. 
+
+#### Model Generator
+
+To faciliate the generation of this file we have implemented a simple model generator in `deeprank/learn/modelGenerator.py`. The generator only expects two lists one containing the convolutional layers and the other the fully conencted layers. Some meta class of layers are defined in `deeprank/learn/modelGenerator.py`:
+
+  * `conv` : Conv3D
+  * `pool` : MaxPool3D
+  * `dropout` : Droupout3D
+  * `fc` : Linear
+
+Other layers type can be defined the same way by adapting the syntax of these meta classes. As an example you can use this generator as follows:
 
 ```python
 from deeprank.learn import *
@@ -341,7 +386,7 @@ that outputs on the screen
 #----------------------------------------------------------------------
 ```
 
-This defines a sinple CNN containing all the layers defined in the two list. So we first have the convolutional block that here contains a series of conv3d and pool3d and then two fully connected layers. This will automatically write a file called model.py and containing the cnn class that can be used in the training.
+This defines a sinple CNN containing all the layers defined in the two list. So we first have the convolutional block that here contains a series of conv3d and pool3d and then two fully connected layers. This will automatically write a file called `model.py` and containing the model class that can be used in the training.
 
 #### Random Model Generator
 
