@@ -14,8 +14,7 @@ def test_generate(tune,test,gpu_block):
 		                                       hdf5='./1ak4.hdf5',
 	                                           )
 
-	#create new files
-	database.create_database()
+
 
 	# map the features
 	grid_info = {
@@ -33,6 +32,10 @@ def test_generate(tune,test,gpu_block):
 	elif test:
 		database.test_cuda(grid_info,gpu_block)
 	else:
+		#create new files
+		database.create_database()
+
+		# map these data
 		database.map_features(grid_info,cuda=True,gpu_block=gpu_block)
 
 
@@ -45,7 +48,6 @@ if __name__ == "__main__":
 	parser.add_argument('--test',action='store_true',help='test the kernel on 1 map')
 	parser.add_argument('--gpu_block',nargs='+',default=[8,8,8],type=int,help='number of gpu block to use. Default: 8 8 1')
 	args = parser.parse_args()
-
 
 	test_generate(args.tune,args.test,args.gpu_block)
 

@@ -480,8 +480,8 @@ class DataGenerator(object):
 
 		# define the grid
 		center_contact = np.zeros(3)
-		nx,ny,nz = grinfo['number_of_points']
-		dx,dy,dz = grinfo['resolution']
+		nx,ny,nz = grid_info['number_of_points']
+		dx,dy,dz = grid_info['resolution']
 		lx,ly,lz = nx*dx,ny*dy,nz*dz
 
 		x = np.linspace(0,lx,nx)
@@ -543,8 +543,8 @@ class DataGenerator(object):
 
 		# define the grid
 		center_contact = np.zeros(3)
-		nx,ny,nz = grinfo['number_of_points']
-		dx,dy,dz = grinfo['resolution']
+		nx,ny,nz = grid_info['number_of_points']
+		dx,dy,dz = grid_info['resolution']
 		lx,ly,lz = nx*dx,ny*dy,nz*dz
 
 		# create the coordinate
