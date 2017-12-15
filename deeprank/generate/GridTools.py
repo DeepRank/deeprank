@@ -588,7 +588,7 @@ class GridTools(object):
 					else:
 						raise ValueError('CUDA only possible for single-valued features so far')
 
-				tgrid += time(-t0)
+				tgrid += time()-t0
 
 			if self.cuda:
 				dict_data[fname] = grid_gpu.get()
