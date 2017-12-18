@@ -102,14 +102,14 @@ class FLANgrid(object):
 		# decide if we store sparse or not
 		# if enough elements are sparse
 		if mem_sparse < mem_dense:		
-			#print('--> FLAN sparse %d bits/%d bits' %(mem_sparse,mem_dense))
+			print('--> FLAN sparse %d bits/%d bits' %(mem_sparse,mem_dense))
 			self.sparse = True
-			self.index = np.array( list( map(self._get_single_index,index) ) ).astype(index_type)
+			self.index = self._get_single_index_array(index).astype(index_type)
 			self.value= value.astype(np.float32)		
 			
 
 		else:
-			#print('--> FLAN dense %d bits/%d bits' %(mem_sparse,mem_dense))
+			print('--> FLAN dense %d bits/%d bits' %(mem_sparse,mem_dense))
 			self.sparse = False
 			self.index=None
 			self.value=data.astype(np.float32)	
@@ -126,7 +126,9 @@ class FLANgrid(object):
 		data[self.index] = self.value[:,0]
 		return data.reshape(self.shape)
 
-	# get the index
+	# get the index can be used with a map
+	# self.index = np.array( list( map(self._get_single_index,index) ) ).astype(index_type)
+	# however that is remarkably slow compared to the array version
 	def _get_single_index(self,index):
 		
 		ndim = len(index)
@@ -136,3 +138,16 @@ class FLANgrid(object):
 		for i in range(ndim-1):
 			ind += index[i] * np.prod(self.shape[i+1:])
 		return ind
+
+	# get the sing index using np array
+	# that is much faster than using a map ...
+	def _get_single_index_array(self,index):
+		
+		single_ind = index[:,-1]
+		ndim = index.shape[-1] 
+		assert ndim == len(self.shape)
+
+		for i in range(ndim-1):
+			single_ind += index[:,i] * np.prod(self.shape[i+1:])
+
+		return single_ind

@@ -108,7 +108,7 @@ class GridTools(object):
 				atomic_feature  =None, atomic_feature_mode  ='sum',
 				contact_distance = 8.5, hdf5_file=None,
 				cuda=False, gpu_block=None, cuda_func=None, cuda_atomic=None,
-				prog_bar = False,time=False):
+				prog_bar = False,time=False,try_sparse=True):
 		
 		# mol file	
 		self.molgrp = molgrp
@@ -134,6 +134,7 @@ class GridTools(object):
 		
 		# hdf5 file
 		self.hdf5 = hdf5_file
+		self.try_sparse = try_sparse
 
 		# export to HDF5 file
 		self.hdf5.require_group(self.mol_basename+'/features/')
@@ -314,8 +315,11 @@ class GridTools(object):
 			dict_data = self.map_features(featlist,feature_type)
 
 			# save to hdf5 if specfied
+			t0 = time()
+			print('-- Save %s Features to HDF5' %feature_type)
 			self.hdf5_grid_data(dict_data,'%sFeature_%s' %(feature_type, self.atomic_feature_mode))
-
+			if self.time:
+				print('      Total %f ms' %((time()-t0)*1000))
 		
 	
 
@@ -329,8 +333,11 @@ class GridTools(object):
 			self.map_atomic_densities()
 
 			# save to hdf5
+			t0 = time()
+			print('-- Save Atomic Densities to HDF5')
 			self.hdf5_grid_data(self.atdens,'AtomicDensities_%s' %(self.atomic_densities_mode))
-
+			if self.time:
+				print('      Total %f ms' %((time()-t0)*1000))
 
 			
 
@@ -774,27 +781,36 @@ class GridTools(object):
 		# gothrough all the feature elements
 		for key,value in dict_data.items():
 
-			# check if the grid is sparse or not
-			spg = sparse.FLANgrid()
-			spg.from_dense(value,beta=1E-2)
-
-			# remove old subgroup
+			# remove only subgroup
 			if key in feat_group:
 				del feat_group[key]
 
 			# create new one
 			sub_feat_group = feat_group.create_group(key)
 
-			# if we have a sparse matrix
-			if spg.sparse:
-				sub_feat_group.attrs['sparse'] = spg.sparse
-				sub_feat_group.create_dataset('index',data=spg.index,compression='gzip',compression_opts=9)
-				sub_feat_group.create_dataset('value',data=spg.value,compression='gzip',compression_opts=9)
+			# try  a sparse representation
+			if self.try_sparse:
 
+				# check if the grid is sparse or not
+				t0 = time()
+				spg = sparse.FLANgrid()
+				spg.from_dense(value,beta=1E-2)
+				print('      SPG time %f ms' %((time()-t0)*1000))
+
+				# if we have a sparse matrix
+				if spg.sparse:
+					sub_feat_group.attrs['sparse'] = spg.sparse
+					sub_feat_group.create_dataset('index',data=spg.index,compression='gzip',compression_opts=9)
+					sub_feat_group.create_dataset('value',data=spg.value,compression='gzip',compression_opts=9)
+
+				else:
+					sub_feat_group.attrs['sparse'] = spg.sparse
+					sub_feat_group.create_dataset('value',data=spg.value,compression='gzip',compression_opts=9)				
+				
 			else:
-				sub_feat_group.attrs['sparse'] = spg.sparse
-				sub_feat_group.create_dataset('value',data=spg.value,compression='gzip',compression_opts=9)				
-					
+				sub_feat_group.attrs['sparse'] = False
+				sub_feat_group.create_dataset('value',data=value,compression='gzip',compression_opts=9)				
+
 ########################################################################################################
 
 

@@ -373,6 +373,7 @@ class DataGenerator(object):
 		             cuda=False,gpu_block=None,
 		             cuda_kernel='/kernel_map.c',
 		             cuda_func_name = 'gaussian',
+		             try_sparse=False,
 		             reset=False,use_tmpdir=False,time=False,prog_bar=False):
 
 		'''
@@ -402,6 +403,7 @@ class DataGenerator(object):
 		'''
 		# default CUDA
 		cuda_func = None
+		cuda_atomic = None
 
 		# name of the hdf5 file
 		f5 = h5py.File(self.hdf5,'a')
@@ -466,7 +468,8 @@ class DataGenerator(object):
 				             cuda_atomic = cuda_atomic,
 				             hdf5_file = f5,
 				             time=time,
-				             prog_bar=prog_bar)
+				             prog_bar=prog_bar,
+				             try_sparse=try_sparse)
 
 		# close he hdf5 file
 		f5.close()
