@@ -55,7 +55,7 @@ class DataGenerator(object):
 				 compute_targets = None, import_targets = None,
 				 compute_features = None,import_features = None,
 				 grid_info = None,
-		         data_augmentation=None, hdf5='database.h5' ):
+		         data_augmentation=None, hdf5='database.h5'):
 
 		self.pdb_select  = pdb_select
 		self.pdb_source  = pdb_source
@@ -76,6 +76,7 @@ class DataGenerator(object):
 		self.all_pdb = []
 		self.all_native = []
 		self.pdb_path = []
+
 
 		# check that a source was given
 		if self.pdb_source is None:
@@ -373,7 +374,7 @@ class DataGenerator(object):
 		             cuda_kernel='/kernel_map.c',
 		             cuda_func = 'gaussian',
 		             cuda_atomic = 'atomic_densities',
-		             reset=False,use_tmpdir=False):
+		             reset=False,use_tmpdir=False,time=False,prog_bar=False):
 
 		'''
 		Generate the input/output data on the grids for a series of prot-prot conformations
@@ -459,7 +460,9 @@ class DataGenerator(object):
 				             gpu_block = gpu_block,
 				             cuda_func = cuda_func,
 				             cuda_atomic = cuda_atomic,
-				             hdf5_file = f5)
+				             hdf5_file = f5,
+				             time=time,
+				             prog_bar=prog_bar)
 
 		# close he hdf5 file
 		f5.close()
@@ -471,7 +474,7 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-	def tune_cuda_kernel(self,grid_info,cuda_kernel='/kernel_map.c',func='gaussian'):
+	def tune_cuda_kernel(self,grid_info,cuda_kernel='kernel_map.c',func='gaussian'):
 			
 		try:
 			from kernel_tuner import tune_kernel
@@ -522,7 +525,7 @@ class DataGenerator(object):
 		tunable_kernel = self._tunable_kernel(kernel_code)
 
 		# tune
-		result = tune_kernel(tuned_func, tunable_kernel,problem_size,args,tune_params)
+		result = tune_kernel(func, tunable_kernel,problem_size,args,tune_params)
 
 
 #====================================================================================
@@ -531,7 +534,7 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-	def test_cuda(self,grid_info,gpu_block=[8,8,8],cuda_kernel='/kernel_map.c',func_name='gaussian'):
+	def test_cuda(self,grid_info,gpu_block=[8,8,8],cuda_kernel='kernel_map.c',func='gaussian'):
 
 		# fills in the grid data if not provided : default = NONE
 		grinfo = ['number_of_points','resolution']
@@ -543,7 +546,7 @@ class DataGenerator(object):
 		npts = grid_info['number_of_points']
 		res = grid_info['resolution']
 		module = self.compile_cuda_kernel(cuda_kernel,npts,res)
-		cuda_func = self.get_cuda_function(cuda_kernel,func_name)
+		cuda_func = self.get_cuda_function(cuda_kernel,func)
 
 		# define the grid
 		center_contact = np.zeros(3)
@@ -569,11 +572,12 @@ class DataGenerator(object):
 
 		xyz_center = np.random.rand(500,3).astype(np.float32)
 		alpha = np.float32(1)
+		t0 = time()
 		for xyz in tqdm(xyz_center):
 			x0,y0,z0 = xyz
 			cuda_func(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,
 					block=tuple(gpu_block),grid=tuple(gpu_grid))
-
+		print('Done in : %f ms' %(time()-t0)*1000)
 
 #====================================================================================
 #

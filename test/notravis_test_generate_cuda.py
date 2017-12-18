@@ -28,15 +28,15 @@ def test_generate(tune,test,gpu_block):
 
 	# tune the kernel 
 	if tune:
-		database.tune_cuda_kernel(grid_info)
+		database.tune_cuda_kernel(grid_info,func='gaussian')
 	elif test:
-		database.test_cuda(grid_info,gpu_block)
+		database.test_cuda(grid_info,gpu_block,func='gaussian')
 	else:
 		#create new files
 		database.create_database()
 
 		# map these data
-		database.map_features(grid_info,cuda=True,gpu_block=gpu_block)
+		database.map_features(grid_info,time=True,cuda=True,gpu_block=gpu_block)
 
 
 if __name__ == "__main__":

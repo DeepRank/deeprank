@@ -108,7 +108,7 @@ class GridTools(object):
 				atomic_feature  =None, atomic_feature_mode  ='sum',
 				contact_distance = 8.5, hdf5_file=None,
 				cuda=False, gpu_block=None, cuda_func=None, cuda_atomic=None,
-				prog_bar = False):
+				prog_bar = False,time=False):
 		
 		# mol file	
 		self.molgrp = molgrp
@@ -182,6 +182,7 @@ class GridTools(object):
 
 		# progress bar
 		self.local_tqdm = lambda x: tqdm(x) if prog_bar else x
+		self.time = time
 
 		# if we already have an output containing the grid
 		# we update the existing features
@@ -457,8 +458,9 @@ class GridTools(object):
 				sys.exit()
 
 			tgrid = time()-t0 
-			print('     Process time %f ms' %(tprocess*1000))
-			print('     Grid    time %f ms' %(tgrid*1000))
+			if self.time:
+				print('     Process time %f ms' %(tprocess*1000))
+				print('     Grid    time %f ms' %(tgrid*1000))
 
 	# compute the atomic denisties on the grid
 	def densgrid(self,center,vdw_radius):
@@ -661,8 +663,9 @@ class GridTools(object):
 				dict_data[fname] = grid_gpu.get()
 				driver.Context.synchronize()
 
-			print('     Process time %f ms' %(tprocess*1000))
-			print('     Grid    time %f ms' %(tgrid*1000))
+			if self.time:
+				print('     Process time %f ms' %(tprocess*1000))
+				print('     Grid    time %f ms' %(tgrid*1000))
 
 		return dict_data
 

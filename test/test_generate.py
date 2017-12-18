@@ -26,9 +26,7 @@ def test_generate():
 		'atomic_feature_mode': 'sum',
 		'resolution' : [1.,1.,1.]
 	}
-
-	#database.tune_cuda_kernel(grid_info)
-	database.map_features(grid_info)
+	database.map_features(grid_info,time=True,prog_bar=False)
 
 
 if __name__ == "__main__":
