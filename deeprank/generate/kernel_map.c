@@ -42,7 +42,7 @@ __global__ void atomic_densities(float vdw_radius, float x0, float y0, float z0,
     	float dz = zvect[tz] - z0;
     	float d = sqrt(dx*dx + dy*dy + dz*dz);
 
-    	float e = exp(1);
+    	float e = exp(1.0);
     	float e2 = e*e;
        	float d2 = d*d;
     	float vdw2 = vdw_radius*vdw_radius;
