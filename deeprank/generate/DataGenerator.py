@@ -417,11 +417,20 @@ class DataGenerator(object):
 			if gr not in grid_info:
 				grid_info[gr] = None
 
-		# fills in the features if somes are missing : default = NONE
-		inp_data = ['atomic_densities','atomic_feature','residue_feature']
-		for inp in inp_data:
-			if inp not in grid_info:
-				grid_info[inp] = None
+		# By default we map all the atomic features
+		if 'atomic_feature' not in grid_info:
+			mol = list(f5.keys())[0]
+			grid_info['atomic_feature'] = list(f5[mol+'/features'].keys())
+
+		# residue features are not yet supported
+		if 'residue_feature' in grid_info:
+			raise ValueError('Warning Residue feature not yet supported\n Remove residue_feature from the grid info or get coding !')
+		else:
+			grid_info['residue_feature'] = None
+			
+		# by default we do not map atomic densities
+		if 'atomic_densities' not in grid_info:
+			grid_info['atomic_densities'] = None
 
 		# fills in the features mode if somes are missing : default = SUM
 		modes = ['atomic_densities_mode','atomic_feature_mode','residue_feature_mode']

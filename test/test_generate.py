@@ -22,12 +22,11 @@ def test_generate():
 
 	# map the features
 	grid_info = {
+		'number_of_points' : [30,30,30],
+		'resolution' : [1.,1.,1.],
 		'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
 		'atomic_densities_mode' : 'sum',
-		'number_of_points' : [30,30,30],
-		'atomic_feature'  : ['vdwaals','coulomb','charge'],
-		'atomic_feature_mode': 'sum',
-		'resolution' : [1.,1.,1.]
+		'atomic_feature_mode': 'sum'
 	}
 	database.map_features(grid_info,try_sparse=True,time=True,prog_bar=False)
 

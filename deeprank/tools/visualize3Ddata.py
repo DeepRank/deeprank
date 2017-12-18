@@ -9,7 +9,7 @@ import h5py
 from deeprank.tools import pdb2sql 
 from deeprank.tools import sparse
 
-def visualize3Ddata(hdf5=None,mol_name=None,out='./'):
+def visualize3Ddata(hdf5=None,mol_name=None,out=None):
 
 
 	'''
@@ -37,6 +37,10 @@ def visualize3Ddata(hdf5=None,mol_name=None,out='./'):
 
 		
 	outdir = out
+
+	if outdir is None:
+		outdir = mol_name
+
 	if outdir[-1] != '/':
 		outdir = outdir + '/'
 		
@@ -167,9 +171,9 @@ if __name__ == "__main__":
 	import argparse
 
 	parser = argparse.ArgumentParser(description='export the grid data in cube format')
-	parser.add_argument('-hdf5', help="hdf5 file storing the data set",default=None)
-	parser.add_argument('-mol_name',help="name of the molecule in the hdf5",default=None)
-	parser.add_argument('-out',help="name of the directory where to output the files",default='./')
+	parser.add_argument('hdf5', help="hdf5 file storing the data set",default=None)
+	parser.add_argument('mol_name',help="name of the molecule in the hdf5",default=None)
+	parser.add_argument('-out',help="name of the directory where to output the files",default=None)
 	args = parser.parse_args()
 
 	# shortcut

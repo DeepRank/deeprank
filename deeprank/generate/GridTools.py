@@ -704,7 +704,7 @@ class GridTools(object):
 			dd = np.sqrt( (self.xgrid-x0)**2 + (self.ygrid-y0)**2 + (self.zgrid-z0)**2 )
 			dgrid = np.zeros(self.npts)
 
-			dgrid[dd<cutoff] = np.exp(-beta*dd[dd<cutoff])
+			dgrid[dd<cutoff] = value*np.exp(-beta*dd[dd<cutoff])
 
 			return dgrid
 
