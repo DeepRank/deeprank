@@ -115,7 +115,8 @@ class DataGenerator(object):
 		self.f5 = h5py.File(self.hdf5,'w')
 
 		# loop over the decoys/natives
-		for cplx in tqdm(self.pdb_path,desc='Create data base'):
+		desc = '{:25s}'.format('Create database')
+		for cplx in tqdm(self.pdb_path,desc=desc):
 
 
 			################################################
@@ -241,7 +242,8 @@ class DataGenerator(object):
 		fnames_augmented = list( filter(lambda x: '_r' in x, fnames) )
 
 		# computes the features of the original
-		for cplx_name in tqdm(fnames_original,desc='Add features'):
+		desc = '{:25s}'.format('Add features')
+		for cplx_name in tqdm(fnames_original,desc=desc):
 
 			# molgrp
 			molgrp = f5[cplx_name]
@@ -292,7 +294,8 @@ class DataGenerator(object):
 		fnames_augmented = list( filter(lambda x: '_r' in x, fnames) )
 
 		# compute the targets  of the original
-		for cplx_name in tqdm(fnames_original,desc='Add targets'):
+		desc = '{:25s}'.format('Add targets')
+		for cplx_name in tqdm(fnames_original,desc=desc):
 
 			# group of the molecule
 			molgrp = f5[cplx_name]
@@ -454,7 +457,8 @@ class DataGenerator(object):
 			cuda_atomic = self.get_cuda_function(module,cuda_atomic_name)
 
 		# get the local progress bar
-		local_tqdm = lambda x: x if time else tqdm(x,desc='Map features')
+		desc = '{:25s}'.format('Map Features')
+		local_tqdm = lambda x: x if time else tqdm(x,desc=desc)
 
 		# loop over the data files
 		for mol in local_tqdm(mol_names):

@@ -20,11 +20,11 @@ def test_generate():
 	#create new files
 	if not os.path.isfile(database.hdf5):
 		t0 = time()
-		print('\nCreate new database : %s' %database.hdf5)
+		print('{:25s}'.format('Create new database') + database.hdf5)
 		database.create_database()
-		print('--> Done in %f s.' %(time()-t0))
+		print(' '*25 + '--> Done in %f s.' %(time()-t0))
 	else:
-		print('\nUse existing database : %s' %database.hdf5)
+		print('{:25s}'.format('Use existing database') + database.hdf5)
 
 	# map the features
 	grid_info = {
@@ -35,9 +35,9 @@ def test_generate():
 		'atomic_feature_mode': 'sum'
 	}
 	t0 =time()
-	print('\nMap features in database : %s' %database.hdf5)
+	print('{:25s}'.format('Map features in database') + database.hdf5)
 	database.map_features(grid_info,try_sparse=True,time=False,prog_bar=False)
-	print('--> Done in %f s.' %(time()-t0))
+	print(' '*25 + '--> Done in %f s.' %(time()-t0))
 
 if __name__ == "__main__":
 	test_generate()
