@@ -372,7 +372,7 @@ class DataGenerator(object):
 	def map_features(self,grid_info,
 		             cuda=False,gpu_block=None,
 		             cuda_kernel='/kernel_map.c',
-		             cuda_func = 'gaussian',
+		             cuda_func_name = 'gaussian',
 		             reset=False,use_tmpdir=False,time=False,prog_bar=False):
 
 		'''
@@ -442,7 +442,7 @@ class DataGenerator(object):
 			module = self.compile_cuda_kernel(cuda_kernel,npts,res)
 
 			# get the cuda function for the atomic/residue feature
-			cuda_func = self.get_cuda_function(module,cuda_func)
+			cuda_func = self.get_cuda_function(module,cuda_func_name)
 
 			# get the cuda function for the atomic densties
 			cuda_atomic_name = 'atomic_densities'
