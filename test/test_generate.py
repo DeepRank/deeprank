@@ -4,7 +4,7 @@ import os
 from time import time
 def test_generate():
 
-	t0 = time()
+	
 
 	# sources to assemble the data base
 	pdb_source     = ['./1AK4/decoys/']
@@ -19,9 +19,12 @@ def test_generate():
 
 	#create new files
 	if not os.path.isfile(database.hdf5):
+		t0 = time()
+		print('\nCreate new database : %s' %database.hdf5)
 		database.create_database()
+		print('--> Done in %f s.' %(time()-t0))
 	else:
-		print('\nUsing peviously generated database : %s' %database.hdf5)
+		print('\nUse existing database : %s' %database.hdf5)
 
 	# map the features
 	grid_info = {
@@ -31,9 +34,10 @@ def test_generate():
 		'atomic_densities_mode' : 'sum',
 		'atomic_feature_mode': 'sum'
 	}
-	database.map_features(grid_info,try_sparse=True,time=True,prog_bar=False)
-
-	print('\nTotal execution time %f s.' %(time()-t0))
+	t0 =time()
+	print('\nMap features in database : %s' %database.hdf5)
+	database.map_features(grid_info,try_sparse=True,time=False,prog_bar=False)
+	print('--> Done in %f s.' %(time()-t0))
 
 if __name__ == "__main__":
 	test_generate()

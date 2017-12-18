@@ -1,5 +1,5 @@
 import numpy as np
-
+printif = lambda string,cond: print(string) if cond else None
 
 '''
 Routines to handle sparse tensors
@@ -14,7 +14,7 @@ class COOgrid(object):
 		self.value = value
 		self.shape = shape
 
-	def from_dense(self,data,beta=None):
+	def from_dense(self,data,beta=None,debug=False):
 		'''
 		data : the 3D tensor to encode
 		beta : threshold to determine if a sparse rep is valuable 
@@ -34,14 +34,14 @@ class COOgrid(object):
 		# decide if we store sparse or not
 		# if enough elements are sparse
 		if mem_sparse < mem_dense:		
-			print('--> COO sparse %d bits/%d bits' %(mem_sparse,mem_dense))
+			printif('--> COO sparse %d bits/%d bits' %(mem_sparse,mem_dense),debug)
 			self.sparse = True
 			self.index = index.astype(np.uint8)
 			self.value= value.astype(np.float32)		
 			self.shape = data.shape
 
 		else:
-			print('--> dense %d bits/%d bits' %(mem_sparse,mem_dense))
+			printif('--> dense %d bits/%d bits' %(mem_sparse,mem_dense),debug)
 			self.sparse = False
 			self.shape = data.shape
 			self.index=None
@@ -102,16 +102,16 @@ class FLANgrid(object):
 		# decide if we store sparse or not
 		# if enough elements are sparse
 		if mem_sparse < mem_dense:	
-			if debug:	
-				print('--> FLAN sparse %d bits/%d bits' %(mem_sparse,mem_dense))
+				
+			printif('--> FLAN sparse %d bits/%d bits' %(mem_sparse,mem_dense),debug)
 			self.sparse = True
 			self.index = self._get_single_index_array(index).astype(index_type)
 			self.value= value.astype(np.float32)		
 			
 
 		else:
-			if debug:
-				print('--> FLAN dense %d bits/%d bits' %(mem_sparse,mem_dense))
+			
+			printif('--> FLAN dense %d bits/%d bits' %(mem_sparse,mem_dense),debug)
 			self.sparse = False
 			self.index=None
 			self.value=data.astype(np.float32)	

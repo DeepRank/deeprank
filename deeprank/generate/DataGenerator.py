@@ -111,13 +111,11 @@ class DataGenerator(object):
 
 	def create_database(self,verbose=False):
 
-		print(': Create hdf5 file')
-
 		# open the file
 		self.f5 = h5py.File(self.hdf5,'w')
 
 		# loop over the decoys/natives
-		for cplx in tqdm(self.pdb_path):
+		for cplx in tqdm(self.pdb_path,desc='Create data base'):
 
 
 			################################################
@@ -232,7 +230,6 @@ class DataGenerator(object):
 		add a feature file to an existing folder arboresence
 		only need an output dir and a feature dictionary
 		'''
-		print(': Add features')
 
 	
 		# get the folder names
@@ -244,7 +241,7 @@ class DataGenerator(object):
 		fnames_augmented = list( filter(lambda x: '_r' in x, fnames) )
 
 		# computes the features of the original
-		for cplx_name in tqdm(fnames_original):
+		for cplx_name in tqdm(fnames_original,desc='Add features'):
 
 			# molgrp
 			molgrp = f5[cplx_name]
@@ -284,9 +281,6 @@ class DataGenerator(object):
 		only need an output dir and a target dictionary
 		'''
 
-		print(': Add targets')
-
-
 		# name of the hdf5 file
 		f5 = h5py.File(self.hdf5,'a')
 						
@@ -298,7 +292,7 @@ class DataGenerator(object):
 		fnames_augmented = list( filter(lambda x: '_r' in x, fnames) )
 
 		# compute the targets  of the original
-		for cplx_name in tqdm(fnames_original):
+		for cplx_name in tqdm(fnames_original,desc='Add targets'):
 
 			# group of the molecule
 			molgrp = f5[cplx_name]
@@ -427,7 +421,7 @@ class DataGenerator(object):
 			raise ValueError('Warning Residue feature not yet supported\n Remove residue_feature from the grid info or get coding !')
 		else:
 			grid_info['residue_feature'] = None
-			
+
 		# by default we do not map atomic densities
 		if 'atomic_densities' not in grid_info:
 			grid_info['atomic_densities'] = None
@@ -459,8 +453,11 @@ class DataGenerator(object):
 			cuda_atomic_name = 'atomic_densities'
 			cuda_atomic = self.get_cuda_function(module,cuda_atomic_name)
 
+		# get the local progress bar
+		local_tqdm = lambda x: x if time else tqdm(x,desc='Map features')
+
 		# loop over the data files
-		for mol in mol_names:
+		for mol in local_tqdm(mol_names):
 					
 			# compute the data we want on the grid
 			grid = gt.GridTools(molgrp=f5[mol],

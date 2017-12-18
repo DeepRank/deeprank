@@ -15,6 +15,8 @@ except:
 	def tqdm(x):
 		return x 
 
+printif = lambda string,cond: print(string) if cond else None
+
 # the main gridtool class
 class GridTools(object):
 
@@ -192,10 +194,10 @@ class GridTools(object):
 			_update_ = True
 
 		if _update_:
-			print('\n= Updating grid data for %s' %(self.mol_basename))
+			printif('\n= Updating grid data for %s' %(self.mol_basename),self.time)
 			self.update_feature()
 		else:
-			print('\n= Creating grid and grid data for %s' %(self.mol_basename))	
+			printif('\n= Creating grid and grid data for %s' %(self.mol_basename),self.time)	
 			self.create_new_data()
 		
 
@@ -316,10 +318,9 @@ class GridTools(object):
 
 			# save to hdf5 if specfied
 			t0 = time()
-			print('-- Save %s Features to HDF5' %feature_type)
+			printif('-- Save %s Features to HDF5' %feature_type,self.time)
 			self.hdf5_grid_data(dict_data,'%sFeature_%s' %(feature_type, self.atomic_feature_mode))
-			if self.time:
-				print('      Total %f ms' %((time()-t0)*1000))
+			printif('      Total %f ms' %((time()-t0)*1000),self.time)
 		
 	
 
@@ -334,10 +335,9 @@ class GridTools(object):
 
 			# save to hdf5
 			t0 = time()
-			print('-- Save Atomic Densities to HDF5')
+			printif('-- Save Atomic Densities to HDF5',self.time)
 			self.hdf5_grid_data(self.atdens,'AtomicDensities_%s' %(self.atomic_densities_mode))
-			if self.time:
-				print('      Total %f ms' %((time()-t0)*1000))
+			printif('      Total %f ms' %((time()-t0)*1000),self.time)
 
 			
 
@@ -351,8 +351,8 @@ class GridTools(object):
 
 	def define_grid_points(self):
 
-		print('-- Define %dx%dx%d grid ' %(self.npts[0],self.npts[1],self.npts[2]))
-		print('-- Resolution of %1.2fx%1.2fx%1.2f Angs' %(self.res[0],self.res[1],self.res[2]))
+		printif('-- Define %dx%dx%d grid ' %(self.npts[0],self.npts[1],self.npts[2]),self.time)
+		printif('-- Resolution of %1.2fx%1.2fx%1.2f Angs' %(self.res[0],self.res[1],self.res[2]),self.time)
 
 
 		halfdim = 0.5*(self.npts*self.res)
@@ -379,8 +379,8 @@ class GridTools(object):
 	# compute all the atomic densities data
 	def map_atomic_densities(self):
 
-		mode = self.atomic_densities_mode
-		print('-- Map atomic densities on %dx%dx%d grid (mode=%s)'%(self.npts[0],self.npts[1],self.npts[2],mode))
+		mode = self.atomic_densities_mode		
+		printif('-- Map atomic densities on %dx%dx%d grid (mode=%s)'%(self.npts[0],self.npts[1],self.npts[2],mode),self.time)
 
 		# prepare the cuda memory
 		if self.cuda:
@@ -465,9 +465,8 @@ class GridTools(object):
 				sys.exit()
 
 			tgrid = time()-t0 
-			if self.time:
-				print('     Process time %f ms' %(tprocess*1000))
-				print('     Grid    time %f ms' %(tgrid*1000))
+			printif('     Process time %f ms' %(tprocess*1000),self.time)
+			printif('     Grid    time %f ms' %(tgrid*1000),self.time)
 
 	# compute the atomic denisties on the grid
 	def densgrid(self,center,vdw_radius):
@@ -532,7 +531,8 @@ class GridTools(object):
 		# loop over all the features required
 		for feature_name in featlist:
 
-			print('-- Map %s on %dx%dx%d grid ' %(feature_name,self.npts[0],self.npts[1],self.npts[2]))
+			
+			printif('-- Map %s on %dx%dx%d grid ' %(feature_name,self.npts[0],self.npts[1],self.npts[2]),self.time)
 
 			# read the data
 			featgrp = self.molgrp['features']
@@ -670,9 +670,9 @@ class GridTools(object):
 				dict_data[fname] = grid_gpu.get()
 				driver.Context.synchronize()
 
-			if self.time:
-				print('     Process time %f ms' %(tprocess*1000))
-				print('     Grid    time %f ms' %(tgrid*1000))
+			
+			printif('     Process time %f ms' %(tprocess*1000),self.time)
+			printif('     Grid    time %f ms' %(tgrid*1000),self.time)
 
 		return dict_data
 
@@ -795,7 +795,8 @@ class GridTools(object):
 				t0 = time()
 				spg = sparse.FLANgrid()
 				spg.from_dense(value,beta=1E-2)
-				print('      SPG time %f ms' %((time()-t0)*1000))
+				if self.time:
+					print('      SPG time %f ms' %((time()-t0)*1000))
 
 				# if we have a sparse matrix
 				if spg.sparse:
