@@ -107,7 +107,8 @@ class GridTools(object):
 				residue_feature =None, residue_feature_mode ='sum',
 				atomic_feature  =None, atomic_feature_mode  ='sum',
 				contact_distance = 8.5, hdf5_file=None,
-				cuda=False, gpu_block=None, cuda_func=None):
+				cuda=False, gpu_block=None, cuda_func=None, cuda_atomic=None,
+				prog_bar = False):
 		
 		# mol file	
 		self.molgrp = molgrp
@@ -163,6 +164,7 @@ class GridTools(object):
 
 		# cuda 
 		self.cuda_func = cuda_func
+		self.cuda_atomic = cuda_atomic
 
 		# grids for calculation of atomic densities
 		self.xgrid = None
@@ -177,6 +179,9 @@ class GridTools(object):
 
 		# contact distance to locate the interface
 		self.contact_distance = contact_distance
+
+		# progress bar
+		self.local_tqdm = lambda x: tqdm(x) if prog_bar else x
 
 		# if we already have an output containing the grid
 		# we update the existing features
@@ -369,26 +374,71 @@ class GridTools(object):
 		mode = self.atomic_densities_mode
 		print('-- Map atomic densities on %dx%dx%d grid (mode=%s)'%(self.npts[0],self.npts[1],self.npts[2],mode))
 
+		# prepare the cuda memory
+		if self.cuda:
+
+			# try to import pycuda
+			try:
+				from pycuda import driver, compiler, gpuarray, tools
+				import pycuda.autoinit
+			except:
+				raise ImportError("Error when importing pyCuda in GridTools")
+
+			# book mem on the gpu
+			x_gpu = gpuarray.to_gpu(self.x.astype(np.float32))
+			y_gpu = gpuarray.to_gpu(self.y.astype(np.float32))
+			z_gpu = gpuarray.to_gpu(self.z.astype(np.float32))
+			grid_gpu = gpuarray.zeros(self.npts,np.float32)
+
 		# loop over all the data we want
-		for atomtype,vdw_rad in tqdm(self.atomic_densities.items()):
+		for atomtype,vdw_rad in self.local_tqdm(self.atomic_densities.items()):
 
 			# get the atom that are of the correct type for chain A
+			t0 = time()
 			xyzA = np.array(self.sqldb.get('x,y,z',chainID='A',name=atomtype))
 
 			# get the atom that are of the correct type for chain B
 			xyzB = np.array(self.sqldb.get('x,y,z',chainID='B',name=atomtype))
+			tprocess = time()-t0
 
-			# init the grid
-			atdensA = np.zeros(self.npts)
-			atdensB = np.zeros(self.npts)
+			t0 = time()
+			# if we use CUDA
+			if self.cuda:
 
-			# run on the atoms
-			for pos in xyzA:
-				atdensA += self.densgrid(pos,vdw_rad)
+				# reset the grid
+				grid_gpu *= 0
 
-			# run on the atoms
-			for pos in xyzB:
-				atdensB += self.densgrid(pos,vdw_rad)
+				# get the atomic densities of chain A
+				for pos in xyzA:
+					x0,y0,z0 = pos.astype(np.float32)
+					vdw = np.float32(vdw_radius)
+					self.cuda_atomic(vdw,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,block=tuple(self.gpu_block),grid=tuple(self.gpu_grid))
+					atdensA = grid_gpu.get()
+
+				# reset the grid
+				grid_gpu *= 0
+
+				# get the atomic densities of chain B
+				for pos in xyzB:
+					x0,y0,z0 = pos.astype(np.float32)
+					vdw = np.float32(vdw_radius)
+					self.cuda_atomic(vdw,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,block=tuple(self.gpu_block),grid=tuple(self.gpu_grid))
+					atdensB = grid_gpu.get()
+
+			# if we don't use CUDA
+			else:
+
+				# init the grid
+				atdensA = np.zeros(self.npts)
+				atdensB = np.zeros(self.npts)
+
+				# run on the atoms
+				for pos in xyzA:
+					atdensA += self.densgrid(pos,vdw_rad)
+
+				# run on the atoms
+				for pos in xyzB:
+					atdensB += self.densgrid(pos,vdw_rad)
 
 			# create the final grid : A - B
 			if mode=='diff':
@@ -405,6 +455,10 @@ class GridTools(object):
 			else:
 				print('Error: Atomic density mode %s not recognized' %mode)
 				sys.exit()
+
+			tgrid = time()-t0 
+			print('     Process time %f ms' %(tprocess*1000))
+			print('     Grid    time %f ms' %(tgrid*1000))
 
 	# compute the atomic denisties on the grid
 	def densgrid(self,center,vdw_radius):
@@ -524,7 +578,7 @@ class GridTools(object):
 			tgrid = 0
 
 			# map all the features
-			for line in tqdm(data):
+			for line in self.local_tqdm(data):
 
 				t0 = time()
 				if feature_type == 'xyz':
@@ -607,8 +661,8 @@ class GridTools(object):
 				dict_data[fname] = grid_gpu.get()
 				driver.Context.synchronize()
 
-			print('Process time %f ms' %(tprocess/len(data)*1000))
-			print('Grid    time %f ms' %(tgrid/len(data)*1000))
+			print('     Process time %f ms' %(tprocess*1000))
+			print('     Grid    time %f ms' %(tgrid*1000))
 
 		return dict_data
 

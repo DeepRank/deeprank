@@ -371,6 +371,8 @@ class DataGenerator(object):
 	def map_features(self,grid_info,
 		             cuda=False,gpu_block=None,
 		             cuda_kernel='/kernel_map.c',
+		             cuda_func = 'gaussian',
+		             cuda_atomic = 'atomic_densities',
 		             reset=False,use_tmpdir=False):
 
 		'''
@@ -437,7 +439,9 @@ class DataGenerator(object):
 			# get the cuda function
 			npts = grid_info['number_of_points']
 			res = grid_info['resolution']
-			cuda_func = self.get_cuda_function(cuda_kernel,gpu_block,npts,res)
+			mod = self.compile_cuda_kernel(cuda_kernel,npts,res)
+			cuda_func = self.get_cuda_function(cuda_kernel,cuda_func)
+			cuda_atomic = self.get_cuda_function(cuda_kernel,'atomic_densities')
 
 		# loop over the data files
 		for mol in mol_names:
@@ -454,6 +458,7 @@ class DataGenerator(object):
 				             cuda = cuda,
 				             gpu_block = gpu_block,
 				             cuda_func = cuda_func,
+				             cuda_atomic = cuda_atomic,
 				             hdf5_file = f5)
 
 		# close he hdf5 file
@@ -466,7 +471,7 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-	def tune_cuda_kernel(self,grid_info,cuda_kernel='/kernel_map.c',tuned_func='AddGrid'):
+	def tune_cuda_kernel(self,grid_info,cuda_kernel='/kernel_map.c',func='gaussian'):
 			
 		try:
 			from kernel_tuner import tune_kernel
@@ -526,7 +531,7 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-	def test_cuda(self,grid_info,gpu_block=[8,8,8],cuda_kernel='/kernel_map.c'):
+	def test_cuda(self,grid_info,gpu_block=[8,8,8],cuda_kernel='/kernel_map.c',func_name='gaussian'):
 
 		# fills in the grid data if not provided : default = NONE
 		grinfo = ['number_of_points','resolution']
@@ -535,7 +540,10 @@ class DataGenerator(object):
 				raise ValueError('%s must be specified to tune the kernel')
 
 		# get the cuda function
-		cuda_func = self.get_cuda_function(cuda_kernel,gpu_block,grid_info['number_of_points'],grid_info['resolution'])
+		npts = grid_info['number_of_points']
+		res = grid_info['resolution']
+		module = self.compile_cuda_kernel(cuda_kernel,npts,res)
+		cuda_func = self.get_cuda_function(cuda_kernel,func_name)
 
 		# define the grid
 		center_contact = np.zeros(3)
@@ -574,7 +582,7 @@ class DataGenerator(object):
 #====================================================================================
 
 	@staticmethod
-	def get_cuda_function(cuda_kernel,gpu_block,npts,res):
+	def compile_cuda_kernel(cuda_kernel,npts,res):
 
 		# get the cuda kernel path
 		kernel = os.path.dirname(os.path.abspath(__file__)) + '/' + cuda_kernel
@@ -583,8 +591,12 @@ class DataGenerator(object):
 
 		# compile the kernel
 		mod = compiler.SourceModule(kernel_code)
-		addgrid = mod.get_function('AddGrid')
-		return addgrid
+		return mod
+
+	@staticmethod
+	def get_cuda_function(module,func_name):
+		cuda_func = mod.get_function(func_name)
+		return cuda_func
 
 	# tranform the kernel to a tunable one
 	@staticmethod
