@@ -373,7 +373,6 @@ class DataGenerator(object):
 		             cuda=False,gpu_block=None,
 		             cuda_kernel='/kernel_map.c',
 		             cuda_func = 'gaussian',
-		             cuda_atomic = 'atomic_densities',
 		             reset=False,use_tmpdir=False,time=False,prog_bar=False):
 
 		'''
@@ -437,12 +436,17 @@ class DataGenerator(object):
 		# initialize cuda
 		if cuda:
 
-			# get the cuda function
+			# compile cuda module
 			npts = grid_info['number_of_points']
 			res = grid_info['resolution']
-			mod = self.compile_cuda_kernel(cuda_kernel,npts,res)
-			cuda_func = self.get_cuda_function(cuda_kernel,cuda_func)
-			cuda_atomic = self.get_cuda_function(cuda_kernel,'atomic_densities')
+			module = self.compile_cuda_kernel(cuda_kernel,npts,res)
+
+			# get the cuda function for the atomic/residue feature
+			cuda_func = self.get_cuda_function(module,cuda_func)
+
+			# get the cuda function for the atomic densties
+			cuda_atomic_name = 'atomic_densities'
+			cuda_atomic = self.get_cuda_function(module,cuda_atomic_name)
 
 		# loop over the data files
 		for mol in mol_names:
@@ -546,7 +550,7 @@ class DataGenerator(object):
 		npts = grid_info['number_of_points']
 		res = grid_info['resolution']
 		module = self.compile_cuda_kernel(cuda_kernel,npts,res)
-		cuda_func = self.get_cuda_function(cuda_kernel,func)
+		cuda_func = self.get_cuda_function(module,func)
 
 		# define the grid
 		center_contact = np.zeros(3)
@@ -599,7 +603,7 @@ class DataGenerator(object):
 
 	@staticmethod
 	def get_cuda_function(module,func_name):
-		cuda_func = mod.get_function(func_name)
+		cuda_func = module.get_function(func_name)
 		return cuda_func
 
 	# tranform the kernel to a tunable one
