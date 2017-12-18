@@ -422,7 +422,7 @@ class GridTools(object):
 				# get the atomic densities of chain B
 				for pos in xyzB:
 					x0,y0,z0 = pos.astype(np.float32)
-					vdw = np.float32(vdw_radius)
+					vdw = np.float32(vdw_rad)
 					self.cuda_atomic(vdw,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,block=tuple(self.gpu_block),grid=tuple(self.gpu_grid))
 					atdensB = grid_gpu.get()
 
