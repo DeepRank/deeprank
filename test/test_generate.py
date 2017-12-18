@@ -18,7 +18,7 @@ def test_generate():
 	if not os.path.isfile(database.hdf5):
 		database.create_database()
 	else:
-		print('\nUsing peviously generated database : %s' database.hdf5)
+		print('\nUsing peviously generated database : %s' %database.hdf5)
 
 	# map the features
 	grid_info = {
