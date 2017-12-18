@@ -582,10 +582,11 @@ class DataGenerator(object):
 		xyz_center = np.random.rand(500,3).astype(np.float32)
 		alpha = np.float32(1)
 		t0 = time()
-		for xyz in tqdm(xyz_center):
+		for xyz in xyz_center:
 			x0,y0,z0 = xyz
 			cuda_func(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,
 					block=tuple(gpu_block),grid=tuple(gpu_grid))
+			
 		print('Done in : %f ms' %(time()-t0)*1000)
 
 #====================================================================================
