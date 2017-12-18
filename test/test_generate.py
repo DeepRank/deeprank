@@ -1,7 +1,10 @@
 import sys
 import deeprank.generate
 import os
+from time import time
 def test_generate():
+
+	t0 = time()
 
 	# sources to assemble the data base
 	pdb_source     = ['./1AK4/decoys/']
@@ -30,6 +33,7 @@ def test_generate():
 	}
 	database.map_features(grid_info,try_sparse=True,time=True,prog_bar=False)
 
+	print('\nTotal execution time %f s.' %(time()-t0))
 
 if __name__ == "__main__":
 	test_generate()
