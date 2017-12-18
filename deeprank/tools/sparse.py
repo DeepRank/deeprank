@@ -64,7 +64,7 @@ Flat Array Normalized
 '''
 class FLANgrid(object):
 
-	def __init__(self,sparse=None,index=None,value=None,shape=None):
+	def __init__(self,sparse=None,index=None,value=None,shape=None,debug=False):
 
 		self.sparse=sparse
 		self.index = index
@@ -101,15 +101,17 @@ class FLANgrid(object):
 
 		# decide if we store sparse or not
 		# if enough elements are sparse
-		if mem_sparse < mem_dense:		
-			print('--> FLAN sparse %d bits/%d bits' %(mem_sparse,mem_dense))
+		if mem_sparse < mem_dense:	
+			if debug:	
+				print('--> FLAN sparse %d bits/%d bits' %(mem_sparse,mem_dense))
 			self.sparse = True
 			self.index = self._get_single_index_array(index).astype(index_type)
 			self.value= value.astype(np.float32)		
 			
 
 		else:
-			print('--> FLAN dense %d bits/%d bits' %(mem_sparse,mem_dense))
+			if debug:
+				print('--> FLAN dense %d bits/%d bits' %(mem_sparse,mem_dense))
 			self.sparse = False
 			self.index=None
 			self.value=data.astype(np.float32)	

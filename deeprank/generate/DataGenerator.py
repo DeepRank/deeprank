@@ -543,6 +543,8 @@ class DataGenerator(object):
 
 	def test_cuda(self,grid_info,gpu_block=[8,8,8],cuda_kernel='kernel_map.c',func='gaussian'):
 
+		from time import time
+
 		# fills in the grid data if not provided : default = NONE
 		grinfo = ['number_of_points','resolution']
 		for gr  in grinfo:
