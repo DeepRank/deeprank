@@ -64,14 +64,14 @@ Flat Array Normalized
 '''
 class FLANgrid(object):
 
-	def __init__(self,sparse=None,index=None,value=None,shape=None,debug=False):
+	def __init__(self,sparse=None,index=None,value=None,shape=None):
 
 		self.sparse=sparse
 		self.index = index
 		self.value = value
 		self.shape = shape
 
-	def from_dense(self,data,beta=None):
+	def from_dense(self,data,beta=None,debug=False):
 		'''
 		data : the 3D tensor to encode
 		beta : threshold to determine if a sparse rep is valuable 
