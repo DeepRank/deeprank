@@ -373,7 +373,7 @@ class DataGenerator(object):
 		             cuda=False,gpu_block=None,
 		             cuda_kernel='/kernel_map.c',
 		             cuda_func_name = 'gaussian',
-		             try_sparse=False,
+		             try_sparse=True,
 		             reset=False,use_tmpdir=False,time=False,prog_bar=False):
 
 		'''
