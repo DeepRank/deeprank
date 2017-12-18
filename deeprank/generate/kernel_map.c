@@ -50,7 +50,7 @@ __global__ void atomic_densities(float vdw_radius, float x0, float y0, float z0,
     	if (d < vdw_radius)
     		out[ty * %(nx)s * %(nz)s + tx * %(nz)s + tz] += exp(-2.*d2/vdw2);
     	else if (d < 1.5*vdw_radius)
-    		out[ty * %(nx)s * %(nz)s + tx * %(nz)s + tz] += 4.*d2/(e2*vdw2) - 12.*d/(e2*vdw_radius) + 9./e2
+    		out[ty * %(nx)s * %(nz)s + tx * %(nz)s + tz] += 4.*d2/(e2*vdw2) - 12.*d/(e2*vdw_radius) + 9./e2;
 
     }
 

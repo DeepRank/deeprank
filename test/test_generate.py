@@ -1,6 +1,6 @@
 import sys
 import deeprank.generate
-
+import os
 def test_generate():
 
 	# sources to assemble the data base
@@ -15,7 +15,10 @@ def test_generate():
 	                                           )
 
 	#create new files
-	database.create_database()
+	if not os.path.isfile(database.hdf5):
+		database.create_database()
+	else:
+		print('\nUsing peviously generated database : %s' database.hdf5)
 
 	# map the features
 	grid_info = {

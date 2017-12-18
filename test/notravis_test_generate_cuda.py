@@ -1,4 +1,5 @@
 import sys
+import os
 import deeprank.generate
 
 def test_generate(tune,test,gpu_block):
@@ -33,7 +34,10 @@ def test_generate(tune,test,gpu_block):
 		database.test_cuda(grid_info,gpu_block,func='gaussian')
 	else:
 		#create new files
-		database.create_database()
+		if not os.path.isfile(database.hdf5):
+			database.create_database()
+		else:
+			print('\nUsing peviously generated database : %s' database.hdf5)
 
 		# map these data
 		database.map_features(grid_info,time=True,cuda=True,gpu_block=gpu_block)
