@@ -18,37 +18,39 @@ except:
 try:
 	from pycuda import driver, compiler, gpuarray, tools
 	import pycuda.autoinit 
-
+except:
+	pass
 
 
 '''
-	Assemble the data set from different sources of  decoys/natives/features/targets
+Assemble the data set from different sources of  decoys/natives/features/targets
 
-	ARGUMENTS
+ARGUMENTS
 
-	pdb_select
+pdb_select
 
-			file containing the name of specfic complexe we want 
-			in the database
+		file containing the name of specfic complexe we want 
+		in the database
 
-	pdb_source
+pdb_source
 
-			path or list of path where to find the pdbs
+		path or list of path where to find the pdbs
 
-	pdb_native 
+pdb_native 
 
-			path or list of path where to find the native conformation of the pdbs			
-			these are required to compute the DockQ score used for training
+		path or list of path where to find the native conformation of the pdbs			
+		these are required to compute the DockQ score used for training
 
-	data_augmentation
+data_augmentation
 
-			None or integers
-			if integers (N), each compound will be copied N times
-			each copy having a different rotation randomly defined
+		None or integers
+		if integers (N), each compound will be copied N times
+		each copy having a different rotation randomly defined
 
-	hdf5
+hdf5
 
-			HDF5 file where to store the database
+		HDF5 file where to store the database
+
 
 '''
 
