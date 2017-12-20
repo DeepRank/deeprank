@@ -61,7 +61,7 @@ def test_learn():
   # declare the dataset instance
   data_set = deeprank.learn.DataSet(database,
                             select_feature={'AtomicDensities_sum' : ['C','CA','O','N'], 
-                                            'atomicFeature_sum' : ['coulomb','vdwaals','charge'] },
+                                            'Feature_sum' : ['coulomb','vdwaals','charge'] },
                             select_target='DOCKQ',normalize_features=True,normalize_targets=True)
 
 

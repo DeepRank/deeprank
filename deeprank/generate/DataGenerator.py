@@ -18,8 +18,7 @@ except:
 try:
 	from pycuda import driver, compiler, gpuarray, tools
 	import pycuda.autoinit 
-except:
-	print("Pycuda not found")
+
 
 
 '''
@@ -30,12 +29,16 @@ except:
 	pdb_select
 
 			file containing the name of specfic complexe we want 
-			in the databas
+			in the database
 
 	pdb_source
 
 			path or list of path where to find the pdbs
 
+	pdb_native 
+
+			path or list of path where to find the native conformation of the pdbs			
+			these are required to compute the DockQ score used for training
 
 	data_augmentation
 
@@ -43,9 +46,9 @@ except:
 			if integers (N), each compound will be copied N times
 			each copy having a different rotation randomly defined
 
-	outdir
+	hdf5
 
-			directory where to output the database
+			HDF5 file where to store the database
 
 '''
 
@@ -54,7 +57,6 @@ class DataGenerator(object):
 	def __init__(self,pdb_select=None,pdb_source=None,pdb_native=None,
 				 compute_targets = None, import_targets = None,
 				 compute_features = None,import_features = None,
-				 grid_info = None,
 		         data_augmentation=None, hdf5='database.h5'):
 
 		self.pdb_select  = pdb_select
@@ -70,8 +72,6 @@ class DataGenerator(object):
 
 		self.compute_features = compute_features
 		self.import_features =  import_features
-
-		self.grid_info = grid_info
 
 		self.all_pdb = []
 		self.all_native = []
@@ -110,6 +110,29 @@ class DataGenerator(object):
 #====================================================================================
 
 	def create_database(self,verbose=False):
+
+		'''
+		main function for the creation of the database
+		For each molecule, creates the following structure
+
+		mol
+		 |_complex
+		 |_native
+		 |_features
+		 |    |_feature_1
+		 |    |_feature_2
+		 |    ...
+		 |_targets
+		 |    |_target_1
+		 |    |_target_2
+		 |    ...
+		 |_grid_points
+		 |_mapped_features
+		 |    |_map_1
+		 |    |_map_2
+		      ....
+
+		'''
 
 		# open the file
 		self.f5 = h5py.File(self.hdf5,'w')
@@ -205,8 +228,12 @@ class DataGenerator(object):
 				if ref is not None:
 					self._add_pdb(molgrp,ref,'native')
 
+
+				# get the rotation axis and angle
+				axis,angle = self._get_aug_rot()
+
 				# create the new pdb
-				self._add_aug_pdb(molgrp,cplx,'complex')
+				center = self._add_aug_pdb(molgrp,cplx,'complex',axis,angle)
 
 				# create the subgroups
 				molgrp.require_group('targets')
@@ -214,7 +241,10 @@ class DataGenerator(object):
 
 				# copy the targets/features
 				molgrp.copy('targets',self.f5[mol_name+'/targets/'])
-				molgrp.copy('features',self.f5[mol_name+'/features/'])					
+				molgrp.copy('features',self.f5[mol_name+'/features/'])		
+
+				# rotate the feature			
+				self._rotate_feature(molgrp,axis,angle,center)
 
 		# close the file
 		self.f5.close()
@@ -228,8 +258,9 @@ class DataGenerator(object):
 	def add_feature(self,compute_features=None,import_features=None):
 
 		'''
-		add a feature file to an existing folder arboresence
+		Add a feature file to an existing folder arboresence
 		only need an output dir and a feature dictionary
+		! Not tested yet !
 		'''
 
 	
@@ -281,6 +312,7 @@ class DataGenerator(object):
 		'''
 		add a target files to an existing folder arboresence
 		only need an output dir and a target dictionary
+		! Not tested yet !
 		'''
 
 		# name of the hdf5 file
@@ -329,6 +361,11 @@ class DataGenerator(object):
 #====================================================================================
 
 	def remove(self,feature=True,pdb=True,points=True,grid=False):
+
+		'''
+		Remove data from the data set
+		Equivalent to the cleandata command line tool
+		'''
 
 		print(': remove features')
 
@@ -379,15 +416,32 @@ class DataGenerator(object):
 
 		ARGUMENTS:
 
-		data_folder 
-
-				main folder containing subfolder with pdbs targets/features
-				of the complexes required for the dataset
-
 		grid info
 
 				dictionay containing the grid information
-				see gridtool_sql.py for details
+				see deeprank.generate.GridTool.py for details
+
+		cuda
+				Use CUDA for the mapping
+
+		gpu_block
+
+				Define the the gpu block size to be uses
+				e.g. [8,8,8]
+
+		cuda_kernel
+
+				CUDA kernel file to be compiled and used for the mapping
+
+		cuda_func_name
+
+				CUDA function present in the kernel to be used
+				for the mapping of the features
+
+		try_sparse
+
+				Store the mapped features in a sparse formar
+				See deeprank.tools.sparse.py for details
 
 		reset
 				Boolean to force the removal of all data
@@ -415,22 +469,16 @@ class DataGenerator(object):
 				grid_info[gr] = None
 
 		# By default we map all the atomic features
-		if 'atomic_feature' not in grid_info:
+		if 'feature' not in grid_info:
 			mol = list(f5.keys())[0]
-			grid_info['atomic_feature'] = list(f5[mol+'/features'].keys())
-
-		# residue features are not yet supported
-		if 'residue_feature' in grid_info:
-			raise ValueError('Warning Residue feature not yet supported\n Remove residue_feature from the grid info or get coding !')
-		else:
-			grid_info['residue_feature'] = None
+			grid_info['feature'] = list(f5[mol+'/features'].keys())
 
 		# by default we do not map atomic densities
 		if 'atomic_densities' not in grid_info:
 			grid_info['atomic_densities'] = None
 
 		# fills in the features mode if somes are missing : default = SUM
-		modes = ['atomic_densities_mode','atomic_feature_mode','residue_feature_mode']
+		modes = ['atomic_densities_mode','feature_mode']
 		for m in modes:
 			if m not in grid_info:
 				grid_info[m] = 'sum'
@@ -469,9 +517,8 @@ class DataGenerator(object):
 				             resolution = grid_info['resolution'],
 				             atomic_densities = grid_info['atomic_densities'],
 				             atomic_densities_mode = grid_info['atomic_densities_mode'],
-				             residue_feature = grid_info['residue_feature'],
-				             atomic_feature = grid_info['atomic_feature'],
-				             atomic_feature_mode = grid_info['atomic_feature_mode'],
+				             feature = grid_info['feature'],
+				             feature_mode = grid_info['feature_mode'],
 				             cuda = cuda,
 				             gpu_block = gpu_block,
 				             cuda_func = cuda_func,
@@ -493,6 +540,12 @@ class DataGenerator(object):
 
 	def tune_cuda_kernel(self,grid_info,cuda_kernel='kernel_map.c',func='gaussian'):
 			
+		'''
+		Tune the CUDA kernel using the kernel tuner
+		http://benvanwerkhoven.github.io/kernel_tuner/
+		'''
+
+
 		try:
 			from kernel_tuner import tune_kernel
 		except:
@@ -552,6 +605,10 @@ class DataGenerator(object):
 #====================================================================================
 
 	def test_cuda(self,grid_info,gpu_block=[8,8,8],cuda_kernel='kernel_map.c',func='gaussian'):
+
+		'''
+		Test the CUDA kernel
+		'''
 
 		from time import time
 
@@ -724,29 +781,22 @@ class DataGenerator(object):
 		dataset = molgrp.create_dataset(name,data=data)
 
 
-	def _add_aug_pdb(self,molgrp,pdbfile,name):
+#====================================================================================
+#
+#		AUGMENTED DATA
+#
+#====================================================================================
+
+	# add a rotated pdb structure to the database
+	def _add_aug_pdb(self,molgrp,pdbfile,name,axis,angle):
 
 
 		# create tthe sqldb and extract positions
 		sqldb = pdb2sql(pdbfile)
 		xyz = sqldb.get('x,y,z')
 
-		# define the transformation axis
-		axis = -1 + 2*np.random.rand(3)
-		axis /= np.linalg.norm(axis)
-
-		# define the axis
-		# uniform distribution on a sphere
-		# http://mathworld.wolfram.com/SpherePointPicking.html
-		u1,u2 = np.random.rand(),np.random.rand()
-		teta,phi = np.arccos(2*u1-1),2*np.pi*u2
-		axis = [np.sin(teta)*np.cos(phi),np.sin(teta)*np.sin(phi),np.cos(teta)]
-
-		# and the rotation angle
-		angle = -np.pi + np.pi*np.random.rand()
-
 		# rotate the positions
-		sqldb.rotation_around_axis(axis,angle)
+		center = sqldb.rotation_around_axis(axis,angle)
 		
 		# get the data
 		sqldata = sqldb.get('*')
@@ -777,3 +827,50 @@ class DataGenerator(object):
 
 		data = np.array(data).astype('|S73')
 		dataset = molgrp.create_dataset(name,data=data)
+
+		return center
+
+	# rotate th xyz-formatted feature in the database
+	def _rotate_feature(self,molgrp,axis,angle,center):
+
+		feat = list(molgrp['features'].keys())
+		for fn in feat:
+			
+			# extrct the data
+			data = molgrp['features/'+fn].value
+
+			# xyz
+			xyz = data[:,1:4]
+			
+			# get the data
+			ct,st = np.cos(angle),np.sin(angle)
+			ux,uy,uz = axis
+
+			# definition of the rotation matrix
+			# see https://en.wikipedia.org/wiki/Rotation_matrix
+			rot_mat = np.array([
+			[ct + ux**2*(1-ct),			ux*uy*(1-ct) - uz*st,		ux*uz*(1-ct) + uy*st],
+			[uy*ux*(1-ct) + uz*st,    	ct + uy**2*(1-ct),			uy*uz*(1-ct) - ux*st],
+			[uz*ux*(1-ct) - uy*st,		uz*uy*(1-ct) + ux*st,   	ct + uz**2*(1-ct)   ]])
+
+			# apply the rotation
+			xyz = np.dot(rot_mat,(xyz-center).T).T + center
+
+			# put back the data
+			data[:,1:4] = xyz
+
+	# get rotation axis and angle
+	@staticmethod
+	def _get_aug_rot():
+
+		# define the axis
+		# uniform distribution on a sphere
+		# http://mathworld.wolfram.com/SpherePointPicking.html
+		u1,u2 = np.random.rand(),np.random.rand()
+		teta,phi = np.arccos(2*u1-1),2*np.pi*u2
+		axis = [np.sin(teta)*np.cos(phi),np.sin(teta)*np.sin(phi),np.cos(teta)]
+
+		# and the rotation angle
+		angle = -np.pi + np.pi*np.random.rand()
+
+		return axis,angle

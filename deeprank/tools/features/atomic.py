@@ -27,7 +27,11 @@ def __compute_feature__(pdb_data,featgrp):
 	# entire residue containing at least 1 contact atom
 	atfeat.evaluate_charges(extend_contact_to_residue=True)
 
+	# export in the hdf5 file
 	atfeat.export_dataxyz_hdf5(featgrp)
+	#atfeat.export_data_hdf5(featgrp)
+
+	# close
 	atfeat.sqldb.close()
 
 

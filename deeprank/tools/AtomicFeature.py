@@ -539,7 +539,11 @@ class AtomicFeature(FeatureClass):
 
 			# store in the dicts
 			charge_data[key] = [charge[i]]
-			charge_data_xyz[tuple(xyz[i,:])] = [charge[i]]
+
+			# xyz format
+			chain_dict = [{'A':0,'B':1}[key[0]]]
+			key = tuple( chain_dict + xyz[i,:].tolist())
+			charge_data_xyz[key] = [charge[i]]
 
 		# add the electrosatic feature
 		self.feature_data['charge'] = charge_data
@@ -640,8 +644,9 @@ class AtomicFeature(FeatureClass):
 			vdw_data[keyA] = [np.sum(evdw)]
 
 			# store in the xyz dict
-			electro_data_xyz[tuple(xyz[iA,:])] = [np.sum(ec)]
-			vdw_data_xyz[tuple(xyz[iA,:])] = [np.sum(evdw)]
+			key = tuple([0]+xyz[iA,:].tolist())
+			electro_data_xyz[key] = [np.sum(ec)]
+			vdw_data_xyz[key] = [np.sum(evdw)]
 
 			# print the result
 			if _save_ or print_interactions:
@@ -702,8 +707,9 @@ class AtomicFeature(FeatureClass):
 			vdw_data[keyB] = [np.sum(evdw)]			
 
 			# store the xyz dict
-			electro_data_xyz[tuple(xyz[indexB,:])] = [np.sum(ec)]
-			vdw_data_xyz[tuple(xyz[indexB,:])] = [np.sum(evdw)]
+			key = tuple([1]+xyz[indexB,:].tolist())
+			electro_data_xyz[key] = [np.sum(ec)]
+			vdw_data_xyz[key] = [np.sum(evdw)]
 
 		# add the electrosatic feature
 		self.feature_data['coulomb'] = electro_data
@@ -912,13 +918,15 @@ class AtomicFeature(FeatureClass):
 	#
 	#####################################################################################
 
+	'''
 	def export_data(self):
 		bare_mol_name = self.pdbfile.split('/')[-1][:-4]
 		super().export_data(bare_mol_name)
 
 	def export_data_hdf5(self,featgrp):
 		super().export_data_hdf5(featgrp)
-
+	'''
+	
 #####################################################################################
 #
 #	test the function

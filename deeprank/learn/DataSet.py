@@ -21,14 +21,11 @@ class DataSet(data_utils.Dataset):
 
 	ARGUMENTS 
 		
-	data_folder : string
+	database : string or list of strings
 
-		the path of the folder where the numpy data are stored
-		for each cconformation. This folder should contains N subfolder
-		each subfolder that each contains and input and output subsbufolder
-		The input subsubfolder should contain a file called AtomicDensities.npy
-		The output subsubfolder should contain a file called score
-		This hierarchie of folder can be created with the gendatatool.py 
+		Path of the HDF5 file(s) containing the database(s)
+		This hdf5 file(s) must be generated with the deeprank.generate
+		tools to insure the correct structure
 
 
 	filter_dataset : None, integer or file name
@@ -82,31 +79,28 @@ class DataSet(data_utils.Dataset):
 
 	'''
 
-	def __init__(self,data_folder,filter_dataset=None,
+	def __init__(self,database,filter_dataset=None,
 				 select_feature='all',select_target='DOCKQ',
 		         normalize_features=True,normalize_targets=True):
 
 
-		self.data_folder = data_folder
+		self.database = database
 		self.filter_dataset = filter_dataset
 		self.select_feature = select_feature
 		self.select_target = select_target
 		self.normalize_features = normalize_features
 		self.normalize_targets = normalize_targets
 
-
 		self.features = None
 		self.targets  = None
 
 		self.input_shape = None
 
-		# load the data
-		if os.path.isdir(data_folder):
-			print('\n')
-			print('='*40)
-			print('=\t Build data set from folder')
-			print('= \t %s' %data_folder)
-			print('='*40,'\n')
+
+		# allow for multiple database
+		if not isinstance(database,list):
+			self.database = [database]
+
 
 	def __len__(self):
 		return len(self.targets)
@@ -117,130 +111,132 @@ class DataSet(data_utils.Dataset):
 	# load the dataset from a h5py file
 	def load(self):
 
-		fh5 = h5py.File(self.data_folder,'r')
-		mol_names = list(fh5.keys())
-		featgrp_name='mapped_features/'
+		for fdata in self.database:
 
-		# get a subset
-		if self.filter_dataset != None:
+			fh5 = h5py.File(fdata,'r')
+			mol_names = list(fh5.keys())
+			featgrp_name='mapped_features/'
 
-			# get a random subset if integers
-			if isinstance(self.filter_dataset,int):
-				np.random.shuffle(mol_names)
-				mol_names = mol_names[:self.filter_dataset]
+			# get a subset
+			if self.filter_dataset != None:
 
-			# select based on name of file
-			if os.path.isfile(self.filter_dataset):
-				tmp_folder = []
-				with open(self.filter_dataset) as f:
-					for line in f:
-						if len(line.split())>0:
-							name = line.split()[0]
-							tmp_folder += list(filter(lambda x: name in x,mol_names))
-				f.close()
-				mol_names = tmp_folder
+				# get a random subset if integers
+				if isinstance(self.filter_dataset,int):
+					np.random.shuffle(mol_names)
+					mol_names = mol_names[:self.filter_dataset]
 
-		#	
-		# load the data
-		# the format of the features must be
-		# Nconf x Nchanels x Nx x Ny x Nz
-		# 
-		# for each folder we create a tmp_feat of size Nchanels x Nx x Ny x Nz
-		# that we then append to the feature list
-		#
-		features, targets = [], []
-		for mol in tqdm(mol_names):
+				# select based on name of file
+				if os.path.isfile(self.filter_dataset):
+					tmp_folder = []
+					with open(self.filter_dataset) as f:
+						for line in f:
+							if len(line.split())>0:
+								name = line.split()[0]
+								tmp_folder += list(filter(lambda x: name in x,mol_names))
+					f.close()
+					mol_names = tmp_folder
 
-			# get the mol
-			mol_data = fh5.get(mol)
-			nx = mol_data['grid_points']['x'].shape[0]
-			ny = mol_data['grid_points']['y'].shape[0]
-			nz = mol_data['grid_points']['z'].shape[0]
-			shape=(nx,ny,nz)
+			#	
+			# load the data
+			# the format of the features must be
+			# Nconf x Nchanels x Nx x Ny x Nz
+			# 
+			# for each folder we create a tmp_feat of size Nchanels x Nx x Ny x Nz
+			# that we then append to the feature list
+			#
+			features, targets = [], []
+			for mol in tqdm(mol_names):
 
-			# load all the features
-			if self.select_feature == 'all':
-				# loop through the features
-				tmp_feat = []
-				for feat_name, feat_members in mol_data.get(featgrp_name).items():
-					# loop through all the feature keys
-					for name,data in feat_members.items():
-						if data.attrs['sparse']:
-							spg = sparse.FLANgrid(sparse=True,
-								                 index=data['index'].value,
-								                 value=data['value'].value,
-								                 shape=shape)
-							tmp_feat.append(spg.to_dense())
-						else:
-							tmp_feat.append(data['value'].value)
-				features.append(np.array(tmp_feat))
+				# get the mol
+				mol_data = fh5.get(mol)
+				nx = mol_data['grid_points']['x'].shape[0]
+				ny = mol_data['grid_points']['y'].shape[0]
+				nz = mol_data['grid_points']['z'].shape[0]
+				shape=(nx,ny,nz)
 
-			# load selected features
-			else:
-				tmp_feat = []
-				for feat_name,feat_channels in self.select_feature.items():
-
-					# see if the feature exists
-					feat_dict = mol_data.get(featgrp_name+feat_name)						
-					
-					if feat_dict is None:
-						
-						print('Error : Feature name %s not found in %s' %(feat_name,mol))
-						opt_names = list(mol_data.get(featgrp_name).keys())
-						print('Error : Possible features are \n\t%s' %'\n\t'.join(opt_names))
-						sys.exit()
-
-					# get the possible channels
-					possible_channels = list(feat_dict.keys())
-
-					# make sure that all the featchanels are in the file
-					if feat_channels != 'all':
-						for fc in feat_channels:
-							if fc not in possible_channels:
-								print("Error : required key %s for feature %s not in the database" %(fc,feat_name))
-								print('Error : Possible features are \n\t%s' %'\n\t'.join(possible_channels))
-								sys.exit()
-
-					# load the feature channels
-					for chanel_name,channel_data in feat_dict.items():
-						if feat_channels == 'all' or chanel_name in feat_channels:
-							if channel_data.attrs['sparse']:
+				# load all the features
+				if self.select_feature == 'all':
+					# loop through the features
+					tmp_feat = []
+					for feat_name, feat_members in mol_data.get(featgrp_name).items():
+						# loop through all the feature keys
+						for name,data in feat_members.items():
+							if data.attrs['sparse']:
 								spg = sparse.FLANgrid(sparse=True,
-									                  index=channel_data['index'].value,
-									                  value=channel_data['value'].value,
-									                  shape=shape)
+									                 index=data['index'].value,
+									                 value=data['value'].value,
+									                 shape=shape)
 								tmp_feat.append(spg.to_dense())
 							else:
-								tmp_feat.append(channel_data['value'].value)
+								tmp_feat.append(data['value'].value)
+					features.append(np.array(tmp_feat))
+
+				# load selected features
+				else:
+					tmp_feat = []
+					for feat_name,feat_channels in self.select_feature.items():
+
+						# see if the feature exists
+						feat_dict = mol_data.get(featgrp_name+feat_name)						
+						
+						if feat_dict is None:
 							
+							print('Error : Feature name %s not found in %s' %(feat_name,mol))
+							opt_names = list(mol_data.get(featgrp_name).keys())
+							print('Error : Possible features are \n\t%s' %'\n\t'.join(opt_names))
+							sys.exit()
 
-				# append to the list of features
-				features.append(np.array(tmp_feat))
+						# get the possible channels
+						possible_channels = list(feat_dict.keys())
+
+						# make sure that all the featchanels are in the file
+						if feat_channels != 'all':
+							for fc in feat_channels:
+								if fc not in possible_channels:
+									print("Error : required key %s for feature %s not in the database" %(fc,feat_name))
+									print('Error : Possible features are \n\t%s' %'\n\t'.join(possible_channels))
+									sys.exit()
+
+						# load the feature channels
+						for chanel_name,channel_data in feat_dict.items():
+							if feat_channels == 'all' or chanel_name in feat_channels:
+								if channel_data.attrs['sparse']:
+									spg = sparse.FLANgrid(sparse=True,
+										                  index=channel_data['index'].value,
+										                  value=channel_data['value'].value,
+										                  shape=shape)
+									tmp_feat.append(spg.to_dense())
+								else:
+									tmp_feat.append(channel_data['value'].value)
+								
+
+					# append to the list of features
+					features.append(np.array(tmp_feat))
 
 
-			# target
-			opt_names = list(mol_data.get('targets/').keys())			
-			fname = list(filter(lambda x: self.select_target in x, opt_names))
-			
-			if len(fname) == 0:
-				print('Error : Target name %s not found in %s' %(self.select_target,mol))
-				print('Error : Possible targets are \n\t%s' %'\n\t'.join(opt_names))
-				sys.exit()
+				# target
+				opt_names = list(mol_data.get('targets/').keys())			
+				fname = list(filter(lambda x: self.select_target in x, opt_names))
+				
+				if len(fname) == 0:
+					print('Error : Target name %s not found in %s' %(self.select_target,mol))
+					print('Error : Possible targets are \n\t%s' %'\n\t'.join(opt_names))
+					sys.exit()
 
-			if len(fname)>1:
-				print('Error : Multiple Targets Matching %s Found in %s' %(self.select_target,mol))
-				print('Error : Possible targets are \n\t%s' %'\n\t'.join(opt_names))
-				sys.exit()
+				if len(fname)>1:
+					print('Error : Multiple Targets Matching %s Found in %s' %(self.select_target,mol))
+					print('Error : Possible targets are \n\t%s' %'\n\t'.join(opt_names))
+					sys.exit()
 
-			fname = fname[0]
-			targ_data = mol_data.get('targets/'+fname)		
-			targets.append(targ_data.value)
+				fname = fname[0]
+				targ_data = mol_data.get('targets/'+fname)		
+				targets.append(targ_data.value)
 
-		# preprocess the data
-		self.preprocess(features,targets)
+			# preprocess the data
+			self.preprocess(features,targets)
 
-		# close
-		fh5.close()
+			# close
+			fh5.close()
 
 	# put in torch format and normalize
 	def preprocess(self,features,targets):

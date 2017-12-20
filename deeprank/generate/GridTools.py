@@ -106,8 +106,7 @@ class GridTools(object):
 	def __init__(self, molgrp,
 				number_of_points = [30,30,30],resolution = [1.,1.,1.],
 				atomic_densities=None, atomic_densities_mode='sum',
-				residue_feature =None, residue_feature_mode ='sum',
-				atomic_feature  =None, atomic_feature_mode  ='sum',
+				feature  =None, feature_mode  ='sum',
 				contact_distance = 8.5, hdf5_file=None,
 				cuda=False, gpu_block=None, cuda_func=None, cuda_atomic=None,
 				prog_bar = False,time=False,try_sparse=True):
@@ -117,19 +116,11 @@ class GridTools(object):
 
 		# feature requestedOO
 		self.atomic_densities = atomic_densities
-		self.residue_feature = residue_feature
-		self.atomic_feature = atomic_feature
+		self.feature = feature
 
 		# mapping mode
-		self.atomic_feature_mode = atomic_feature_mode
+		self.feature_mode = feature_mode
 		self.atomic_densities_mode = atomic_densities_mode
-
-		# feature type requested
-		self.feattype_required = []
-		if self.residue_feature != None:
-			self.feattype_required.append('residue')
-		if self.atomic_feature != None:
-			self.feattype_required.append('atomic')
 
 		# base name of the molecule
 		self.mol_basename = molgrp.name
@@ -220,8 +211,7 @@ class GridTools(object):
 		self.export_grid_points()
 
 		#map the features
-		for feattype in self.feattype_required:
-			self.add_all_features(feattype)
+		self.add_all_features()
 
 		# if we wnat the atomic densisties
 		self.add_all_atomic_densities()
@@ -254,8 +244,7 @@ class GridTools(object):
 		self.res = np.array([self.x[1]-self.x[0],self.y[1]-self.y[0],self.z[1]-self.z[0]])
 
 		# map the features
-		for feattype in self.feattype_required:
-			self.add_all_features(feattype)
+		self.add_all_features()
 
 		# if we want the atomic densisties
 		self.add_all_atomic_densities()			
@@ -300,26 +289,18 @@ class GridTools(object):
 	################################################################
 
 	# add all the residue features to the data
-	def add_all_features(self,feature_type):
-
-		if feature_type == 'residue':
-			featlist = self.residue_feature
-		elif feature_type == 'atomic':
-			featlist = self.atomic_feature
-		else:
-			print('Error feature type must be residue or atomic')
-			return
+	def add_all_features(self):
 
 		#map the features
-		if featlist is not None:
+		if self.feature is not None:
 		
 			# map the residue features
-			dict_data = self.map_features(featlist,feature_type)
+			dict_data = self.map_features(self.feature)
 
 			# save to hdf5 if specfied
 			t0 = time()
-			printif('-- Save %s Features to HDF5' %feature_type,self.time)
-			self.hdf5_grid_data(dict_data,'%sFeature_%s' %(feature_type, self.atomic_feature_mode))
+			printif('-- Save Features to HDF5',self.time)
+			self.hdf5_grid_data(dict_data,'Feature_%s' %( self.feature_mode))
 			printif('      Total %f ms' %((time()-t0)*1000),self.time)
 		
 	
@@ -490,7 +471,7 @@ class GridTools(object):
 	################################################################
 
 	# map residue a feature on the grid
-	def map_features(self, featlist, feature_type, transform=None):
+	def map_features(self, featlist, transform=None):
 
 		'''
 		For residue based feature the feature file must be of the format 
@@ -519,15 +500,6 @@ class GridTools(object):
 			z_gpu = gpuarray.to_gpu(self.z.astype(np.float32))
 			grid_gpu = gpuarray.zeros(self.npts,np.float32)
 
-		# number of features
-		if feature_type == 'residue':
-			ntext = 3
-		elif feature_type == 'atomic':
-			ntext = 4
-		else:
-			print('Error feature type either residue or atomic')
-			return None
-
 		# loop over all the features required
 		for feature_name in featlist:
 
@@ -543,10 +515,26 @@ class GridTools(object):
 				raise ValueError('feature %s  not found in the file' %(feature_name))
 			
 			# detect if we have a xyz format
-			if isinstance(data[0],np.ndarray):
+			# or a byte format
+			# define how many elements (ntext) 
+			# are present before the feature values
+			# xyz : 4 (chain x y z)
+			# byte - residue : 3 (chain resSeq resName)
+			# byte - atomic  : 4 (chain resSeq resName name)
+			if not isinstance(data[0],bytes):
 				feature_type = 'xyz'
-				ntext = 3
+				ntext = 4
+			else:
+				try :
+					float(data[0].split()[3])
+					feature_type = 'residue'
+					ntext = 3
+				except:
+					feature_type = 'atomic' 
+					ntext = 4
 
+			# test if the transform is callable
+			# and test it on the first line of the data
 			# get the data on the first line
 			if feature_type != 'xyz':
 				data_test = data[0].split()
@@ -564,15 +552,16 @@ class GridTools(object):
 				return None			
 
 			# declare the dict
+			# that will in fine holds all the data
 			if nFeat == 1:
-				if self.atomic_feature_mode == 'ind':
+				if self.feature_mode == 'ind':
 					dict_data[feature_name+'_chainA'] = np.zeros(self.npts)
 					dict_data[feature_name+'_chainB'] = np.zeros(self.npts)
 				else:
 					dict_data[feature_name] = np.zeros(self.npts)
 			else:
 				for iF in range(nFeat):
-					if self.atomic_feature_mode == 'ind':
+					if self.feature_mode == 'ind':
 						dict_data[feature_name+'_chainA_%03d' %iF] = np.zeros(self.npts)
 						dict_data[feature_name+'_chainB_%03d' %iF] = np.zeros(self.npts)
 					else:
@@ -590,10 +579,16 @@ class GridTools(object):
 			for line in self.local_tqdm(data):
 
 				t0 = time()
+				# if the feature was written with xyz data
+				# i.e chain x y z values
 				if feature_type == 'xyz':
-					pos = line[:ntext]
+
+					chain = ['A','B'][int(line[0])]
+					pos = line[1:ntext]
 					feat_values = np.array(line[ntext:])
 
+				# if the feature was written with bytes
+				# i.e chain resSeq resName (name) values
 				else:
 
 					# decode the line
@@ -638,11 +633,11 @@ class GridTools(object):
 
 				# handle the mode
 				fname = feature_name
-				if self.atomic_feature_mode == "diff":
+				if self.feature_mode == "diff":
 					coeff = {'A':1,'B':-1}[chain]
 				else:
 					coeff = 1
-				if self.atomic_feature_mode == "ind":
+				if self.feature_mode == "ind":
 					fname = feature_name + "_chain" + chain
 				tprocess += time()-t0
 

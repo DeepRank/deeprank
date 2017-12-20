@@ -14,8 +14,8 @@ class FeatureClass(object):
 
 	self.feature_data_xyz : dictionary of feature
 							dictionary of features
-	                    {'coulomb':data_dict_clb[(atom xyz):value] 
-	                     'vdwaals':data_dict_vdw[(atom xyz):value]  }
+	                    {'coulomb':data_dict_clb[(chainID atom xyz):value] 
+	                     'vdwaals':data_dict_vdw[(chainID atom xyz):value]  }
 
 	'''
 

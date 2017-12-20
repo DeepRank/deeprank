@@ -890,6 +890,7 @@ class pdb2sql(object):
 
 		self.update('x,y,z',xyz,**kwargs)
 
+		return xyz0
 			
 	def rotation_euler(self,alpha,beta,gamma,**kwargs):
 

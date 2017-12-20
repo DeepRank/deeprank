@@ -22,7 +22,7 @@ pdb_native     = [BM4 + 'BM4_dimers_bound/pdbFLs_ori']
 #init the data assembler 
 database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
                         compute_targets  = ['deeprank.tools.targets.dockQ'],
-                        compute_features = ['deeprank.tools.features.atomic'],
+                        compute_features = ['deeprank.tools.features.atomic,deeprank.tools.features.pssm'],
                         hdf5='./1ak4.hdf5',
                         )
  
@@ -35,8 +35,7 @@ grid_info = {
 	'resolution' : [1.,1.,1.],
 	'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
 	'atomic_densities_mode' : 'diff',
-	'atomic_feature'  : ['vdwaals','coulomb','charge'],
-	'atomic_feature_mode': 'sum'
+	'feature_mode': 'sum'
 }
 
 database.map_features(grid_info)
