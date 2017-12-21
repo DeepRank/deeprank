@@ -158,6 +158,7 @@ class DataGenerator(object):
 				################################################
 
 				# names of the molecule
+				mol_aug_name_list = []
 				mol_name = os.path.splitext(os.path.basename(cplx))[0]
 
 				# get the bare name of the molecule
@@ -258,7 +259,7 @@ class DataGenerator(object):
 
 			except:
 
-				self.feature_error += [cplx] + mol_aug_name_list
+				self.feature_error += [mol_name] + mol_aug_name_list
 				Warning('Error during the feature calculation of %s' %cplx)
 
 		# remove the data where we had issues
