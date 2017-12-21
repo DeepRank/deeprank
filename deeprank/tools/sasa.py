@@ -76,8 +76,8 @@ class SASA(object):
 		resB = np.array(sql.get('resSeq,resName,x,y,z',name='CB',chainID=chainB))
 		sql.close()
 
-		assert resA[:,0].astype(np.int).tolist() == np.unique(resA[:,0].astype(np.int)).tolist()
-		assert resB[:,0].astype(np.int).tolist() == np.unique(resB[:,0].astype(np.int)).tolist()
+		assert len(resA[:,0].astype(np.int).tolist()) == len(np.unique(resA[:,0].astype(np.int)).tolist())
+		assert len(resB[:,0].astype(np.int).tolist()) == len(np.unique(resB[:,0].astype(np.int)).tolist())
 
 		self.xyz = {}
 		self.xyz[chainA] = resA[:,2:].astype(np.float)

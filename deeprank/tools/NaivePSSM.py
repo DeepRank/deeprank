@@ -153,7 +153,7 @@ if __name__ == '__main__':
 
 	t0 = time()
 	path = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/PSSM_newformat/'
-	pssm = NaivePSSM(pdb='1AK4_1w.pdb',pssm_path=path)
+	pssm = NaivePSSM(mol_name = '2ABZ', pdbfile='2ABZ_1w.pdb',pssm_path=path)
 
 	# get the surface accessible solvent area
 	pssm.get_sasa()

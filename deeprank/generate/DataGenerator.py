@@ -260,7 +260,7 @@ class DataGenerator(object):
 			except:
 
 				self.feature_error += [mol_name] + mol_aug_name_list
-				Warning('Error during the feature calculation of %s' %cplx)
+				raise Warning('Error during the feature calculation of %s' %cplx)
 
 		# remove the data where we had issues
 		if remove_error:
@@ -285,7 +285,7 @@ class DataGenerator(object):
 		! Not tested yet !
 		'''
 
-		Warning("ADD FEATURE NOT FULLY TESTED")
+		raise Warning("ADD FEATURE NOT FULLY TESTED")
 
 	
 		# get the folder names
@@ -492,7 +492,7 @@ class DataGenerator(object):
 		mol_names = f5.keys()
 
 		if len(mol_names) == 0:
-			Warning('No molecules found in %s' %self.hdf5)
+			raise Warning('No molecules found in %s' %self.hdf5)
 			f5.close()
 			return 
 		
