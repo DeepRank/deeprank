@@ -5,11 +5,11 @@ class SASA(object):
 
 
 	'''
-	Simple class that computes SASA following some of the methods presented in
+	Simple class that computes Surface Accessible Solvent Area following some of the methods presented in
 	
-	Solvent accessible surface area approximations for rapid and accurate protein structure prediction
-	J Mol Model (2009) 15:1093–1108
-	DOI 10.1007/s00894-009-0454-9
+	[1] Solvent accessible surface area approximations for rapid and accurate protein structure prediction
+	    J Mol Model (2009) 15:1093–1108
+	    DOI 10.1007/s00894-009-0454-9
 	'''
 
 	def __init__(self,pdbfile):
@@ -17,6 +17,12 @@ class SASA(object):
 		self.pdbfile = pdbfile
 
 	def get_center(self,chainA='A',chainB='B',center='cb'):
+
+		'''
+		Get the center of the resiudes
+		center = cb --> the center is located on the carbon beta of each residue
+		center = 'center' --> average position of all atoms of the residue
+		'''
 
 		if center == 'center':
 			self.get_residue_center(chainA=chainA,chainB=chainB)
@@ -27,6 +33,10 @@ class SASA(object):
 
 
 	def get_residue_center(self,chainA='A',chainB='B'):
+
+		'''
+		Compute the average position of all the residues
+		'''
 
 		sql = pdb2sql(self.pdbfile)
 		resA = np.array(sql.get('resSeq,resName,x,y,z',chainID=chainA))
@@ -57,6 +67,10 @@ class SASA(object):
 
 	def get_residue_carbon_beta(self,chainA='A',chainB='B'):
 
+		'''
+		Extract the position of the carbon beta of each residue
+		'''
+
 		sql = pdb2sql(self.pdbfile)
 		resA = np.array(sql.get('resSeq,resName,x,y,z',name='CB',chainID=chainA))
 		resB = np.array(sql.get('resSeq,resName,x,y,z',name='CB',chainID=chainB))
@@ -74,6 +88,12 @@ class SASA(object):
 		self.resinfo[chainB] = resB[:,:2]
 
 	def neighbor_vector(self,lbound=3.3,ubound=11.1,chainA='A',chainB='B',center='cb'):
+
+
+		'''
+		Compute teh SASA folowing the neighbour vector approach.
+		Eq on page 1097 of Ref[1] 
+		'''
 
 		# get the center
 		self.get_center(chainA=chainA,chainB=chainB,center=center)
@@ -107,6 +127,11 @@ class SASA(object):
 
 		
 	def neighbor_count(self,lbound=4.0,ubound=11.4,chainA='A',chainB='B',center='cb'):
+
+		'''
+		Compute the neighbourhood count of each residue
+		Eq on page 1097 of Ref[1]
+		'''
 
 		# get the center
 		self.get_center(chainA=chainA,chainB=chainB,center=center)

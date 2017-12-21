@@ -48,7 +48,7 @@ def test_generate(tune,test,gpu_block):
 		t0 =time()
 		print('\nMap features in database : %s' %database.hdf5)
 		database.map_features(grid_info,try_sparse=True,time=False,cuda=True,gpu_block=gpu_block)
-		print('--> Done in %f s.' %(time()-t0))
+		print(' '*25 + '--> Done in %f s.' %(time()-t0))
 
 
 

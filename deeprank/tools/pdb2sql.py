@@ -99,6 +99,9 @@ class pdb2sql(object):
 		# backbone type
 		self.backbone_type = ['C','CA','N','O']
 
+		# hard limit for the number of SQL varaibles
+		self.SQLITE_LIMIT_VARIABLE_NUMBER = 999
+
 	##################################################################################
 	#
 	#	CREATION AND PRINTING
@@ -199,6 +202,8 @@ class pdb2sql(object):
 			if os.path.isfile(pdbfile):
 				with open(pdbfile,'r') as fi:
 					data = [line.split('\n')[0] for line in fi if line.startswith('ATOM')]
+			else:
+				raise FileNotFoundError('File %s was not found',pdbfile)
 
 		# if we pass a list as for h5py read/write
 		# we directly use that
@@ -371,11 +376,34 @@ class pdb2sql(object):
 				# deal with the indexing issue if rowID is required
 				if isinstance(v,list):
 					nv = len(v)
-					if k == 'rowID':
-						vals = vals + tuple([iv+1 for iv in v])
+
+					# if we have a large nuber of indexes
+					# we must cut that in pieces
+					if nv>self.SQLITE_LIMIT_VARIABLE_NUMBER:
+
+						if len(kwargs.items())>1:
+							raise ValueError('Query exeeding SQLITE_LIMIT_VARIABLE_NUMBER only possible with one kwargs so far')
+
+						chunck_size = self.SQLITE_LIMIT_VARIABLE_NUMBER
+						vchunck = [v[i:i+chunck_size] for i in range(0,nv,chunck_size)]
+
+						data = []
+						for v in vchunck:
+							kwargs = {}
+							kwargs[k] = v
+							data += self.get(atnames,**kwargs)
+						return data
+
+					#otherwithe we just go on
 					else:
-						vals = vals + tuple(v)
+
+						if k == 'rowID':
+							vals = vals + tuple([iv+1 for iv in v])
+						else:
+							vals = vals + tuple(v)
+
 				else:
+
 					nv = 1
 					if k == 'rowID':
 						vals = vals + (v+1,)
