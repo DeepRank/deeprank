@@ -265,6 +265,7 @@ class DataGenerator(object):
 		# remove the data where we had issues
 		if remove_error:
 			for mol in self.feature_error:
+				print('removing %s from %f' %(mol,self.hdf5))
 				del self.f5[mol]
 
 		# close the file
@@ -568,6 +569,7 @@ class DataGenerator(object):
 		# remove the molecule with issues
 		if remove_error:
 			for mol in self.map_error:
+				print('removing %s from %f' %(mol,self.hdf5))
 				del f5[mol]
 
 		# close he hdf5 file
