@@ -545,6 +545,11 @@ class AtomicFeature(FeatureClass):
 			key = tuple( chain_dict + xyz[i,:].tolist())
 			charge_data_xyz[key] = [charge[i]]
 
+		# if we have no contact atoms
+		if len(charge_data_xyz)==0:
+			charge_data_xyz[tuple([0,0.,0.,0.])] = [0.0]
+			charge_data_xyz[tuple([1,0.,0.,0.])] = [0.0]
+
 		# add the electrosatic feature
 		self.feature_data['charge'] = charge_data
 		self.feature_data_xyz['charge'] = charge_data_xyz
@@ -710,6 +715,16 @@ class AtomicFeature(FeatureClass):
 			key = tuple([1]+xyz[indexB,:].tolist())
 			electro_data_xyz[key] = [np.sum(ec)]
 			vdw_data_xyz[key] = [np.sum(evdw)]
+
+
+		# if we have no contact atoms
+		if len(electro_data_xyz) == 0:
+			electro_data_xyz0[tuple([0,0.,0.,0.])] = [0.0]
+			electro_data_xyz0[tuple([1,0.,0.,0.])] = [0.0]
+
+		if len(vdw_data_xyz) == 0:
+			vdw_data_xyz0[tuple([0,0.,0.,0.])] = [0.0]
+			vdw_data_xyz0[tuple([1,0.,0.,0.])] = [0.0]
 
 		# add the electrosatic feature
 		self.feature_data['coulomb'] = electro_data
