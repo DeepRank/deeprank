@@ -490,6 +490,11 @@ class DataGenerator(object):
 
 		# check all the input PDB files
 		mol_names = f5.keys()
+
+		if len(mol_names) == 0:
+			Warning('No molecules found in %s' %self.hdf5)
+			f5.close()
+			return 
 		
 		# fills in the grid data if not provided : default = NONE
 		grinfo = ['number_of_points','resolution']
