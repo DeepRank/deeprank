@@ -358,7 +358,7 @@ class GridTools(object):
 	################################################################
 
 	# compute all the atomic densities data
-	def map_atomic_densities(self):
+	def map_atomic_densities(self,only_contact=True):
 
 		mode = self.atomic_densities_mode		
 		printif('-- Map atomic densities on %dx%dx%d grid (mode=%s)'%(self.npts[0],self.npts[1],self.npts[2],mode),self.time)
@@ -382,12 +382,20 @@ class GridTools(object):
 		# loop over all the data we want
 		for atomtype,vdw_rad in self.local_tqdm(self.atomic_densities.items()):
 
-			# get the atom that are of the correct type for chain A
+			
 			t0 = time()
-			xyzA = np.array(self.sqldb.get('x,y,z',chainID='A',name=atomtype))
 
-			# get the atom that are of the correct type for chain B
-			xyzB = np.array(self.sqldb.get('x,y,z',chainID='B',name=atomtype))
+			# get the contact atom that of the correct type on both chains
+			if only_contact:
+				index = self.sqldb.get_contact_atoms()
+				xyzA = np.array(self.sqldb.get('x,y,z',rowID=index[0],name=atomtype))
+				xyzB = np.array(self.sqldb.get('x,y,z',rowID=index[1],name=atomtype))
+				
+			else:
+				# get the atom that are of the correct type on both chains
+				xyzA = np.array(self.sqldb.get('x,y,z',chainID='A',name=atomtype))
+				xyzB = np.array(self.sqldb.get('x,y,z',chainID='B',name=atomtype))
+
 			tprocess = time()-t0
 
 			t0 = time()
@@ -514,6 +522,7 @@ class GridTools(object):
 				print('Error Feature not found \n\tPossible features : ' + ' | '.join(featgrp.keys()) )
 				raise ValueError('feature %s  not found in the file' %(feature_name))
 			
+
 			# detect if we have a xyz format
 			# or a byte format
 			# define how many elements (ntext) 

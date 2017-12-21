@@ -141,10 +141,14 @@ class DataGenerator(object):
 		# open the file
 		self.f5 = h5py.File(self.hdf5,'w')
 
-		# loop over the decoys/natives
-		desc = '{:25s}'.format('Create database')
-		for cplx in tqdm(self.pdb_path,desc=desc):
 
+		# get the local progress bar
+		desc = '{:25s}'.format('Create database')
+		cplx_tqdm = tqdm(self.pdb_path,desc=desc)
+
+		for cplx in cplx_tqdm:
+
+			cplx_tqdm.set_postfix(mol=os.path.basename(cplx))
 
 			try:
 
@@ -347,7 +351,8 @@ class DataGenerator(object):
 
 		# compute the targets  of the original
 		desc = '{:25s}'.format('Add targets')
-		for cplx_name in tqdm(fnames_original,desc=desc):
+
+		for cplx_name in tqdm(fnames_original,desc=desc,ncols=100):
 
 			# group of the molecule
 			molgrp = f5[cplx_name]
@@ -529,9 +534,12 @@ class DataGenerator(object):
 		# get the local progress bar
 		desc = '{:25s}'.format('Map Features')
 		local_tqdm = lambda x: x if time else tqdm(x,desc=desc)
+		mol_tqdm = local_tqdm(mol_names)
 
 		# loop over the data files
-		for mol in local_tqdm(mol_names):
+		for mol in mol_tqdm:
+
+			mol_tqdm.set_postfix(mol=mol)
 					
 			try:
 

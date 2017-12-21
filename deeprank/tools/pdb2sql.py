@@ -100,7 +100,7 @@ class pdb2sql(object):
 		self.backbone_type = ['C','CA','N','O']
 
 		# hard limit for the number of SQL varaibles
-		self.SQLITE_LIMIT_VARIABLE_NUMBER = 999
+		self.SQLITE_LIMIT_VARIABLE_NUMBER = 950
 
 	##################################################################################
 	#
@@ -375,23 +375,26 @@ class pdb2sql(object):
 				# and build the value tuple for the sql query
 				# deal with the indexing issue if rowID is required
 				if isinstance(v,list):
+
 					nv = len(v)
 
-					# if we have a large nuber of indexes
-					# we must cut that in pieces
+					# if we have a large number of values
+					# we must cut that in pieces because SQL has a hard limit
+					# that is 999
 					if nv>self.SQLITE_LIMIT_VARIABLE_NUMBER:
 
-						if len(kwargs.items())>1:
-							raise ValueError('Query exeeding SQLITE_LIMIT_VARIABLE_NUMBER only possible with one kwargs so far')
+						# I've only checked that works with a single kwargs
+						#if len(kwargs.items())>1:
+						#	raise Warning('Query exeeding SQLITE_LIMIT_VARIABLE_NUMBER with multiple kwargs')
 
 						chunck_size = self.SQLITE_LIMIT_VARIABLE_NUMBER
 						vchunck = [v[i:i+chunck_size] for i in range(0,nv,chunck_size)]
 
 						data = []
 						for v in vchunck:
-							kwargs = {}
-							kwargs[k] = v
-							data += self.get(atnames,**kwargs)
+							new_kwargs = kwargs.copy()
+							new_kwargs[k] = v
+							data += self.get(atnames,**new_kwargs)
 						return data
 
 					#otherwithe we just go on
@@ -415,6 +418,22 @@ class pdb2sql(object):
 
 			# stitch the conditions and append to the query
 			query += ' AND '.join(conditions)	
+
+			# error if vals is too long
+			if len(vals)>999:
+				print('\nError : SQL Queries can only handle a total of 999 values')
+				print('      : the current query has %d values' %len(vals))
+				print('      : hence it will fails.')
+				print('      : You are in a rare situation where MULTIPLE conditions have')
+				print('      : have a combined number of values that are too large')
+				print('      : These conditions are:')
+				ntot = 0
+				for k,v in kwargs.items():
+					print('      : --> %10s : %d values' %(k,len(v)))
+					ntot += len(v) 
+				print('      : --> %10s : %d values' %('Total',ntot))
+				print('      : Try to decrease SQLITE_LIMIT_VARIABLE_NUMBER in pdb2sql.py\n')
+				raise ValueError('Too many SQL variables')
 
 			# query the sql database and return the answer in a list
 			data = [list(row) for row in self.c.execute(query,vals)]
