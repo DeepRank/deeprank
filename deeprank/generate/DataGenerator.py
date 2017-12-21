@@ -79,6 +79,8 @@ class DataGenerator(object):
 		self.all_native = []
 		self.pdb_path = []
 
+		self.feature_error = []
+		self.map_error = []
 
 		# check that a source was given
 		if self.pdb_source is None:
@@ -111,7 +113,7 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-	def create_database(self,verbose=False):
+	def create_database(self,verbose=False,remove_error=True):
 
 		'''
 		main function for the creation of the database
@@ -144,109 +146,121 @@ class DataGenerator(object):
 		for cplx in tqdm(self.pdb_path,desc=desc):
 
 
-			################################################
-			#	get the pdbs of the conformation and its ref
-			#   for the original data (not augmetned one)
-			################################################
-
-			# names of the molecule
-			mol_name = os.path.splitext(os.path.basename(cplx))[0]
-
-			# get the bare name of the molecule
-			# and define the name of the native
-			# i.e. 1AK4_100w -> 1AK4
-			bare_mol_name = mol_name.split('_')[0]
-			ref_name = bare_mol_name + '.pdb'
-
-			# check if we have a decoy or native
-			# and find the reference
-			if mol_name == bare_mol_name:
-				ref = cplx
-			else:
-				ref = list(filter(lambda x: ref_name in x,self.all_native))
-				if len(ref)>1:
-					raise Warning('Multiple native complexes found for',mol_name)
-				ref = ref[0]
-				if ref == '':
-					ref = None
-				
-			# talk a bit
-			if verbose:
-				print('\n: Process complex %s' %(mol_name))
-
-			# crete a subgroup for the molecule
-			molgrp = self.f5.require_group(mol_name)
-
-			# add the ref and the complex
-			self._add_pdb(molgrp,cplx,'complex')
-			if ref is not None:
-				self._add_pdb(molgrp,ref,'native')
-
-			################################################
-			#	add the features
-			################################################
-
-			# add the features
-			featgrp = molgrp.require_group('features')
-			if self.import_features is not None:
-				self._import_features(self.import_features,featgrp)			
-
-			if self.compute_features is not None:
-				self._compute_features(self.compute_features, molgrp['complex'].value,molgrp['features'] )
-
-			################################################
-			#	add the targets
-			################################################
-
-			# add the features
-			molgrp.require_group('targets')
-			if self.import_targets is not None:
-				self._import_targets(self.import_targets,mol_name)			
-
-			if self.compute_targets is not None:
-				self._compute_targets(self.compute_targets, molgrp['complex'].value,molgrp['targets'])	
-
-			################################################
-			#	DATA AUGMENTATION
-			################################################			
-
-			# GET ALL THE NAMES
-			if self.data_augmentation is not None:
-				mol_aug_name_list = [mol_name + '_r%03d' %(idir+1) for idir in range(self.data_augmentation)]
-			else:
-				mol_aug_name_list = []
-
-			# loop over the complexes
-			for icplx, mol_aug_name in enumerate(mol_aug_name_list):
+			try:
 
 				################################################
 				#	get the pdbs of the conformation and its ref
+				#   for the original data (not augmetned one)
 				################################################
 
-				# crete a subgroup for the molecule
-				molgrp = self.f5.require_group(mol_aug_name)
+				# names of the molecule
+				mol_name = os.path.splitext(os.path.basename(cplx))[0]
 
-				# copy the ref into it
+				# get the bare name of the molecule
+				# and define the name of the native
+				# i.e. 1AK4_100w -> 1AK4
+				bare_mol_name = mol_name.split('_')[0]
+				ref_name = bare_mol_name + '.pdb'
+
+				# check if we have a decoy or native
+				# and find the reference
+				if mol_name == bare_mol_name:
+					ref = cplx
+				else:
+					ref = list(filter(lambda x: ref_name in x,self.all_native))
+					if len(ref)>1:
+						raise Warning('Multiple native complexes found for',mol_name)
+					ref = ref[0]
+					if ref == '':
+						ref = None
+					
+				# talk a bit
+				if verbose:
+					print('\n: Process complex %s' %(mol_name))
+
+				# crete a subgroup for the molecule
+				molgrp = self.f5.require_group(mol_name)
+
+				# add the ref and the complex
+				self._add_pdb(molgrp,cplx,'complex')
 				if ref is not None:
 					self._add_pdb(molgrp,ref,'native')
 
+				################################################
+				#	add the features
+				################################################
 
-				# get the rotation axis and angle
-				axis,angle = self._get_aug_rot()
+				# add the features
+				featgrp = molgrp.require_group('features')
+				if self.import_features is not None:
+					self._import_features(self.import_features,featgrp)			
 
-				# create the new pdb
-				center = self._add_aug_pdb(molgrp,cplx,'complex',axis,angle)
+				if self.compute_features is not None:
+					self._compute_features(self.compute_features, molgrp['complex'].value,molgrp['features'] )
 
-				# create the subgroups
+				################################################
+				#	add the targets
+				################################################
+
+				# add the features
 				molgrp.require_group('targets')
-				molgrp.require_group('features')
+				if self.import_targets is not None:
+					self._import_targets(self.import_targets,mol_name)			
 
-				# copy the targets/features
-				molgrp.copy('targets',self.f5[mol_name+'/targets/'])
-				molgrp.copy('features',self.f5[mol_name+'/features/'])		
+				if self.compute_targets is not None:
+					self._compute_targets(self.compute_targets, molgrp['complex'].value,molgrp['targets'])	
 
-				# rotate the feature			
-				self._rotate_feature(molgrp,axis,angle,center)
+				################################################
+				#	DATA AUGMENTATION
+				################################################			
+
+				# GET ALL THE NAMES
+				if self.data_augmentation is not None:
+					mol_aug_name_list = [mol_name + '_r%03d' %(idir+1) for idir in range(self.data_augmentation)]
+				else:
+					mol_aug_name_list = []
+
+				# loop over the complexes
+				for icplx, mol_aug_name in enumerate(mol_aug_name_list):
+
+					################################################
+					#	get the pdbs of the conformation and its ref
+					################################################
+
+					# crete a subgroup for the molecule
+					molgrp = self.f5.require_group(mol_aug_name)
+
+					# copy the ref into it
+					if ref is not None:
+						self._add_pdb(molgrp,ref,'native')
+
+
+					# get the rotation axis and angle
+					axis,angle = self._get_aug_rot()
+
+					# create the new pdb
+					center = self._add_aug_pdb(molgrp,cplx,'complex',axis,angle)
+
+					# create the subgroups
+					molgrp.require_group('targets')
+					molgrp.require_group('features')
+
+					# copy the targets/features
+					molgrp.copy('targets',self.f5[mol_name+'/targets/'])
+					molgrp.copy('features',self.f5[mol_name+'/features/'])		
+
+					# rotate the feature			
+					self._rotate_feature(molgrp,axis,angle,center)
+
+			except:
+
+				self.feature_error += [cplx] + mol_aug_name_list
+				Warning('Error during the feature calculation of %s' %cplx)
+
+		# remove the data where we had issues
+		if remove_error:
+			for mol in self.feature_error:
+				del self.f5[mol]
 
 		# close the file
 		self.f5.close()
@@ -414,7 +428,9 @@ class DataGenerator(object):
 		             cuda_kernel='/kernel_map.c',
 		             cuda_func_name = 'gaussian',
 		             try_sparse=True,
-		             reset=False,use_tmpdir=False,time=False,prog_bar=False):
+		             reset=False,use_tmpdir=False,
+		             time=False,prog_bar=False,
+		             remove_error=True):
 
 		'''
 		Generate the input/output data on the grids for a series of prot-prot conformations
@@ -517,22 +533,33 @@ class DataGenerator(object):
 		# loop over the data files
 		for mol in local_tqdm(mol_names):
 					
-			# compute the data we want on the grid
-			grid = gt.GridTools(molgrp=f5[mol],
-				             number_of_points = grid_info['number_of_points'],
-				             resolution = grid_info['resolution'],
-				             atomic_densities = grid_info['atomic_densities'],
-				             atomic_densities_mode = grid_info['atomic_densities_mode'],
-				             feature = grid_info['feature'],
-				             feature_mode = grid_info['feature_mode'],
-				             cuda = cuda,
-				             gpu_block = gpu_block,
-				             cuda_func = cuda_func,
-				             cuda_atomic = cuda_atomic,
-				             hdf5_file = f5,
-				             time=time,
-				             prog_bar=prog_bar,
-				             try_sparse=try_sparse)
+			try:
+
+				# compute the data we want on the grid
+				grid = gt.GridTools(molgrp=f5[mol],
+					             number_of_points = grid_info['number_of_points'],
+					             resolution = grid_info['resolution'],
+					             atomic_densities = grid_info['atomic_densities'],
+					             atomic_densities_mode = grid_info['atomic_densities_mode'],
+					             feature = grid_info['feature'],
+					             feature_mode = grid_info['feature_mode'],
+					             cuda = cuda,
+					             gpu_block = gpu_block,
+					             cuda_func = cuda_func,
+					             cuda_atomic = cuda_atomic,
+					             hdf5_file = f5,
+					             time=time,
+					             prog_bar=prog_bar,
+					             try_sparse=try_sparse)
+
+			except:
+				self.map_error.append(mol)
+				Warning('Error during the mapping of %s' %mol)
+
+		# remove the molecule with issues
+		if remove_error:
+			for mol in self.map_error:
+				del f5[mol]
 
 		# close he hdf5 file
 		f5.close()
