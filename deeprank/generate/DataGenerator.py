@@ -265,6 +265,8 @@ class DataGenerator(object):
 		! Not tested yet !
 		'''
 
+		Warning("ADD FEATURE NOT FULLY TESTED")
+
 	
 		# get the folder names
 		f5 = h5py.File(self.hdf5,'a')
@@ -316,6 +318,8 @@ class DataGenerator(object):
 		only need an output dir and a target dictionary
 		! Not tested yet !
 		'''
+
+		Warning("ADD TARGET NOT FULLY TESTED")
 
 		# name of the hdf5 file
 		f5 = h5py.File(self.hdf5,'a')

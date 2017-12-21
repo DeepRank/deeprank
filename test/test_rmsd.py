@@ -13,6 +13,8 @@ def test_rmsd():
 	ref    = MOL + '/native/1AK4.pdb' 
 	data   = MOL + '/haddock_data/' 
 
+	
+
 	# options
 	verbose = True
 	plot = False
@@ -116,14 +118,14 @@ def test_rmsd():
 	try:
 		assert np.all(delta<[1E-3,1,1E-3])
 		print('\n')
-		print('OK : %d molecules tested in %f sec.' %(nconf,t1))
+		print('OK : %d molecules tested in %f sec.' %(lend(decoy_list),t1))
 		print('   : Maximum Fnat  deviation %1.3e' %(delta[0]))
 		print('   : Maximum LRMSD deviation %1.3e' %(delta[1]))
 		print('   : Maximum IRMSD deviation %1.3e' %(delta[2]))
 
 	except:
 		print('\n')
-		print('Failed : %d molecules tested in %f sec.' %(nconf,t1))
+		print('Failed : %d molecules tested in %f sec.' %(len(decoy_list),t1))
 		print('       : Maximum Fnat  deviation %1.3e' %(delta[0]))
 		print('       : Maximum LRMSD deviation %1.3e' %(delta[1]))
 		print('       : Maximum IRMSD deviation %1.3e' %(delta[2]))	
