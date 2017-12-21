@@ -100,7 +100,8 @@ class pdb2sql(object):
 		self.backbone_type = ['C','CA','N','O']
 
 		# hard limit for the number of SQL varaibles
-		self.SQLITE_LIMIT_VARIABLE_NUMBER = 950
+		self.SQLITE_LIMIT_VARIABLE_NUMBER = 999
+		self.max_sql_values = 950
 
 	##################################################################################
 	#
@@ -380,14 +381,13 @@ class pdb2sql(object):
 
 					# if we have a large number of values
 					# we must cut that in pieces because SQL has a hard limit
-					# that is 999
-					if nv>self.SQLITE_LIMIT_VARIABLE_NUMBER:
+					# that is 999. The limit is here set to 950
+					# so that we can have multiple conditions with a total number
+					# of values inferior to 999
+					if nv>self.max_sql_values:
 
-						# I've only checked that works with a single kwargs
-						#if len(kwargs.items())>1:
-						#	raise Warning('Query exeeding SQLITE_LIMIT_VARIABLE_NUMBER with multiple kwargs')
-
-						chunck_size = self.SQLITE_LIMIT_VARIABLE_NUMBER
+						# cut in chunck
+						chunck_size = self.max_sql_values
 						vchunck = [v[i:i+chunck_size] for i in range(0,nv,chunck_size)]
 
 						data = []
@@ -420,10 +420,10 @@ class pdb2sql(object):
 			query += ' AND '.join(conditions)	
 
 			# error if vals is too long
-			if len(vals)>999:
+			if len(vals)>self.SQLITE_LIMIT_VARIABLE_NUMBER:
 				print('\nError : SQL Queries can only handle a total of 999 values')
-				print('      : the current query has %d values' %len(vals))
-				print('      : hence it will fails.')
+				print('      : The current query has %d values' %len(vals))
+				print('      : Hence it will fails.')
 				print('      : You are in a rare situation where MULTIPLE conditions have')
 				print('      : have a combined number of values that are too large')
 				print('      : These conditions are:')
@@ -432,7 +432,7 @@ class pdb2sql(object):
 					print('      : --> %10s : %d values' %(k,len(v)))
 					ntot += len(v) 
 				print('      : --> %10s : %d values' %('Total',ntot))
-				print('      : Try to decrease SQLITE_LIMIT_VARIABLE_NUMBER in pdb2sql.py\n')
+				print('      : Try to decrease self.max_sql_values in pdb2sql.py\n')
 				raise ValueError('Too many SQL variables')
 
 			# query the sql database and return the answer in a list
