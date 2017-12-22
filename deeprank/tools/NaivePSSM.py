@@ -141,8 +141,8 @@ class NaivePSSM(FeatureClass):
 
 		# if we have no contact atoms
 		if len(pssm_data_xyz) == 0:
-			pssm_data_xyz[tuple(0,0.,0.,0.)] = [0.0]
-			pssm_data_xyz[tuple(1,0.,0.,0.)] = [0.0]
+			pssm_data_xyz[tuple([0,0.,0.,0.])] = [0.0]
+			pssm_data_xyz[tuple([1,0.,0.,0.])] = [0.0]
 
 		self.feature_data_xyz['pssm'] = pssm_data_xyz
 
