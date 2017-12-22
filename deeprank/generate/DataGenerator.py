@@ -84,7 +84,8 @@ class DataGenerator(object):
 		self.map_error = []
 
 		self.logger = logger or logging.getLogger(__name__)
-
+		self.debug = debug
+		
 		# check that a source was given
 		if self.pdb_source is None:
 			raise NotADirectoryError('You must provide one or several source directory where the pdbs are stored')
