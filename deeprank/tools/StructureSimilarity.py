@@ -79,6 +79,11 @@ class StructureSimilarity(object):
 		else:	
 			resData = self.read_zone(lzone)
 
+		##################################################
+		# the check make sure that all the 
+		# atoms are in the correct order 
+		# I strongly discourage turning the check off
+		##################################################
 		if check:
 
 			data_decoy_long, data_decoy_short  = self.read_data_zone(self.decoy,resData,return_not_in_zone=True)
@@ -211,7 +216,11 @@ class StructureSimilarity(object):
 		else:
 			resData = self.read_zone(izone)
 
-
+		##################################################
+		# the check make sure that all the 
+		# atoms are in the correct order 
+		# I strongly discourage turning the check off
+		##################################################
 		if check:
 
 			data_decoy  = self.read_data_zone(self.decoy,resData,return_not_in_zone=False)
@@ -319,8 +328,10 @@ class StructureSimilarity(object):
 		if isinstance(self.decoy,str) and os.path.isfile(self.decoy): 
 			with open(self.decoy,'r') as f:
 				data_decoy = f.readlines()
+			decoy_name = os.path.basename(self.decoy)
 		elif isinstance(self.decoy,np.ndarray):
 			data_decoy = [l.decode('utf-8') for l in self.decoy]
+			decoy_name = 'decoy'
 		else:
 			raise ValueError('Decoy not found')
 
@@ -365,14 +376,17 @@ class StructureSimilarity(object):
 		# and increment common if an atom pair is close enough
 		nCommon,nTotal = 0,0
 		for resA,resB_list in residue_pairs_ref.items():
-			xyzA = residue_xyz[resA]
-			for resB in resB_list:
-				if resB in residue_xyz.keys():
-					xyzB = residue_xyz[resB]
-					dist_min = np.min(np.array([  np.sqrt(np.sum((np.array(p1)-np.array(p2))**2)) for p1 in xyzA for p2 in xyzB  ]))
-					if dist_min<=cutoff:
-						nCommon += 1						
-				nTotal += 1
+			if resA in residue_xyz:
+				xyzA = residue_xyz[resA]
+				for resB in resB_list:
+					if resB in residue_xyz.keys():
+						xyzB = residue_xyz[resB]
+						dist_min = np.min(np.array([  np.sqrt(np.sum((np.array(p1)-np.array(p2))**2)) for p1 in xyzA for p2 in xyzB  ]))
+						if dist_min<=cutoff:
+							nCommon += 1						
+					nTotal += 1
+			else:
+				print('\t FNAT Warning could not find residue: ', resA, ' in: ',decoy_name)
 
 		# normalize
 		return nCommon/nTotal
@@ -557,10 +571,10 @@ class StructureSimilarity(object):
 
 		# get the contact atoms
 		if izone is None:
-			contact_ref = sql_ref.get_contact_atoms(cutoff=cutoff,extend_to_residue=True,return_only_backbone_atoms=True)
+			contact_ref = sql_ref.get_contact_atoms(cutoff=cutoff,extend_to_residue=True,return_only_backbone_atoms=False)
 			index_contact_ref = contact_ref[0]+contact_ref[1]
 		else:
-			index_contact_ref = self.get_izone_rowID(sql_ref,izone,return_only_backbone_atoms=True)
+			index_contact_ref = self.get_izone_rowID(sql_ref,izone,return_only_backbone_atoms=False)
 
 
 		# get the xyz and atom identifier of the decoy contact atoms
@@ -1073,6 +1087,9 @@ if __name__ == '__main__':
 	decoy = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_324w.pdb'
 	ref = BM4 + 'BM4_dimers_bound/pdbFLs_ori/1AK4.pdb'
 
+
+	#decoy = BM4 + 'decoys_pdbFLs/2BTF/water/2BTF_342w.pdb'
+	#ref = BM4 + 'BM4_dimers_bound/pdbFLs_ori/2BTF.pdb'
 
 	sim = StructureSimilarity(decoy,ref)
 
