@@ -1,6 +1,7 @@
 import numpy as np
 from deeprank.tools import pdb2sql 
 import sys,os,time,pickle
+printif = lambda string,cond: print(string) if cond else None
 
 '''
 	Replacement of ProFit by an internal module for simpler worflow
@@ -82,7 +83,7 @@ class StructureSimilarity(object):
 		##################################################
 		# the check make sure that all the 
 		# atoms are in the correct order 
-		# I strongly discourage turning the check off
+		# I STRONGLY discourage turning the check off
 		##################################################
 		if check:
 
@@ -116,7 +117,7 @@ class StructureSimilarity(object):
 
 		# extract the xyz
 		else:
-
+			print('WARNING : The atom order have not been checked. Switch to check=True or continue at your own risk')
 			xyz_decoy_long,xyz_decoy_short  = self.read_xyz_zone(self.decoy,resData,return_not_in_zone=True)
 			xyz_ref_long,xyz_ref_short  = self.read_xyz_zone(self.ref,resData,return_not_in_zone=True)
 
@@ -219,7 +220,7 @@ class StructureSimilarity(object):
 		##################################################
 		# the check make sure that all the 
 		# atoms are in the correct order 
-		# I strongly discourage turning the check off
+		# I STRONGLY discourage turning the check off
 		##################################################
 		if check:
 
@@ -240,7 +241,7 @@ class StructureSimilarity(object):
 
 		# extract the xyz
 		else:
-
+			print('WARNING : The atom order have not been checked. Switch to check=True or continue at your own risk')
 			xyz_contact_decoy = self.read_xyz_zone(self.decoy,resData)
 			xyz_contact_ref   = self.read_xyz_zone(self.ref,resData)
 
@@ -386,7 +387,7 @@ class StructureSimilarity(object):
 							nCommon += 1						
 					nTotal += 1
 			else:
-				print('\t FNAT Warning could not find residue: ', resA, ' in: ',decoy_name)
+				printif('\t FNAT Warning could not find residue: ', resA, ' in: ',decoy_name,self.verbose)
 
 		# normalize
 		return nCommon/nTotal
