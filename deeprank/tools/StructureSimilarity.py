@@ -387,7 +387,8 @@ class StructureSimilarity(object):
 							nCommon += 1						
 					nTotal += 1
 			else:
-				printif('\t FNAT Warning could not find residue: ', resA, ' in: ',decoy_name,self.verbose)
+				msg = '\t FNAT Warning could not find residue: ', resA, ' in: ',decoy_name
+				printif(msg,self.verbose)
 
 		# normalize
 		return nCommon/nTotal
