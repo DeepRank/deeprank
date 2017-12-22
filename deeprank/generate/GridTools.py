@@ -6,6 +6,7 @@ from scipy.signal import bspline
 import scipy.sparse as spsp
 from collections import OrderedDict
 from time import time
+import logging
 
 from deeprank.tools import pdb2sql
 from deeprank.tools import sparse
@@ -27,11 +28,14 @@ class GridTools(object):
 
 	ARGUMENTS
 
-	mol_name
+	molgrp
 
-			molecule name containing the two proteins docked. 
-			MUST BE A PDB FILE
+			the name of the group of the molecule in the HDF5 file
 	          
+	hdf5_file
+
+			the file handler of th HDF5 file where to store the grids
+
 	number_of_points 
 
 			the number of points we want in each direction of the grid
@@ -45,71 +49,73 @@ class GridTools(object):
 			dictionary of atom types cand their vdw radius
 			exemple {'CA':3.5, 'CB':3.0}
 			The correspondign atomic densities will be mapped on the grid 
-			and exported
+			and exported to the hdf5 file
 
-	residue_feature
+	feature
 
-			dictionnary containing the name and the data files of the features
-			exemple : {'PSSM' : file}
-			The corresponding features will be mapped on the grid and exorted
+			Name of the features to be mapped. By default all the features
+			present in hdf5_file['<molgrp>/features/] will be mapped
 
-	atomic_feature
+	atomic_densities_mode
+	feature_mode
 
-			Not yet implemented
+			The mode for mapping
+			'sum'  --> chainA + chainB
+			'diff' --> chainA - chainB
+			'ind'  --> chainA and chainB in separate grids
 
-	export_path
-			
-			the path where to export the file. 
-			if not specified the files will be exported in the cwd  
+	contact distance
+			the dmaximum distance between two contact atoms default 8.5 A
+
+	
+	cuda
+			Use CUDA or not 
+
+	gpu_block
+			GPU block size to be used e.g. [8,8,8]
+
+
+	cuda_func
+			Name of the CUDA function to be used for the mapping 
+			of the features. Must be present in kernel_cuda.c
+
+	cuda_atomic
+			Name of the CUDA function to be used for the mapping 
+			of the atomic densities. Must be present in kernel_cuda.c		
+
+	prog_bar
+			print progression bar for individual grid (default False)
+
+	time
+			print timimg statistic for individual grid (default False)
+
+	try_sparse
+			Try to store the matrix in sparse format (default True)
+
+	logger
+			logger 
 
 
 	USAGE
 
 
-	grid = GridTools(mol_name='complex.1.pdb',
+	grid = GridTools(mogrp='1AK4_1w',hdf5_file=fhandle
 		             atomic_densities={'CA':3.5},
 		             number_of_points = [30,30,30],
 		             resolution = [1.,1.,1.])
 
-	if the export_path already exists and contains the coodinate of the grid 
-	the script will compute the features specified on the grid already present 
-	in the directory
 
-
-	OUTPUT : all files are located in export_path
-
-	AtomicDensities.npy
-
-			requires export_atomic_densities = True
-			contains the atomic densities for each atom_type.
-			The format is : Natomtype x Nx x Ny x Nz
-
-
-	<feature_name>.npy
-
-			if residue_feature or atomic_feature is not NONE
-			contains all the grid data of he corresponding feature
-			The format is : Nfeature x Nx x Ny x Nz
-			for example PSSM.npy contains usually 20 grid_data
- 
-	contact_atoms.xyz
-
-			XYZ file containing the positions of the contact atoms 
-
-	monomer1.pdb/momomer2.pdb
-
-			PDB files containing the positions of each monomer
-			Can be used to represent each monomer with a specific color
+	OUTPUT : all files are stored in the HDF5 file
 	
 	'''
 
 	def __init__(self, molgrp,
 				number_of_points = [30,30,30],resolution = [1.,1.,1.],
 				atomic_densities=None, atomic_densities_mode='sum',
-				feature  =None, feature_mode  ='sum',
+				feature = None, feature_mode  ='sum',
 				contact_distance = 8.5, hdf5_file=None,
 				cuda=False, gpu_block=None, cuda_func=None, cuda_atomic=None,
-				prog_bar = False,time=False,try_sparse=True):
+				prog_bar = False,time=False,try_sparse=True,logger=None):
 		
 		# mol file	
 		self.molgrp = molgrp
@@ -177,6 +183,7 @@ class GridTools(object):
 		# progress bar
 		self.local_tqdm = lambda x: tqdm(x) if prog_bar else x
 		self.time = time
+		self.logger = logger or logging.getLogger(__name__)
 
 		# if we already have an output containing the grid
 		# we update the existing features

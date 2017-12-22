@@ -5,7 +5,7 @@ import numpy as np
 import subprocess as sp
 import h5py
 from collections import OrderedDict
-
+import logging 
 from deeprank.tools import pdb2sql
 from deeprank.generate import GridTools as gt
 
@@ -21,6 +21,7 @@ try:
 except:
 	pass
 
+printif = lambda string,cond: print(string) if cond else None
 
 '''
 Assemble the data set from different sources of  decoys/natives/features/targets
@@ -59,11 +60,11 @@ class DataGenerator(object):
 	def __init__(self,pdb_select=None,pdb_source=None,pdb_native=None,
 				 compute_targets = None, import_targets = None,
 				 compute_features = None,import_features = None,
-		         data_augmentation=None, hdf5='database.h5'):
+		         data_augmentation=None, hdf5='database.h5',logger=None,debug=True):
 
 		self.pdb_select  = pdb_select
 		self.pdb_source  = pdb_source
-		self.pdb_native  = pdb_native
+		self.pdb_native  = pdb_native 
 
 		self.data_augmentation = data_augmentation
 		
@@ -81,6 +82,8 @@ class DataGenerator(object):
 
 		self.feature_error = []
 		self.map_error = []
+
+		self.logger = logger or logging.getLogger(__name__)
 
 		# check that a source was given
 		if self.pdb_source is None:
@@ -146,9 +149,12 @@ class DataGenerator(object):
 		desc = '{:25s}'.format('Create database')
 		cplx_tqdm = tqdm(self.pdb_path,desc=desc)
 
+		self.logger.info('Start Feature calculation')
+
 		for cplx in cplx_tqdm:
 
 			cplx_tqdm.set_postfix(mol=os.path.basename(cplx))
+			self.logger.debug('MOLECULE %s' %(cplx))
 
 			try:
 
@@ -174,7 +180,7 @@ class DataGenerator(object):
 				else:
 					ref = list(filter(lambda x: ref_name in x,self.all_native))
 					if len(ref)>1:
-						raise Warning('Multiple native complexes found for',mol_name)
+						self.logger.warning('Multiple native complexes found for',mol_name)
 					ref = ref[0]
 					if ref == '':
 						ref = None
@@ -260,12 +266,15 @@ class DataGenerator(object):
 			except:
 
 				self.feature_error += [mol_name] + mol_aug_name_list
-				raise Warning('Error during the feature calculation of %s' %cplx)
+				self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
+				printif('Error during the feature calculation of %s' %cplx,self.debug)
+				
 
 		# remove the data where we had issues
 		if remove_error:
 			for mol in self.feature_error:
-				print('removing %s from %s' %(mol,self.hdf5))
+				self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
+				printif('removing %s from %s' %(mol,self.hdf5),self.debug)
 				del self.f5[mol]
 
 		# close the file
@@ -285,7 +294,8 @@ class DataGenerator(object):
 		! Not tested yet !
 		'''
 
-		raise Warning("ADD FEATURE NOT FULLY TESTED")
+		self.logger.warning('add_feature not fully tested yet')
+		printif("ADD FEATURE NOT FULLY TESTED",self.debug)
 
 	
 		# get the folder names
@@ -338,8 +348,8 @@ class DataGenerator(object):
 		only need an output dir and a target dictionary
 		! Not tested yet !
 		'''
-
-		Warning("ADD TARGET NOT FULLY TESTED")
+		self.logger.warning('add_target not fully tested yet')
+		printif("ADD TARGET NOT FULLY TESTED",self.debug)
 
 		# name of the hdf5 file
 		f5 = h5py.File(self.hdf5,'a')
@@ -394,7 +404,7 @@ class DataGenerator(object):
 		Equivalent to the cleandata command line tool
 		'''
 
-		print(': remove features')
+		printif('Remove features',self.debug)
 
 		# name of the hdf5 file
 		f5 = h5py.File(self.hdf5,'a')
@@ -492,7 +502,7 @@ class DataGenerator(object):
 		mol_names = f5.keys()
 
 		if len(mol_names) == 0:
-			raise Warning('No molecules found in %s' %self.hdf5)
+			printif('No molecules found in %s' %self.hdf5,self.debug)
 			f5.close()
 			return 
 		
@@ -569,7 +579,8 @@ class DataGenerator(object):
 
 			except:
 				self.map_error.append(mol)
-				Warning('Error during the mapping of %s' %mol)
+				self.logger.warning('Error during the mapping of %s' %mol,exc_info=True)
+				printif('Error during the mapping of %s' %mol,self.debug)
 
 		# remove the molecule with issues
 		if remove_error:
