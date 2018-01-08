@@ -2,7 +2,7 @@
 
 import deeprank.generate
 import h5py
-
+import os
 
 def clean_dataset(fname,feature=True,pdb=True,points=True,grid=False):
 
@@ -27,6 +27,9 @@ def clean_dataset(fname,feature=True,pdb=True,points=True,grid=False):
 			del mol_grp['mapped_features']
 
 	f5.close()
+	
+	os.system('h5repack %s _tmp.h5py' %fname)
+	os.system('mv _tmp.h5py %s' %fname)
 
 if __name__ == '__main__':
 
@@ -47,8 +50,8 @@ if __name__ == '__main__':
 		         points = not args.keep_pts,
 		         grid = args.rm_grid )
 
-	os.system('h5repack %s _tmp.h5py' %args.hdf5)
-	os.system('mv _tmp.h5py %s' %args.hdf5)
+	#os.system('h5repack %s _tmp.h5py' %args.hdf5)
+	#os.system('mv _tmp.h5py %s' %args.hdf5)
 
 
 	

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for f5 in $(ls -d *.hdf5); do
+	echo "-->Cleaning file: $f5"
+	./cleandata.py $f5
+	echo "-->done"
+	echo ""
+done

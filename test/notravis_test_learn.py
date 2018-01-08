@@ -64,10 +64,6 @@ def test_learn():
                                             'Feature_sum' : ['coulomb','vdwaals','charge'] },
                             select_target='DOCKQ')
 
-
-  # load the data set
-  data_set.load()
-
   # create the network
   model = deeprank.learn.ConvNet(data_set,
                           ConvNet3D,

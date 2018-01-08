@@ -33,6 +33,7 @@ def test_generate():
 		'atomic_densities_mode' : 'sum',
 		'feature_mode': 'sum'
 	}
+	
 	t0 =time()
 	print('{:25s}'.format('Map features in database') + database.hdf5)
 	database.map_features(grid_info,try_sparse=True,time=False,prog_bar=False)
