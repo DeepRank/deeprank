@@ -181,7 +181,7 @@ class ConvNet:
 		# set the optimizer
 		self.optimizer = optim.SGD(self.net.parameters(),lr=0.005,momentum=0.9,weight_decay=0.001)
 
-	def train(self,nepoch=50, divide_set=[0.8,0.1,0.1], train_batch_size = 10, 
+	def train(self,nepoch=50, divide_set=[0.8,0.2], train_batch_size = 10, 
 		      preshuffle = True,plot_intermediate=True,debug=False):
 
 		'''
@@ -232,7 +232,7 @@ class ConvNet:
 
 
 
-	def train_montecarlo(self,nmc=2,nepoch=50, divide_set=[0.8,0.1,0.1], train_batch_size = 10, preshuffle = True):
+	def train_montecarlo(self,nmc=2,nepoch=50, divide_set=[0.8,0.1], train_batch_size = 10, preshuffle = True):
 
 		'''
 		Perform a monte carlo cross validation calculation
@@ -301,7 +301,7 @@ class ConvNet:
 		if self.tensorboard:
 			tbwriter.close()
 
-	def train_kfold(self,k=2,nepoch=50, divide_set=[0.8,0.1,0.1], train_batch_size = 10, preshuffle = True):
+	def train_kfold(self,k=2,nepoch=50, divide_set=[0.8,0.1], train_batch_size = 10, preshuffle = True):
 
 		'''
 		Perform a kfold cross validation of the model. 
@@ -381,18 +381,42 @@ class ConvNet:
 		ind = np.arange(self.data_set.__len__())
 		ntot = len(ind)
 
-		if preshuffle:
-			np.random.shuffle(ind)
+		if self.data_set.test_database is None:
 
-		# size of the subset
-		ntrain = int( float(ntot)*divide_set[0] )	
-		nvalid = int( float(ntot)*divide_set[1] )
-		ntest  = int( float(ntot)*divide_set[2] )
+			print('No test data base found')
+			print('Dividing the train dataset in:')
+			print('  : 0.8 -> train')
+			print('  : 0.1 -> valid')
+			print('  : 0.1 -> test')
 
-		# indexes
-		index_train = ind[:ntrain]
-		index_valid = ind[ntrain:ntrain+nvalid]
-		index_test = ind[ntrain+nvalid:]
+			divide_set = [0.8,0.1,0.1]
+
+			if preshuffle:
+				np.random.shuffle(ind)
+
+			# size of the subset
+			ntrain = int( float(ntot)*divide_set[0] )	
+			nvalid = int( float(ntot)*divide_set[1] )
+			ntest =  int( float(ntot)*divide_set[2] )
+			
+
+			# indexes
+			index_train = ind[:ntrain]
+			index_valid = ind[ntrain:ntrain+nvalid]
+			index_test = ind[ntrain+nvalid:]
+
+		else:
+
+			if preshuffle:
+				np.random.shuffle(ind[:self.data_set.ntrain])
+
+			# size of the subset for training
+			ntrain = int( float(self.data_set.ntrain)*divide_set[0] )	
+			
+			# indexes
+			index_train = ind[:ntrain]
+			index_valid = ind[ntrain:self.data_set.ntrain]
+			index_test = ind[self.data_set.ntrain:]
 
 		return index_train,index_valid,index_test
 

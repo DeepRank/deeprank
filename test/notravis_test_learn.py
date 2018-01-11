@@ -60,6 +60,7 @@ def test_learn():
 
   # declare the dataset instance
   data_set = deeprank.learn.DataSet(database,
+                            test_database = database,
                             select_feature={'AtomicDensities_sum' : ['C','CA','O','N'], 
                                             'Feature_sum' : ['coulomb','vdwaals','charge'] },
                             select_target='DOCKQ')

@@ -21,9 +21,7 @@ class DataSet(data_utils.Dataset):
 	Class that generates the data needed for deeprank.
 
 	The data is stored in memory on the fly.
-	That allows to handle large data set but alters performance
-
-	For bigger dataset use LargeDataset()
+	That allows to handle large data set but might alters performance
 
 	ARGUMENTS 
 		
@@ -59,11 +57,12 @@ class DataSet(data_utils.Dataset):
 
 	'''
 
-	def __init__(self,database,select_feature='all',select_target='DOCKQ',
+	def __init__(self,database,test_database=None,select_feature='all',select_target='DOCKQ',
 		         transform_to_2D=False,projection=0):
 
 
 		self.database = database
+		self.test_database = test_database
 		self.select_feature = select_feature
 		self.select_target = select_target
 
@@ -73,6 +72,10 @@ class DataSet(data_utils.Dataset):
 		# allow for multiple database
 		if not isinstance(database,list):
 			self.database = [database]
+
+		# allow for multiple database
+		if not isinstance(test_database,list):
+			self.test_database = [test_database]
 
 		# get the eventual projection
 		self.transform = transform_to_2D
@@ -127,6 +130,20 @@ class DataSet(data_utils.Dataset):
 			mol_names = list(fh5.keys())
 			self.index_complexes += [(fdata,k) for k in mol_names]
 			fh5.close()
+
+		self.ntrain = len(self.index_complexes)
+		self.index_train = list(range(self.ntrain))
+
+		if self.test_database is not None:
+
+			for fdata in self.test_database:
+				fh5 = h5py.File(fdata,'r')
+				mol_names = list(fh5.keys())
+				self.index_complexes += [(fdata,k) for k in mol_names]
+				fh5.close()
+
+		self.ntot = len(self.index_complexes)
+		self.index_valid = list(range(self.ntrain,self.ntot))
 
 	# get the input shape
 	# That's useful to preprocess 
