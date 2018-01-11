@@ -12,26 +12,29 @@ import os
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import QAbstractItemModel, QFile, QIODevice, QModelIndex, Qt, QItemSelectionModel
 from PyQt5.QtCore import pyqtSignal,pyqtSlot
-from PyQt5.QtWidgets import QApplication, QTreeView, QFrame, QFileIconProvider
+from PyQt5.QtWidgets import QApplication, QTreeView, QFrame, QFileIconProvider, QMenuBar
 import h5py
 import functools
 
 # Import the console machinery from ipython
-from qtconsole.rich_ipython_widget import RichIPythonWidget
+from qtconsole.rich_ipython_widget import RichIPythonWidget,RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
 from IPython.lib import guisupport
 
 import numpy as np
 import viztools 
 
-class QIPythonWidget(RichIPythonWidget):
+from deeprank.tools import pdb2sql 
+from deeprank.tools import sparse
+
+class QIPythonWidget(RichJupyterWidget):
 
     """ 
     Convenience class for a live IPython console widget. 
     We can replace the standard banner using the customBanner argument
     https://stackoverflow.com/questions/11513132/embedding-ipython-qt-console-in-a-pyqt-application
     """
-    def __init__(self,customBanner=None,*args,**kwargs):
+    def __init__(self,customBanner=None,colors='linux',*args,**kwargs):
         if not customBanner is None: self.banner=customBanner
         super(QIPythonWidget, self).__init__(*args,**kwargs)
         self.kernel_manager = kernel_manager = QtInProcessKernelManager()
@@ -39,7 +42,7 @@ class QIPythonWidget(RichIPythonWidget):
         kernel_manager.kernel.gui = 'qt4'
         self.kernel_client = kernel_client = self._kernel_manager.client()
         kernel_client.start_channels()
-
+        self.set_default_style(colors=colors)
         def stop():
             kernel_client.stop_channels()
             kernel_manager.shutdown_kernel()
@@ -70,7 +73,7 @@ class QIPythonWidget(RichIPythonWidget):
         self.pushVariables(variableDict)
         for k in variableDict:
             self.printText(k + '\n')
-            self.executeCommand(k)
+            self.executeCommand('print(%s)' %k)
 
 class DummyHDF5Group(dict):
     def __init__(self,dictionary, attrs ={}, name="DummyHDF5Group"):
@@ -156,15 +159,6 @@ class HDF5TreeItem(object):
     def __del__(self):
         self.purge_children()
 
-def print_tree(item, prefix=""):
-    """Recursively print the HDF5 tree for debug purposes"""
-    if len(prefix) > 16:
-        return # recursion guard
-    print(prefix + item.basename)
-    if item.has_children:
-        for child in item.children:
-            print_tree(child, prefix + "  ")
-
 class HDF5ItemModel(QtCore.QAbstractItemModel):
     """
     This model takes its data from an HDF5 Group for display in a tree.
@@ -173,12 +167,13 @@ class HDF5ItemModel(QtCore.QAbstractItemModel):
     Adapted from NLAP  https://github.com/nanophotonics/nplab/blob/master/nplab/ui/hdf5_browser.py
     """
 
-    def __init__(self,data_group):
+    def __init__(self,data_group,res):
 
         super().__init__()
         self.root_item = None
         self.data_group = data_group
         self.iconProvider = QFileIconProvider()
+        self.res = res
 
         #self.selections = QItemSelectionModel(self)
 
@@ -237,12 +232,20 @@ class HDF5ItemModel(QtCore.QAbstractItemModel):
             return None
 
         if role == QtCore.Qt.DisplayRole:
+            item = self._index_to_item(index)
+
+            # for the targets we pint the name and values
+            if item.parent.basename == 'targets':
+                value = item.data_file[item.name].value
+                return "{:10s}".format(item.basename) + ' %1.3f' %value
+
+            # for the rest just the values
             return self._index_to_item(index).basename
 
-        elif role == QtCore.Qt.WhatsThisRole:
-            if not self._index_to_item(index)._has_children:
-                print(self._index_to_item(index).basename)
-            return print(self._index_to_item(index).basename)
+        # elif role == QtCore.Qt.WhatsThisRole:
+        #     if not self._index_to_item(index)._has_children:
+        #         print(self._index_to_item(index).basename)
+        #     return print(self._index_to_item(index).basename)
 
         elif role == Qt.DecorationRole:
             if self._index_to_item(index)._has_children:
@@ -278,6 +281,7 @@ class HDF5ItemModel(QtCore.QAbstractItemModel):
         return 1
 
     def refresh_tree(self):
+
         """Reload the HDF5 tree, resetting the model
         This causes all cached HDF5 tree information to be deleted, and any views
         using this model will automatically reload.
@@ -325,42 +329,44 @@ class HDF5ItemModel(QtCore.QAbstractItemModel):
             return
         item = items[0]
 
+        if len(item.name.split('/')) != 3:
+            return
+
         # no right click if no children
         if not item._has_children:
             return
 
         menu = QtWidgets.QMenu()
         actions = {}
-
-        if item.name.split('/')[-1] == 'targets':
-            list_operations = ['Print Targets to Console']
-        else:
-            list_operations = ['Name','Load in PyMol','Load in VMD','Targets']
+        list_operations = ['Load in PyMol','Load in VMD','PDB2SQL']
 
         for operation in list_operations:
             actions[operation] = menu.addAction(operation)
         action = menu.exec_(treeview.viewport().mapToGlobal(position))
+        
+        if action == actions['Load in VMD']:
+            cplx_name = item.name.split('/')[1]
+            mol_name =  item.name.split('/')[2]
+            grp_name = '/' + cplx_name + '/' + mol_name
+            molgrp = self.root_item.data_file[grp_name]
+            viztools.create3Ddata(mol_name,molgrp)
+            viztools.launchVMD(mol_name,self.res)
 
-        if 'Name' in actions:
-            if action == actions['Name']:
-                print(item.name)
+        if action == actions['Load in PyMol']:
+            cplx_name = item.name.split('/')[1]
+            mol_name =  item.name.split('/')[2]
+            grp_name = '/' + cplx_name + '/' + mol_name
+            molgrp = self.root_item.data_file[grp_name]
+            viztools.create3Ddata(mol_name,molgrp)
+            viztools.launchPyMol(mol_name)
 
-        if 'Load in VMD' in actions:
-            if action == actions['Load in VMD']:
-                mol_name = item.name.split('/')[1]
-                molgrp = self.root_item.data_file[mol_name]
-                viztools.create3Ddata(mol_name,molgrp)
-                viztools.launchVMD(mol_name)
-
-        if 'Print Targets to Console' in actions:
-            if action == actions['Print Targets to Console']:
-                mol_name = item.name.split('/')[1]
-                keys = list(self.root_item.data_file[mol_name+'/targets/'].keys())
-                print('\n==> Target Values Found for %s' %mol_name)
-                print('-----------------------------------------')
-                for k in keys:
-                    print('{:10s}'.format(k) + ' : ' + '{:10f}'.format(self.root_item.data_file[mol_name+'/targets/'+k].value))
-                print('-----------------------------------------')
+        if action == actions['PDB2SQL']:
+            cplx_name = item.name.split('/')[1]
+            mol_name =  item.name.split('/')[2]
+            grp_name = '/' + cplx_name + '/' + mol_name
+            molgrp = self.root_item.data_file[grp_name]
+            db = pdb2sql(molgrp['complex'].value)
+            treeview.emitDict.emit({'_'+item.basename+'_pb2sql': db})
 
 class HDF5TreeWidget(QtWidgets.QTreeView):
 
@@ -368,7 +374,7 @@ class HDF5TreeWidget(QtWidgets.QTreeView):
     emitDict = pyqtSignal(dict)
 
     """A TreeView for looking at an HDF5 tree"""
-    def __init__(self, datafile, **kwargs):
+    def __init__(self, datafile,res=None, **kwargs):
         """Create a TreeView widget that views the contents of an HDF5 tree.
         Arguments:
             datafile : nplab.datafile.Group
@@ -377,7 +383,7 @@ class HDF5TreeWidget(QtWidgets.QTreeView):
         You may want to include parent, for example."""
         QtWidgets.QTreeView.__init__(self, **kwargs)
 
-        self.model = HDF5ItemModel(datafile)
+        self.model = HDF5ItemModel(datafile,res)
         self.model.set_up_treeview(self)
         self.sizePolicy().setHorizontalStretch(0)
         self.mouseDoubleClickEvent = self.doubleClicked
@@ -390,6 +396,8 @@ class HDF5TreeWidget(QtWidgets.QTreeView):
 
         '''
         Handle the double click on the different items
+        If the item has no children its name/value are emitted
+        and are pushed in the iPython console
         '''
 
         # get the current item
@@ -398,87 +406,117 @@ class HDF5TreeWidget(QtWidgets.QTreeView):
             return
         item=items[0]
 
-        # makesure it doesn t have items
-        if item._has_children:
-            return
-        else:
-            #name = item.name.lstrip('/')
+        # if we have a mapped feature
+        # we push the matrix
+        if item.parent.parent.basename == 'mapped_features':
+            subgrp = item.data_file[item.name]
+            data_dict = {}
+            name = item.name.replace('/','_')
+            if not subgrp.attrs['sparse']:
+                data_dict[item.name] =  subgrp['value'].value 
+            else:
+                molgrp = item.data_file[item.parent.parent.parent.name]
+                grid = {}
+                lx = len(molgrp['grid_points/x'].value)
+                ly = len(molgrp['grid_points/y'].value)
+                lz = len(molgrp['grid_points/z'].value)
+                shape = (lx,ly,lz)
+                spg = sparse.FLANgrid(sparse=True,index=subgrp['index'].value,value=subgrp['value'].value,shape=shape)
+                data_dict[name] =  spg.to_dense()
+            self.emitDict.emit(data_dict)
+
+        # if the item has no children we push the raw data
+        elif not item._has_children:
             name = item.name.replace('/','_')
             self.emitDict.emit({name: item.data_file[item.name].value})
+
+        # or we skip
+        else:
+            return
 
 class HDF5Browser(QtWidgets.QWidget):
     """A Qt Widget for browsing an HDF5 file and graphing the data.
     """
 
-    def __init__(self, data_file, parent=None):
-        super(HDF5Browser, self).__init__(parent)
-        self.data_file = data_file
+    def __init__(self, data_file, res, parent=None):
 
-        self.treeWidget = HDF5TreeWidget(data_file,parent=self)
+        super(HDF5Browser, self).__init__(parent)
+
+        self.setWindowTitle("DeepRank Dataset Explorer")
+        self.data_file = data_file
+        self.res = res
+        ip = QtWidgets.QFileIconProvider()
+        fileinfo = QtCore.QFileInfo(data_file.name)
+        icon = ip.icon(QFileIconProvider.Drive)
+
+        # the tree widget
+        self.treeWidget = HDF5TreeWidget(data_file,res=self.res,parent=self)
         self.selection_model = self.treeWidget.selectionModel() 
 
-        #self.selection_model.selectionChanged.connect(self.selection_changed)
-        #self.viewer = QTreeView() 
-        #self.viewer = QFrame()
+        # push button to load data
+        self.load_tree_button = QtWidgets.QPushButton() #Create a refresh button
+        self.load_tree_button.setIcon(icon)
+        self.load_tree_button.setIconSize(QtCore.QSize(24,24))
+        self.load_tree_button.clicked.connect(self.load_new_data)
 
-        top = QFrame() 
-        top.setFrameShape(QFrame.StyledPanel)
-
-        self.ipyConsole = QIPythonWidget(customBanner="Welcome to the embedded ipython console\n")
-        #self.ipyConsole.pushVariables({"foo":43,"faa":45})
-
-
-        #self.ipyConsole.setFrameShape(QFrame.StyledPanel)
-        #self.viewer = QtWidgets.QSplitter(Qt.Vertical)
-        #self.viewer.resize(1000,0)
-        #self.viewer.addWidget(top)
-        #self.viewer.addWidget(ipyConsole)
-
-        #self.refresh_tree_button = QtWidgets.QPushButton() #Create a refresh button
-        #self.refresh_tree_button.setText("Refresh Tree")
-        
-        #adding the refresh button
-        self.treelayoutwidget = QtWidgets.QWidget()     #construct a widget which can then contain the refresh button and the tree
+        #  widget that contains the toolbar and the treeview
+        self.treelayoutwidget = QtWidgets.QWidget()
         self.treelayoutwidget.setLayout(QtWidgets.QVBoxLayout())
         self.treelayoutwidget.layout().addWidget(self.treeWidget)
-        #self.treelayoutwidget.layout().addWidget(self.refresh_tree_button) 
-        
-        #self.refresh_tree_button.clicked.connect(self.treeWidget.model.refresh_tree)
+        self.treelayoutwidget.layout().addWidget(self.load_tree_button)         
 
+        #the Ipython console
+        self.ipyConsole = QIPythonWidget(customBanner="Welcome to the DeepRank Explorer\n")
+
+        # make the splitt window
         splitter = QtWidgets.QSplitter()
         splitter.addWidget(self.treelayoutwidget)       #Add newly constructed widget (treeview and button) to the splitter
         splitter.addWidget(self.ipyConsole)
         self.setLayout(QtWidgets.QHBoxLayout())
         self.layout().addWidget(splitter)
 
-        # make the connection between the two ....
+        # make the connection between the tree and the iPython console
         self.ipyConsole.import_value(self.treeWidget)
 
-    def sizeHint(self):
-        return QtCore.QSize(1024,768)
 
-    def selection_changed(self, selected, deselected):
-        """Callback function to update the displayed item when the tree selection changes."""
-        print(selected)
-        # try:
-        #     self.viewer.data = self.treeWidget.selected_h5item()
-        #     df.set_current_group(self.treeWidget.selected_h5item())
-        # except Exception as e:
-        #     print(e, 'That could be corrupted')
-            
-    def __del__(self):
-        pass  # self.data_file.close()
+    def load_new_data(self):
+
+        fname = QtWidgets.QFileDialog.getOpenFileName(self,'Open File','./')
+        fname = fname[0]
+        if os.path.isfile(fname):
+            print('Load File ' + fname)
+            mol_name = os.path.splitext(os.path.basename(fname))[0]
+            if mol_name not in self.data_file:
+                self.data_file[mol_name] = h5py.ExternalLink(fname,'/')
+                self.treeWidget.model.refresh_tree()
+
+    def sizeHint(self):
+        #return QtCore.QSize(int(self.res.width()/2),int(self.res.height()))
+        return QtCore.QSize(1000,600)
 
 if __name__ == '__main__':
     
-    import sys
+    import sys,os
+    import argparse
 
-    data_file = h5py.File('1ak4.hdf5','r')
+    parser = argparse.ArgumentParser(description='Data Explorer for DeepRank')
+    parser.add_argument('-hdf5', help="hdf5 file storing the data set",default=None)
+    args = parser.parse_args()
+
+    data_file = h5py.File('_tmp.hdf5','w')
+
+    src_file = args.hdf5
+    if src_file is not None:
+        mol_name = os.path.splitext(os.path.basename(src_file))[0]
+        data_file[mol_name] = h5py.ExternalLink(src_file,'/')
+
 
     app = QApplication(sys.argv)
+    res = app.desktop().screenGeometry()
+    w,h = res.width(),res.height()
+
+    ui = HDF5Browser(data_file,res)
     
-    ui = HDF5Browser(data_file)
-    ui.setWindowTitle("DeepRank Dataset Explorer")
     ui.show()
     sys.exit(app.exec_())
-    data_file.close()    
+    data_file.close()   

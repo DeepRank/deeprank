@@ -10,7 +10,7 @@ from deeprank.tools import pdb2sql
 from deeprank.tools import sparse
 
 def create3Ddata(mol_name,molgrp):
-	
+
 	outdir = './_tmp_' + mol_name + '/'
 		
 	if not os.path.isdir(outdir):
@@ -97,7 +97,7 @@ def export_cube_files(data_dict,data_name,grid,export_path):
 						f.write("\n")
 			f.close() 
 
-def launchVMD(mol_name):
+def launchVMD(mol_name,res):
 
 	export_path =  './_tmp_' + mol_name + '/'
 	exec_fname = 'loadData.vmd'
@@ -122,8 +122,13 @@ def launchVMD(mol_name):
 	f.close()
 
 	# launch VMD
-	sp.call('vmd -e ' + exec_fname, cwd = export_path,shell = True)
-
+	w,h = res.width()/2,res.height()/2
+	sw,sh = 1050,600
+	w,h = 600,600
+	vmd_option = '-pos %f %f -size %f %f' %(sw,sh,w,h)
+	vmd_file = ' -e ' + exec_fname
+	sp.Popen('vmd ' + vmd_option + vmd_file, cwd = export_path,shell = True)
+	
 # quick shortcut for writting the vmd file
 def write_molspec_vmd(f,name,rep,color):
 	f.write('\nmol new %s\n' %name)
@@ -132,3 +137,39 @@ def write_molspec_vmd(f,name,rep,color):
 		f.write('mol color %s \n' %color)
 	f.write('mol addrep top\n\n')
 
+
+
+def launchPyMol(mol_name):
+
+
+	export_path =  './_tmp_' + mol_name + '/'
+	exec_fname = 'loadData.py'
+
+	fname = export_path + exec_fname
+	f = open(fname,'w')
+	f.write('# can be executed with pymol -qRr loadData.py\n\n')
+	f.write('import os\n')
+	f.write('import pymol\n')
+	f.write('pymol.finish_launching()\n\n')
+
+	f.write("# load the molecule\n")
+	f.write("pymol.cmd.load('complex.pdb','complex')\n")
+	f.write("pymol.util.cbc(selection='(all)',first_color=7,quiet=1,legacy=0,_self=pymol.cmd)\n")
+	f.write("pymol.cmd.show('stick','complex')\n\n")
+
+	f.write("# load the molecule\n")
+	f.write("cube_files = list(filter(lambda x: '.cube' in x,os.listdir('./')))\n")
+
+	# load the cube files
+	f.write("for f in cube_files:\n")
+	f.write("	fname = os.path.splitext(f)[0]\n")
+	f.write("	pymol.cmd.load(f)\n")
+	f.write("	pymol.cmd.isosurface('pos_'+fname,fname,level=0.05)\n")
+	f.write("	pymol.cmd.isosurface('neg_'+fname,fname,level=-0.05)\n\n")
+
+	f.write("pymol.cmd.disable('all')\n")
+	f.write("pymol.cmd.enable('complex')\n\n")
+
+	f.close()
+
+	sp.Popen('pymol -qQr ' + exec_fname, cwd = export_path,shell = True)
