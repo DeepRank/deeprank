@@ -540,14 +540,7 @@ class ConvNet:
 			av_time += elapsed
 			nremain = nepoch-(epoch+1)
 			remaining_time = av_time/(epoch+1)*nremain
-			if remaining_time < 60:
-				print('  estimated remaining time %1.3f sec.' %remaining_time)
-
-			elif remaining_time < 3600:
-				print('  estimated remaining time %1.3f min.' %(remaining_time/60))
-
-			else:
-				print('  estimated remaining time %1.3f hours.' %(remaining_time/3600))		
+			print('  estimated remaining time :',  time.strftime('%H:%M:%S', time.gmtime(remaining_time)))		
 
 			# plot the scatter plots
 			if self.plot:
