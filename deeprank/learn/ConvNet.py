@@ -4,6 +4,7 @@
 from datetime import datetime
 import sys
 import os
+import time
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -108,7 +109,7 @@ class ConvNet:
 		if self.ngpu > 0:
 			self.cuda = True
 
-		if self.ngpu == 0 and not self.cuda :
+		if self.ngpu == 0 and self.cuda :
 			self.ngpu = 1
 
 		# plot or not plot
@@ -509,10 +510,11 @@ class ConvNet:
 
 
 		# training loop
+		av_time = 0.0
 		for epoch in range(nepoch):
 
 			print('\n: epoch %03d ' %epoch + '-'*50)
-			
+			t0 = time.time()
 			# train the model
 			self.train_loss = self._epoch(train_loader,train_model=True)
 			
@@ -523,8 +525,18 @@ class ConvNet:
 			if self.tensorboard:
 				self._export_tensorboard(tensorboard_writer,epoch)
 
-			# talk a bit
+			# talk a bit about losse
 			print('  training loss : %1.3e \t validation loss : %1.3e' %(self.train_loss, self.valid_loss))
+
+			# timer
+			elapsed = time.time()-t0
+			print('  epoch done in %1.3f sec.' %elapsed )
+
+			# remaining time
+			av_time += elapsed
+			av_time /= (epoch+1)
+			nremain = nepoch-(epoch+1)
+			print('  estimated remaining time %1.3f sec.' %(av_time*nremain))
 
 			# plot the scatter plots
 			if self.plot:

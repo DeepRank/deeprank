@@ -122,10 +122,13 @@ class DataSet(data_utils.Dataset):
 		we can find in which file it is stored
 		and its group name in the file
 		'''
-
+		print(" Processing data set")
 		self.index_complexes = []
 
-		for fdata in self.database:
+		desc = '{:25s}'.format('Train dataset')
+		data_tqdm = tqdm(self.database,desc=desc)
+		for fdata in data_tqdm:
+			data_tqdm.set_postfix(mol=os.path.basename(fdata))
 			fh5 = h5py.File(fdata,'r')
 			mol_names = list(fh5.keys())
 			self.index_complexes += [(fdata,k) for k in mol_names]
@@ -136,7 +139,11 @@ class DataSet(data_utils.Dataset):
 
 		if self.test_database is not None:
 
-			for fdata in self.test_database:
+			desc = '{:25s}'.format('Test dataset')
+			data_tqdm = tqdm(self.test_database,desc=desc)
+
+			for fdata in data_tqdm:
+				data_tqdm.set_postfix(mol=os.path.basename(fdata))
 				fh5 = h5py.File(fdata,'r')
 				mol_names = list(fh5.keys())
 				self.index_complexes += [(fdata,k) for k in mol_names]
