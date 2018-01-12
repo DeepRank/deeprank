@@ -530,17 +530,17 @@ class ConvNet:
 				self._export_tensorboard(tensorboard_writer,epoch)
 
 			# talk a bit about losse
-			print('  training loss : %1.3e \t validation loss : %1.3e' %(self.train_loss, self.valid_loss))
+			print('  train loss       : %1.3e\n  valid loss       : %1.3e' %(self.train_loss, self.valid_loss))
 
 			# timer
 			elapsed = time.time()-t0
-			print('  epoch done in %1.3f sec.' %elapsed )
+			print('  epoch done in    :', time.strftime('%H:%M:%S', time.gmtime(elapsed)) )
 
 			# remaining time
 			av_time += elapsed
 			nremain = nepoch-(epoch+1)
 			remaining_time = av_time/(epoch+1)*nremain
-			print('  estimated remaining time :',  time.strftime('%H:%M:%S', time.gmtime(remaining_time)))		
+			print('  remaining time   :',  time.strftime('%H:%M:%S', time.gmtime(remaining_time)))		
 
 			# plot the scatter plots
 			if self.plot:
@@ -683,9 +683,11 @@ class ConvNet:
 		labels = ['Train','Valid','Test']
 
 		fig,ax = plt.subplots()	
-		#ax.plot([0,1],[0,1])
-		plot_min = 1 
-		plot_max = 0
+		#ax.plot([0,1],[0,1],transform=ax.transAxes)
+		
+
+		xvalues = np.array([])
+		yvalues = np.array([])
 
 		for idata,data_loader in enumerate(loaders):
 
@@ -703,13 +705,22 @@ class ConvNet:
 				else:
 					plot_out +=  outputs.data.numpy().tolist()
 					plot_targ += targets.data.numpy().tolist()
-					
+			
+
+			xvalues = np.append(xvalues,np.array(plot_targ).flatten())
+			yvalues = np.append(yvalues,np.array(plot_out).flatten())
 			ax.scatter(plot_targ,plot_out,c = color_plot[idata],label=labels[idata])	
 
-		ax.plot(ax.get_xlim(), ax.get_ylim(), ls="--", c=".3")
+		
 		legend = ax.legend(loc='upper left')
 		ax.set_xlabel('Targets')
 		ax.set_ylabel('Predictions')
+
+		values = np.append(xvalues,yvalues)
+		border = 0.1 * (values.max()-values.min())
+		ax.plot([values.min()-border,values.max()+border],[values.min()-border,values.max()+border])
+		#plt.xlim([xvalues.min()-border,xvalues.max()+border])
+		#plt.ylim([yvalues.min()-border,yvalues.max()+border])
 
 		fig.savefig(figname)
 		plt.close()
