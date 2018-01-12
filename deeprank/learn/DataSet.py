@@ -58,14 +58,14 @@ class DataSet(data_utils.Dataset):
 	'''
 
 	def __init__(self,database,test_database=None,select_feature='all',select_target='DOCKQ',
-		         transform_to_2D=False,projection=0):
+		         transform_to_2D=False,projection=0,grid_shape = None):
 
 
 		self.database = database
 		self.test_database = test_database
 		self.select_feature = select_feature
 		self.select_target = select_target
-
+		self.grid_shape = shape
 		self.features = None
 		self.targets  = None
 
@@ -178,10 +178,15 @@ class DataSet(data_utils.Dataset):
 
 		# get the mol
 		mol_data = fh5.get(mol)
-		nx = mol_data['grid_points']['x'].shape[0]
-		ny = mol_data['grid_points']['y'].shape[0]
-		nz = mol_data['grid_points']['z'].shape[0]
-		shape=(nx,ny,nz)
+		if 'grid_points' in mol_data:
+			nx = mol_data['grid_points']['x'].shape[0]
+			ny = mol_data['grid_points']['y'].shape[0]
+			nz = mol_data['grid_points']['z'].shape[0]
+			shape=(nx,ny,nz)
+		elif self.grid_shape is not None:
+			shape = self.grid_shape
+		else:
+			raise ValueError('Impossible to determine sparse grid shape.\n Specify argument grid_shape=(x,y,z)')
 
 		# load all the features
 		if self.select_feature == 'all':
