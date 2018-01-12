@@ -658,6 +658,9 @@ class ConvNet:
 		if self.plot == False:
 			return
 
+
+		print('\n --> Scatter Plot : ', figname, '\n')
+
 		# check if we have loaders
 		if loaders is None:
 
@@ -675,7 +678,9 @@ class ConvNet:
 		labels = ['Train','Valid','Test']
 
 		fig,ax = plt.subplots()	
-		ax.plot([0,1],[0,1])
+		#ax.plot([0,1],[0,1])
+		plot_min = 1 
+		plot_max = 0
 
 		for idata,data_loader in enumerate(loaders):
 
@@ -693,12 +698,14 @@ class ConvNet:
 				else:
 					plot_out +=  outputs.data.numpy().tolist()
 					plot_targ += targets.data.numpy().tolist()
-
+					
 			ax.scatter(plot_targ,plot_out,c = color_plot[idata],label=labels[idata])	
 
+		ax.plot(ax.get_xlim(), ax.get_ylim(), ls="--", c=".3")
 		legend = ax.legend(loc='upper left')
 		ax.set_xlabel('Targets')
 		ax.set_ylabel('Predictions')
+
 		fig.savefig(figname)
 		plt.close()
 
@@ -717,10 +724,13 @@ class ConvNet:
 		indexes should be a list of indexes list of maxsize 3
 		indexes = [index_train,index_valid,index_test]
 		'''
+		
 
 		# abort if we don't want to plot
 		if self.plot == False:
 			return
+
+		print('\n --> Scatter Plot : ', figname, '\n')
 
 		# check if we have loaders
 		if loaders is None:
