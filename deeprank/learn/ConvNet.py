@@ -211,6 +211,10 @@ class ConvNet:
 		if self.ngpu > 1:
 			train_batch_size *= self.ngpu
 
+		print('\n: Batch Size : %d' %train_batch_size)
+		if self.cuda:
+			print(': NGPU       : %d' %self.ngpu)
+
 		# divide the set in train+ valid and test
 		index_train,index_valid,index_test = self._divide_dataset(divide_set,preshuffle)
 
@@ -513,7 +517,7 @@ class ConvNet:
 		av_time = 0.0
 		for epoch in range(nepoch):
 
-			print('\n: epoch %03d ' %epoch + '-'*50)
+			print('\n: epoch %03d / %03d ' %(epoch,nepoch) + '-'*45)
 			t0 = time.time()
 			# train the model
 			self.train_loss = self._epoch(train_loader,train_model=True)
@@ -535,7 +539,15 @@ class ConvNet:
 			# remaining time
 			av_time += elapsed
 			nremain = nepoch-(epoch+1)
-			print('  estimated remaining time %1.3f sec.' %(av_time/(epoch+1)*nremain))
+			remaining_time = (av_time/(epoch+1)*nremain)
+			if remaining_time < 60:
+				print('  estimated remaining time %1.3f sec.' %remaining_time)
+
+			elif remaining_time < 3600:
+				print('  estimated remaining time %1.3f min.' %remaining_time/60)
+
+			else:
+				print('  estimated remaining time %1.3f hours.' %remaining_time/3600)				
 
 			# plot the scatter plots
 			if self.plot:
