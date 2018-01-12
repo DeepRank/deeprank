@@ -58,7 +58,7 @@ class DataSet(data_utils.Dataset):
 	'''
 
 	def __init__(self,database,test_database=None,select_feature='all',select_target='DOCKQ',
-		         transform_to_2D=False,projection=0,grid_shape = None):
+		         transform_to_2D=False,projection=0,grid_shape = None,normalize_features=True,normalize_targets=True):
 
 
 		self.database = database
@@ -68,6 +68,9 @@ class DataSet(data_utils.Dataset):
 		self.grid_shape = grid_shape
 		self.features = None
 		self.targets  = None
+
+		self.normalize_features = normalize_features
+		self.normalize_targets = normalize_targets
 
 		# allow for multiple database
 		if not isinstance(database,list):
@@ -105,6 +108,10 @@ class DataSet(data_utils.Dataset):
 		# get the input shape
 		self.get_input_shape()
 
+		# get renormalization factor
+		if self.normalize_features or self.normalize_targets:
+			self.get_normalization()
+
 		print('\n')
 		print("   Data Set Info")
 		print('   Training set        : %d conformations' %self.ntrain)
@@ -122,6 +129,12 @@ class DataSet(data_utils.Dataset):
 		mol = self.index_complexes[index][1]
 		
 		feature, target = self.load_one_molecule(fname,mol)
+
+		if self.normalize_targets:
+			target = self._normalize_target(target)
+
+		if self.normalize_features:
+			feature = self._normalize_feature(feature)
 
 		if self.transform:
 			feature = self.convert2d(feature,self.proj2d)
@@ -161,7 +174,7 @@ class DataSet(data_utils.Dataset):
 		self.index_train = list(range(self.ntrain))
 
 		if self.test_database is not None:
-			print(self.test_database)
+			
 			desc = '{:25s}'.format('   Test dataset')
 			data_tqdm = tqdm(self.test_database,desc=desc)
 
@@ -183,6 +196,78 @@ class DataSet(data_utils.Dataset):
 		fname = self.database[0]
 		feature,_ = self.load_one_molecule(fname)
 		self.input_shape = feature.shape
+
+	# normalize the data
+	# its a bit more complicated when you
+	# load mol by mol
+	# for the std see
+	# https://stats.stackexchange.com/questions/25848/how-to-sum-a-standard-deviation
+	# 
+	def get_normalization(self):
+
+		desc = '{:25s}'.format('   Normalization')
+		data_tqdm = tqdm(range(self.__len__()),desc=desc)
+		for index in data_tqdm:
+
+			fname = self.index_complexes[index][0]
+			mol = self.index_complexes[index][1]			
+			data_tqdm.set_postfix(mol=os.path.basename(mol))
+
+			feature, target = self.load_one_molecule(fname,mol)
+
+			target = target.numpy()
+			feature = feature.numpy()
+
+			if index == 0:
+
+				self.target_min = np.min(target)
+				self.target_max = np.min(target)
+
+				self.feat_mean = np.zeros(self.input_shape[0])
+
+				var  = np.zeros(self.input_shape[0])
+				sqmean = np.zeros(self.input_shape[0])
+
+				for ic in range(self.input_shape[0]):
+					self.feat_mean[ic] = feature[ic].mean()
+					var[ic] = feature[ic].var()
+					sqmean[ic] = feature[ic].mean()**2
+			else:
+				
+				self.target_min = np.min([self.target_min,target])
+				self.target_max = np.max([self.target_max,target])
+
+				for ic in range(self.input_shape[0]):
+					self.feat_mean[ic] += feature[ic].mean()
+					var[ic]  += feature[ic].var()
+					sqmean[ic] += feature[ic].mean()**2
+
+		# average the mean values
+		self.feat_mean /= self.ntot
+		
+		# average teh standard deviations
+		self.feat_std = var/self.ntot
+		self.feat_std += sqmean/self.ntot
+		self.feat_std -= self.feat_mean**2
+		self.feat_std = np.sqrt(self.feat_std)
+
+		# make torch tensor
+		self.target_min = FloatTensor(np.array([self.target_min]))
+		self.target_max = FloatTensor(np.array([self.target_max]))
+		self.feat_mean = FloatTensor(self.feat_mean)
+		self.feat_std = FloatTensor(self.feat_std)
+
+	def _normalize_target(self,target):
+
+		target -= self.target_min
+		target /= self.target_max
+		return target
+
+	def _normalize_feature(self,feature):
+
+		for ic in range(self.input_shape[0]):
+			feature[ic] = (feature[ic]-self.feat_mean[ic])/self.feat_std[ic]
+		return feature
 
 	############################################
 	# load the feature/target of a single molecule
