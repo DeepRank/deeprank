@@ -65,7 +65,7 @@ class DataSet(data_utils.Dataset):
 		self.test_database = test_database
 		self.select_feature = select_feature
 		self.select_target = select_target
-		self.grid_shape = shape
+		self.grid_shape = grid_shape
 		self.features = None
 		self.targets  = None
 
