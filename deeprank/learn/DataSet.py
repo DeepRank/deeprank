@@ -74,8 +74,9 @@ class DataSet(data_utils.Dataset):
 			self.database = [database]
 
 		# allow for multiple database
-		if not isinstance(test_database,list):
-			self.test_database = [test_database]
+		if test_database is not None:
+			if not isinstance(test_database,list):
+				self.test_database = [test_database]
 
 		# get the eventual projection
 		self.transform = transform_to_2D
@@ -89,9 +90,10 @@ class DataSet(data_utils.Dataset):
 		for f in self.database:
 			print('=\t ->',f)
 		print('=')
-		print('=\t Test data' )
-		for f in self.test_database:
-			print('=\t ->',f)
+		if self.test_database is not None:
+			print('=\t Test data' )
+			for f in self.test_database:
+				print('=\t ->',f)
 		print('=')
 		print('='*40,'\n')		
 
@@ -159,7 +161,7 @@ class DataSet(data_utils.Dataset):
 		self.index_train = list(range(self.ntrain))
 
 		if self.test_database is not None:
-
+			print(self.test_database)
 			desc = '{:25s}'.format('   Test dataset')
 			data_tqdm = tqdm(self.test_database,desc=desc)
 
