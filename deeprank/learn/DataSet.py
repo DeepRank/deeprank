@@ -81,6 +81,20 @@ class DataSet(data_utils.Dataset):
 		self.transform = transform_to_2D
 		self.proj2D = projection
 
+		print('\n')
+		print('='*40)
+		print('=\t DeepRank Data Set')
+		print('=')
+		print('=\t Training data' )
+		for f in self.database:
+			print('=\t ->',f)
+		print('=')
+		print('=\t Test data' )
+		for f in self.test_database:
+			print('=\t ->',f)
+		print('=')
+		print('='*40,'\n')		
+
 		# create the indexing system
 		# alows to associate each mol to an index
 		# and get fname and mol name from the index
@@ -88,6 +102,13 @@ class DataSet(data_utils.Dataset):
 
 		# get the input shape
 		self.get_input_shape()
+
+		print('\n')
+		print("   Data Set Info")
+		print('   Training set        : %d conformations' %self.ntrain)
+		print('   Test set            : %d conformations' %(self.ntot-self.ntrain))
+		print('   Number of channels  : %d' %self.input_shape[0])
+		print('   Grid Size           : %d x %d x %d' %(self.input_shape[1],self.input_shape[2],self.input_shape[3]))
 
 
 	def __len__(self):
@@ -122,10 +143,10 @@ class DataSet(data_utils.Dataset):
 		we can find in which file it is stored
 		and its group name in the file
 		'''
-		print(" Processing data set")
+		print("   Processing data set")
 		self.index_complexes = []
 
-		desc = '{:25s}'.format('Train dataset')
+		desc = '{:25s}'.format('   Train dataset')
 		data_tqdm = tqdm(self.database,desc=desc)
 		for fdata in data_tqdm:
 			data_tqdm.set_postfix(mol=os.path.basename(fdata))
@@ -139,7 +160,7 @@ class DataSet(data_utils.Dataset):
 
 		if self.test_database is not None:
 
-			desc = '{:25s}'.format('Test dataset')
+			desc = '{:25s}'.format('   Test dataset')
 			data_tqdm = tqdm(self.test_database,desc=desc)
 
 			for fdata in data_tqdm:
