@@ -331,8 +331,8 @@ class NeuralNet:
 
 		#  create the loaders
 		train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler,pin_memory=pin)
-		valid_loader = data_utils.DataLoader(self.data_set,batch_size=1,sampler=valid_sampler,pin_memory=pin)
-		test_loader = data_utils.DataLoader(self.data_set,batch_size=1,sampler=test_sampler,pin_memory=pin)
+		valid_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=valid_sampler,pin_memory=pin)
+		test_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=test_sampler,pin_memory=pin)
 
 		# training loop
 		av_time = 0.0
