@@ -59,7 +59,7 @@ class DataSet(data_utils.Dataset):
 
 	def __init__(self,database,test_database=None,select_feature='all',select_target='DOCKQ',
 		         transform_to_2D=False,projection=0,grid_shape = None,
-		         normalize_features=True,normalize_targets=True,tqdm=True):
+		         normalize_features=True,normalize_targets=True,tqdm=False):
 
 
 		self.database = database
@@ -231,7 +231,7 @@ class DataSet(data_utils.Dataset):
 			data_tqdm = range(self.__len__())
 			print('   Normalization')
 		sys.stdout.flush()
-		
+
 		for index in data_tqdm:
 
 			fname = self.index_complexes[index][0]
