@@ -245,7 +245,7 @@ class DataSet(data_utils.Dataset):
 		# average the mean values
 		self.feat_mean /= self.ntot
 		
-		# average teh standard deviations
+		# average the standard deviations
 		self.feat_std = var/self.ntot
 		self.feat_std += sqmean/self.ntot
 		self.feat_std -= self.feat_mean**2
@@ -262,6 +262,12 @@ class DataSet(data_utils.Dataset):
 		target -= self.target_min
 		target /= self.target_max
 		return target
+
+	def backtransform_target(self,data):
+		data = FloatTensor(data)
+		data *= self.target_max
+		data += self.target_min
+		return data.numpy()
 
 	def _normalize_feature(self,feature):
 
@@ -281,7 +287,7 @@ class DataSet(data_utils.Dataset):
 		- read the specified features
 		- read the specified target
 		- transform to 2d (optional)
-		- close th hdf5
+		- close the hdf5
 		- return the feature/target
 		'''
 

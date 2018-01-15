@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 #import torch
+import torch
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
@@ -133,6 +134,9 @@ class ConvNet:
 			print("Task " + self.task +"not recognized.\nOptions are \n\t 'reg': regression \n\t 'class': classifiation\n\n")
 			sys.exit()
 
+		# containers for the losses
+		self.losses={'train': [],'valid': [], 'test':[]}
+
 
 		# options for outputing the results
 		self.tensorboard = tensorboard
@@ -218,14 +222,21 @@ class ConvNet:
 		# divide the set in train+ valid and test
 		index_train,index_valid,index_test = self._divide_dataset(divide_set,preshuffle)
 
+
 		# print the final; scatter plot
 		self._plot_scatter(self.outdir+"/initial_prediction.png", indexes = [index_train,index_valid,index_test])
 		
 		# train the model
-		self._train(index_train,index_valid,nepoch=nepoch,train_batch_size=train_batch_size,tensorboard_writer=tbwriter,plot_intermediate=plot_intermediate,debug=debug)
+		self._train(index_train,index_valid,
+			        index_test=index_test,
+			        nepoch=nepoch,
+			        train_batch_size=train_batch_size,
+			        tensorboard_writer=tbwriter,
+			        plot_intermediate=plot_intermediate,
+			        debug=debug)
 
 		# test the model
-		self.test_loss = self._test(index_test)
+		self.test_loss = self._test(index_test,print_loss=True)
 
 		# print the final; scatter plot
 
@@ -373,6 +384,25 @@ class ConvNet:
 		if self.tensorboard:
 			tbwriter.close()
 
+
+	def save_model(self,epoch,filename='model.pth.tar'):
+		'''
+		save the model to disk
+		'''
+		state = {'epoch'       : epoch,
+				'state_dict'   : self.net.state_dict(),
+				'optimizer'    : self.optimizer.state_dict(),
+				'losses'       : self.losses}
+		torch.save(state,filename)
+
+	def load_model(self,filename):
+		'''
+		load model
+		'''
+		state = torch.load(filename)
+		self.net.load_state_dict(state['state_dict'])
+		self.optimizer.load_state_dict(state['optimizer'])
+
 		
 	def _divide_dataset(self,divide_set, preshuffle):
 
@@ -457,7 +487,10 @@ class ConvNet:
 		return indexes_train,indexes_valid
 
 
-	def _train(self,index_train,index_valid,nepoch = 50,train_batch_size = 5,tensorboard_writer = None,plot_intermediate=False,debug=False):
+	def _train(self,index_train,index_valid,
+		       index_test=None,
+		       nepoch = 50,train_batch_size = 5,
+		       tensorboard_writer = None,plot_intermediate=False,debug=False):
 
 		'''
 		Train the model 
@@ -521,9 +554,16 @@ class ConvNet:
 			t0 = time.time()
 			# train the model
 			self.train_loss = self._epoch(train_loader,train_model=True)
-			
+			self.losses['train'].append(self.train_loss)
+
 			# validate the model
 			self.valid_loss = self._epoch(valid_loader,train_model=False)
+			self.losses['valid'].append(self.valid_loss)
+
+			# test the model
+			if index_test is not None:
+				test_loss = self._test(index_test,print_loss=False)
+				self.losses['test'] = test_loss
 
 			# write the histogramm for tensorboard
 			if self.tensorboard:
@@ -531,6 +571,8 @@ class ConvNet:
 
 			# talk a bit about losse
 			print('  train loss       : %1.3e\n  valid loss       : %1.3e' %(self.train_loss, self.valid_loss))
+			if index_test is not None:
+				print('  test loss        : %1.3e' %(test_loss))
 
 			# timer
 			elapsed = time.time()-t0
@@ -551,13 +593,14 @@ class ConvNet:
 		return torch.cat([param.data.view(-1) for param in self.net.parameters()],0)
 
 
-	def _test(self,index_test):
+	def _test(self,index_test,print_loss=False):
 
 		# test the model
 		test_sampler = data_utils.sampler.SubsetRandomSampler(index_test)
 		test_loader = data_utils.DataLoader(self.data_set,batch_size=1,sampler=test_sampler)
 		test_loss = self._epoch(test_loader,train_model=False)
-		print('\n-->\n-->\t\t Test loss : %1.3e\n-->' %test_loss)
+		if print_loss:
+			print('\n-->\n-->\t\t Test loss : %1.3e\n-->' %test_loss)
 		return test_loss
 
 	def _epoch(self,data_loader,train_model=True):
@@ -683,8 +726,6 @@ class ConvNet:
 		labels = ['Train','Valid','Test']
 
 		fig,ax = plt.subplots()	
-		#ax.plot([0,1],[0,1],transform=ax.transAxes)
-		
 
 		xvalues = np.array([])
 		yvalues = np.array([])
@@ -707,8 +748,15 @@ class ConvNet:
 					plot_targ += targets.data.numpy().tolist()
 			
 
-			xvalues = np.append(xvalues,np.array(plot_targ).flatten())
-			yvalues = np.append(yvalues,np.array(plot_out).flatten())
+			plot_targ = np.array(plot_targ).flatten()
+			plot_out = np.array(plot_out).flatten()
+
+			plot_targ = self.data_set.backtransform_target(plot_targ)
+			plot_out = self.data_set.backtransform_target(plot_out)
+
+			xvalues = np.append(xvalues,plot_targ)
+			yvalues = np.append(yvalues,plot_out)
+
 			ax.scatter(plot_targ,plot_out,c = color_plot[idata],label=labels[idata])	
 
 		
@@ -719,8 +767,6 @@ class ConvNet:
 		values = np.append(xvalues,yvalues)
 		border = 0.1 * (values.max()-values.min())
 		ax.plot([values.min()-border,values.max()+border],[values.min()-border,values.max()+border])
-		#plt.xlim([xvalues.min()-border,xvalues.max()+border])
-		#plt.ylim([yvalues.min()-border,yvalues.max()+border])
 
 		fig.savefig(figname)
 		plt.close()

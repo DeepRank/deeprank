@@ -72,11 +72,26 @@ def test_learn():
                           task='reg',
                           tensorboard=False,
                           cuda=False,
-                          plot=False,
+                          plot=True,
                           outdir='./out/')
 
   # start the training
-  model.train(nepoch = 5,divide_set=[0.8,0.1,0.1], train_batch_size = 5)
+  model.train(nepoch = 50,divide_set=[0.8,0.1], train_batch_size = 5)
+
+  # save the model
+  model.save_model(epoch = 50)
+
+  model = deeprank.learn.ConvNet(data_set,
+                          ConvNet3D,
+                          model_type='3d',
+                          task='reg',
+                          tensorboard=False,
+                          cuda=False,
+                          plot=True,
+                          outdir='./out_reload/')
+
+  model.load_model('model.pth.tar')
+  model.train(nepoch = 10,divide_set=[0.8,0.1], train_batch_size = 5)
 
 if __name__ == "__main__":
   test_learn()
