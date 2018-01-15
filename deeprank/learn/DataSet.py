@@ -102,6 +102,7 @@ class DataSet(data_utils.Dataset):
 				print('=\t ->',f)
 		print('=')
 		print('='*40,'\n')		
+		sys.stdout.flush()
 
 		# create the indexing system
 		# alows to associate each mol to an index
@@ -122,7 +123,7 @@ class DataSet(data_utils.Dataset):
 		print('   Test set            : %d conformations' %(self.ntot-self.ntrain))
 		print('   Number of channels  : %d' %self.input_shape[0])
 		print('   Grid Size           : %d x %d x %d' %(self.input_shape[1],self.input_shape[2],self.input_shape[3]))
-
+		sys.stdout.flush()
 
 	def __len__(self):
 		return len(self.index_complexes)
@@ -163,6 +164,7 @@ class DataSet(data_utils.Dataset):
 		and its group name in the file
 		'''
 		print("   Processing data set")
+
 		self.index_complexes = []
 
 		desc = '{:25s}'.format('   Train dataset')
@@ -171,6 +173,7 @@ class DataSet(data_utils.Dataset):
 		else:
 			print('   Train dataset')
 			data_tqdm = self.database
+		sys.stdout.flush()
 
 		for fdata in data_tqdm:
 			if self.tqdm:
@@ -191,6 +194,7 @@ class DataSet(data_utils.Dataset):
 			else:
 				data_tqdm = self.test_database
 				print('   Test dataset')
+			sys.stdout.flush()
 
 			for fdata in data_tqdm:
 				if self.tqdm:
@@ -226,7 +230,8 @@ class DataSet(data_utils.Dataset):
 		else:
 			data_tqdm = range(self.__len__())
 			print('   Normalization')
-
+		sys.stdout.flush()
+		
 		for index in data_tqdm:
 
 			fname = self.index_complexes[index][0]

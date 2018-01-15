@@ -296,7 +296,7 @@ class NeuralNet:
 	def _train(self,index_train,index_valid,index_test,
 		       nepoch = 50,train_batch_size = 5,
 		       tensorboard_writer = None,
-		       export_intermediate=False,debug=False):
+		       export_intermediate=False):
 
 		'''
 		Train the model 
@@ -376,6 +376,7 @@ class NeuralNet:
 					self._plot_scatter(figname)
 				self._export_epoch_hdf5(epoch,self.data)
 
+			sys.stdout.flush()
 
 		# plot the losses
 		self._export_losses(self.outdir+'/'+'losses.png')
