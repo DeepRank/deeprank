@@ -58,7 +58,8 @@ class DataSet(data_utils.Dataset):
 	'''
 
 	def __init__(self,database,test_database=None,select_feature='all',select_target='DOCKQ',
-		         transform_to_2D=False,projection=0,grid_shape = None,normalize_features=True,normalize_targets=True):
+		         transform_to_2D=False,projection=0,grid_shape = None,
+		         normalize_features=True,normalize_targets=True,tqdm=True):
 
 
 		self.database = database
@@ -71,6 +72,8 @@ class DataSet(data_utils.Dataset):
 
 		self.normalize_features = normalize_features
 		self.normalize_targets = normalize_targets
+
+		self.tqdm=tqdm
 
 		# allow for multiple database
 		if not isinstance(database,list):
@@ -111,6 +114,7 @@ class DataSet(data_utils.Dataset):
 		# get renormalization factor
 		if self.normalize_features or self.normalize_targets:
 			self.get_normalization()
+
 
 		print('\n')
 		print("   Data Set Info")
@@ -162,9 +166,15 @@ class DataSet(data_utils.Dataset):
 		self.index_complexes = []
 
 		desc = '{:25s}'.format('   Train dataset')
-		data_tqdm = tqdm(self.database,desc=desc)
+		if self.tqdm:
+			data_tqdm = tqdm(self.database,desc=desc,file=sys.stdout)
+		else:
+			print('   Train dataset')
+			data_tqdm = self.database
+
 		for fdata in data_tqdm:
-			data_tqdm.set_postfix(mol=os.path.basename(fdata))
+			if self.tqdm:
+				data_tqdm.set_postfix(mol=os.path.basename(fdata))
 			fh5 = h5py.File(fdata,'r')
 			mol_names = list(fh5.keys())
 			self.index_complexes += [(fdata,k) for k in mol_names]
@@ -176,10 +186,15 @@ class DataSet(data_utils.Dataset):
 		if self.test_database is not None:
 			
 			desc = '{:25s}'.format('   Test dataset')
-			data_tqdm = tqdm(self.test_database,desc=desc)
+			if self.tqdm:
+				data_tqdm = tqdm(self.test_database,desc=desc,file=sys.stdout)
+			else:
+				data_tqdm = self.test_database
+				print('   Test dataset')
 
 			for fdata in data_tqdm:
-				data_tqdm.set_postfix(mol=os.path.basename(fdata))
+				if self.tqdm:
+					data_tqdm.set_postfix(mol=os.path.basename(fdata))
 				fh5 = h5py.File(fdata,'r')
 				mol_names = list(fh5.keys())
 				self.index_complexes += [(fdata,k) for k in mol_names]
@@ -206,12 +221,19 @@ class DataSet(data_utils.Dataset):
 	def get_normalization(self):
 
 		desc = '{:25s}'.format('   Normalization')
-		data_tqdm = tqdm(range(self.__len__()),desc=desc)
+		if self.tqdm:
+			data_tqdm = tqdm(range(self.__len__()),desc=desc,file=sys.stdout)
+		else:
+			data_tqdm = range(self.__len__())
+			print('   Normalization')
+
 		for index in data_tqdm:
 
 			fname = self.index_complexes[index][0]
-			mol = self.index_complexes[index][1]			
-			data_tqdm.set_postfix(mol=os.path.basename(mol))
+			mol = self.index_complexes[index][1]	
+
+			if self.tqdm:		
+				data_tqdm.set_postfix(mol=os.path.basename(mol))
 
 			feature, target = self.load_one_molecule(fname,mol)
 

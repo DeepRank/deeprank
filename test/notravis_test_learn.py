@@ -1,4 +1,4 @@
-import os
+import os,sys
 
 import torch.optim as optim
 import torch
@@ -65,6 +65,7 @@ def test_learn():
                                             'Feature_sum' : ['coulomb','vdwaals','charge'] },
                             select_target='DOCKQ')
 
+  
   # create the network
   model = deeprank.learn.NeuralNet(data_set,
                           ConvNet3D,

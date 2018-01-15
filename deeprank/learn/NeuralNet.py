@@ -177,7 +177,7 @@ class NeuralNet:
 		self.optimizer = optim.SGD(self.net.parameters(),lr=0.005,momentum=0.9,weight_decay=0.001)
 
 	def train(self,nepoch=50, divide_set=[0.8,0.2], hdf5='data.hdf5',train_batch_size = 10, 
-		      preshuffle = True,export_intermediate=True,debug=False):
+		      preshuffle = True,export_intermediate=True):
 
 		'''
 		Perform a simple training of the model. The data set is divided in training/validation sets
@@ -218,8 +218,7 @@ class NeuralNet:
 		self._train(index_train,index_valid,index_test,
 			        nepoch=nepoch,
 			        train_batch_size=train_batch_size,
-			        export_intermediate=export_intermediate,
-			        debug=debug)
+			        export_intermediate=export_intermediate)
 
 		self.f5.close()
 
