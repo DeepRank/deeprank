@@ -5,6 +5,7 @@ from datetime import datetime
 import sys
 import os
 import time
+import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -87,8 +88,11 @@ class ConvNet:
 
 	'''
 
-	def __init__(self,data_set,model,model_type='3d',proj2d=0,
-		         task='reg',cuda=False,ngpu=0,tensorboard=False,plot=True,outdir='./'):
+	def __init__(self,data_set,model,
+				 model_type='3d',proj2d=0,task='reg',
+				 cuda=False,ngpu=0,
+		         hdf5=None,tensorboard=False,
+		         plot=True,outdir='./'):
 
 
 
@@ -140,6 +144,11 @@ class ConvNet:
 
 		# options for outputing the results
 		self.tensorboard = tensorboard
+
+		# store in a hdf5 file
+		if hdf5 is not None:
+			self.hdf5 = hdf5.File(hdf5,'w')
+
 
 		# output directory
 		self.outdir = outdir
@@ -239,8 +248,11 @@ class ConvNet:
 		self.test_loss = self._test(index_test,print_loss=True)
 
 		# print the final; scatter plot
-
 		self._plot_scatter(self.outdir+"/final_prediction.png", indexes = [index_train,index_valid,index_test])
+
+		# save data in hdf5
+		self.save_data_hdf5()
+
 
 		# close the writers	
 		if self.tensorboard:
@@ -385,14 +397,16 @@ class ConvNet:
 			tbwriter.close()
 
 
-	def save_model(self,epoch,filename='model.pth.tar'):
+	def save_data_hdf5(self):
+		for k,v in self.losses.items():
+			self.hdf5.create_dataset('/losses/'+k,data=v)
+
+	def save_model(self,filename='model.pth.tar'):
 		'''
 		save the model to disk
 		'''
-		state = {'epoch'       : epoch,
-				'state_dict'   : self.net.state_dict(),
-				'optimizer'    : self.optimizer.state_dict(),
-				'losses'       : self.losses}
+		state = {'state_dict'   : self.net.state_dict(),
+				'optimizer'    : self.optimizer.state_dict()}
 		torch.save(state,filename)
 
 	def load_model(self,filename):
@@ -520,7 +534,7 @@ class ConvNet:
 
 		if debug:
 
-			# crete the valid/train data set
+			# create the valid/train data set
 			dataset_train = DeepRankDataSet('')
 			dataset_train.features =  self.data_set.features[:ntrain]
 			dataset_train.targets = self.data_set.targets[:ntrain]
@@ -540,11 +554,12 @@ class ConvNet:
 			# create the sampler
 			train_sampler = data_utils.sampler.SubsetRandomSampler(index_train)
 			valid_sampler = data_utils.sampler.SubsetRandomSampler(index_valid)
+			test_sampler = data_utils.sampler.SubsetRandomSampler(index_test)
 
 			#  create the loaders
 			train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler,pin_memory=pin)
 			valid_loader = data_utils.DataLoader(self.data_set,batch_size=1,sampler=valid_sampler,pin_memory=pin)
-
+			test_loader = data_utils.DataLoader(self.data_set,batch_size=1,sampler=test_sampler,pin_memory=pin)
 
 		# training loop
 		av_time = 0.0
@@ -552,6 +567,7 @@ class ConvNet:
 
 			print('\n: epoch %03d / %03d ' %(epoch,nepoch) + '-'*45)
 			t0 = time.time()
+
 			# train the model
 			self.train_loss = self._epoch(train_loader,train_model=True)
 			self.losses['train'].append(self.train_loss)
@@ -562,12 +578,15 @@ class ConvNet:
 
 			# test the model
 			if index_test is not None:
-				test_loss = self._test(index_test,print_loss=False)
+				test_loss = self._epoch(test_loader,train_model=False)
 				self.losses['test'] = test_loss
 
 			# write the histogramm for tensorboard
 			if self.tensorboard:
 				self._export_tensorboard(tensorboard_writer,epoch)
+
+			# export to hdf5
+			self._export_epoch_hdf5(epoch)
 
 			# talk a bit about losse
 			print('  train loss       : %1.3e\n  valid loss       : %1.3e' %(self.train_loss, self.valid_loss))
@@ -613,6 +632,7 @@ class ConvNet:
 		'''
 
 		running_loss = 0
+		all_output = []
 		for (inputs,targets) in data_loader:
 
 			# get the data
@@ -632,8 +652,45 @@ class ConvNet:
 				loss.backward()
 				self.optimizer.step()
 
-		return running_loss
+			# get the outputs for export
+			if self.cuda:
+				out +=  outputs.data.cpu().numpy().tolist()
+			else:
+				out +=  outputs.data.numpy().tolist()				
 
+		# transform the output back
+		out = np.array(out).flatten()
+		out = self.data_set.backtransform_target(out)
+		
+		return running_loss, out
+
+
+
+	def _get_output(self,data_loader):
+
+		# storage for ploting
+		out,targ = [],[]
+
+		for (inputs,targets) in data_loader :
+
+			inputs,targets = self._get_variables(inputs,targets)
+			outputs = self.net(inputs)
+
+			if self.cuda:
+				out +=  outputs.data.cpu().numpy().tolist()
+				targ += targets.data.cpu().numpy().tolist()
+			else:
+				out +=  outputs.data.numpy().tolist()
+				targ += targets.data.numpy().tolist()
+		
+
+		targ = np.array(targ).flatten()
+		out = np.array(out).flatten()
+
+		targ = self.data_set.backtransform_target(targ)
+		out = self.data_set.backtransform_target(out)
+
+		return out,tar
 
 	def _reinit_parameters(self):
 
@@ -687,6 +744,23 @@ class ConvNet:
 
 		return inputs,targets
 
+
+	def plot_losses(self,figname):
+
+		'''
+		plot the losses vs the epoch
+		'''
+
+		print('\n --> Loss Plot')
+
+		color_plot = ['red','blue','green']
+		labels = ['Train','Valid','Test']
+
+		fig,ax = plt.subplots()	
+		plt.plot(np.array(self.losses['trai']),c=color_plot[0],label=labels[0])
+		plt.plot(np.array(self.losses['valid']),c=color_plot[1],label=labels[1])
+		plt.plot(np.array(self.losses['test']),c=color_plot[2],label=labels[2])
+
 	def _plot_scatter_reg(self,figname,loaders=None,indexes=None):
 
 		'''
@@ -732,33 +806,12 @@ class ConvNet:
 
 		for idata,data_loader in enumerate(loaders):
 
-			# storage for ploting
-			plot_out,plot_targ = [],[]
-
-			for (inputs,targets) in data_loader :
-
-				inputs,targets = self._get_variables(inputs,targets)
-				outputs = self.net(inputs)
-
-				if self.cuda:
-					plot_out +=  outputs.data.cpu().numpy().tolist()
-					plot_targ += targets.data.cpu().numpy().tolist()
-				else:
-					plot_out +=  outputs.data.numpy().tolist()
-					plot_targ += targets.data.numpy().tolist()
-			
-
-			plot_targ = np.array(plot_targ).flatten()
-			plot_out = np.array(plot_out).flatten()
-
-			plot_targ = self.data_set.backtransform_target(plot_targ)
-			plot_out = self.data_set.backtransform_target(plot_out)
+			plot_out,plot_targ = self._get_output(data_loader)
 
 			xvalues = np.append(xvalues,plot_targ)
 			yvalues = np.append(yvalues,plot_out)
 
 			ax.scatter(plot_targ,plot_out,c = color_plot[idata],label=labels[idata])	
-
 		
 		legend = ax.legend(loc='upper left')
 		ax.set_xlabel('Targets')
@@ -926,6 +979,10 @@ class ConvNet:
 			tensorboard_writer.add_scalar('train_loss',self.train_loss,epoch)
 			tensorboard_writer.add_scalar('valid_loss',self.valid_loss,epoch)
 
+
+	def _export_epoch_hdf5(self,epoch):
+
+		self.hdf5.create_group('epoch_%04d' %epoch)
 
 
 #-------------------------------------------------------------------------------

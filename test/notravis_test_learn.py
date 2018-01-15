@@ -66,11 +66,10 @@ def test_learn():
                             select_target='DOCKQ')
 
   # create the network
-  model = deeprank.learn.ConvNet(data_set,
+  model = deeprank.learn.NeuralNet(data_set,
                           ConvNet3D,
                           model_type='3d',
                           task='reg',
-                          tensorboard=False,
                           cuda=False,
                           plot=True,
                           outdir='./out/')
@@ -79,18 +78,17 @@ def test_learn():
   model.train(nepoch = 50,divide_set=[0.8,0.1], train_batch_size = 5)
 
   # save the model
-  model.save_model(epoch = 50)
+  model.save_model()
 
-  model = deeprank.learn.ConvNet(data_set,
+  model = deeprank.learn.NeuralNet(data_set,
                           ConvNet3D,
                           model_type='3d',
                           task='reg',
-                          tensorboard=False,
                           cuda=False,
                           plot=True,
                           outdir='./out_reload/')
 
-  model.load_model('model.pth.tar')
+  model.load_model('./out/model.pth.tar')
   model.train(nepoch = 10,divide_set=[0.8,0.1], train_batch_size = 5)
 
 if __name__ == "__main__":
