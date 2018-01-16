@@ -298,7 +298,6 @@ class NeuralNet:
 
 	def _train(self,index_train,index_valid,index_test,
 		       nepoch = 50,train_batch_size = 5,
-		       tensorboard_writer = None,
 		       export_intermediate=False):
 
 		'''
@@ -397,7 +396,7 @@ class NeuralNet:
 
 		running_loss = 0
 		data = {'outputs':[],'targets':[]}
-
+		n = 0
 		for (inputs,targets) in data_loader:
 
 			# get the data
@@ -411,6 +410,7 @@ class NeuralNet:
 			outputs = self.net(inputs)
 			loss = self.criterion(outputs,targets)
 			running_loss += loss.data[0]
+			n += len(inputs)
 
 			# backward + step
 			if train_model:
@@ -428,6 +428,9 @@ class NeuralNet:
 		# transform the output back
 		data['outputs']  = self.data_set.backtransform_target(np.array(data['outputs']).flatten())
 		data['targets']  = self.data_set.backtransform_target(np.array(data['targets']).flatten())
+
+		# normalize the loss
+		running_loss /= n
 
 		return running_loss, data
 
