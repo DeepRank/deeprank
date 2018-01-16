@@ -91,7 +91,10 @@ class NeuralNet:
 
 		# convert the data to 2d if necessary
 		if model_type == '2d':
-			data_set.convert_dataset_to2d(proj2d=proj2d)
+			self.data_set.transform = True
+			self.data_set.get_shape()
+			self.data_set.proj2D = proj2d
+			
 
 		# task to accomplish 
 		self.task = task
@@ -117,7 +120,7 @@ class NeuralNet:
 
 		# Set the loss functiom
 		if self.task=='reg':
-			self.criterion = nn.MSELoss()
+			self.criterion = nn.MSELoss(size_average=False)
 			self._plot_scatter = self._plot_scatter_reg
 
 		elif self.task=='class':

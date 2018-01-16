@@ -110,7 +110,7 @@ class DataSet(data_utils.Dataset):
 		self.create_index_molecules()
 
 		# get the input shape
-		self.get_input_shape()
+		self.get_shape()
 
 		# get renormalization factor
 		if self.normalize_features or self.normalize_targets:
@@ -122,7 +122,7 @@ class DataSet(data_utils.Dataset):
 		print('   Training set        : %d conformations' %self.ntrain)
 		print('   Test set            : %d conformations' %(self.ntot-self.ntrain))
 		print('   Number of channels  : %d' %self.input_shape[0])
-		print('   Grid Size           : %d x %d x %d' %(self.input_shape[1],self.input_shape[2],self.input_shape[3]))
+		print('   Grid Size           : %d x %d x %d' %(self.data_shape[1],self.data_shape[2],self.data_shape[3]))
 		sys.stdout.flush()
 
 	def __len__(self):
@@ -142,7 +142,7 @@ class DataSet(data_utils.Dataset):
 			feature = self._normalize_feature(feature)
 
 		if self.transform:
-			feature = self.convert2d(feature,self.proj2d)
+			feature = self.convert2d(feature,self.proj2D)
 
 		return feature,target
 
@@ -210,10 +210,19 @@ class DataSet(data_utils.Dataset):
 	# get the input shape
 	# That's useful to preprocess 
 	# the model 
-	def get_input_shape(self):
+	def get_shape(self):
+		'''
+		get the size of the data and input
+		the data is the raw 3d data set
+		the input is the input size of the CNN (potentially after 2d transformation)
+		'''
 
 		fname = self.database[0]
 		feature,_ = self.load_one_molecule(fname)
+		self.data_shape = feature.shape
+
+		if self.transform:
+			feature = self.convert2d(feature,self.proj2D)
 		self.input_shape = feature.shape
 
 	# normalize the data
@@ -250,12 +259,12 @@ class DataSet(data_utils.Dataset):
 				self.target_min = np.min(target)
 				self.target_max = np.min(target)
 
-				self.feat_mean = np.zeros(self.input_shape[0])
+				self.feat_mean = np.zeros(self.data_shape[0])
 
-				var  = np.zeros(self.input_shape[0])
-				sqmean = np.zeros(self.input_shape[0])
+				var  = np.zeros(self.data_shape[0])
+				sqmean = np.zeros(self.data_shape[0])
 
-				for ic in range(self.input_shape[0]):
+				for ic in range(self.data_shape[0]):
 					self.feat_mean[ic] = feature[ic].mean()
 					var[ic] = feature[ic].var()
 					sqmean[ic] = feature[ic].mean()**2
@@ -264,7 +273,7 @@ class DataSet(data_utils.Dataset):
 				self.target_min = np.min([self.target_min,target])
 				self.target_max = np.max([self.target_max,target])
 
-				for ic in range(self.input_shape[0]):
+				for ic in range(self.data_shape[0]):
 					self.feat_mean[ic] += feature[ic].mean()
 					var[ic]  += feature[ic].var()
 					sqmean[ic] += feature[ic].mean()**2
@@ -298,7 +307,7 @@ class DataSet(data_utils.Dataset):
 
 	def _normalize_feature(self,feature):
 
-		for ic in range(self.input_shape[0]):
+		for ic in range(self.data_shape[0]):
 			feature[ic] = (feature[ic]-self.feat_mean[ic])/self.feat_std[ic]
 		return feature
 
@@ -443,6 +452,9 @@ class DataSet(data_utils.Dataset):
 		
 		return feature
 
+
+
+"""
 class InMemoryDataSet(data_utils.Dataset):
 
 	'''
@@ -712,3 +724,4 @@ class InMemoryDataSet(data_utils.Dataset):
 		# get the number of channels and points along each axis
 		# the input_shape is now a torch.Size object
 		self.input_shape = self.features[0].shape
+"""		
