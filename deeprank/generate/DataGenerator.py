@@ -192,6 +192,7 @@ class DataGenerator(object):
 
 				# crete a subgroup for the molecule
 				molgrp = self.f5.require_group(mol_name)
+				molgrp.attrs['type'] = 'molecule'
 
 				# add the ref and the complex
 				self._add_pdb(molgrp,cplx,'complex')
@@ -204,11 +205,12 @@ class DataGenerator(object):
 
 				# add the features
 				featgrp = molgrp.require_group('features')
+				featgrp = molgrp.require_group('features_raw')
 				if self.import_features is not None:
 					self._import_features(self.import_features,featgrp)			
 
 				if self.compute_features is not None:
-					self._compute_features(self.compute_features, molgrp['complex'].value,molgrp['features'] )
+					self._compute_features(self.compute_features, molgrp['complex'].value,molgrp['features'],molgrp['features_raw'] )
 
 				################################################
 				#	add the targets
@@ -793,11 +795,11 @@ class DataGenerator(object):
 			else:
 				fsrc.close()
 
-	def _compute_features(self,feat_list,pdb_data,featgrp):
+	def _compute_features(self,feat_list,pdb_data,featgrp,featgrp_raw):
 
 		for feat in feat_list:
 			feat_module = importlib.import_module(feat,package=None)
-			feat_module.__compute_feature__(pdb_data,featgrp)
+			feat_module.__compute_feature__(pdb_data,featgrp,featgrp_raw)
 
 
 #====================================================================================

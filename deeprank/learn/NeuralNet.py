@@ -482,8 +482,10 @@ class NeuralNet:
 		fig.savefig(figname)
 		plt.close()
 
+		grp = self.f5.create_group('/losses/')
+		grp.attrs['type'] = 'losses'
 		for k,v in self.losses.items():
-			self.f5.create_dataset('/losses/'+k,data=v)
+			grp.create_dataset(k,data=v)
 
 	def _plot_scatter_reg(self,figname,loaders=None,indexes=None):
 
@@ -541,6 +543,7 @@ class NeuralNet:
 
 		grp_name = 'epoch_%04d' %epoch
 		grp = self.f5.create_group(grp_name)
+		grp.attrs['type'] = 'epoch'
 		for k,v in data.items():
 			sg = grp.create_group(k)
 			for kk,vv in v.items():

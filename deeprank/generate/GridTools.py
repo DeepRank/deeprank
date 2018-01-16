@@ -812,15 +812,18 @@ class GridTools(object):
 				# if we have a sparse matrix
 				if spg.sparse:
 					sub_feat_group.attrs['sparse'] = spg.sparse
+					sub_feat_group.attrs['type'] = 'sparse_matrix'
 					sub_feat_group.create_dataset('index',data=spg.index,compression='gzip',compression_opts=9)
 					sub_feat_group.create_dataset('value',data=spg.value,compression='gzip',compression_opts=9)
 
 				else:
 					sub_feat_group.attrs['sparse'] = spg.sparse
+					sub_feat_group.attrs['type'] = 'sparse_matrix'
 					sub_feat_group.create_dataset('value',data=spg.value,compression='gzip',compression_opts=9)				
 				
 			else:
 				sub_feat_group.attrs['sparse'] = False
+				sub_feat_group.attrs['type'] = 'sparse_matrix'
 				sub_feat_group.create_dataset('value',data=value,compression='gzip',compression_opts=9)				
 
 ########################################################################################################

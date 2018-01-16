@@ -6,7 +6,7 @@ from deeprank.tools import NaivePSSM
 #
 #####################################################################################
 
-def __compute_feature__(pdb_data,featgrp):
+def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
 	path = os.path.dirname(os.path.realpath(__file__))
 	PSSM = path + '/PSSM/'
@@ -30,3 +30,4 @@ def __compute_feature__(pdb_data,featgrp):
 	
 	# export in the hdf5 file
 	pssm.export_dataxyz_hdf5(featgrp)
+	pssm.export_data_hdf5(featgrp_raw)

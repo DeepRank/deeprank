@@ -120,7 +120,7 @@ class FeatureClass(object):
 			ds = np.array(ds).astype('|S'+str(len(ds[0])))
 
 			# create the dataset
-			featgrp.create_dataset(name,data=ds)			
+			featgrp.create_dataset(name+'_raw',data=ds)			
 
 
 

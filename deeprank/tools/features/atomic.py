@@ -7,7 +7,7 @@ import os
 #
 #####################################################################################
 
-def __compute_feature__(pdb_data,featgrp):
+def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
 	path = os.path.dirname(os.path.realpath(__file__))
 	FF = path + '/forcefield/'
@@ -29,7 +29,7 @@ def __compute_feature__(pdb_data,featgrp):
 
 	# export in the hdf5 file
 	atfeat.export_dataxyz_hdf5(featgrp)
-	#atfeat.export_data_hdf5(featgrp)
+	atfeat.export_data_hdf5(featgrp_raw)
 
 	# close
 	atfeat.sqldb.close()
