@@ -19,7 +19,7 @@ import torch.utils.data as data_utils
 
 import torch.cuda
 
-from deeprank.learn import DataSet
+printif = lambda string,cond: print(string) if cond else None
 
 class NeuralNet:
 
@@ -92,10 +92,18 @@ class NeuralNet:
 		# convert the data to 2d if necessary
 		if model_type == '2d':
 			self.data_set.transform = True
-			self.data_set.get_shape()
 			self.data_set.proj2D = proj2d
-			
 
+			dstype = self.data_set.__class__.__name__ 
+			if  dstype == 'InMemoryDataSet':
+				self.data_set.convert_dataset_to2d()
+			elif dstype == 'DataSet':
+				self.data_set.get_shape()
+			else:
+				raise ValueError('Data set type %s not recognized' %self.data_set.__name__)
+			
+			
+			
 		# task to accomplish 
 		self.task = task
 
@@ -291,7 +299,7 @@ class NeuralNet:
 			index_train = ind[:ntrain]
 			index_valid = ind[ntrain:self.data_set.ntrain]
 			index_test = ind[self.data_set.ntrain:]
-
+			
 		return index_train,index_valid,index_test
 
 
@@ -332,9 +340,9 @@ class NeuralNet:
 		test_sampler = data_utils.sampler.SubsetRandomSampler(index_test)
 
 		#  create the loaders
-		train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler,pin_memory=pin)
-		valid_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=valid_sampler,pin_memory=pin)
-		test_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=test_sampler,pin_memory=pin)
+		train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler,pin_memory=pin,num_workers=1)
+		valid_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=valid_sampler,pin_memory=pin,num_workers=1)
+		test_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=test_sampler,pin_memory=pin,num_workers=1)
 
 		# training loop
 		av_time = 0.0
@@ -363,7 +371,10 @@ class NeuralNet:
 
 			# timer
 			elapsed = time.time()-t0
-			print('  epoch done in    :', time.strftime('%H:%M:%S', time.gmtime(elapsed)) )
+			if elapsed>10:
+				print('  epoch done in    :', time.strftime('%H:%M:%S', time.gmtime(elapsed)))
+			else:
+				print('  epoch done in    : %1.3f' %elapsed)
 
 			# remaining time
 			av_time += elapsed
@@ -397,12 +408,17 @@ class NeuralNet:
 		running_loss = 0
 		data = {'outputs':[],'targets':[]}
 		n = 0
+		debug_time = False
+		time_learn = 0
+		
 		for (inputs,targets) in data_loader:
 
-			# get the data
+			# transform the data
 			inputs,targets = self._get_variables(inputs,targets)
+			
 
 			# zero gradient
+			tlearn0 = time.time()
 			if train_model:
 				self.optimizer.zero_grad()
 
@@ -411,11 +427,12 @@ class NeuralNet:
 			loss = self.criterion(outputs,targets)
 			running_loss += loss.data[0]
 			n += len(inputs)
-
+		
 			# backward + step
 			if train_model:
 				loss.backward()
 				self.optimizer.step()
+			time_learn += time.time()-tlearn0
 
 			# get the outputs for export
 			if self.cuda:
@@ -431,7 +448,9 @@ class NeuralNet:
 
 		# normalize the loss
 		running_loss /= n
-
+		if train_model:
+			printif('     __train__ %f' %time_learn,debug_time)
+		
 		return running_loss, data
 
 
@@ -450,7 +469,7 @@ class NeuralNet:
 
 
 		# get the varialbe as float by default
-		inputs,targets = Variable(inputs),Variable(targets).float()
+		inputs,targets = Variable(inputs).float(),Variable(targets).float()
 
 		# change the targets to long for classification
 		if self.task == 'class':

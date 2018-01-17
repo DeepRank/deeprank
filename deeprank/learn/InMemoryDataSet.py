@@ -91,10 +91,12 @@ class InMemoryDataSet(data_utils.Dataset):
 
 		
 		# allow for multiple database
+		self.database = database
 		if not isinstance(database,list):
 			self.database = [database]
 
 		# allow for multiple database
+		self.test_database = test_database
 		if test_database is not None:
 			if not isinstance(test_database,list):
 				self.test_database = [test_database]
