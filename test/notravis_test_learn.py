@@ -61,8 +61,9 @@ def test_learn():
   # declare the dataset instance
   data_set = deeprank.learn.DataSet(database,
                             test_database = database,
-                            select_feature={'AtomicDensities_sum' : ['C','CA','O','N'], 
-                                            'Feature_sum' : ['coulomb','vdwaals','charge'] },
+                            #select_feature={'AtomicDensities_sum' : ['C','CA','O','N'], 
+                            #                'Feature_sum' : ['coulomb','vdwaals','charge'] },
+                            select_feature = 'all',
                             select_target='DOCKQ')
 
   
@@ -81,16 +82,16 @@ def test_learn():
   # save the model
   model.save_model()
 
-  model = deeprank.learn.NeuralNet(data_set,
-                          ConvNet3D,
-                          model_type='3d',
-                          task='reg',
-                          cuda=False,
-                          plot=True,
-                          outdir='./out_reload/')
+  # model = deeprank.learn.NeuralNet(data_set,
+  #                         ConvNet3D,
+  #                         model_type='3d',
+  #                         task='reg',
+  #                         cuda=False,
+  #                         plot=True,
+  #                         outdir='./out_reload/')
 
-  model.load_model('./out/model.pth.tar')
-  model.train(nepoch = 10,divide_set=[0.8,0.1], train_batch_size = 5)
+  # model.load_model('./out/model.pth.tar')
+  # model.train(nepoch = 10,divide_set=[0.8,0.1], train_batch_size = 5)
 
 if __name__ == "__main__":
   test_learn()
