@@ -187,10 +187,15 @@ class InMemoryDataSet(data_utils.Dataset):
 
 					# get the mol
 					mol_data = fh5.get(mol)
-					nx = mol_data['grid_points']['x'].shape[0]
-					ny = mol_data['grid_points']['y'].shape[0]
-					nz = mol_data['grid_points']['z'].shape[0]
-					shape=(nx,ny,nz)
+					if self.grid_shape is not None:
+						shape = self.grid_shape
+					elif 'grid_points' in mol_data:
+						nx = mol_data['grid_points']['x'].shape[0]
+						ny = mol_data['grid_points']['y'].shape[0]
+						nz = mol_data['grid_points']['z'].shape[0]
+						shape=(nx,ny,nz)
+					else:
+						raise ValueError('Impossible to determine sparse grid shape.\n Specify argument grid_shape=(x,y,z)')
 
 					# load all the features
 					if self.select_feature == 'all':
