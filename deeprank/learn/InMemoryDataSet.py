@@ -312,6 +312,8 @@ class InMemoryDataSet(data_utils.Dataset):
 	# put in torch format and normalize
 	def preprocess(self,features,targets):
 
+		print(': Normalize the data')
+
 		# get the number of channels and points along each axis
 		self.input_shape = features[0].shape
 		self.data_shape = features[0].shape

@@ -238,13 +238,27 @@ class NeuralNet:
 		self.f5.close()
 		print(' --> Training done in ', time.strftime('%H:%M:%S', time.gmtime(time.time()-t0)))
 
+	def test(self):
+
+		index = list(range(self.data_set.__len__()))
+		sampler = data_utils.sampler.SubsetRandomSampler(index)
+		loader = data_utils.DataLoader(self.data_set,sampler=sampler)
+		self.data = {}
+		test_loss,self.data['test'] = self._epoch(loader,train_model=False)
+		print(self.data)
+		self._plot_scatter_reg(self.outdir+'/test.png')
+
 	def save_model(self,filename='model.pth.tar'):
 		'''
 		save the model to disk
 		'''
 		filename = self.outdir + '/' + filename
 		state = {'state_dict'   : self.net.state_dict(),
-				'optimizer'    : self.optimizer.state_dict()}
+				'optimizer'    : self.optimizer.state_dict(),
+				'target_min'   : self.data_set.target_min,
+				'target_max'   : self.data_set.target_max,
+				'transform'   : self.data_set.transform,
+				'proj2D'      : self.data_set.proj2D}
 		torch.save(state,filename)
 
 	def load_model(self,filename):
@@ -254,7 +268,10 @@ class NeuralNet:
 		state = torch.load(filename)
 		self.net.load_state_dict(state['state_dict'])
 		self.optimizer.load_state_dict(state['optimizer'])
-
+		self.data_set.target_min = state['target_min']
+		self.data_set.target_max = state['target_max']
+		self.data_set.transform = state['transform']
+		self.data_set.proj2D = state['proj2D']
 		
 	def _divide_dataset(self,divide_set, preshuffle):
 
@@ -511,7 +528,7 @@ class NeuralNet:
 		for k,v in self.losses.items():
 			grp.create_dataset(k,data=v)
 
-	def _plot_scatter_reg(self,figname,loaders=None,indexes=None):
+	def _plot_scatter_reg(self,figname):
 
 		'''
 		Plot a scatter plots of predictions VS targets useful '
@@ -543,13 +560,14 @@ class NeuralNet:
 
 		for l in labels:
 
-			targ = self.data[l]['targets']
-			out = self.data[l]['outputs']
+			if l in self.data:
+				targ = self.data[l]['targets']
+				out = self.data[l]['outputs']
 
-			xvalues = np.append(xvalues,targ)
-			yvalues = np.append(yvalues,out)
+				xvalues = np.append(xvalues,targ)
+				yvalues = np.append(yvalues,out)
 
-			ax.scatter(targ,out,c = color_plot[l],label=l)	
+				ax.scatter(targ,out,c = color_plot[l],label=l)	
 		
 		legend = ax.legend(loc='upper left')
 		ax.set_xlabel('Targets')
