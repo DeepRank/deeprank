@@ -225,13 +225,18 @@ class NeuralNet:
 		# divide the set in train+ valid and test
 		index_train,index_valid,index_test = self._divide_dataset(divide_set,preshuffle)
 
+		print(': %d confs. for training' %len(index_train))
+		print(': %d confs. for validation' %len(index_valid))
+		print(': %d confs. for testing' %len(index_test))
+
 		# train the model
+		t0 = time.time()
 		self._train(index_train,index_valid,index_test,
 			        nepoch=nepoch,
 			        train_batch_size=train_batch_size,
 			        export_intermediate=export_intermediate)
-
 		self.f5.close()
+		print(' --> Training done in ', time.strftime('%H:%M:%S', time.gmtime(time.time()-t0)))
 
 	def save_model(self,filename='model.pth.tar'):
 		'''
