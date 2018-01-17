@@ -330,16 +330,40 @@ class InMemoryDataSet(data_utils.Dataset):
 			self.targets /= self.target_max
 
 		if self.normalize_features:
+			self.feature_mean = np.zeros(self.features.shape[1])
+			self.feature_std = np.zeros(self.features.shape[1])
 			for iC in range(self.features.shape[1]):
-				self.features[:,iC,:,:,:] = (self.features[:,iC,:,:,:]-self.features[:,iC,:,:,:].mean())/self.features[:,iC,:,:,:].std()
+				mean = self.features[:,iC,:,:,:].mean()
+				std = self.features[:,iC,:,:,:].std()
+				self.feature_mean[iC] = mean
+				self.feature_std[iC] = std
+				self.features[:,iC,:,:,:] = (self.features[:,iC,:,:,:]-mean)/std
+
+
+	# normalize data
+	def normalize_data(self):
+
+		if self.normalize_targets:
+			self.targets -= self.target_min
+			self.targets /= self.target_max
+
+		if self.normalize_features:
+			for iC in range(self.features.shape[1]):
+				mean = self.features[:,iC,:,:,:].mean()
+				std = self.features[:,iC,:,:,:].mean()
+				mean = self.feature_mean[iC]
+				std = self.feature_std[iC]
+				self.features[:,iC,:,:,:] = (self.features[:,iC,:,:,:]-mean)/std
 
 
 	def backtransform_target(self,data):
-		data = FloatTensor(data)
-		data *= self.target_max
-		data += self.target_min
-		return data.numpy()
-
+		if self.normalize_targets:
+			data = FloatTensor(data)
+			data *= self.target_max
+			data += self.target_min
+			return data.numpy()
+		else:
+			return data
 
 	#convert the 3d data set to 2d data set
 	def convert_dataset_to2d(self):

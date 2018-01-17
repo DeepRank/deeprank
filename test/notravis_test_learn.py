@@ -82,16 +82,10 @@ def test_learn():
   # save the model
   model.save_model()
 
-  # model = deeprank.learn.NeuralNet(data_set,
-  #                         ConvNet3D,
-  #                         model_type='3d',
-  #                         task='reg',
-  #                         cuda=False,
-  #                         plot=True,
-  #                         outdir='./out_reload/')
-
-  # model.load_model('./out/model.pth.tar')
-  # model.train(nepoch = 10,divide_set=[0.8,0.1], train_batch_size = 5)
+  # reload the model and test it
+  model = deeprank.learn.NeuralNet(data_set,ConvNet3D,outdir='./out_reload/')
+  model.load_model('./out/model.pth.tar')
+  model.test()
 
 if __name__ == "__main__":
   test_learn()

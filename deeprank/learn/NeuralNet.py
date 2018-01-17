@@ -245,7 +245,7 @@ class NeuralNet:
 		loader = data_utils.DataLoader(self.data_set,sampler=sampler)
 		self.data = {}
 		test_loss,self.data['test'] = self._epoch(loader,train_model=False)
-		print(self.data)
+		
 		self._plot_scatter_reg(self.outdir+'/test.png')
 
 	def save_model(self,filename='model.pth.tar'):
@@ -255,8 +255,12 @@ class NeuralNet:
 		filename = self.outdir + '/' + filename
 		state = {'state_dict'   : self.net.state_dict(),
 				'optimizer'    : self.optimizer.state_dict(),
+				'normalize_targets' : self.data_set.normalize_targets,
 				'target_min'   : self.data_set.target_min,
 				'target_max'   : self.data_set.target_max,
+				'normalize_features': self.data_set.normalize_features,
+				'feature_mean' : self.data_set.feature_mean,
+				'feature_std' : self.data_set.feature_std,
 				'transform'   : self.data_set.transform,
 				'proj2D'      : self.data_set.proj2D}
 		torch.save(state,filename)
@@ -268,8 +272,12 @@ class NeuralNet:
 		state = torch.load(filename)
 		self.net.load_state_dict(state['state_dict'])
 		self.optimizer.load_state_dict(state['optimizer'])
+		self.data_set.normalize_targets = state['normalize_targets']
 		self.data_set.target_min = state['target_min']
 		self.data_set.target_max = state['target_max']
+		self.data_set.normalize_features = state['normalize_features']
+		self.data_set.feature_mean = state['feature_mean']
+		self.data_set.feature_std = state['feature_std']
 		self.data_set.transform = state['transform']
 		self.data_set.proj2D = state['proj2D']
 		
