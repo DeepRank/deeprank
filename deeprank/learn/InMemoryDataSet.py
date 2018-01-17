@@ -165,10 +165,15 @@ class InMemoryDataSet(data_utils.Dataset):
 
 		lendata = [0,0]
 		features, targets = [], []
+		print(': Loading Data set in memory')
+		size_total = 0
+
 		if self.test_database is None:
 			iter_databases = [self.database]
 		else:
 			iter_databases = [self.database,self.test_database]
+
+
 		for idata,database in enumerate(iter_databases):
 			
 			for fdata in database:
@@ -186,8 +191,18 @@ class InMemoryDataSet(data_utils.Dataset):
 				# for each folder we create a tmp_feat of size Nchanels x Nx x Ny x Nz
 				# that we then append to the feature list
 				#
-				
-				for mol in tqdm(mol_names):
+				if self.tqdm:
+					desc = '{:25s}'.format('   '+fdata) 
+					data_tqdm  = tqdm(mol_names,desc=desc,file=sys.stdout)
+				else:
+					data_tqdm = mol_names
+					print('   --> Loading %s' %fdata,end='',flush=True)
+
+				for mol in data_tqdm:
+
+					if self.tqdm:		
+						mem = sys.getsizeof(np.array(features))/1E9
+						data_tqdm.set_postfix(MEM='{:1.3f}'.format(mem)+' GB')
 
 					# get the mol
 					mol_data = fh5.get(mol)
@@ -260,7 +275,6 @@ class InMemoryDataSet(data_utils.Dataset):
 						# append to the list of features
 						features.append(np.array(tmp_feat))
 
-
 					# target
 					opt_names = list(mol_data.get('targets/').keys())			
 					fname = list(filter(lambda x: self.select_target in x, opt_names))
@@ -278,6 +292,11 @@ class InMemoryDataSet(data_utils.Dataset):
 					fname = fname[0]
 					targ_data = mol_data.get('targets/'+fname)		
 					targets.append(targ_data.value)
+
+
+				if not self.tqdm:
+					mem = sys.getsizeof(np.array(features))/1E9
+					print('   %1.3f GB loaded' %mem)
 
 				# close
 				fh5.close()

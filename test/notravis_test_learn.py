@@ -59,12 +59,12 @@ def test_learn():
     raise FileNotFoundError('Database %s not found. Make sure to run test_generate before')
 
   # declare the dataset instance
-  data_set = deeprank.learn.DataSet(database,
+  data_set = deeprank.learn.InMemoryDataSet(database,
                             test_database = database,
                             #select_feature={'AtomicDensities_sum' : ['C','CA','O','N'], 
                             #                'Feature_sum' : ['coulomb','vdwaals','charge'] },
                             select_feature = 'all',
-                            select_target='DOCKQ')
+                            select_target='DOCKQ',tqdm=True)
 
   
   # create the network
