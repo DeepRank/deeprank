@@ -165,7 +165,11 @@ class InMemoryDataSet(data_utils.Dataset):
 
 		lendata = [0,0]
 		features, targets = [], []
-		for idata,database in enumerate([self.database,self.test_database]):
+		if self.test_database is None:
+			iter_databases = [self.database]
+		else:
+			iter_databases = [self.database,self.test_database]
+		for idata,database in enumerate(iter_databases):
 			
 			for fdata in database:
 
