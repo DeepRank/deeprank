@@ -271,13 +271,13 @@ class DataSet(data_utils.Dataset):
 				self.target_min = np.min(target)
 				self.target_max = np.min(target)
 
-				self.feat_mean = np.zeros(self.data_shape[0])
+				self.feature_mean = np.zeros(self.data_shape[0])
 
 				var  = np.zeros(self.data_shape[0])
 				sqmean = np.zeros(self.data_shape[0])
 
 				for ic in range(self.data_shape[0]):
-					self.feat_mean[ic] = feature[ic].mean()
+					self.feature_mean[ic] = feature[ic].mean()
 					var[ic] = feature[ic].var()
 					sqmean[ic] = feature[ic].mean()**2
 			else:
@@ -286,18 +286,18 @@ class DataSet(data_utils.Dataset):
 				self.target_max = np.max([self.target_max,target])
 
 				for ic in range(self.data_shape[0]):
-					self.feat_mean[ic] += feature[ic].mean()
+					self.feature_mean[ic] += feature[ic].mean()
 					var[ic]  += feature[ic].var()
 					sqmean[ic] += feature[ic].mean()**2
 
 		# average the mean values
-		self.feat_mean /= self.ntot
+		self.feature_mean /= self.ntot
 		
 		# average the standard deviations
-		self.feat_std = var/self.ntot
-		self.feat_std += sqmean/self.ntot
-		self.feat_std -= self.feat_mean**2
-		self.feat_std = np.sqrt(self.feat_std)
+		self.feature_std = var/self.ntot
+		self.feature_std += sqmean/self.ntot
+		self.feature_std -= self.feature_mean**2
+		self.feature_std = np.sqrt(self.feature_std)
 
 		# make torch tensor
 		# takes quite a long time to do and I'm not sure it's needed
@@ -321,7 +321,7 @@ class DataSet(data_utils.Dataset):
 	def _normalize_feature(self,feature):
 
 		for ic in range(self.data_shape[0]):
-			feature[ic] = (feature[ic]-self.feat_mean[ic])/self.feat_std[ic]
+			feature[ic] = (feature[ic]-self.feature_mean[ic])/self.feature_std[ic]
 		return feature
 
 	############################################
