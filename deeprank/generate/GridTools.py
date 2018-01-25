@@ -593,7 +593,6 @@ class GridTools(object):
 
 			# map all the features
 			for line in self.local_tqdm(data):
-
 				t0 = time()
 				# if the feature was written with xyz data
 				# i.e chain x y z values

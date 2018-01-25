@@ -272,7 +272,7 @@ class DataGenerator(object):
 				self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
 				printif('Error during the feature calculation of %s' %cplx,self.debug)
 				
-
+			
 		# remove the data where we had issues
 		if remove_error:
 			for mol in self.feature_error:

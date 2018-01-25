@@ -5,6 +5,8 @@ from .AtomicFeature import AtomicFeature
 from .StructureSimilarity import StructureSimilarity
 from .sasa import SASA
 from .NaivePSSM import NaivePSSM
+from .BSA import BSA
+from .ResidueDensity import ResidueDensity
 
 from .sparse import *
 from .features import *

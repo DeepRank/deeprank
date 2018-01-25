@@ -188,7 +188,7 @@ class NeuralNet:
 		self.optimizer = optim.SGD(self.net.parameters(),lr=0.005,momentum=0.9,weight_decay=0.001)
 
 	def train(self,nepoch=50, divide_set=[0.8,0.2], hdf5='data.hdf5',train_batch_size = 10, 
-		      preshuffle = True,export_intermediate=True):
+		      preshuffle = True,export_intermediate=True,num_workers=1):
 
 		'''
 		Perform a simple training of the model. The data set is divided in training/validation sets
@@ -234,7 +234,8 @@ class NeuralNet:
 		self._train(index_train,index_valid,index_test,
 			        nepoch=nepoch,
 			        train_batch_size=train_batch_size,
-			        export_intermediate=export_intermediate)
+			        export_intermediate=export_intermediate,
+			        num_workers=num_workers)
 		self.f5.close()
 		print(' --> Training done in ', time.strftime('%H:%M:%S', time.gmtime(time.time()-t0)))
 
@@ -336,7 +337,7 @@ class NeuralNet:
 
 	def _train(self,index_train,index_valid,index_test,
 		       nepoch = 50,train_batch_size = 5,
-		       export_intermediate=False):
+		       export_intermediate=False,num_workers=1):
 
 		'''
 		Train the model 
@@ -370,9 +371,9 @@ class NeuralNet:
 		test_sampler = data_utils.sampler.SubsetRandomSampler(index_test)
 
 		#  create the loaders
-		train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler,pin_memory=pin,num_workers=1)
-		valid_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=valid_sampler,pin_memory=pin,num_workers=1)
-		test_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=test_sampler,pin_memory=pin,num_workers=1)
+		train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler,pin_memory=pin,num_workers=num_workers)
+		valid_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=valid_sampler,pin_memory=pin,num_workers=num_workers)
+		test_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=test_sampler,pin_memory=pin,num_workers=num_workers)
 
 		# training loop
 		av_time = 0.0

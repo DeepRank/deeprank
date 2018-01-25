@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as data_utils
 
-import deeprank.learn 
+from deeprank.learn import *
 
 ###################################
 # define the CNN
@@ -59,32 +59,30 @@ def test_learn():
     raise FileNotFoundError('Database %s not found. Make sure to run test_generate before')
 
   # declare the dataset instance
-  data_set = deeprank.learn.InMemoryDataSet(database,
-                            test_database = database,
-                            #select_feature={'AtomicDensities_sum' : ['C','CA','O','N'], 
-                            #                'Feature_sum' : ['coulomb','vdwaals','charge'] },
-                            select_feature = 'all',
-                            select_target='DOCKQ',tqdm=True)
+  #data_set = InMemoryDataSet(database,test_database = database,
+  #                          select_feature = 'all',select_target='DOCKQ',tqdm=True,
+  #                          normalize_features = True, normalize_targets=True)
 
   
   # create the network
-  model = deeprank.learn.NeuralNet(data_set,
-                          ConvNet3D,
-                          model_type='3d',
-                          task='reg',
-                          cuda=False,
-                          plot=True,
-                          outdir='./out/')
+  #model = NeuralNet(data_set,ConvNet3D,model_type='3d',task='reg',
+  #                  cuda=False,plot=True,outdir='./out/')
 
   # start the training
-  model.train(nepoch = 50,divide_set=[0.8,0.1], train_batch_size = 5)
+  #model.train(nepoch = 50,divide_set=[0.8,0.1], train_batch_size = 5)
 
   # save the model
-  model.save_model()
+  #model.save_model()
 
   # reload the model and test it
-  model = deeprank.learn.NeuralNet(data_set,ConvNet3D,outdir='./out_reload/')
+  # declare the dataset instance
+  data_set = InMemoryDataSet(database,test_database = database,
+                            select_feature = 'all',select_target='DOCKQ',tqdm=True,
+                            normalize_features = False, normalize_targets=False)
+
+  model = NeuralNet(data_set,ConvNet3D,outdir='./out_reload/')
   model.load_model('./out/model.pth.tar')
+  model.data_set.normalize_data()
   model.test()
 
 if __name__ == "__main__":
