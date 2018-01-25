@@ -1,9 +1,12 @@
-import freesasa
 import os
 import numpy as np
 from deeprank.tools import pdb2sql
 from deeprank.tools import FeatureClass
 
+try:
+	import freesasa
+except:
+	print('Freesasa not found')
 
 class BSA(FeatureClass):
 
@@ -14,12 +17,20 @@ class BSA(FeatureClass):
 
 	Freesasa is required
 
-	# get the code and go in its dir
+	# get the code and go in its dir from github (some issues with configure)
 	git clone https://github.com/mittinatten/freesasa.git
+	cd freesasa
+	autoconf -i configure.ac
+
+	# OR dowload it directly (preferred method)
+	wget http://freesasa.github.io/freesasa-2.0.2.tar.gz
+	tar -xvf freesasa-2.0.2.tar.gz
+
+	# go there
 	cd freesasa
 
 	# configure with fPIC flag on Ubuntu
-	./configure --enable-python-binding CFLAGS=-fPIC
+	./configure --enable-python-bindings CFLAGS=-fPIC
 
 	# make the code possibly sudo that
 	make 
