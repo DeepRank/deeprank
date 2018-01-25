@@ -29,7 +29,7 @@ before_install:
   - ./configure --disable-xml --disable-json --enable-python-bindings --with-python=python3.6 CFLAGS="-fPIC" --prefix=$HOME
   - make 
   - make install
-
+  - cd ../
 
 install:
   - pip install -qe .[test]
