@@ -1,6 +1,6 @@
 # DeepRank
 
-<a href='https://travis-ci.org/DeepRank/deeprank_v0.0'><img src='https://secure.travis-ci.org/DeepRank/deeprank.png?branch=master'></a>
+<a href='https://travis-ci.org/DeepRank/deeprank'><img src='https://secure.travis-ci.org/DeepRank/deeprank.png?branch=master'></a>
 
 These module allows to :
 
