@@ -190,10 +190,13 @@ class DataSet(data_utils.Dataset):
 		for fdata in data_tqdm:
 			if self.tqdm:
 				data_tqdm.set_postfix(mol=os.path.basename(fdata))
-			fh5 = h5py.File(fdata,'r')
-			mol_names = list(fh5.keys())
-			self.index_complexes += [(fdata,k) for k in mol_names]
-			fh5.close()
+			try:
+				fh5 = h5py.File(fdata,'r')
+				mol_names = list(fh5.keys())
+				self.index_complexes += [(fdata,k) for k in mol_names]
+				fh5.close()
+			except:
+				print('Ignore File : '+fdata)
 
 		self.ntrain = len(self.index_complexes)
 		self.index_train = list(range(self.ntrain))
@@ -211,10 +214,13 @@ class DataSet(data_utils.Dataset):
 			for fdata in data_tqdm:
 				if self.tqdm:
 					data_tqdm.set_postfix(mol=os.path.basename(fdata))
-				fh5 = h5py.File(fdata,'r')
-				mol_names = list(fh5.keys())
-				self.index_complexes += [(fdata,k) for k in mol_names]
-				fh5.close()
+				try:
+					fh5 = h5py.File(fdata,'r')
+					mol_names = list(fh5.keys())
+					self.index_complexes += [(fdata,k) for k in mol_names]
+					fh5.close()
+				except:
+					print('Ignore File : '+fdata)				
 
 		self.ntot = len(self.index_complexes)
 		self.index_test = list(range(self.ntrain,self.ntot))
