@@ -436,11 +436,11 @@ if __name__== '__main__':
 	fc_layers.append(fc(output_size=84,post='relu'))
 	fc_layers.append(fc(input_size=84,output_size=1))
 
-	MG = NetworkGenerator(name='cnntest',fname='modeltest.py',conv_layers=conv_layers,fc_layers=fc_layers)
+	MG = NetworkGenerator(name='cnntest',fname='model.py',conv_layers=conv_layers,fc_layers=fc_layers)
 	MG.print()
 	MG.write()
 
-	MGR = NetworkGenerator(name='cnnrand',fname='modelrandom.py')
-	MGR.get_new_random_model()
-	MGR.print()
-	MGR.write()
+	# MGR = NetworkGenerator(name='cnnrand',fname='modelrandom.py')
+	# MGR.get_new_random_model()
+	# MGR.print()
+	# MGR.write()

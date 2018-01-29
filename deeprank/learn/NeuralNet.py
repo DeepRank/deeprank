@@ -21,7 +21,7 @@ import torch.cuda
 
 printif = lambda string,cond: print(string) if cond else None
 
-class NeuralNet:
+class NeuralNet():
 
 	'''
 	Train a Convolutional Neural Network for DeepRank
@@ -474,8 +474,12 @@ class NeuralNet:
 				data['targets'] += targets.data.numpy().tolist()
 
 		# transform the output back
-		data['outputs']  = self.data_set.backtransform_target(np.array(data['outputs']).flatten())
-		data['targets']  = self.data_set.backtransform_target(np.array(data['targets']).flatten())
+		if self.data_set.normalize_targets:
+			data['outputs']  = self.data_set.backtransform_target(np.array(data['outputs']).flatten())
+			data['targets']  = self.data_set.backtransform_target(np.array(data['targets']).flatten())
+		else:
+			data['outputs']  = np.array(data['outputs']).flatten()
+			data['targets']  = np.array(data['targets']).flatten()
 
 		# normalize the loss
 		running_loss /= n
