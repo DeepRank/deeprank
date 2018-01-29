@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import h5py
+import torch
 from torch import FloatTensor
 import torch.utils.data as data_utils
 import subprocess as sp
@@ -263,32 +264,39 @@ class DataSet(data_utils.Dataset):
 
 			feature, target = self.load_one_molecule(fname,mol)
 
+			# here we pass eveything in np format again
+			# and then we re going to retransform  ..... 
+			# dum dum dum
 			#target = target.numpy()
 			#feature = feature.numpy()
 
 			if index == 0:
 
-				self.target_min = np.min(target)
-				self.target_max = np.min(target)
+				self.target_min = torch.min(target)
+				self.target_max = torch.max(target)
 
-				self.feature_mean = np.zeros(self.data_shape[0])
+				#self.feature_mean = np.zeros(self.data_shape[0])
+				#var  = np.zeros(self.data_shape[0])
+				#sqmean = np.zeros(self.data_shape[0])
 
-				var  = np.zeros(self.data_shape[0])
-				sqmean = np.zeros(self.data_shape[0])
+				self.feature_mean = FloatTensor(self.data_shape[0]).zero_()
+				var = FloatTensor(self.data_shape[0]).zero_()
+				sqmean = FloatTensor(self.data_shape[0]).zero_()
+				
 
 				for ic in range(self.data_shape[0]):
-					self.feature_mean[ic] = feature[ic].mean()
-					var[ic] = feature[ic].var()
-					sqmean[ic] = feature[ic].mean()**2
+					self.feature_mean[ic] = torch.mean(feature[ic])
+					var[ic] = torch.var(feature[ic])
+					sqmean[ic] = self.feature_mean[ic]**2
 			else:
 				
-				self.target_min = np.min([self.target_min,target])
-				self.target_max = np.max([self.target_max,target])
+				self.target_min = np.min(np.append(target.numpy(),self.target_min))
+				self.target_max = np.max(np.append(target.numpy(),self.target_max))
 
 				for ic in range(self.data_shape[0]):
-					self.feature_mean[ic] += feature[ic].mean()
-					var[ic]  += feature[ic].var()
-					sqmean[ic] += feature[ic].mean()**2
+					self.feature_mean[ic] += torch.mean(feature[ic])
+					var[ic]  += torch.var(feature[ic])
+					sqmean[ic] +=  torch.mean(feature[ic])**2
 
 		# average the mean values
 		self.feature_mean /= self.ntot
@@ -297,14 +305,14 @@ class DataSet(data_utils.Dataset):
 		self.feature_std = var/self.ntot
 		self.feature_std += sqmean/self.ntot
 		self.feature_std -= self.feature_mean**2
-		self.feature_std = np.sqrt(self.feature_std)
+		self.feature_std = torch.sqrt(self.feature_std)
 
 		# make torch tensor
-		# takes quite a long time to do and I'm not sure it's needed
+		# takes quite a long time 
 		#self.target_min = FloatTensor(np.array([self.target_min]))
 		#self.target_max = FloatTensor(np.array([self.target_max]))
-		#self.feat_mean = FloatTensor(self.feat_mean)
-		#self.feat_std = FloatTensor(self.feat_std)
+		#self.feature_mean = FloatTensor(self.feature_mean)
+		#self.feature_std = FloatTensor(self.feature_std)
 
 	def _normalize_target(self,target):
 
@@ -439,12 +447,13 @@ class DataSet(data_utils.Dataset):
 		target = mol_data.get('targets/'+fname).value
 	
 		# transform the data in torch Tensor
-		t0 = time.time()
-		#feature = FloatTensor(np.array(feature))
-		#target = FloatTensor(np.array([target]))
-		feature = np.array(feature)
-		target = np.array([target])
+		feature = FloatTensor(np.array(feature))
+		target = FloatTensor(np.array([target]))
 
+		# no TorchTensor transform
+		#feature = np.array(feature)
+		#target = np.array([target])
+		
 		# close
 		fh5.close()
 
