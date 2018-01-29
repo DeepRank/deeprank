@@ -196,7 +196,7 @@ class DataSet(data_utils.Dataset):
 				self.index_complexes += [(fdata,k) for k in mol_names]
 				fh5.close()
 			except:
-				print('Ignore File : '+fdata)
+				print('\t\t-->Ignore File : '+fdata)
 
 		self.ntrain = len(self.index_complexes)
 		self.index_train = list(range(self.ntrain))
@@ -220,7 +220,7 @@ class DataSet(data_utils.Dataset):
 					self.index_complexes += [(fdata,k) for k in mol_names]
 					fh5.close()
 				except:
-					print('Ignore File : '+fdata)				
+					print('\t\t-->Ignore File : '+fdata)				
 
 		self.ntot = len(self.index_complexes)
 		self.index_test = list(range(self.ntrain,self.ntot))
@@ -249,8 +249,11 @@ class DataSet(data_utils.Dataset):
 	# load mol by mol
 	# for the std see
 	# https://stats.stackexchange.com/questions/25848/how-to-sum-a-standard-deviation
-	# 
 	def get_normalization(self):
+
+		'''
+		Get the normalization data from the entire data set
+		'''
 
 		desc = '{:25s}'.format('   Normalization')
 		if self.tqdm:
@@ -270,20 +273,10 @@ class DataSet(data_utils.Dataset):
 
 			feature, target = self.load_one_molecule(fname,mol)
 
-			# here we pass eveything in np format again
-			# and then we re going to retransform  ..... 
-			# dum dum dum
-			#target = target.numpy()
-			#feature = feature.numpy()
-
 			if index == 0:
 
 				self.target_min = torch.min(target)
 				self.target_max = torch.max(target)
-
-				#self.feature_mean = np.zeros(self.data_shape[0])
-				#var  = np.zeros(self.data_shape[0])
-				#sqmean = np.zeros(self.data_shape[0])
 
 				self.feature_mean = FloatTensor(self.data_shape[0]).zero_()
 				var = FloatTensor(self.data_shape[0]).zero_()
@@ -313,12 +306,12 @@ class DataSet(data_utils.Dataset):
 		self.feature_std -= self.feature_mean**2
 		self.feature_std = torch.sqrt(self.feature_std)
 
-		# make torch tensor
-		# takes quite a long time 
-		#self.target_min = FloatTensor(np.array([self.target_min]))
-		#self.target_max = FloatTensor(np.array([self.target_max]))
-		#self.feature_mean = FloatTensor(self.feature_mean)
-		#self.feature_std = FloatTensor(self.feature_std)
+		# make numpy
+		# it's faster to process the numpy data 
+		# than the torch tensors ..... 
+		self.feature_mean = self.feature_mean.numpy()
+		self.feature_std = self.feature_std.numpy()
+
 
 	def _normalize_target(self,target):
 
@@ -333,10 +326,17 @@ class DataSet(data_utils.Dataset):
 		return data.numpy()
 
 	def _normalize_feature(self,feature):
-
+		# we convert the feature back to numpy
+		# normlaize them as np array
+		# and pass them back as torch tensor
+		# that's faster than doing the processing in Torch .... 
+		# 400 conf 
+		#   -> 12 sec in numpy
+		#   -> 18 sec in torch
+		feature = feature.numpy()
 		for ic in range(self.data_shape[0]):
 			feature[ic] = (feature[ic]-self.feature_mean[ic])/self.feature_std[ic]
-		return feature
+		return FloatTensor(feature)
 
 	############################################
 	# load the feature/target of a single molecule
