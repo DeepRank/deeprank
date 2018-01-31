@@ -171,7 +171,8 @@ class DataSet(data_utils.Dataset):
 		if self.transform:
 			feature = self.convert2d(feature,self.proj2D)
 
-		return FloatTensor(feature),FloatTensor(target)
+		return feature,target
+
 
 	def create_index_molecules(self):
 
@@ -477,7 +478,7 @@ class DataSet(data_utils.Dataset):
 		'''
 		load the feature/target of a single molecule
 		'''
-
+		outtype = 'float32'
 		fh5 = h5py.File(fname,'r')
 
 		if mol is None:
@@ -519,7 +520,8 @@ class DataSet(data_utils.Dataset):
 		# close
 		fh5.close()
 
-		return np.array(feature),np.array([target])
+		#return np.array(feature),np.array([target])
+		return np.array(feature).astype(outtype),np.array([target]).astype(outtype)
 
 
 

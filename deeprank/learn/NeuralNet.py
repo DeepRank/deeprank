@@ -353,11 +353,11 @@ class NeuralNet():
 
 
 		#  create the loaders
-		train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False)
-		valid_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=valid_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False)
+		train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False,drop_last=True)
+		valid_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=valid_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False,drop_last=True)
 
 		if _test_:
-			test_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=test_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False)
+			test_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=test_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False,drop_last=True)
 
 		# training loop
 		av_time = 0.0
@@ -432,7 +432,6 @@ class NeuralNet():
 			# transform the data
 			inputs,targets = self._get_variables(inputs,targets)
 			
-
 			# zero gradient
 			tlearn0 = time.time()
 			if train_model:
