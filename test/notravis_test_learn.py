@@ -59,11 +59,12 @@ def test_learn():
     raise FileNotFoundError('Database %s not found. Make sure to run test_generate before')
 
   # declare the dataset instance
-  data_set = DataSet(database,test_database = database,
+  data_set = DataSet(database,
+                            test_database = database,
                             select_feature = 'all',select_target='DOCKQ',tqdm=True,
                             normalize_features = True, normalize_targets=True)
 
-  
+ 
   # create the network
   model = NeuralNet(data_set,ConvNet3D,model_type='3d',task='reg',
                     cuda=False,plot=True,outdir='./out/')

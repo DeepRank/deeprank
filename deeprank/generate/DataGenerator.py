@@ -528,7 +528,7 @@ class DataGenerator(object):
 		modes = ['atomic_densities_mode','feature_mode']
 		for m in modes:
 			if m not in grid_info:
-				grid_info[m] = 'sum'
+				grid_info[m] = 'ind'
 
 		# sanity check for cuda
 		if cuda and gpu_block is None:

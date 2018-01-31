@@ -1,4 +1,4 @@
-from deeprank.tools import AtomicFeature
+from deeprank.features import AtomicFeature
 import numpy as np 
 import os
 import pkg_resources
@@ -17,7 +17,7 @@ def test():
 	# get the force field included in deeprank
 	# if another FF has been used to compute the ref
 	# change also this path to the correct one
-	FF = pkg_resources.resource_filename('deeprank.tools', 'features') + '/forcefield/'
+	FF = pkg_resources.resource_filename('deeprank.features','') + '/forcefield/'
 
 	# declare the feature calculator instance
 	atfeat = AtomicFeature(pdb,

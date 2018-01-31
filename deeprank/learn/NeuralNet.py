@@ -91,6 +91,7 @@ class NeuralNet():
 
 		# convert the data to 2d if necessary
 		if model_type == '2d':
+
 			self.data_set.transform = True
 			self.data_set.proj2D = proj2d
 
@@ -98,7 +99,7 @@ class NeuralNet():
 			if  dstype == 'InMemoryDataSet':
 				self.data_set.convert_dataset_to2d()
 			elif dstype == 'DataSet':
-				self.data_set.get_shape()
+				self.data_set.get_input_shape()
 			else:
 				raise ValueError('Data set type %s not recognized' %self.data_set.__name__)
 			
@@ -136,11 +137,8 @@ class NeuralNet():
 			self._plot_scatter = self._plot_boxplot_class
 
 		else:
-			print("Task " + self.task +"not recognized.\nOptions are \n\t 'reg': regression \n\t 'class': classifiation\n\n")
-			sys.exit()
+			raise ValueError("Task " + self.task +"not recognized.\nOptions are \n\t 'reg': regression \n\t 'class': classifiation\n\n")
 
-		# containers for the losses
-		self.losses={'train': [],'valid': [], 'test':[]}
 
 		# output directory
 		self.outdir = outdir
@@ -153,21 +151,21 @@ class NeuralNet():
 		print('=\t Convolution Neural Network')
 		print('=\t model     : %s' %model_type)
 		print('=\t CNN       : %s' %model.__name__)
-		if self.data_set.select_feature == 'all':
-			print('=\t features  : all')
-		else:
-			print('=\t features  : %s' %" / ".join([key for key,_ in self.data_set.select_feature.items()]))
+
+		for feat_type,feat_names in self.data_set.select_feature.items():
+			print('=\t features  : %s' %(feat_type))
+			for name in feat_names:	
+				print('=\t\t     %s' %(name))
 		print('=\t targets   : %s' %self.data_set.select_target)
 		print('=\t CUDA      : %s' %str(self.cuda))
 		if self.cuda:
 			print('=\t nGPU      : %d' %self.ngpu)
 		print('='*40,'\n')	
-
-
+		
 		# check if CUDA works
 		if self.cuda and not torch.cuda.is_available():
 			print(' --> CUDA not deteceted : Make sure that CUDA is installed and that you are running on GPUs')
-			print(' --> To turn CUDA of set cuda=False in DeepRankConvNet')
+			print(' --> To turn CUDA of set cuda=False in NeuralNet')
 			print(' --> Aborting the experiment \n\n')
 			sys.exit()
 
@@ -296,46 +294,16 @@ class NeuralNet():
 		Retun the indexes of  each set
 		'''
 
-		# get the indexes of the train/validation set
-		ind = np.arange(self.data_set.__len__())
-		ntot = len(ind)
+		if preshuffle:
+			np.random.shuffle(self.data_set.index_train)
 
-		if self.data_set.test_database is None:
-
-			print('No test data base found')
-			print('Dividing the train dataset in:')
-			print('  : 0.8 -> train')
-			print('  : 0.1 -> valid')
-			print('  : 0.1 -> test')
-
-			divide_set = [0.8,0.1,0.1]
-
-			if preshuffle:
-				np.random.shuffle(ind)
-
-			# size of the subset
-			ntrain = int( float(ntot)*divide_set[0] )	
-			nvalid = int( float(ntot)*divide_set[1] )
-			ntest =  int( float(ntot)*divide_set[2] )
-			
-
-			# indexes
-			index_train = ind[:ntrain]
-			index_valid = ind[ntrain:ntrain+nvalid]
-			index_test = ind[ntrain+nvalid:]
-
-		else:
-
-			if preshuffle:
-				np.random.shuffle(ind[:self.data_set.ntrain])
-
-			# size of the subset for training
-			ntrain = int( float(self.data_set.ntrain)*divide_set[0] )	
-			
-			# indexes
-			index_train = ind[:ntrain]
-			index_valid = ind[ntrain:self.data_set.ntrain]
-			index_test = ind[self.data_set.ntrain:]
+		# size of the subset for training
+		ntrain = int( float(self.data_set.ntrain)*divide_set[0] )	
+		
+		# indexes
+		index_train = self.data_set.index_train[:ntrain]
+		index_valid = self.data_set.index_train[ntrain:self.data_set.ntrain]
+		index_test = self.data_set.index_test
 			
 		return index_train,index_valid,index_test
 
@@ -370,16 +338,26 @@ class NeuralNet():
 		if self.cuda:
 			pin = True
 
-
 		# create the sampler
 		train_sampler = data_utils.sampler.SubsetRandomSampler(index_train)
 		valid_sampler = data_utils.sampler.SubsetRandomSampler(index_valid)
 		test_sampler = data_utils.sampler.SubsetRandomSampler(index_test)
 
+		# get if we test as well
+		_test_ = len(test_sampler.indices)>0
+
+		# containers for the losses
+		self.losses={'train': [],'valid': []}
+		if _test_:
+			self.losses['test'] = []
+
+
 		#  create the loaders
 		train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False)
 		valid_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=valid_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False)
-		test_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=test_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False)
+
+		if _test_:
+			test_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=test_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False)
 
 		# training loop
 		av_time = 0.0
@@ -398,12 +376,13 @@ class NeuralNet():
 			self.losses['valid'].append(self.valid_loss)
 
 			# test the model
-			test_loss,self.data['test'] = self._epoch(test_loader,train_model=False)
-			self.losses['test'].append(test_loss)
+			if _test_:
+				test_loss,self.data['test'] = self._epoch(test_loader,train_model=False)
+				self.losses['test'].append(test_loss)
 
 			# talk a bit about losse
 			print('  train loss       : %1.3e\n  valid loss       : %1.3e' %(self.train_loss, self.valid_loss))
-			if index_test is not None:
+			if _test_:
 				print('  test loss        : %1.3e' %(test_loss))
 
 			# timer
@@ -531,10 +510,9 @@ class NeuralNet():
 		labels = ['Train','Valid','Test']
 
 		fig,ax = plt.subplots()	
-		plt.plot(np.array(self.losses['train']),c=color_plot[0],label=labels[0])
-		plt.plot(np.array(self.losses['valid']),c=color_plot[1],label=labels[1])
-		plt.plot(np.array(self.losses['test']),c=color_plot[2],label=labels[2])
-
+		for ik,name in enumerate(self.losses):
+			plt.plot(np.array(self.losses[name]),c=color_plot[ik],label=labels[ik])
+		
 		legend = ax.legend(loc='upper left')
 		ax.set_xlabel('Epoch')
 		ax.set_ylabel('Losses')

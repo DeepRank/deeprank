@@ -111,8 +111,8 @@ class GridTools(object):
 
 	def __init__(self, molgrp,
 				number_of_points = [30,30,30],resolution = [1.,1.,1.],
-				atomic_densities=None, atomic_densities_mode='sum',
-				feature = None, feature_mode  ='sum',
+				atomic_densities=None, atomic_densities_mode='ind',
+				feature = None, feature_mode  ='ind',
 				contact_distance = 8.5, hdf5_file=None,
 				cuda=False, gpu_block=None, cuda_func=None, cuda_atomic=None,
 				prog_bar = False,time=False,try_sparse=True,logger=None):
