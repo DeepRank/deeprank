@@ -64,7 +64,8 @@ def test_learn():
                             select_feature = 'all',select_target='DOCKQ',tqdm=True,
                             normalize_features = True, normalize_targets=True)
 
- 
+  print(data_set.select_feature)
+  exit() 
   # create the network
   model = NeuralNet(data_set,ConvNet3D,model_type='3d',task='reg',
                     cuda=False,plot=True,outdir='./out/')

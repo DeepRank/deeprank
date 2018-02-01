@@ -194,18 +194,6 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #####################################################################################
 #
 #	IF WE JUST TEST THE CLASS

@@ -67,6 +67,7 @@ class DataSet(data_utils.Dataset):
 
 	def __init__(self,database,test_database=None,
 		         select_feature='all',select_target='DOCKQ',
+		         pair_ind_feature = False,
 		         transform_to_2D=False,projection=0,grid_shape = None,
 		         normalize_features=True,normalize_targets=True,tqdm=False):
 
@@ -96,6 +97,9 @@ class DataSet(data_utils.Dataset):
 		self.input_shape = None
 		self.data_hape = None
 		self.grid_shape = grid_shape
+
+		# the possible pairing of the ind features
+		self.pair_ind_feature = pair_ind_feature
 
 		# get the eventual projection
 		self.transform = transform_to_2D
@@ -128,6 +132,9 @@ class DataSet(data_utils.Dataset):
 
 		# get the actual feature name
 		self.get_feature_name()
+
+		# get the pairing
+		self.get_pairing_feature()
 
 		# get grid shape
 		self.get_grid_shape()
@@ -170,6 +177,9 @@ class DataSet(data_utils.Dataset):
 
 		if self.transform:
 			feature = self.convert2d(feature,self.proj2D)
+
+		if self.pair_ind_feature:
+			feature = self.make_feature_pair(feature,self.pair_indexes,self.pair_ind_feature)
 
 		return feature,target
 
@@ -283,6 +293,21 @@ class DataSet(data_utils.Dataset):
 
 		f5.close()
 
+
+	def get_pairing_feature(self):
+
+		if self.pair_ind_feature :
+
+			self.pair_indexes = []
+			start = 0
+			for feat_type,feat_names in self.select_feature.items():
+				nfeat = len(feat_names):
+				if '_ind' in feat_type:
+					self.pair_indexes += [ [i,i+1] for i in range(start,start+nfeat,2)]
+				else:
+					self.pair_indexes += [ [i] for i in range(start,start+nfeat)]
+				start += n
+
 	def get_input_shape(self):
 
 		'''
@@ -295,8 +320,12 @@ class DataSet(data_utils.Dataset):
 		feature,_ = self.load_one_molecule(fname)
 		self.data_shape = feature.shape
 
+		if self.pair_ind_feature:
+			feature = self.make_feature_pair(feature,self.pair_indexes,self.pair_ind_feature)
+
 		if self.transform:
 			feature = self.convert2d(feature,self.proj2D)
+
 		self.input_shape = feature.shape
 
 
@@ -341,11 +370,11 @@ class DataSet(data_utils.Dataset):
 				self.param_norm['features'][feat_type][name] = NormParam()
 		self.param_norm['targets'][self.select_target] = MinMaxParam()
 
-		try:
-			self._read_norm()
-		except:
-			print('   Could not load normalization data')
-			self._compute_norm()
+		#try:
+		self._read_norm()
+		#except:
+		#	print('   Could not load normalization data')
+		#	self._compute_norm()
 
 		# make array for fast access
 		self.feature_mean,self.feature_std = [],[]
@@ -520,7 +549,9 @@ class DataSet(data_utils.Dataset):
 		# close
 		fh5.close()
 
-		#return np.array(feature),np.array([target])
+		# make sure all the feature have exact same type
+		# if they don't  collate_fn in the creation of the minibatch will fail. 
+		# Note returning torch.FloatTensor makes each epoch twice longer ...
 		return np.array(feature).astype(outtype),np.array([target]).astype(outtype)
 
 
@@ -672,5 +703,20 @@ class DataSet(data_utils.Dataset):
 		
 		return feature
 
+
+	@staticmethod
+	def make_feature_pair(feature,pair_indexes,op):
+
+		if not callable(op):
+			raise ValueError('Operation not callable',op)
+
+		outtype = feature.dtype
+		new_feat = []
+		for ind in pair_indexes:
+			if len(ind) == 1:
+				new_feat.append(feature[ind,...])
+			else:
+				new_feat.append(op(feature[ind[0],...],feature[ind[1],...]))
+		return np.array(new_feat).astype(outtype)
 
 	
