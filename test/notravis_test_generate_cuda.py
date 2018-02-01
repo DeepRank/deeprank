@@ -1,7 +1,7 @@
 import sys
 import os
 import deeprank.generate
-from time import time 
+from time import time
 
 def test_generate(tune,test,gpu_block):
 
@@ -10,7 +10,7 @@ def test_generate(tune,test,gpu_block):
 	pdb_source     = ['./1AK4/decoys/']
 	pdb_native     = ['./1AK4/native/']
 
-	#init the data assembler 
+	#init the data assembler
 	database = deeprank.generate.DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
 		                                       compute_targets  = ['deeprank.tools.targets.dockQ'],
 		                                       compute_features = ['deeprank.tools.features.atomic'],
@@ -26,7 +26,7 @@ def test_generate(tune,test,gpu_block):
 		'atomic_feature_mode': 'sum'
 	}
 
-	# tune the kernel 
+	# tune the kernel
 	if tune:
 		database.tune_cuda_kernel(grid_info,func='gaussian')
 	# test thekernel

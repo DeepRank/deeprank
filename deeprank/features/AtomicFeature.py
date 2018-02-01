@@ -1,4 +1,4 @@
-import subprocess as sp 
+import subprocess as sp
 import os
 import numpy as np
 import sys
@@ -10,7 +10,7 @@ from deeprank.features import FeatureClass
 class AtomicFeature(FeatureClass):
 
 	'''
-	Sub class that deals with the electrostatic interaction 
+	Sub class that deals with the electrostatic interaction
 	and van der waals interactions between atoms
 
 
@@ -23,12 +23,12 @@ class AtomicFeature(FeatureClass):
 
 	               CYM  atom O   type=O      charge=-0.500 end
 	               ALA    atom N   type=NH1     charge=-0.570 end
-	
+
 	param_vdw : force field file containing the vdw parameters e.g  protein-allhdg5.4_new.param
 	            must be of the format
 
-	            NONBonded  CYAA    0.105   3.750       0.013    3.750  
-	            NONBonded  CCIS    0.105   3.750       0.013    3.750  
+	            NONBonded  CYAA    0.105   3.750       0.013    3.750
+	            NONBonded  CCIS    0.105   3.750       0.013    3.750
 
 
 	patch_file : valid patch file for the parameters e.g. patch.top
@@ -37,12 +37,12 @@ class AtomicFeature(FeatureClass):
 
 	contact_distance : the maximum distance between 2 contact atoms
 
-	include_entire_residue : if atom X of resiue M is a contact atom, include all the atoms 
+	include_entire_residue : if atom X of resiue M is a contact atom, include all the atoms
 	                         of resiude M in the contact_atom list
 
 	root_export : root directory where the feature file will be exported
 
-	
+
 	EXAMPLE
 
 	atfeat = atomicFeature(PDB,
@@ -55,13 +55,13 @@ class AtomicFeature(FeatureClass):
 
 	# only compute the pair interactions here
 	atfeat.evaluate_pair_interaction(print_interactions=True)
-	
+
 	# export the data
 	atfeat.export_data()
 
 	# close the sqldb
-	atfeat.sqldb.close() 
-	
+	atfeat.sqldb.close()
+
 
 	'''
 
@@ -94,7 +94,7 @@ class AtomicFeature(FeatureClass):
 
 		# read the force field
 		self.read_charge_file()
-		
+
 		if patch_file != None:
 			self.patch = self.read_patch()
 		else:
@@ -148,7 +148,7 @@ class AtomicFeature(FeatureClass):
 
 			# get the type
 			attype = words[3].split('=')[-1]
-			
+
 			# store the charge
 			self.charge[(res,atname)] = q
 
@@ -159,7 +159,7 @@ class AtomicFeature(FeatureClass):
 			self.at_name_type_convertor[(res,atname)] = attype
 
 		self.valid_resnames = list(set(resnames))
-		
+
 
 	def read_patch(self):
 
@@ -195,7 +195,7 @@ class AtomicFeature(FeatureClass):
 				if ind != -1:
 					type_ = l[ind+5:ind+9]
 					self.patch_type[(words[0],words[3])] = type_.strip()
-				
+
 
 
 	def read_vdw_file(self):
@@ -209,7 +209,7 @@ class AtomicFeature(FeatureClass):
 		Last two nmbers are for intra-chain interactions
 		We only compute the interchain here
 
-		Create 
+		Create
 
 			self.vdw : dictionary {attype:[E1,S1]}
 		'''
@@ -255,7 +255,7 @@ class AtomicFeature(FeatureClass):
 		self.contact_atoms_A = []
 		self.contact_atoms_B = []
 
-		#The contact atom pairs only co ntains pairs of atoms that are 
+		#The contact atom pairs only co ntains pairs of atoms that are
 		# in contact
 		self.contact_pairs = {}
 
@@ -267,7 +267,7 @@ class AtomicFeature(FeatureClass):
 			# if we have contact atoms and resA is not a ligand
 			if (len(contacts) > 0) and (resName1[i] in self.valid_resnames):
 
-				# add i to the list 
+				# add i to the list
 				# add the index of b if its resname is not a ligand
 				self.contact_atoms_A += [i]
 				self.contact_atoms_B += [index_b[k] for k in contacts if resName2[k] in self.valid_resnames]
@@ -307,7 +307,7 @@ class AtomicFeature(FeatureClass):
 		for resdata in resA:
 			chainID,resName,resSeq = resdata
 			index_contact_A += self.sqldb.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq)
-		
+
 		# contact of chain B
 		for resdata in resB:
 			chainID,resName,resSeq = resdata
@@ -316,14 +316,14 @@ class AtomicFeature(FeatureClass):
 		# make sure that we don't have double (maybe optional)
 		index_contact_A = sorted(set(index_contact_A))
 		index_contact_B = sorted(set(index_contact_B))
-		
+
 		return index_contact_A,index_contact_B
 
 
 
 	#####################################################################################
 	#
-	#	Assign parameters 
+	#	Assign parameters
 	#
 	#####################################################################################
 
@@ -342,14 +342,14 @@ class AtomicFeature(FeatureClass):
 		data = self.sqldb.get('chainID,resSeq,resName')
 		natom = len(data)
 		data = np.unique(np.array(data),axis=0)
-		
+
 
 		# declare the parameters for future insertion in SQL
 		atcharge = np.zeros(natom)
 		ateps = np.zeros(natom)
 		atsig = np.zeros(natom)
 
-		# check 
+		# check
 		attype = np.zeros(natom,dtype='<U5')
 		ataltResName = np.zeros(natom,dtype='<U5')
 
@@ -358,7 +358,7 @@ class AtomicFeature(FeatureClass):
 
 		# loop over all the residues
 		for chain,resNum,resName in data:
-			
+
 			# atom types of the residue
 			#query = "WHERE chainID='%s' AND resSeq=%s" %(chain,resNum)
 			atNames = np.array(self.sqldb.get('name',chainID=chain,resSeq=resNum))
@@ -409,22 +409,22 @@ class AtomicFeature(FeatureClass):
 
 		new_type = {
 		'PROP' : ['all',    ['HT1','HT2'],                    [ ]],
-		'NTER' : ['all',    ['HT1','HT2','HT3'],              [ ]], 
+		'NTER' : ['all',    ['HT1','HT2','HT3'],              [ ]],
 		'CTER' : ['all',    ['OXT'],                          [ ]],
 		'CTN'  : ['all',    ['NT','HT1','HT2'],               [ ]],
 		'CYNH' : ['CYS',    ['1SG'],                          ['2SG']],
 		'DISU' : ['CYS',    ['1SG','2SG'],                    [ ]],
-		'HISE' : ['HIS',    ['ND1','CE1','CD2','NE2','HE2'],  ['HD1']], 
-		'HISD' : ['HIS',    ['ND1','CE1','CD2','NE2','HD1'],  ['HE2']]  
+		'HISE' : ['HIS',    ['ND1','CE1','CD2','NE2','HE2'],  ['HD1']],
+		'HISD' : ['HIS',    ['ND1','CE1','CD2','NE2','HD1'],  ['HE2']]
 		}
 
-		# this works fine now 
+		# this works fine now
 
 		altResName = resName
 		for key,values in new_type.items():
 
 			res, atpres, atabs = values
-			
+
 			if res == resName or res == 'all':
 				if all(x in atNames for x in atpres) and all(x not in atNames for x in atabs):
 					altResName = key
@@ -556,7 +556,7 @@ class AtomicFeature(FeatureClass):
 		if self.individual_directory:
 			self.export_directories['charge'] = self.root_export+'/CHARGE/'
 		else:
-			self.export_directories['charge'] = self.root_export 
+			self.export_directories['charge'] = self.root_export
 
 	#####################################################################################
 	#
@@ -568,7 +568,7 @@ class AtomicFeature(FeatureClass):
 
 		if self.verbose:
 			print('-- Compute interaction energy for contact pairs only')
-		
+
 		if len(self.contact_atoms_A) == 0:
 			self.feature_data['coulomb'] = {}
 			self.feature_data_xyz['culomb'] = {}
@@ -582,9 +582,9 @@ class AtomicFeature(FeatureClass):
 		charge = np.array(self.sqldb.get('CHARGE'))
 		vdw = np.array(self.sqldb.get('eps,sig'))
 		eps,sig = vdw[:,0],vdw[:,1]
-			
+
 		# define the dictionaries
-		# these holds data like 
+		# these holds data like
 		# chainID resname resSeq,name values
 		electro_data = {}
 		vdw_data = {}
@@ -594,7 +594,7 @@ class AtomicFeature(FeatureClass):
 		electro_data_xyz = {}
 		vdw_data_xyz = {}
 
-		# define the matrices 
+		# define the matrices
 		natA,natB = len(self.sqldb.get('x',chainID='A')),len(self.sqldb.get('x',chainID='B'))
 		matrix_elec = np.zeros((natA,natB))
 		matrix_vdw = np.zeros((natA,natB))
@@ -613,7 +613,7 @@ class AtomicFeature(FeatureClass):
 
 		# total energy terms
 		ec_tot,evdw_tot = 0,0
-		
+
 		# loop over the chain A
 		for iA,indsB in self.contact_pairs.items():
 
@@ -621,7 +621,7 @@ class AtomicFeature(FeatureClass):
 			r = np.sqrt(np.sum((xyz[indsB,:]-xyz[iA,:])**2,1))
 			q1q2 = charge[iA]*charge[indsB]
 			ec = q1q2 * self.c / (self.eps0*r) * (1 - (r/self.contact_distance)**2 ) **2
-			
+
 			# coulomb terms
 			sigma_avg = 0.5*(sig[iA] + sig[indsB])
 			eps_avg = np.sqrt(eps[iA]*eps[indsB])
@@ -667,18 +667,18 @@ class AtomicFeature(FeatureClass):
 					line += '\t{:<3s}'.format(keyB[0])
 					line += '\t{:>1s}'.format(keyB[1])
 					line += '\t{:>4d}'.format(keyB[2])
-					line += '\t{:^4s}'.format(keyB[3])	
+					line += '\t{:^4s}'.format(keyB[3])
 
 					line += '\t{: 6.3f}'.format(r[iB])
 					line += '\t{: f}'.format(ec[iB])
-					line += '\t{: e}'.format(evdw[iB])	
+					line += '\t{: e}'.format(evdw[iB])
 
 					# print and/or save the interactions
 					if print_interactions:
 						print(line)
 
 					if _save_:
-						line += '\n'	
+						line += '\n'
 						f.write(line)
 
 		# print the total interactions
@@ -707,7 +707,7 @@ class AtomicFeature(FeatureClass):
 
 			# store in the dict
 			electro_data[keyB] = [np.sum(ec)]
-			vdw_data[keyB] = [np.sum(evdw)]			
+			vdw_data[keyB] = [np.sum(evdw)]
 
 			# store the xyz dict
 			key = tuple([1]+xyz[indexB,:].tolist())
@@ -798,7 +798,7 @@ class AtomicFeature(FeatureClass):
 
 			# store amd symmtrized these values
 			matrix[iat,:] = value
-			
+
 			# atinfo
 			key = tuple(atinfoA[iat])
 
@@ -890,7 +890,7 @@ class AtomicFeature(FeatureClass):
 
 			# store these values
 			matrix[iat,:] = value
-			
+
 			# atinfo
 			key = tuple(atinfoA[iat])
 
@@ -917,7 +917,8 @@ class AtomicFeature(FeatureClass):
 		else:
 			self.export_directories['vdwaals'] = self.root_export
 
-	def _prefactor_vdw(self,r):
+	@staticmethod
+	def _prefactor_vdw(r):
 		r_off,r_on = 8.5,6.5
 		r2 = r**2
 		pref = (r_off**2-r2)**2 * (r_off**2 - r2 - 3*(r_on**2 - r2)) / (r_off**2-r_on**2)**3
@@ -939,7 +940,7 @@ class AtomicFeature(FeatureClass):
 	def export_data_hdf5(self,featgrp):
 		super().export_data_hdf5(featgrp)
 	'''
-	
+
 #####################################################################################
 #
 #	THE MAIN FUNCTION CALLED IN THE INTERNAL FEATURE CALCULATOR
@@ -985,7 +986,7 @@ if __name__ == "__main__":
 	FF = path + '/forcefield/'
 
 	BM4 = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
-	pdb = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_100w.pdb' 
+	pdb = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_100w.pdb'
 
 	atfeat = AtomicFeature(pdb,
 		                   param_charge = FF + 'protein-allhdg5-4_new.top',
@@ -1004,6 +1005,5 @@ if __name__ == "__main__":
 	# entire residue containing at least 1 contact atom
 	atfeat.evaluate_charges(extend_contact_to_residue=True)
 
-	
+
 	atfeat.sqldb.close()
-	

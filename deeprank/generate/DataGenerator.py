@@ -1,4 +1,4 @@
-import os 
+import os
 import sys
 import importlib
 import numpy as np
@@ -17,7 +17,7 @@ except ImportError:
 
 try:
 	from pycuda import driver, compiler, gpuarray, tools
-	import pycuda.autoinit 
+	import pycuda.autoinit
 except ImportError:
 	pass
 
@@ -30,14 +30,14 @@ ARGUMENTS
 
 pdb_select
 
-		file containing the name of specfic complexe we want 
+		file containing the name of specfic complexe we want
 		in the database
 
 pdb_source
 
 		path or list of path where to find the pdbs
 
-pdb_native 
+pdb_native
 
 		path or list of path where to find the native conformation of the pdbs
 		these are required to compute the DockQ score used for training
@@ -64,11 +64,11 @@ class DataGenerator(object):
 
 		self.pdb_select  = pdb_select
 		self.pdb_source  = pdb_source
-		self.pdb_native  = pdb_native 
+		self.pdb_native  = pdb_native
 
 		self.data_augmentation = data_augmentation
-		
-		self.hdf5 = hdf5 
+
+		self.hdf5 = hdf5
 
 		self.compute_targets  = compute_targets
 		self.import_targets = import_targets
@@ -85,11 +85,11 @@ class DataGenerator(object):
 
 		self.logger = logger or logging.getLogger(__name__)
 		self.debug = debug
-		
+
 		# check that a source was given
 		if self.pdb_source is None:
 			raise NotADirectoryError('You must provide one or several source directory where the pdbs are stored')
-			
+
 		# handle the sources
 		if not isinstance(self.pdb_source,list):
 			self.pdb_source = [self.pdb_source]
@@ -97,7 +97,7 @@ class DataGenerator(object):
 		# get all the conformation path
 		for src_dir in self.pdb_source:
 			self.all_pdb += sp.check_output('find %s -name "*.pdb"' %src_dir,shell=True).decode('utf8').split()
-			
+
 
 		# handle the native
 		if not isinstance(self.pdb_native,list):
@@ -187,7 +187,7 @@ class DataGenerator(object):
 					ref = ref[0]
 					if ref == '':
 						ref = None
-					
+
 				# talk a bit
 				if verbose:
 					print('\n: Process complex %s' %(mol_name))
@@ -209,7 +209,7 @@ class DataGenerator(object):
 				featgrp = molgrp.require_group('features')
 				featgrp = molgrp.require_group('features_raw')
 				if self.import_features is not None:
-					self._import_features(self.import_features,featgrp)			
+					self._import_features(self.import_features,featgrp)
 
 				if self.compute_features is not None:
 					self._compute_features(self.compute_features, molgrp['complex'].value,molgrp['features'],molgrp['features_raw'] )
@@ -221,7 +221,7 @@ class DataGenerator(object):
 				# add the features
 				molgrp.require_group('targets')
 				if self.import_targets is not None:
-					self._import_targets(self.import_targets,mol_name)			
+					self._import_targets(self.import_targets,mol_name)
 
 				if self.compute_targets is not None:
 					self._compute_targets(self.compute_targets, molgrp['complex'].value,molgrp['targets'])	
@@ -263,9 +263,9 @@ class DataGenerator(object):
 
 					# copy the targets/features
 					molgrp.copy('targets',self.f5[mol_name+'/targets/'])
-					molgrp.copy('features',self.f5[mol_name+'/features/'])		
+					molgrp.copy('features',self.f5[mol_name+'/features/'])
 
-					# rotate the feature			
+					# rotate the feature
 					self._rotate_feature(molgrp,axis,angle,center)
 
 			except:
@@ -273,8 +273,8 @@ class DataGenerator(object):
 				self.feature_error += [mol_name] + mol_aug_name_list
 				self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
 				printif('Error during the feature calculation of %s' %cplx,self.debug)
-				
-			
+
+
 		# remove the data where we had issues
 		if remove_error:
 			for mol in self.feature_error:
@@ -302,7 +302,7 @@ class DataGenerator(object):
 		self.logger.warning('add_feature not fully tested yet')
 		printif("ADD FEATURE NOT FULLY TESTED",self.debug)
 
-	
+
 		# get the folder names
 		f5 = h5py.File(self.hdf5,'a')
 		fnames = f5.keys()
@@ -358,7 +358,7 @@ class DataGenerator(object):
 
 		# name of the hdf5 file
 		f5 = h5py.File(self.hdf5,'a')
-						
+
 		# get the folder names
 		fnames = f5.keys()
 
@@ -412,12 +412,12 @@ class DataGenerator(object):
 
 		# name of the hdf5 file
 		f5 = h5py.File(self.hdf5,'a')
-						
+
 		# get the folder names
 		mol_names = f5.keys()
 
 		for name in mol_names:
-			
+
 			mol_grp = f5[name]
 
 			if feature and 'features' in mol_grp:
@@ -492,7 +492,7 @@ class DataGenerator(object):
 
 
 		use_tmpdir
-				Use the tmp dir to export the data 
+				Use the tmp dir to export the data
 				to avoid transferring files between computing and head nodes
 
 		'''
@@ -509,8 +509,8 @@ class DataGenerator(object):
 		if len(mol_names) == 0:
 			printif('No molecules found in %s' %self.hdf5,self.debug)
 			f5.close()
-			return 
-		
+			return
+
 		# fills in the grid data if not provided : default = NONE
 		grinfo = ['number_of_points','resolution']
 		for gr in grinfo:
@@ -556,7 +556,7 @@ class DataGenerator(object):
 		# get the local progress bar
 		desc = '{:25s}'.format('Map Features')
 		mol_tqdm = tqdm(mol_names,desc=desc,disable = not prog_bar)
-		
+
 		if not prog_bar:
 			print(desc, ':', self.hdf5)
 			sys.stdout.flush()
@@ -565,7 +565,7 @@ class DataGenerator(object):
 		for mol in mol_tqdm:
 
 			mol_tqdm.set_postfix(mol=mol)
-					
+
 			try:
 
 				# compute the data we want on the grid
@@ -608,7 +608,7 @@ class DataGenerator(object):
 #====================================================================================
 
 	def tune_cuda_kernel(self,grid_info,cuda_kernel='kernel_map.c',func='gaussian'):
-			
+
 		'''
 		Tune the CUDA kernel using the kernel tuner
 		http://benvanwerkhoven.github.io/kernel_tuner/
@@ -777,12 +777,12 @@ class DataGenerator(object):
 
 		# create the filters
 		tmp_path = []
-		for name in pdb_name:	
+		for name in pdb_name:
 			tmp_path += list(filter(lambda x: name in x,self.pdb_path))
 
 		# update the pdb_path
 		self.pdb_path = tmp_path
-		
+
 
 
 #====================================================================================
@@ -799,7 +799,7 @@ class DataGenerator(object):
 			fsrc  = h5py.File(src,'r')
 			if molgrp.name in fsrc.keys:
 				molgrp.require_group('features')
-				molgrp.copy('features',fsrc[molgrp.name+'/features/']) 
+				molgrp.copy('features',fsrc[molgrp.name+'/features/'])
 				fsrc.close()
 				break
 			else:
@@ -826,7 +826,7 @@ class DataGenerator(object):
 			fsrc  = h5py.File(src,'r')
 			if molgrp.name in fsrc.keys:
 				molgrp.require_group('targets')
-				molgrp.copy('targets',fsrc[molgrp.name+'/targets/']) 
+				molgrp.copy('targets',fsrc[molgrp.name+'/targets/'])
 				fsrc.close()
 				break
 			else:
@@ -869,7 +869,7 @@ class DataGenerator(object):
 
 		# rotate the positions
 		center = sqldb.rotation_around_axis(axis,angle)
-		
+
 		# get the data
 		sqldata = sqldb.get('*')
 
@@ -907,13 +907,13 @@ class DataGenerator(object):
 
 		feat = list(molgrp['features'].keys())
 		for fn in feat:
-			
+
 			# extrct the data
 			data = molgrp['features/'+fn].value
 
 			# xyz
 			xyz = data[:,1:4]
-			
+
 			# get the data
 			ct,st = np.cos(angle),np.sin(angle)
 			ux,uy,uz = axis

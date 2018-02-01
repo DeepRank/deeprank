@@ -13,7 +13,7 @@ class BSA(FeatureClass):
 
 	'''
 	Class to compute the burried surface area
-	
+
 
 
 	Freesasa is required
@@ -34,10 +34,10 @@ class BSA(FeatureClass):
 	./configure --enable-python-bindings CFLAGS=-fPIC
 
 	# make the code possibly sudo that
-	make 
+	make
 	make install
 
-	# If the install of the python bindings fails 
+	# If the install of the python bindings fails
 	# because no python (problem with anaconda)
 	cd ./bindings/python
 	python setup.py install
@@ -51,7 +51,7 @@ class BSA(FeatureClass):
 		self.pdb_data = pdb_data
 		self.sql = pdb2sql(pdb_data)
 		self.chains_label =  [chainA,chainB]
-		
+
 		self.feature_data = {}
 		self.feature_data_xyz = {}
 
@@ -69,7 +69,7 @@ class BSA(FeatureClass):
 				atomName = '{:>2}'.format(atomName[0])
 				self.complex.addAtom(atomName,residueName,residueNumber,chainLabel,x,y,z)
 		self.result_complex = freesasa.calc(self.complex)
-		
+
 		self.chains = {}
 		self.result_chains = {}
 		for label in self.chains_label:
@@ -78,9 +78,8 @@ class BSA(FeatureClass):
 			for atomName,residueName,residueNumber,chainLabel,x,y,z in atomdata:
 				atomName = '{:>2}'.format(atomName[0])
 				self.chains[label].addAtom(atomName,residueName,residueNumber,chainLabel,x,y,z)
-			self.result_chains[label] = freesasa.calc(self.chains[label])		
-    
-	
+			self.result_chains[label] = freesasa.calc(self.chains[label])
+
 	def get_contact_residue_sasa(self):
 
 		bsa_data = {}
@@ -92,7 +91,7 @@ class BSA(FeatureClass):
 		for r in res:
 
 			# define the selection string and the bsa for the complex
-			select_str = ('res, (resi %d) and (chain %s)' %(r[1],r[0]),) 
+			select_str = ('res, (resi %d) and (chain %s)' %(r[1],r[0]),)
 			asa_complex = freesasa.selectArea(select_str,self.complex,self.result_complex)['res']
 
 			# define the selection string and the bsa for the isolated
@@ -102,7 +101,7 @@ class BSA(FeatureClass):
 			# define the bsa
 			bsa = asa_unbound-asa_complex
 
-			# define the xyz key : (chain,x,y,z) 
+			# define the xyz key : (chain,x,y,z)
 			chain = {'A':0,'B':1}[r[0]]
 			xyz = np.mean(self.sql.get('x,y,z',resSeq=r[1],chainID=r[0]),0)
 			xyzkey = tuple([chain]+xyz.tolist())

@@ -29,8 +29,8 @@ class DataSet(data_utils.Dataset):
 	The data is stored in memory on the fly.
 	That allows to handle large data set but might alters performance
 
-	ARGUMENTS 
-		
+	ARGUMENTS
+
 	database : string or list of strings
 
 		Path of the HDF5 file(s) containing the database(s)
@@ -38,7 +38,7 @@ class DataSet(data_utils.Dataset):
 		tools to insure the correct structure
 
 	select_feature : dict or 'all'
-		
+
 		if 'all', all the mapped features contained in the HDF5 file
 		will be loaded
 
@@ -48,13 +48,13 @@ class DataSet(data_utils.Dataset):
 		{name : 'all'}     e.g {feature : 'all'}
 
 		the name must correspond to a valid group : f[mo/mapped_features/name]
-		
+
 		if the value is a list of keys only thoses keys will be loaded
 		if 'all' all the data will be loaded
 
 	select_target
 
-		the name of the target we want. 
+		the name of the target we want.
 		the name must correspond to a valid group : f[mo/targets/name]
 
 	USAGE
@@ -120,7 +120,7 @@ class DataSet(data_utils.Dataset):
 			for f in self.test_database:
 				print('=\t ->',f)
 		print('=')
-		print('='*40,'\n')		
+		print('='*40,'\n')
 		sys.stdout.flush()
 
 		# check if the files are ok
@@ -211,11 +211,11 @@ class DataSet(data_utils.Dataset):
 		Create the indexing of each molecule in the dataset
 
 		only create an indexing like
-		[ ('1ak4.hdf5,1AK4_100w), 
+		[ ('1ak4.hdf5,1AK4_100w),
 		  ('1ak4.hdf5,1AK4_101w),
 		....
-		  ('1fqj.hdf5,1FGJ_399w),  
-		  ('1fqj.hdf5,1FGJ_400w),  
+		  ('1fqj.hdf5,1FGJ_399w),
+		  ('1fqj.hdf5,1FGJ_400w),
 		]
 		so that with the index of each molecule
 		we can find in which file it is stored
@@ -248,7 +248,7 @@ class DataSet(data_utils.Dataset):
 		self.index_train = list(range(self.ntrain))
 
 		if self.test_database is not None:
-			
+
 			desc = '{:25s}'.format('   Test dataset')
 			if self.tqdm:
 				data_tqdm = tqdm(self.test_database,desc=desc,file=sys.stdout)
@@ -266,7 +266,7 @@ class DataSet(data_utils.Dataset):
 					self.index_complexes += [(fdata,k) for k in mol_names]
 					fh5.close()
 				except:
-					print('\t\t-->Ignore File : '+fdata)				
+					print('\t\t-->Ignore File : '+fdata)
 
 		self.ntot = len(self.index_complexes)
 		self.index_test = list(range(self.ntrain,self.ntot))
@@ -290,10 +290,10 @@ class DataSet(data_utils.Dataset):
 		# if we select all the features
 		if self.select_feature == "all":
 
-			# redefine dict	
+			# redefine dict
 			self.select_feature = {}
 
-			# loop over the feat types and add all the feat_names 
+			# loop over the feat types and add all the feat_names
 			for feat_type,feat_names in mapped_data.items():
 				self.select_feature[feat_type] = [name for name in feat_names]
 
@@ -371,13 +371,13 @@ class DataSet(data_utils.Dataset):
 				ny = mol_data['grid_points']['y'].shape[0]
 				nz = mol_data['grid_points']['z'].shape[0]
 				self.grid_shape = (nx,ny,nz)
-		
+
 			else:
 				raise ValueError('Impossible to determine sparse grid shape.\n Specify argument grid_shape=(x,y,z)')
 
 		fh5.close()
 
-	
+
 	def get_norm(self):
 
 		print("   Normalization factor :")
@@ -393,7 +393,7 @@ class DataSet(data_utils.Dataset):
 
 		# read the normalization
 		self._read_norm()
-		
+
 		# make array for fast access
 		self.feature_mean,self.feature_std = [],[]
 		for feat_type,feat_names in self.select_feature.items():
@@ -447,7 +447,7 @@ class DataSet(data_utils.Dataset):
 		Get the normalization data from the entire data set
 		This is used only if the .pckl files containing the
 		normalization info for each .hdf5 files can't be found
-		
+
 		'''
 
 		desc = '{:25s}'.format('   Normalization')
@@ -461,8 +461,8 @@ class DataSet(data_utils.Dataset):
 		for index in data_tqdm:
 
 			fname,mol = self.index_complexes[index]
-			
-			if self.tqdm:		
+
+			if self.tqdm:
 				data_tqdm.set_postfix(mol=os.path.basename(mol))
 
 			# load the molecule
@@ -499,8 +499,8 @@ class DataSet(data_utils.Dataset):
 		# we convert the feature back to numpy
 		# normlaize them as np array
 		# and pass them back as torch tensor
-		# that's faster than doing the processing in Torch .... 
-		# 400 conf 
+		# that's faster than doing the processing in Torch ....
+		# 400 conf
 		#   -> 12 sec in numpy
 		#   -> 18 sec in torch
 		#feature = feature.numpy()
@@ -539,11 +539,11 @@ class DataSet(data_utils.Dataset):
 		for feat_type,feat_names in self.select_feature.items():
 
 			# see if the feature exists
-			feat_dict = mol_data.get('mapped_features/'+feat_type)						
-			
+			feat_dict = mol_data.get('mapped_features/'+feat_type)
+
 			# loop through all the desired feat names
 			for name in feat_names:
-				
+
 				# extract the group
 				data = feat_dict[name]
 
@@ -563,12 +563,12 @@ class DataSet(data_utils.Dataset):
 
 		# get the target value
 		target = mol_data.get('targets/'+self.select_target).value
-		
+
 		# close
 		fh5.close()
 
 		# make sure all the feature have exact same type
-		# if they don't  collate_fn in the creation of the minibatch will fail. 
+		# if they don't  collate_fn in the creation of the minibatch will fail.
 		# Note returning torch.FloatTensor makes each epoch twice longer ...
 		return np.array(feature).astype(outtype),np.array([target]).astype(outtype)
 
@@ -606,7 +606,7 @@ class DataSet(data_utils.Dataset):
 			nz = mol_data['grid_points']['z'].shape[0]
 			shape=(nx,ny,nz)
 			self.grid_shape = shape
-		
+
 		else:
 			raise ValueError('Impossible to determine sparse grid shape.\n Specify argument grid_shape=(x,y,z)')
 
@@ -617,7 +617,7 @@ class DataSet(data_utils.Dataset):
 			for feat_name, feat_members in mol_data.get(featgrp_name).items():
 				# loop through all the feature keys
 				for name,data in feat_members.items():
-			
+
 					if data.attrs['sparse']:
 						spg = sparse.FLANgrid(sparse=True,
 							                 index=data['index'].value,
@@ -626,7 +626,7 @@ class DataSet(data_utils.Dataset):
 						feature.append(spg.to_dense())
 					else:
 						feature.append(data['value'].value)
-					
+
 
 		# load selected features
 		else:
@@ -634,10 +634,10 @@ class DataSet(data_utils.Dataset):
 			for feat_name,feat_channels in self.select_feature.items():
 
 				# see if the feature exists
-				feat_dict = mol_data.get(featgrp_name+feat_name)						
-				
+				feat_dict = mol_data.get(featgrp_name+feat_name)
+
 				if feat_dict is None:
-					
+
 					print('Error : Feature name %s not found in %s' %(feat_name,mol))
 					opt_names = list(mol_data.get(featgrp_name).keys())
 					print('Error : Possible features are \n\t%s' %'\n\t'.join(opt_names))
@@ -665,15 +665,15 @@ class DataSet(data_utils.Dataset):
 							feature.append(spg.to_dense())
 						else:
 							feature.append(channel_data['value'].value)
-						
+
 
 			# append to the list of features
 			feature = np.array(feature)
 
 		# target
-		opt_names = list(mol_data.get('targets/').keys())			
+		opt_names = list(mol_data.get('targets/').keys())
 		fname = list(filter(lambda x: self.select_target in x, opt_names))
-		
+
 
 		if len(fname) == 0:
 			print('Error : Target name %s not found in %s' %(self.select_target,mol))
@@ -687,11 +687,11 @@ class DataSet(data_utils.Dataset):
 
 		fname = fname[0]
 		target = mol_data.get('targets/'+fname).value
-	
+
 		# no TorchTensor transform
 		feature = np.array(feature)
 		target = np.array([target])
-		
+
 		# close
 		fh5.close()
 
@@ -705,10 +705,10 @@ class DataSet(data_utils.Dataset):
 	def convert2d(feature,proj2d):
 
 		'''
-		convert the 3D volumetric feature to a 2D planar data set 
+		convert the 3D volumetric feature to a 2D planar data set
 		to be used in 2d convolutional network
 		proj2d specifies the dimension that we want to comsider as channel
-		for example for proj2d = 0 the 2D images are in the yz plane and 
+		for example for proj2d = 0 the 2D images are in the yz plane and
 		the stack along the x dimension is considered as extra channels
 		'''
 		nc,nx,ny,nz = feature.shape
@@ -718,7 +718,7 @@ class DataSet(data_utils.Dataset):
 			feature = feature.reshape(-1,nx,1,nz).squeeze()
 		elif proj2d==2:
 			feature = feature.reshape(-1,nx,ny,1).squeeze()
-		
+
 		return feature
 
 
@@ -737,4 +737,3 @@ class DataSet(data_utils.Dataset):
 				new_feat.append(op(feature[ind[0],...],feature[ind[1],...]))
 		return np.array(new_feat).astype(outtype)
 
-	

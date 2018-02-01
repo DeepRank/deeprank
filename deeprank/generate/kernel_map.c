@@ -2,8 +2,8 @@
 
 __global__ void gaussian(float alpha, float x0, float y0, float z0, float *xvect, float *yvect, float *zvect, float *out)
 {
-	
-	// 3D thread 
+
+	// 3D thread
     int tx = threadIdx.x + blockDim.x * blockIdx.x;
     int ty = threadIdx.y + blockDim.y * blockIdx.y;
     int tz = threadIdx.z + blockDim.z * blockIdx.z;
@@ -29,7 +29,7 @@ __global__ void atomic_densities(float vdw_radius, float x0, float y0, float z0,
 	Protein-Ligand Scoring with Convolutional NN Arxiv:1612.02751v1
 	*/
 
-	// 3D thread 
+	// 3D thread
     int tx = threadIdx.x + blockDim.x * blockIdx.x;
     int ty = threadIdx.y + blockDim.y * blockIdx.y;
     int tz = threadIdx.z + blockDim.z * blockIdx.z;
@@ -46,7 +46,7 @@ __global__ void atomic_densities(float vdw_radius, float x0, float y0, float z0,
     	float e2 = e*e;
        	float d2 = d*d;
     	float vdw2 = vdw_radius*vdw_radius;
-	
+
     	if (d < vdw_radius)
     		out[ty * %(nx)s * %(nz)s + tx * %(nz)s + tz] += exp(-2.*d2/vdw2);
     	else if (d < 1.5*vdw_radius)

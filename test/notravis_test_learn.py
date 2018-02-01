@@ -18,7 +18,7 @@ class ConvNet3D(nn.Module):
     self.conv1 = nn.Conv3d(input_shape[0],4,kernel_size=2)
     self.pool  = nn.MaxPool3d((2,2,2))
     self.conv2 = nn.Conv3d(4,5,kernel_size=2)
-    
+
     size = self._get_conv_output(input_shape)
 
     self.fc1   = nn.Linear(size,84)
@@ -37,7 +37,7 @@ class ConvNet3D(nn.Module):
     return x
 
   def forward(self,x):
-    
+
     x = self._forward_features(x)
     x = x.view(x.size(0),-1)
     x = F.relu(self.fc1(x))
@@ -64,7 +64,7 @@ def test_learn():
                             normalize_features = True, normalize_targets=True)
 
   print(data_set.select_feature)
-  
+
   # create the network
   model = NeuralNet(data_set,ConvNet3D,model_type='3d',task='reg',
                     cuda=False,plot=True,outdir='./out/')

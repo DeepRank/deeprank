@@ -1,4 +1,4 @@
-import numpy as np 
+import numpy as np
 import subprocess as sp
 from deeprank.tools import StructureSimilarity
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ def test_rmsd():
 	MOL = './1AK4/'
 	decoys = MOL + '/decoys/'
 	ref    = MOL + '/native/1AK4.pdb'
-	data   = MOL + '/haddock_data/' 
+	data   = MOL + '/haddock_data/'
 
 
 
@@ -29,7 +29,7 @@ def test_rmsd():
 
 	# extract the data from the haddock files
 	for i,fname in enumerate(haddock_files):
-		
+
 		# read the file
 		f = open(fname,'r')
 		data = f.readlines()
@@ -43,7 +43,7 @@ def test_rmsd():
 				haddock_data[mol_name] = np.zeros(3)
 			haddock_data[mol_name][i] = float(line[1])
 
-			
+
 	# init all the data handlers
 	nconf = len(haddock_data)
 	deep = np.zeros((nconf,3))
@@ -60,8 +60,7 @@ def test_rmsd():
 		lrmsd = sim.compute_lrmsd_fast(method='svd',lzone='1AK4.lzone')
 		irmsd = sim.compute_irmsd_fast(method='svd',izone='1AK4.izone')
 		fnat = sim.compute_Fnat_fast(ref_pairs='1AK4.refpairs')
-		
-		
+
 		mol_name = decoy.split('/')[-1].split('.')[0]
 		deep_data[mol_name] =  [fnat,lrmsd,irmsd]
 		deep[i,:] = deep_data[mol_name]
@@ -70,16 +69,16 @@ def test_rmsd():
 		if verbose:
 			print("HADDOCK : fnat = %1.6f\tlrmsd = %2.7f\tirmsd = %2.7f" %(haddock_data[mol_name][0],haddock_data[mol_name][1],haddock_data[mol_name][2]))
 			print("DEEP    : fnat = %1.6f\tlrmsd = %2.7f\tirmsd = %2.7f" %(deep_data[mol_name][0],deep_data[mol_name][1],deep_data[mol_name][2]))
-		
+
 	t1=time.time()-t0
 
-	# save the data	
+	# save the data
 	if save:
 		np.savetxt('deep.dat',deep)
 		np.savetxt('hdk.dat',hdk)
-	
+
 	# remove the data
-	#sp.call('rm 1AK4.lzone 1AK4.izone 1AK4.refpairs') 
+	#sp.call('rm 1AK4.lzone 1AK4.izone 1AK4.refpairs')
 
 	# plot
 	if plot:
@@ -96,7 +95,7 @@ def test_rmsd():
 		plt.scatter(hdk[:,1],deep[:,1],label='l-rmsd')
 		mini = np.min(deep[:,1])
 		maxi = np.max(deep[:,1])
-		plt.plot(  [mini,maxi],[mini,maxi],'--',color='black' )  
+		plt.plot(  [mini,maxi],[mini,maxi],'--',color='black' )
 		plt.legend(loc=4)
 		plt.xlabel('PROFIT')
 		plt.ylabel('DEEP')
@@ -129,7 +128,7 @@ def test_rmsd():
 		print('Failed : %d molecules tested in %f sec.' %(len(decoy_list),t1))
 		print('       : Maximum Fnat  deviation %1.3e' %(delta[0]))
 		print('       : Maximum LRMSD deviation %1.3e' %(delta[1]))
-		print('       : Maximum IRMSD deviation %1.3e' %(delta[2]))	
+		print('       : Maximum IRMSD deviation %1.3e' %(delta[2]))
 
 if __name__ == '__main__':
 	test_rmsd()

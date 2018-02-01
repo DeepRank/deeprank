@@ -9,7 +9,7 @@ def test_generate():
 	pdb_source     = ['./1AK4/decoys/']
 	pdb_native     = ['./1AK4/native/']
 
-	#init the data assembler 
+	#init the data assembler
 	database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
 		                     compute_targets  = ['deeprank.targets.dockQ'],
 		                     compute_features = ['deeprank.features.AtomicFeature',
@@ -34,7 +34,7 @@ def test_generate():
 		'resolution' : [1.,1.,1.],
 		'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
 	}
-	
+
 	t0 =time()
 	print('{:25s}'.format('Map features in database') + database.hdf5)
 	database.map_features(grid_info,try_sparse=True,time=False,prog_bar=False)

@@ -1,4 +1,3 @@
-import subprocess as sp 
 import os
 import numpy as np
 import sys
@@ -53,7 +52,7 @@ class PSSM_IC(FeatureClass):
 		data = f.readlines()
 		f.close()
 		raw_data = list( map(lambda x: x.decode('utf-8').split(),data))
-		
+
 		self.res_data  = np.array(raw_data)[:,:3]
 		self.res_data = [  (r[0],int(r[1]),r[2]) for r in self.res_data ]
 		self.pssmic_data = np.array(raw_data)[:,-1].astype(np.float)
@@ -67,15 +66,15 @@ class PSSM_IC(FeatureClass):
 		xyz_dict = {}
 		for pos,info in zip(xyz,xyz_info):
 			xyz_dict[tuple(info)] = pos
-		
+
 		contact_residue = sql.get_contact_residue()
 		contact_residue = contact_residue[0] + contact_residue[1]
 		sql.close()
-		
+
 		pssm_data_xyz = {}
 		pssm_data = {}
 		for res,data in zip(self.res_data,self.pssmic_data):
-			
+
 			if contact_only and res not in contact_residue:
 				continue
 
@@ -118,7 +117,7 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
 	# get the feature vales
 	pssmic.get_feature_value()
-	
+
 	# export in the hdf5 file
 	pssmic.export_dataxyz_hdf5(featgrp)
 	pssmic.export_data_hdf5(featgrp_raw)

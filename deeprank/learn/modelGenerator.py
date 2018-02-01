@@ -11,7 +11,7 @@ class conv(object):
 		self.output_size =  output_size
 		self.kernel_size = kernel_size
 		self.post = post
-		
+
 
 	def __def_str__(self,ilayer):
 		if ilayer == 0:
@@ -197,7 +197,7 @@ class NetworkGenerator(object):
 
 		# params for the automatic generation of fc layers
 		self.fc_params = {}
-		self.fc_params['output_size'] = [2**i for i in range(4,11)]	
+		self.fc_params['output_size'] = [2**i for i in range(4,11)]
 
 		# types of post processing
 		# must be in torch.nn.functional
@@ -205,7 +205,7 @@ class NetworkGenerator(object):
 
 	#######################################
 	#
-	# Routines used to write dow the 
+	# Routines used to write dow the
 	# file containing the model
 	#
 	#######################################
@@ -329,8 +329,8 @@ import torch.utils.data as data_utils
 	def get_new_random_model(self):
 
 		# number of conv/fc layers
-		nconv = np.random.choice(self.num_conv_layers)	
-		nfc   = np.random.choice(self.num_fc_layers)	
+		nconv = np.random.choice(self.num_conv_layers)
+		nfc   = np.random.choice(self.num_fc_layers)
 
 		# generate the conv layers
 		self.conv_layers = []
@@ -360,7 +360,7 @@ import torch.utils.data as data_utils
 			name = np.random.choice(self.conv_types[:-1])
 
 		# else it can be anything
-		else: 
+		else:
 			name = np.random.choice(self.conv_types)
 
 		# init the parms of the layer
@@ -381,7 +381,7 @@ import torch.utils.data as data_utils
 			params['output_size'] = np.random.choice(self.conv_params['output_size'])
 			params['kernel_size'] = np.random.choice(self.conv_params['kernel_size'])
 			params['post'] = np.random.choice(self.post_types)
-			
+
 		if name == 'pool':
 			params = {}
 			params['name'] = name

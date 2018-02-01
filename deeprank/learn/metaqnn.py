@@ -1,5 +1,4 @@
-import os
-import numpy as np 
+import numpy as np
 import pickle
 import torch.optim as optim
 
@@ -72,7 +71,7 @@ class MetaQNN(object):
 	#
 	#########################################
 	def store_model(self):
-		
+
 		conv_layers_params = []
 		for layer in self.conv_layers:
 			conv_layers_params.append(layer.__get_params__())
@@ -98,9 +97,9 @@ class MetaQNN(object):
 	# write a model to file
 	#
 	#########################################
-	def write_model(self):	
+	def write_model(self):
 		model_generator = NetworkGenerator(name=self.model_name,
-			                               fname =self.file_name, 
+			                               fname =self.file_name,
 			                               conv_layers=self.conv_layers,
 			                               fc_layers=self.fc_layers)
 		model_generator.print()
@@ -115,8 +114,8 @@ class MetaQNN(object):
 
 		print('QNN : Generate new model')
 		# number of conv/fc layers
-		nconv = np.random.choice(self.num_conv_layers)	
-		nfc   = np.random.choice(self.num_fc_layers)	
+		nconv = np.random.choice(self.num_conv_layers)
+		nfc   = np.random.choice(self.num_fc_layers)
 
 		# generate the conv layers
 		self.conv_layers = []
@@ -149,7 +148,7 @@ class MetaQNN(object):
 			name = np.random.choice(self.conv_types[:-1])
 
 		# else it can be anything
-		else: 
+		else:
 			name = np.random.choice(self.conv_types)
 
 		# init the parms of the layer
@@ -170,7 +169,7 @@ class MetaQNN(object):
 			params['output_size'] = np.random.choice(self.conv_params['output_size'])
 			params['kernel_size'] = np.random.choice(self.conv_params['kernel_size'])
 			params['post'] = np.random.choice(self.post_types)
-			
+
 		if name == 'pool':
 			params = {}
 			params['name'] = name
@@ -226,8 +225,8 @@ class MetaQNN(object):
 
 		print('QNN : Train model')
 		import model
-		
-		# create the ConvNet 
+
+		# create the ConvNet
 		model = ConvNet(self.data_set,model.conv3d,plot=False,cuda=cuda,ngpu=ngpu)
 
 		# fix optimizer

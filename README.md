@@ -11,7 +11,7 @@ These module allows to :
 
 ## 1 . Installation
 
-Minimal information to install the module 
+Minimal information to install the module
 
   * clone the repository `git clone https://github.com/DeepRank/deeprank.git`
   * go there             `cd deeprank`
@@ -32,7 +32,7 @@ python test_rmsd.py
 # generation of the data
 python test_generate.py
 
-# if you have CUDA installed 
+# if you have CUDA installed
 # you can try the CUDA version
 python notravis_test_generate_cuda.py
 
@@ -40,7 +40,7 @@ python notravis_test_generate_cuda.py
 python notravis_test_learn.py
 
 ```
- 
+
 These tests (except the notravis_* ones) are automatically run on Travis CI at each new push. So if the *build* button display *passing* they should work !
 
 ## 3 . Dependencies

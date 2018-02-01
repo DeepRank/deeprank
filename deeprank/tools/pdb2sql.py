@@ -1,5 +1,5 @@
 import sqlite3
-import subprocess as sp 
+import subprocess as sp
 import os
 import numpy as np
 from time import time
@@ -10,14 +10,14 @@ This allows to easily extract information of the PDB using SQL queries
 
 USAGE db = pdb2sql('XXX.pdb')
 
-A few SQL querry wrappers have been implemented 
+A few SQL querry wrappers have been implemented
 
-	
+
 	self.get(attribute_name,**kwargs)
-	
+
 		Get hte value(s) of the attribute(s) for possible selection of the db
 
-		attributename   : 	must be a valid attribute name. 
+		attributename   : 	must be a valid attribute name.
 						 	you can get these names via the get_colnames()
 						 	serial, name, atLoc,resName,chainID, resSeq,iCode,x,y,z,occ,temp
 						 	you can specify more than one attribute name at once e.g 'x,y,z'
@@ -27,8 +27,8 @@ A few SQL querry wrappers have been implemented
 
 							chain = 'X' return the values of that chain
 							name  = 'CA' only these atoms
-							index = [0,1,2,3] return only those rows (not serial) 
-							where = "chainID='B'" general WHERE SQL query 
+							index = [0,1,2,3] return only those rows (not serial)
+							where = "chainID='B'" general WHERE SQL query
 							query = 'WHERE chainID='B'' general SQL Query
 
 		example         :
@@ -41,7 +41,7 @@ A few SQL querry wrappers have been implemented
 
 		Update the value of the attribute with value specified with possible selection
 
-		attributename   : 	must be a valid attribute name. 
+		attributename   : 	must be a valid attribute name.
 						 	you can get these names via the get_colnames()
 						 	serial, name, atLoc,resName,chainID, resSeq,iCode,x,y,z,occ,temp
 						 	you can specify more than one attribute name at once e.g 'x,y,z'
@@ -57,7 +57,7 @@ A few SQL querry wrappers have been implemented
 
 							db = pdb2sql(filename)
 							db.add_column('CHARGE')
-							db.put('CHARGE',1.25,index=[1])							
+							db.put('CHARGE',1.25,index=[1])
 							db.close()
 
 
@@ -68,7 +68,7 @@ A few SQL querry wrappers have been implemented
 	- self.update_xyz(new_xyz,index=None)
 	- self.commit()
 
-	TO DO 
+	TO DO
 
 	- Add more user friendly wrappers to SQL queries
 	- Make use of the ? more often to prevent quoting issues and SQL injection attack
@@ -151,14 +151,14 @@ class pdb2sql(object):
 					'z'       :[46,54],
 					'occ'     :[54,60],
 					'temp'    :[60,66]}
-	    
+
 	    # size of the things
 		ncol = len(self.col)
 		ndel = len(self.delimiter)
 
 
-	    # open the data base 
-	    # if we do not specify a db name 
+	    # open the data base
+	    # if we do not specify a db name
 	    # the db is only in RAM
 	    # there might be little advantage to use memory
 	    # https://stackoverflow.com/questions/764710/sqlite-performance-benchmark-why-is-memory-so-slow-only-1-5x-as-fast-as-d
@@ -183,10 +183,10 @@ class pdb2sql(object):
 		# create the table
 		query = 'CREATE TABLE ATOM ({hd})'.format(hd=header)
 		self.c.execute(query)
-		
+
 
 		# read the pdb file
-		# this is dangerous if there are ATOM written in the comment part 
+		# this is dangerous if there are ATOM written in the comment part
 		# which happends often
 		#data = sp.check_output("awk '/ATOM/' %s" %pdbfile,shell=True).decode('utf8').split('\n')
 
@@ -195,7 +195,7 @@ class pdb2sql(object):
 		#data = sp.check_output("awk '$1 ~ /^ATOM/' %s" %pdbfile,shell=True).decode('utf8').split('\n')
 
 		# a pure python way
-		# RMK we go through the data twice here. Once to read the ATOM line and once to parse the data ... 
+		# RMK we go through the data twice here. Once to read the ATOM line and once to parse the data ...
 		# we could do better than that. But the most time consuming step seems to be the CREATE TABLE query
 		# if we path a file we read it
 		if isinstance(pdbfile,str):
@@ -257,12 +257,11 @@ class pdb2sql(object):
 
 		# push in the database
 		self.c.executemany('INSERT INTO ATOM VALUES ({qm})'.format(qm=qm),data_atom)
-	
 
 	# replace the chain ID by A,B,C,D, ..... in that order
 	def _fix_chainID(self):
 
-		from string import ascii_uppercase 
+		from string import ascii_uppercase
 
 		# get the current names
 		chainID = self.get('chainID')
@@ -297,7 +296,7 @@ class pdb2sql(object):
 
 	# print the database
 	def prettyprint(self):
-		import pandas.io.sql as psql 
+		import pandas.io.sql as psql
 		df = psql.read_sql("SELECT * FROM ATOM",self.conn)
 		print(df)
 
@@ -327,7 +326,7 @@ class pdb2sql(object):
 		'''
 
 		# the asked keys
-		keys = kwargs.keys()			
+		keys = kwargs.keys()
 
 		# check if the column exists
 		try:
@@ -341,7 +340,7 @@ class pdb2sql(object):
 		if len(kwargs) == 0:
 			query = 'SELECT {an} FROM ATOM'.format(an=atnames)
 			data = [list(row) for row in self.c.execute(query)]
-		
+
 		############################################################################
 		# GENERIC QUERY
 		#
@@ -416,7 +415,7 @@ class pdb2sql(object):
 				conditions.append(k + ' in (' + ','.join('?'*nv) + ')')
 
 			# stitch the conditions and append to the query
-			query += ' AND '.join(conditions)	
+			query += ' AND '.join(conditions)
 
 			# error if vals is too long
 			if len(vals)>self.SQLITE_LIMIT_VARIABLE_NUMBER:
@@ -429,14 +428,14 @@ class pdb2sql(object):
 				ntot = 0
 				for k,v in kwargs.items():
 					print('      : --> %10s : %d values' %(k,len(v)))
-					ntot += len(v) 
+					ntot += len(v)
 				print('      : --> %10s : %d values' %('Total',ntot))
 				print('      : Try to decrease self.max_sql_values in pdb2sql.py\n')
 				raise ValueError('Too many SQL variables')
 
 			# query the sql database and return the answer in a list
 			data = [list(row) for row in self.c.execute(query,vals)]
-		
+
 		# empty data
 		if len(data)==0:
 			print('Warning sqldb.get returned an empty')
@@ -453,13 +452,13 @@ class pdb2sql(object):
 		# flatten it if each els is of size 1
 		if len(data[0])==1:
 			data = [d[0] for d in data]
-	
+
 		return data
 
 	############################################################################
 	#
 	# get the contact atoms
-	# 
+	#
 	# we should have a entire module called pdb2sql
 	# with a submodule pdb2sql.interface that finds contact atoms/residues
 	# and possbily other submodules to do other things
@@ -476,7 +475,7 @@ class pdb2sql(object):
 
 		# index of b
 		index2 = self.get('rowID',chainID=chain2)
-		
+
 		# resName of the chains
 		resName1 = np.array(self.get('resName',chainID=chain1))
 		#resName2 = np.array(self.get('resName',chainID=chain2))
@@ -487,7 +486,7 @@ class pdb2sql(object):
 
 
 		# loop through the first chain
-		# TO DO : loop through the smallest chain instead ... 
+		# TO DO : loop through the smallest chain instead ...
 		index_contact_1,index_contact_2 = [],[]
 		index_contact_pairs = {}
 
@@ -505,7 +504,7 @@ class pdb2sql(object):
 				# the contact atoms
 				index_contact_1 += [i]
 				index_contact_2 += [index2[k] for k in contacts if ( any( [atName2[k] in self.backbone_type,  not only_backbone_atoms]) and not (excludeH and atName2[k][0]=='H') ) ]
-				
+
 				# the pairs
 				pairs = [index2[k] for k in contacts if any( [atName2[k] in self.backbone_type,  not only_backbone_atoms] ) and not (excludeH and atName2[k][0]=='H') ]
 				if len(pairs) > 0:
@@ -515,7 +514,7 @@ class pdb2sql(object):
 		index_contact_1 = sorted(set(index_contact_1))
 		index_contact_2 = sorted(set(index_contact_2))
 
-		# if no atoms were found	
+		# if no atoms were found
 		if len(index_contact_1)==0:
 			print('Warning : No contact atoms detected in pdb2sql')
 
@@ -571,16 +570,16 @@ class pdb2sql(object):
 		# contact of chain A
 		for resdata in resA:
 			chainID,resName,resSeq = resdata
-			
+
 			if only_backbone_atoms:
 				index_contact_A += self.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq,name=self.backbone_type)
 			else:
 				index_contact_A += self.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq)
-		
+
 		# contact of chain B
 		for resdata in resB:
 			chainID,resName,resSeq = resdata
-			
+
 			if only_backbone_atoms:
 				index_contact_B += self.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq,name=self.backbone_type)
 			else:
@@ -589,8 +588,8 @@ class pdb2sql(object):
 		# make sure that we don't have double (maybe optional)
 		index_contact_A = sorted(set(index_contact_A))
 		index_contact_B = sorted(set(index_contact_B))
-		
-		return index_contact_A,index_contact_B		
+
+		return index_contact_A,index_contact_B
 
 
 	# get the contact residue
@@ -671,7 +670,7 @@ class pdb2sql(object):
 	def update(self,attribute,values,**kwargs):
 
 		# the asked keys
-		keys = kwargs.keys()			
+		keys = kwargs.keys()
 
 		# check if the column exists
 		try:
@@ -681,7 +680,7 @@ class pdb2sql(object):
 			self.get_colnames()
 			return
 
-		# handle the multi model cases 
+		# handle the multi model cases
 		if 'model' not in keys and self.nModel > 0:
 			for iModel in range(self.nModel):
 				kwargs['model'] = iModel
@@ -718,7 +717,7 @@ class pdb2sql(object):
 		query = query + ', '.join(map(lambda x: x+'=?',attribute))
 		if len(kwargs)>0:
 			query = query + ' WHERE rowID=?'
-			
+
 
 		# prepare the data
 		data = []
@@ -772,19 +771,19 @@ class pdb2sql(object):
 		Exectute a simple SQL query that put a value in an attributes for certain condition
 		Ex  db.put('resName','XXX',where="chainID=='A'")
 		'''
-		
+
 		arguments = {'where' : "String e.g 'chainID = 'A''",
 					 'index' : "Array e.g. [27,28,30]",
 					 'name'  : "'CA' atome name",
 					 'query' : "SQL query e.g. 'WHERE chainID='B' AND resName='ASP' "}
 
 		# the asked keys
-		keys = kwargs.keys()			
+		keys = kwargs.keys()
 
 		# if we have more than one key we kill it
 		if len(keys)>1 :
 			print('You can only specify 1 conditional statement for the pdb2sql.put function')
-			return 
+			return
 
 		# check if the column exists
 		try:
@@ -800,7 +799,7 @@ class pdb2sql(object):
 			query = 'UPDATE ATOM SET {cn}=?'.format(cn=colname)
 			value = tuple([value])
 			self.c.execute(query,value)
-			return  
+			return
 
 		# otherwise we have only one key
 		key = list(keys)[0]
@@ -822,7 +821,7 @@ class pdb2sql(object):
 			qm = ','.join(['?' for i in range(len(cond))])
 			query = 'UPDATE ATOM SET {cn}=? WHERE rowID in ({qm})'.format(cn=colname,qm=qm)
 			self.c.execute(query,values)
-		
+
 		elif key == 'query' :
 			query = 'UPDATE ATOM SET {cn}=? {c1}'.format(cn=colname,c1=cond)
 			value = tuple([value])
@@ -842,7 +841,7 @@ class pdb2sql(object):
 	#
 	###############################################################################################
 
-	# comit changes 
+	# comit changes
 	def commit(self):
 		self.conn.commit()
 
@@ -886,20 +885,20 @@ class pdb2sql(object):
 		f.close()
 
 
-	# close the database 
+	# close the database
 	def close(self,rmdb = True):
-		
+
 		if self.sqlfile is None:
 			self.conn.close()
 
 		else:
 
 			if rmdb:
-				self.conn.close() 
+				self.conn.close()
 				os.system('rm %s' %(self.sqlfile))
 			else:
 				self.commit()
-				self.conn.close() 
+				self.conn.close()
 
 	############################################################################
 	#
@@ -937,7 +936,7 @@ class pdb2sql(object):
 		self.update('x,y,z',xyz,**kwargs)
 
 		return xyz0
-			
+
 	def rotation_euler(self,alpha,beta,gamma,**kwargs):
 
 		xyz = self.get('x,y,z',**kwargs)
@@ -972,13 +971,6 @@ class pdb2sql(object):
 		else:
 			xyz = np.dot(rot_mat,(xyz).T).T
 		self.update('x,y,z',xyz,**kwargs)
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':

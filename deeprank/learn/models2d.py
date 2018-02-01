@@ -42,7 +42,7 @@ class ConvNet2D_reg(nn.Module):
 		return x
 
 	def forward(self,x):
-		
+
 		x = self._forward_features(x)
 		x = x.view(x.size(0),-1)
 		x = F.relu(self.fc1(x))

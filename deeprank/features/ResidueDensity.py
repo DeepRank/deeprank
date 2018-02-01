@@ -1,4 +1,3 @@
-import freesasa
 import os
 import numpy as np
 import itertools
@@ -15,7 +14,7 @@ class residue_pair(object):
 		self.density = {'total':0,'polar':0,'apolar':0,'charged':0}
 		self.connections = {'polar':[],'apolar':[],'charged':[]}
 
-	def print(self):	
+	def print(self):
 		print('')
 		print(self.res, ' : ', self.type)
 		print('  Residue Density')
@@ -61,7 +60,7 @@ class ResidueDensity(FeatureClass):
 
 			if key not in self.residue_densities:
 				self.residue_densities[key] = residue_pair(key,self.residue_types[key[2]])
-			self.residue_densities[key].density['total'] += len(other_res)	
+			self.residue_densities[key].density['total'] += len(other_res)
 
 			for key2 in other_res:
 
@@ -93,7 +92,7 @@ class ResidueDensity(FeatureClass):
 
 		for key,res in self.residue_densities.items():
 
-			# total density in raw format 
+			# total density in raw format
 			self.feature_data['RCD_total'][key] = [res.density['total']]
 
 			# total density in xyz format

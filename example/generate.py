@@ -5,8 +5,8 @@ from deeprank.generate import *
 #
 #	GENERATE THE DATA BASE AT ONCE
 #	--> assemble the pdbs
-#   --> compute the features on the fly 
-#   --> compute the targets on the fly 
+#   --> compute the features on the fly
+#   --> compute the targets on the fly
 #   --> map the features on the grid
 #
 ##########################################################################
@@ -19,13 +19,13 @@ BM4 = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
 pdb_source     = [BM4 + 'decoys_pdbFLs/1AK4/water/']
 pdb_native     = [BM4 + 'BM4_dimers_bound/pdbFLs_ori']
 
-#init the data assembler 
+#init the data assembler
 database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
                         compute_targets  = ['deeprank.tools.targets.dockQ'],
                         compute_features = ['deeprank.tools.features.atomic,deeprank.tools.features.pssm'],
                         hdf5='./1ak4.hdf5',
                         )
- 
+
 #create new files
 database.create_database()
 

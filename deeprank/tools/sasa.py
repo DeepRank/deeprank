@@ -6,7 +6,7 @@ class SASA(object):
 
 	'''
 	Simple class that computes Surface Accessible Solvent Area following some of the methods presented in
-	
+
 	[1] Solvent accessible surface area approximations for rapid and accurate protein structure prediction
 	    J Mol Model (2009) 15:1093–1108
 	    DOI 10.1007/s00894-009-0454-9
@@ -92,7 +92,7 @@ class SASA(object):
 
 		'''
 		Compute teh SASA folowing the neighbour vector approach.
-		Eq on page 1097 of Ref[1] 
+		Eq on page 1097 of Ref[1]
 		'''
 
 		# get the center
@@ -105,13 +105,13 @@ class SASA(object):
 			for i,xyz in enumerate(self.xyz[chain]):
 
 				vect = self.xyz[chain]-xyz
-				dist = np.sqrt(np.sum((self.xyz[chain]-xyz)**2,1))	
+				dist = np.sqrt(np.sum((self.xyz[chain]-xyz)**2,1))
 
 				dist = np.delete(dist,i,0)
 				vect = np.delete(vect,i,0)
-				
+
 				vect /= np.linalg.norm(vect,axis=1).reshape(-1,1)
-				
+
 				weight = self.neighbor_weight(dist,lbound=lbound,ubound=ubound).reshape(-1,1)
 				vect *= weight
 
@@ -125,7 +125,7 @@ class SASA(object):
 
 		return NV
 
-		
+
 	def neighbor_count(self,lbound=4.0,ubound=11.4,chainA='A',chainB='B',center='cb'):
 
 		'''
@@ -140,9 +140,9 @@ class SASA(object):
 		NC = {}
 
 		for chain in [chainA,chainB]:
-			
+
 			for i,xyz in enumerate(self.xyz[chain]):
-				dist = np.sqrt(np.sum((self.xyz[chain]-xyz)**2,1))	
+				dist = np.sqrt(np.sum((self.xyz[chain]-xyz)**2,1))
 				resSeq,resname = self.resinfo[chain][i].tolist()
 				key = tuple([chain,int(resSeq),resName])
 				value =  np.sum(self.neighbor_weight(dist,lbound,ubound))

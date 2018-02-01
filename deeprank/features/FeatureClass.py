@@ -9,12 +9,12 @@ class FeatureClass(object):
 
 
 	self.feature_data : dictionary of features
-	                    {'coulomb':data_dict_clb[(atom info):value] 
+	                    {'coulomb':data_dict_clb[(atom info):value]
 	                     'vdwaals':data_dict_vdw[(atom info):value]  }
 
 	self.feature_data_xyz : dictionary of feature
 							dictionary of features
-	                    {'coulomb':data_dict_clb[(chainID atom xyz):value] 
+	                    {'coulomb':data_dict_clb[(chainID atom xyz):value]
 	                     'vdwaals':data_dict_vdw[(chainID atom xyz):value]  }
 
 	'''
@@ -22,9 +22,9 @@ class FeatureClass(object):
 	def __init__(self,feature_type):
 
 		self.type = feature_type
-		self.feature_data = {}	
-		self.feature_data_xyz = {}	
-		self.export_directories = {}	
+		self.feature_data = {}
+		self.feature_data_xyz = {}
+		self.export_directories = {}
 
 	########################################
 	#
@@ -78,22 +78,22 @@ class FeatureClass(object):
 	#
 	# export the data in an HDF5 file group
 	# the format of the data is here
-	# 
+	#
 	# for atomic features
-	# chainID  resSeq resNum name [values] 
+	# chainID  resSeq resNum name [values]
 	#
 	# for residue features
 	# chainID  resSeq resNum [values]
-	#  
+	#
 	# PRO : might be usefull for other applications
 	# CON : slow when mapping cause we have to retrive the xyz
-	#	
+	#
 	########################################
-	
+
 	def export_data_hdf5(self,featgrp):
 
 		# loop through the datadict and name
-		for name,data in self.feature_data.items():	
+		for name,data in self.feature_data.items():
 
 			ds = []
 			for key,value in data.items():
@@ -112,7 +112,7 @@ class FeatureClass(object):
 
 				# values
 				for v in value:
-					feat += '    {: 1.6E}'.format(v)	
+					feat += '    {: 1.6E}'.format(v)
 
 				# append
 				ds.append(feat)
@@ -121,7 +121,7 @@ class FeatureClass(object):
 			ds = np.array(ds).astype('|S'+str(len(ds[0])))
 
 			# create the dataset
-			featgrp.create_dataset(name+'_raw',data=ds)			
+			featgrp.create_dataset(name+'_raw',data=ds)
 
 
 
@@ -129,21 +129,21 @@ class FeatureClass(object):
 	#
 	# export the data in an HDF5 file group
 	# the format of the data is here
-	# 
+	#
 	# for atomic and residue features
-	# x y z [values] 
-	#  
-	# PRO : fast when mapping 
+	# x y z [values]
+	#
+	# PRO : fast when mapping
 	# CON : only usefull for deeprank
 	#
 	########################################
 	def export_dataxyz_hdf5(self,featgrp):
 
 		# loop through the datadict and name
-		for name,data in self.feature_data_xyz.items():	
+		for name,data in self.feature_data_xyz.items():
 
 			# create the data set
 			ds = np.array([list(key)+value for key,value in data.items()])
 
 			# create the dataset
-			featgrp.create_dataset(name,data=ds)	
+			featgrp.create_dataset(name,data=ds)

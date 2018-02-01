@@ -9,8 +9,8 @@ from cleandata import *
 #
 #	GENERATE THE DATA BASE AT ONCE
 #	--> assemble the pdbs
-#   --> compute the features on the fly 
-#   --> compute the targets on the fly 
+#   --> compute the features on the fly
+#   --> compute the targets on the fly
 #   --> map the features on the grid
 #
 ##########################################################################
@@ -28,14 +28,14 @@ def generate(LIST_NAME,clean=False):
 		pdb_source     = [BM4 + 'decoys_pdbFLs/'+NAME+'/water/']
 		pdb_native     = [BM4 + 'BM4_dimers_bound/pdbFLs_ori']
 
-		#init the data assembler 
+		#init the data assembler
 		database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
 		                        compute_targets  = ['deeprank.tools.targets.dockQ'],
 		                        compute_features = ['deeprank.tools.features.atomic',
 		                                            'deeprank.tools.features.pssm'],
 		                        hdf5=NAME + '.hdf5',
 		                        )
-		 
+
 		if not os.path.isfile(database.hdf5):
 			t0 = time()
 			print('{:25s}'.format('Create new database') + database.hdf5)
@@ -57,12 +57,12 @@ def generate(LIST_NAME,clean=False):
 		print('{:25s}'.format('Map features in database') + database.hdf5)
 		database.map_features(grid_info,time=False,try_sparse=True,cuda=True,gpu_block=[8,8,8])
 		print(' '*25 + '--> Done in %f s.' %(time()-t0))
-		
+
 		# clean the data file
 		if clean:
 			t0 = time()
 			print('{:25s}'.format('Clean datafile') + database.hdf5)
-			clean_dataset(database.hdf5)	
+			clean_dataset(database.hdf5)
 			print(' '*25 + '--> Done is %f s.' %(time()-t0))
 
 if __name__ == '__main__':
@@ -111,7 +111,7 @@ if __name__ == '__main__':
 			MOL = args.mol
 		else:
 			MOL = names[args.init:args.final+1]
-		
+
 		# set the cuda device
 		#os.environ['CUDA_DEVICE'] = args.device
 

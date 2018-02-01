@@ -17,7 +17,7 @@ class COOgrid(object):
 	def from_dense(self,data,beta=None,debug=False):
 		'''
 		data : the 3D tensor to encode
-		beta : threshold to determine if a sparse rep is valuable 
+		beta : threshold to determine if a sparse rep is valuable
 		'''
 		if beta is not None:
 			thr = beta*np.mean(np.abs(data))
@@ -33,11 +33,11 @@ class COOgrid(object):
 
 		# decide if we store sparse or not
 		# if enough elements are sparse
-		if mem_sparse < mem_dense:		
+		if mem_sparse < mem_dense:
 			printif('--> COO sparse %d bits/%d bits' %(mem_sparse,mem_dense),debug)
 			self.sparse = True
 			self.index = index.astype(np.uint8)
-			self.value= value.astype(np.float32)		
+			self.value= value.astype(np.float32)
 			self.shape = data.shape
 
 		else:
@@ -45,7 +45,7 @@ class COOgrid(object):
 			self.sparse = False
 			self.shape = data.shape
 			self.index=None
-			self.value=data.astype(np.float32)	
+			self.value=data.astype(np.float32)
 
 	def to_dense(self,shape=None):
 		if not self.sparse:
@@ -60,7 +60,7 @@ class COOgrid(object):
 		return data
 
 '''
-Flat Array Normalized 
+Flat Array Normalized
 '''
 class FLANgrid(object):
 
@@ -74,7 +74,7 @@ class FLANgrid(object):
 	def from_dense(self,data,beta=None,debug=False):
 		'''
 		data : the 3D tensor to encode
-		beta : threshold to determine if a sparse rep is valuable 
+		beta : threshold to determine if a sparse rep is valuable
 		'''
 		if beta is not None:
 			thr = beta*np.mean(np.abs(data))
@@ -101,20 +101,20 @@ class FLANgrid(object):
 
 		# decide if we store sparse or not
 		# if enough elements are sparse
-		if mem_sparse < mem_dense:	
-				
+		if mem_sparse < mem_dense:
+
 			printif('--> FLAN sparse %d bits/%d bits' %(mem_sparse,mem_dense),debug)
 			self.sparse = True
 			self.index = self._get_single_index_array(index).astype(index_type)
-			self.value= value.astype(np.float32)		
-			
+			self.value= value.astype(np.float32)
+
 
 		else:
-			
+
 			printif('--> FLAN dense %d bits/%d bits' %(mem_sparse,mem_dense),debug)
 			self.sparse = False
 			self.index=None
-			self.value=data.astype(np.float32)	
+			self.value=data.astype(np.float32)
 
 	def to_dense(self,shape=None):
 		if not self.sparse:
@@ -132,7 +132,7 @@ class FLANgrid(object):
 	# self.index = np.array( list( map(self._get_single_index,index) ) ).astype(index_type)
 	# however that is remarkably slow compared to the array version
 	def _get_single_index(self,index):
-		
+
 		ndim = len(index)
 		assert ndim == len(self.shape)
 
@@ -144,9 +144,9 @@ class FLANgrid(object):
 	# get the sing index using np array
 	# that is much faster than using a map ...
 	def _get_single_index_array(self,index):
-		
+
 		single_ind = index[:,-1]
-		ndim = index.shape[-1] 
+		ndim = index.shape[-1]
 		assert ndim == len(self.shape)
 
 		for i in range(ndim-1):

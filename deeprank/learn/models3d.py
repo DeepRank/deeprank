@@ -3,7 +3,6 @@ import torch
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
 import torch.utils.data as data_utils
 
 
@@ -45,7 +44,7 @@ class ConvNet3D(nn.Module):
 		return x
 
 	def forward(self,x):
-		
+
 		x = self._forward_features(x)
 		x = x.view(x.size(0),-1)
 		x = F.relu(self.fc1(x))
@@ -84,7 +83,7 @@ class SmallConvNet3D(nn.Module):
 		return x
 
 	def forward(self,x):
-		
+
 		x = self._forward_features(x)
 		x = x.view(x.size(0),-1)
 		x = F.relu(self.fc1(x))

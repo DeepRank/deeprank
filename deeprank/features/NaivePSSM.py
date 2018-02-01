@@ -1,4 +1,4 @@
-import subprocess as sp 
+#import subprocess as sp
 import os
 import numpy as np
 import sys
@@ -28,7 +28,7 @@ class NaivePSSM(FeatureClass):
 
 	More advanced methods could be developped see e.g
 	Simplified Sequence-based method for ATP-binding prediction using contextual local evolutionary conservation
-	Algorithms for Molecular Biology 2014 9:7 
+	Algorithms for Molecular Biology 2014 9:7
 
 	USAGE
 
@@ -73,7 +73,7 @@ class NaivePSSM(FeatureClass):
 		data = f.readlines()
 		f.close()
 		raw_data = list( map(lambda x: x.decode('utf-8').split(),data))
-		
+
 		self.res_data  = np.array(raw_data)[:,:3]
 		self.res_data = [  (r[0],int(r[1]),r[2]) for r in self.res_data ]
 		self.pssm_data = np.array(raw_data)[:,3:].astype(np.float)
@@ -90,7 +90,7 @@ class NaivePSSM(FeatureClass):
 	def _mask_pssm(pssm_data,nmask=17):
 
 		nres = len(pssm_data)
-		
+
 		masked_pssm = np.copy(pssm_data)
 		for idata in range(nres):
 			istart = np.max([idata-nmask,0])
@@ -118,7 +118,7 @@ class NaivePSSM(FeatureClass):
 
 
 	def get_feature_value(self,contact_only=True):
-		
+
 		sql = pdb2sql(self.pdbfile)
 		xyz_info = sql.get('chainID,resSeq,resName',name='CB')
 		xyz = sql.get('x,y,z',name='CB')
@@ -126,17 +126,16 @@ class NaivePSSM(FeatureClass):
 		xyz_dict = {}
 		for pos,info in zip(xyz,xyz_info):
 			xyz_dict[tuple(info)] = pos
-		
+
 		contact_residue = sql.get_contact_residue()
 		contact_residue = contact_residue[0] + contact_residue[1]
 		sql.close()
-		
+
 		pssm_data_xyz = {}
 		pssm_data = {}
 
 		for res,data in zip(self.res_data,self.pssm_data):
-			
-			
+
 			if contact_only and res not in contact_residue:
 				continue
 
@@ -186,7 +185,7 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
 	# get the feature vales
 	pssm.get_feature_value()
-	
+
 	# export in the hdf5 file
 	pssm.export_dataxyz_hdf5(featgrp)
 	pssm.export_data_hdf5(featgrp_raw)
@@ -215,4 +214,3 @@ if __name__ == '__main__':
 	pssm.get_feature_value()
 	print(pssm.feature_data_xyz)
 	print(' Time %f ms' %((time()-t0)*1000))
-	

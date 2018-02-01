@@ -1,5 +1,5 @@
 from deeprank.tools.StructureSimilarity import StructureSimilarity
-import os 
+import os
 import numpy as np
 
 def __compute_target__(decoy,targrp):

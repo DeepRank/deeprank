@@ -1,6 +1,6 @@
 import numpy as np
 import subprocess as sp
-import os, sys 
+import os, sys
 import itertools
 from scipy.signal import bspline
 from collections import OrderedDict
@@ -14,7 +14,7 @@ try:
 	from tqdm import tqdm
 except ImportError :
 	def tqdm(x):
-		return x 
+		return x
 
 printif = lambda string,cond: print(string) if cond else None
 
@@ -22,7 +22,7 @@ printif = lambda string,cond: print(string) if cond else None
 class GridTools(object):
 
 	'''
-	
+
 	Map the feature of a complex on the grid
 
 
@@ -31,18 +31,18 @@ class GridTools(object):
 	molgrp
 
 			the name of the group of the molecule in the HDF5 file
-	          
+
 	hdf5_file
 
 			the file handler of th HDF5 file where to store the grids
 
-	number_of_points 
+	number_of_points
 
 			the number of points we want in each direction of the grid
 
 	resolution
 
-			the distance (in Angs) between two points we want. 
+			the distance (in Angs) between two points we want.
 
 	atomic_densities
 
@@ -67,21 +67,21 @@ class GridTools(object):
 	contact distance
 			the dmaximum distance between two contact atoms default 8.5 A
 
-	
+
 	cuda
-			Use CUDA or not 
+			Use CUDA or not
 
 	gpu_block
 			GPU block size to be used e.g. [8,8,8]
 
 
 	cuda_func
-			Name of the CUDA function to be used for the mapping 
+			Name of the CUDA function to be used for the mapping
 			of the features. Must be present in kernel_cuda.c
 
 	cuda_atomic
-			Name of the CUDA function to be used for the mapping 
-			of the atomic densities. Must be present in kernel_cuda.c		
+			Name of the CUDA function to be used for the mapping
+			of the atomic densities. Must be present in kernel_cuda.c
 
 	prog_bar
 			print progression bar for individual grid (default False)
@@ -93,7 +93,7 @@ class GridTools(object):
 			Try to store the matrix in sparse format (default True)
 
 	logger
-			logger 
+			logger
 
 
 	USAGE
@@ -106,7 +106,7 @@ class GridTools(object):
 
 
 	OUTPUT : all files are stored in the HDF5 file
-	
+
 	'''
 
 	def __init__(self, molgrp,
@@ -116,8 +116,8 @@ class GridTools(object):
 				contact_distance = 8.5, hdf5_file=None,
 				cuda=False, gpu_block=None, cuda_func=None, cuda_atomic=None,
 				prog_bar = False,time=False,try_sparse=True,logger=None):
-		
-		# mol file	
+
+		# mol file
 		self.molgrp = molgrp
 
 		# feature requestedOO
@@ -130,7 +130,7 @@ class GridTools(object):
 
 		# base name of the molecule
 		self.mol_basename = molgrp.name
-		
+
 		# hdf5 file
 		self.hdf5 = hdf5_file
 		self.try_sparse = try_sparse
@@ -154,7 +154,7 @@ class GridTools(object):
 		if self.cuda:
 			self.gpu_block = gpu_block
 			self.gpu_grid = [ int(np.ceil(n/b)) for b,n in zip(self.gpu_block,self.npts)]
-			
+
 
 		# parameter of the atomic system
 		self.atom_xyz = None
@@ -166,14 +166,14 @@ class GridTools(object):
 		self.y = None
 		self.z = None
 
-		# cuda 
+		# cuda
 		self.cuda_func = cuda_func
 		self.cuda_atomic = cuda_atomic
 
 		# grids for calculation of atomic densities
 		self.xgrid = None
 		self.ygrid = None
-		self.zgrid = None 
+		self.zgrid = None
 
 		# dictionaries of atomic densities
 		self.atdens = {}
@@ -191,7 +191,7 @@ class GridTools(object):
 
 		# if we already have an output containing the grid
 		# we update the existing features
-		_update_ = False	
+		_update_ = False
 		if self.mol_basename+'/grid_points' in self.hdf5:
 			_update_ = True
 
@@ -199,9 +199,9 @@ class GridTools(object):
 			printif('\n= Updating grid data for %s' %(self.mol_basename),self.time)
 			self.update_feature()
 		else:
-			printif('\n= Creating grid and grid data for %s' %(self.mol_basename),self.time)	
+			printif('\n= Creating grid and grid data for %s' %(self.mol_basename),self.time)
 			self.create_new_data()
-		
+
 
 
 
@@ -215,7 +215,7 @@ class GridTools(object):
 		#get the contact atoms
 		self.get_contact_atoms()
 
-		# define the grid 
+		# define the grid
 		self.define_grid_points()
 
 		# save the grid points
@@ -249,7 +249,7 @@ class GridTools(object):
 
 		# create the grid
 		self.ygrid,self.xgrid,self.zgrid = np.meshgrid(self.y,self.x,self.z)
-		
+
 		# set the resolution/dimension
 		self.npts = np.array([len(self.x),len(self.y),len(self.z)])
 		self.res = np.array([self.x[1]-self.x[0],self.y[1]-self.y[0],self.z[1]-self.z[0]])
@@ -258,7 +258,7 @@ class GridTools(object):
 		self.add_all_features()
 
 		# if we want the atomic densisties
-		self.add_all_atomic_densities()			
+		self.add_all_atomic_densities()
 
 		# cloe the db file
 		self.sqldb.close()
@@ -304,7 +304,7 @@ class GridTools(object):
 
 		#map the features
 		if self.feature is not None:
-		
+
 			# map the residue features
 			dict_data = self.map_features(self.feature)
 
@@ -313,8 +313,7 @@ class GridTools(object):
 			printif('-- Save Features to HDF5',self.time)
 			self.hdf5_grid_data(dict_data,'Feature_%s' %( self.feature_mode))
 			printif('      Total %f ms' %((time()-t0)*1000),self.time)
-		
-	
+
 
 	# add all the atomic densities to the data
 	def add_all_atomic_densities(self):
@@ -331,12 +330,12 @@ class GridTools(object):
 			self.hdf5_grid_data(self.atdens,'AtomicDensities_%s' %(self.atomic_densities_mode))
 			printif('      Total %f ms' %((time()-t0)*1000),self.time)
 
-			
+
 
 	################################################################
 	# define the grid points
 	# there is an issue maybe with the ordering
-	# In order to visualize the data in VMD the Y and X axis must be inverted ... 
+	# In order to visualize the data in VMD the Y and X axis must be inverted ...
 	# I keep it like that for now as it should not matter for the CNN
 	# and maybe we don't need atomic denisties as features
 	################################################################
@@ -359,8 +358,8 @@ class GridTools(object):
 
 
 		# there is something fishy about the meshgrid 3d
-		# the axis are a bit screwy .... 
-		# i dont quite get why the ordering is like that 
+		# the axis are a bit screwy ....
+		# i dont quite get why the ordering is like that
 		self.ygrid,self.xgrid,self.zgrid = np.meshgrid(self.y,self.x,self.z)
 
 	################################################################
@@ -371,7 +370,7 @@ class GridTools(object):
 	# compute all the atomic densities data
 	def map_atomic_densities(self,only_contact=True):
 
-		mode = self.atomic_densities_mode	
+		mode = self.atomic_densities_mode
 		printif('-- Map atomic densities on %dx%dx%d grid (mode=%s)'%(self.npts[0],self.npts[1],self.npts[2],mode),self.time)
 
 		# prepare the cuda memory
@@ -393,7 +392,7 @@ class GridTools(object):
 		# loop over all the data we want
 		for atomtype,vdw_rad in self.local_tqdm(self.atomic_densities.items()):
 
-			
+
 			t0 = time()
 
 			# get the contact atom that of the correct type on both chains
@@ -401,7 +400,7 @@ class GridTools(object):
 				index = self.sqldb.get_contact_atoms()
 				xyzA = np.array(self.sqldb.get('x,y,z',rowID=index[0],name=atomtype))
 				xyzB = np.array(self.sqldb.get('x,y,z',rowID=index[1],name=atomtype))
-				
+
 			else:
 				# get the atom that are of the correct type on both chains
 				xyzA = np.array(self.sqldb.get('x,y,z',chainID='A',name=atomtype))
@@ -464,7 +463,7 @@ class GridTools(object):
 				print('Error: Atomic density mode %s not recognized' %mode)
 				sys.exit()
 
-			tgrid = time()-t0 
+			tgrid = time()-t0
 			printif('     Process time %f ms' %(tprocess*1000),self.time)
 			printif('     Grid    time %f ms' %(tgrid*1000),self.time)
 
@@ -485,7 +484,7 @@ class GridTools(object):
 
 	################################################################
 	# Residue or Atomic features
-	# read the file provided in input 
+	# read the file provided in input
 	# and map it on the grid
 	################################################################
 
@@ -493,8 +492,8 @@ class GridTools(object):
 	def map_features(self, featlist, transform=None):
 
 		'''
-		For residue based feature the feature file must be of the format 
-		chainID    residue_name(3-letter)     residue_number     [values] 
+		For residue based feature the feature file must be of the format
+		chainID    residue_name(3-letter)     residue_number     [values]
 
 		For atom based feature it must be
 		chainID    residue_name(3-letter)     residue_number   atome_name  [values]
@@ -522,7 +521,7 @@ class GridTools(object):
 		# loop over all the features required
 		for feature_name in featlist:
 
-			
+
 			printif('-- Map %s on %dx%dx%d grid ' %(feature_name,self.npts[0],self.npts[1],self.npts[2]),self.time)
 
 			# read the data
@@ -532,11 +531,11 @@ class GridTools(object):
 			else:
 				print('Error Feature not found \n\tPossible features : ' + ' | '.join(featgrp.keys()) )
 				raise ValueError('feature %s  not found in the file' %(feature_name))
-			
+
 
 			# detect if we have a xyz format
 			# or a byte format
-			# define how many elements (ntext) 
+			# define how many elements (ntext)
 			# are present before the feature values
 			# xyz : 4 (chain x y z)
 			# byte - residue : 3 (chain resSeq resName)
@@ -550,7 +549,7 @@ class GridTools(object):
 					feature_type = 'residue'
 					ntext = 3
 				except:
-					feature_type = 'atomic' 
+					feature_type = 'atomic'
 					ntext = 4
 
 			# test if the transform is callable
@@ -569,7 +568,7 @@ class GridTools(object):
 				nFeat = len(transform(data_test))
 			else:
 				print('Error transform in map_feature must be callable')
-				return None			
+				return None
 
 			# declare the dict
 			# that will in fine holds all the data
@@ -669,7 +668,7 @@ class GridTools(object):
 						for iF in range(nFeat):
 							dict_data[fname+'_%03d' %iF] += coeff*self.featgrid(pos,feat_values[iF])
 
-				# try to use cuda to speed it up		
+				# try to use cuda to speed it up
 				else:
 					if nFeat == 1:
 						x0,y0,z0 = pos.astype(np.float32)
@@ -684,7 +683,7 @@ class GridTools(object):
 				dict_data[fname] = grid_gpu.get()
 				driver.Context.synchronize()
 
-			
+
 			printif('     Process time %f ms' %(tprocess*1000),self.time)
 			printif('     Grid    time %f ms' %(tgrid*1000),self.time)
 
@@ -730,7 +729,7 @@ class GridTools(object):
 			return dd
 
 		# nearest neighbours
-		elif type_ == 'nearest': 
+		elif type_ == 'nearest':
 
 			# distances
 			dx,dy,dz = np.abs(self.x-x0),np.abs(self.y-y0),np.abs(self.z-z0)
@@ -823,7 +822,7 @@ class GridTools(object):
 					sub_feat_group.attrs['sparse'] = spg.sparse
 					sub_feat_group.attrs['type'] = 'sparse_matrix'
 					sub_feat_group.create_dataset('value',data=spg.value,compression='gzip',compression_opts=9)				
-				
+
 			else:
 				sub_feat_group.attrs['sparse'] = False
 				sub_feat_group.attrs['type'] = 'sparse_matrix'

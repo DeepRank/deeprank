@@ -1,7 +1,7 @@
 import numpy as np
 import os
-import h5py 
-import pickle 
+import h5py
+import pickle
 from deeprank.tools import sparse
 
 class NormParam(object):
@@ -23,7 +23,7 @@ class NormParam(object):
 		self.mean = mean
 		self.var = var
 		self.sqmean = sqmean
-		
+
 
 	def add(self,mean,var):
 		self.mean += mean
@@ -35,7 +35,7 @@ class NormParam(object):
 		# normalize the mean and var
 		self.mean   /= n
 		self.var    /= n
-		self.sqmean /= n 
+		self.sqmean /= n
 
 		# get the std
 		self.std = self.var
@@ -80,7 +80,7 @@ class NormalizeData(object):
 			return
 
 		f5 = h5py.File(self.fname,'r')
-		mol = list(f5.keys())[0]		
+		mol = list(f5.keys())[0]
 		mol_data = f5.get(mol)
 
 		if 'grid_points' in mol_data:
@@ -91,7 +91,7 @@ class NormalizeData(object):
 			self.shape=(nx,ny,nz)
 
 		else:
-			raise ValueError('Impossible to determine sparse grid shape.\n Specify argument grid_shape=(x,y,z)')	
+			raise ValueError('Impossible to determine sparse grid shape.\n Specify argument grid_shape=(x,y,z)')
 
 	def extract_data(self):
 
@@ -105,7 +105,7 @@ class NormalizeData(object):
 			#get the mapped features group
 			data_group = f5.get(mol+'/mapped_features/')
 
-			# loop over all the feature types 
+			# loop over all the feature types
 			for feat_types,feat_names in data_group.items():
 
 				# if feature type not in param add

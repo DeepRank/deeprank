@@ -1,5 +1,5 @@
-import numpy as np 
-import subprocess as sp 
+import numpy as np
+import subprocess as sp
 import sys
 
 
@@ -46,7 +46,7 @@ def write_newfile(names_oldfile,name_newfile):
 		for l in data:
 			l = l.split()
 			if len(l)>0:
-				
+
 				chain = chainID[ifile]
 				feat = '{:>4}'.format(chain)
 

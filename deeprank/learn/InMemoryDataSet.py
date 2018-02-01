@@ -22,13 +22,13 @@ class InMemoryDataSet(data_utils.Dataset):
 	'''
 	Class that generates the data needed for deeprank.
 
-	All the data is stored in memory. That allows fast access to 
+	All the data is stored in memory. That allows fast access to
 	the data but limit the dataset to small size.
 
 	For bigger dataset use Dataset()
 
-	ARGUMENTS 
-		
+	ARGUMENTS
+
 	database : string or list of strings
 
 		Path of the HDF5 file(s) containing the database(s)
@@ -53,7 +53,7 @@ class InMemoryDataSet(data_utils.Dataset):
 		all the data are loaded
 
 	select_feature : dict or 'all'
-		
+
 		if 'all', all the mapped features contained in the HDF5 file
 		will be loaded
 
@@ -63,13 +63,13 @@ class InMemoryDataSet(data_utils.Dataset):
 		{name : 'all'}     e.g {feature : 'all'}
 
 		the name must correspond to a valid group : f[mo/mapped_features/name]
-		
+
 		if the value is a list of keys only thoses keys will be loaded
 		if 'all' all the data will be loaded
 
 	select_target
 
-		the name of the target we want. 
+		the name of the target we want.
 		the name must correspond to a valid group : f[mo/targets/name]
 
 	normalize_x   :	Boolean
@@ -89,7 +89,7 @@ class InMemoryDataSet(data_utils.Dataset):
 		         normalize_features=True,normalize_targets=True,tqdm=False):
 
 
-		
+
 		# allow for multiple database
 		self.database = database
 		if not isinstance(database,list):
@@ -134,7 +134,7 @@ class InMemoryDataSet(data_utils.Dataset):
 			for f in self.test_database:
 				print('=\t ->',f)
 		print('=')
-		print('='*40,'\n')		
+		print('='*40,'\n')
 		sys.stdout.flush()
 
 
@@ -175,7 +175,7 @@ class InMemoryDataSet(data_utils.Dataset):
 
 
 		for idata,database in enumerate(iter_databases):
-			
+
 			for fdata in database:
 
 				fh5 = h5py.File(fdata,'r')
@@ -183,16 +183,16 @@ class InMemoryDataSet(data_utils.Dataset):
 				featgrp_name='mapped_features/'
 				lendata[idata] += len(mol_names)
 
-				#	
+				#
 				# load the data
 				# the format of the features must be
 				# Nconf x Nchanels x Nx x Ny x Nz
-				# 
+				#
 				# for each folder we create a tmp_feat of size Nchanels x Nx x Ny x Nz
 				# that we then append to the feature list
 				#
 				if self.tqdm:
-					desc = '{:25s}'.format('   '+fdata) 
+					desc = '{:25s}'.format('   '+fdata)
 					data_tqdm  = tqdm(mol_names,desc=desc,file=sys.stdout)
 				else:
 					data_tqdm = mol_names
@@ -200,7 +200,7 @@ class InMemoryDataSet(data_utils.Dataset):
 
 				for mol in data_tqdm:
 
-					if self.tqdm:		
+					if self.tqdm:
 						mem = sys.getsizeof(np.array(features))/1E9
 						data_tqdm.set_postfix(MEM='{:1.3f}'.format(mem)+' GB')
 
@@ -239,10 +239,10 @@ class InMemoryDataSet(data_utils.Dataset):
 						for feat_name,feat_channels in self.select_feature.items():
 
 							# see if the feature exists
-							feat_dict = mol_data.get(featgrp_name+feat_name)						
-							
+							feat_dict = mol_data.get(featgrp_name+feat_name)
+
 							if feat_dict is None:
-								
+
 								print('Error : Feature name %s not found in %s' %(feat_name,mol))
 								opt_names = list(mol_data.get(featgrp_name).keys())
 								print('Error : Possible features are \n\t%s' %'\n\t'.join(opt_names))
@@ -270,15 +270,15 @@ class InMemoryDataSet(data_utils.Dataset):
 										tmp_feat.append(spg.to_dense())
 									else:
 										tmp_feat.append(channel_data['value'].value)
-									
+
 
 						# append to the list of features
 						features.append(np.array(tmp_feat))
 
 					# target
-					opt_names = list(mol_data.get('targets/').keys())			
+					opt_names = list(mol_data.get('targets/').keys())
 					fname = list(filter(lambda x: self.select_target in x, opt_names))
-					
+
 					if len(fname) == 0:
 						print('Error : Target name %s not found in %s' %(self.select_target,mol))
 						print('Error : Possible targets are \n\t%s' %'\n\t'.join(opt_names))
@@ -290,7 +290,7 @@ class InMemoryDataSet(data_utils.Dataset):
 						sys.exit()
 
 					fname = fname[0]
-					targ_data = mol_data.get('targets/'+fname)		
+					targ_data = mol_data.get('targets/'+fname)
 					targets.append(targ_data.value)
 
 
@@ -369,10 +369,10 @@ class InMemoryDataSet(data_utils.Dataset):
 	def convert_dataset_to2d(self):
 
 		'''
-		convert the 3D volumetric dataset to a 2D planar data set 
+		convert the 3D volumetric dataset to a 2D planar data set
 		to be used in 2d convolutional network
 		proj2d specifies the dimension that we want to comsider as channel
-		for example for proj2d = 0 the 2D images are in the yz plane and 
+		for example for proj2d = 0 the 2D images are in the yz plane and
 		the stack along the x dimension is considered as extra channels
 		'''
 		planes = ['yz','xz','xy']
@@ -386,7 +386,7 @@ class InMemoryDataSet(data_utils.Dataset):
 			self.features = self.features.view(nf,-1,nx,1,nz).squeeze()
 		elif self.proj2D==2:
 			self.features = self.features.view(nf,-1,nx,ny,1).squeeze()
-		
+
 		# get the number of channels and points along each axis
 		# the input_shape is now a torch.Size object
 		self.input_shape = self.features[0].shape
