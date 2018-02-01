@@ -148,7 +148,7 @@ class DataGenerator(object):
 
 		# get the local progress bar
 		desc = '{:25s}'.format('Create database')
-		cplx_tqdm = tqdm(self.pdb_path,desc=desc,disable=prog_bar)
+		cplx_tqdm = tqdm(self.pdb_path,desc=desc,disable = not prog_bar)
 		
 
 		self.logger.info('Start Feature calculation')

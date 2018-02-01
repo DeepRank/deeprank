@@ -196,11 +196,11 @@ class DataSet(data_utils.Dataset):
 				f = h5py.File(fname)
 				mol_names = list(f.keys())
 				if len(mol_names) == 0:
-					print('    -> %s is empty ' %f)
+					print('    -> %s is empty ' %fname)
 					remove_file.append(fname)
 				f.close()
 			except:
-				print('    -> %s is corrputed ' %f)
+				print('    -> %s is corrputed ' %fname)
 				remove_file.append(fname)
 
 		for name in remove_file:

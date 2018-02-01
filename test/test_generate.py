@@ -23,7 +23,7 @@ def test_generate():
 	if not os.path.isfile(database.hdf5):
 		t0 = time()
 		print('{:25s}'.format('Create new database') + database.hdf5)
-		database.create_database(prog_bar=True)
+		database.create_database(prog_bar=False)
 		print(' '*25 + '--> Done in %f s.' %(time()-t0))
 	else:
 		print('{:25s}'.format('Use existing database') + database.hdf5)
