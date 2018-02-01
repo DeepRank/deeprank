@@ -191,17 +191,17 @@ class DataSet(data_utils.Dataset):
 
 		print("   Checking dataset Integrity")
 		remove_file = []
-		for f in self.database:
+		for fname in self.database:
 			try:
-				f = h5py.File(f)
+				f = h5py.File(fname)
 				mol_names = list(f.keys())
 				if len(mol_names) == 0:
 					print('    -> %s is empty ' %f)
-					remove_file.append(f)
+					remove_file.append(fname)
 				f.close()
 			except:
 				print('    -> %s is corrputed ' %f)
-				remove_file.append(f)
+				remove_file.append(fname)
 
 		for name in remove_file:
 			self.database.remove(name)
