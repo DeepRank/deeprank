@@ -4,8 +4,6 @@ from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import torch.utils.data as data_utils
-
 
 '''
 definition of the Convolutional Networks
@@ -13,7 +11,6 @@ definition of the Convolutional Networks
 The model must take as an argument the input shape
 This allows to automaically precompute
 the input size of the first FC hidden layer
-
 '''
 
 class ConvNet2D_reg(nn.Module):
