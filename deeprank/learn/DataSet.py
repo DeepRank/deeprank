@@ -296,12 +296,12 @@ class DataSet(data_utils.Dataset):
 
 	def get_pairing_feature(self):
 
-		if self.pair_ind_feature :
+		if self.pair_ind_feature:
 
 			self.pair_indexes = []
 			start = 0
 			for feat_type,feat_names in self.select_feature.items():
-				nfeat = len(feat_names):
+				nfeat = len(feat_names)
 				if '_ind' in feat_type:
 					self.pair_indexes += [ [i,i+1] for i in range(start,start+nfeat,2)]
 				else:
