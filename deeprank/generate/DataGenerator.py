@@ -117,7 +117,7 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-	def create_database(self,verbose=False,remove_error=True,prog_bar=True):
+	def create_database(self,verbose=False,remove_error=True,prog_bar=False):
 
 		'''
 		main function for the creation of the database
@@ -368,7 +368,7 @@ class DataGenerator(object):
 		# compute the targets  of the original
 		desc = '{:25s}'.format('Add targets')
 
-		for cplx_name in tqdm(fnames_original,desc=desc,ncols=100,disable=prog_bar):
+		for cplx_name in tqdm(fnames_original,desc=desc,ncols=100,disable = not prog_bar):
 
 			# group of the molecule
 			molgrp = f5[cplx_name]
@@ -450,7 +450,8 @@ class DataGenerator(object):
 		             cuda_func_name = 'gaussian',
 		             try_sparse=True,
 		             reset=False,use_tmpdir=False,
-		             time=False,prog_bar=True,grid_prog_bar=False
+		             time=False,
+		             prog_bar=True,grid_prog_bar=False,
 		             remove_error=True):
 
 		'''
@@ -554,9 +555,8 @@ class DataGenerator(object):
 
 		# get the local progress bar
 		desc = '{:25s}'.format('Map Features')
-		local_tqdm = lambda x: x if time else tqdm(x,desc=desc,disable=prog_bar)
-		mol_tqdm = local_tqdm(mol_names)
-
+		mol_tqdm = tqdm(mol_names,desc=desc,disable = not prog_bar)
+		
 		# loop over the data files
 		for mol in mol_tqdm:
 
@@ -582,6 +582,7 @@ class DataGenerator(object):
 					             try_sparse=try_sparse)
 
 			except:
+
 				self.map_error.append(mol)
 				self.logger.warning('Error during the mapping of %s' %mol,exc_info=True)
 				printif('Error during the mapping of %s' %mol,self.debug)
