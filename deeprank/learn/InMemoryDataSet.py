@@ -11,7 +11,7 @@ from deeprank.tools import sparse
 
 try:
 	from tqdm import tqdm
-except:
+except ImportError:
 	def tqdm(x):
 		return x
 
@@ -379,7 +379,7 @@ class InMemoryDataSet(data_utils.Dataset):
 		print(': Project 3D data set to 2D images in the %s plane ' %planes[self.proj2D])
 		self.data_shape = self.input_shape
 		nf = self.__len__()
-		nc,nx,ny,nz = self.input_shape
+		_,nx,ny,nz = self.input_shape
 		if self.proj2D==0:
 			self.features = self.features.view(nf,-1,1,ny,nz).squeeze()
 		elif self.proj2D==1:

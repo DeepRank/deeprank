@@ -5,7 +5,8 @@ from deeprank.features import FeatureClass
 
 try:
 	import freesasa
-except:
+
+except ImportError:
 	print('Freesasa not found')
 
 class BSA(FeatureClass):
@@ -125,7 +126,7 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 	# create the BSA instance
 	bsa = BSA(pdb_data)
 
-	# get the structure/calc 
+	# get the structure/calc
 	bsa.get_structure()
 
 	# get the feature info

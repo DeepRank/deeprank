@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 import torch.optim as optim
 
-from deeprank.learn import *
+from deeprank.learn import NetworkGenerator,ConvNet
 import deeprank.learn.modelGenerator
 
 class saved_model(object):
@@ -211,11 +211,10 @@ class MetaQNN(object):
 		self.fc_layers.append(current_layer)
 
 	# load the data set in memory only once
-	def load_dataset(self,database,filter_dataset=None,feature='all',target='DOCKQ'):
+	def load_dataset(self,database,feature='all',target='DOCKQ'):
 
 		print('QNN : Load data set')
 		self.data_set = DataSet(database,
-				   filter_dataset=filter_dataset,
 		           select_feature=feature,
 		           select_target=target,
 		           normalize_features=True,

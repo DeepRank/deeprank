@@ -66,7 +66,7 @@ def test():
 		at_test = ( (ltest[0],ltest[1],ltest[2],ltest[3]),(ltest[4],ltest[5],ltest[6],ltest[7]) )
 		at_ref  = ( (lref[1] ,lref[0] ,lref[2] ,lref[3]) ,(lref[5] ,lref[4] ,lref[6] ,lref[7]) )
 		assert at_test == at_ref
-		
+			
 		dtest = np.array(float(ltest[8]))
 		dref  = np.array(float(lref[8]))
 		delta_dist = np.max([delta_dist,np.abs(dtest-dref)])

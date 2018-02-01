@@ -71,8 +71,7 @@ A few SQL querry wrappers have been implemented
 	TO DO 
 
 	- Add more user friendly wrappers to SQL queries
-	- Make use of the ? more often to prevent quoting issues and SQL injection attack 
-
+	- Make use of the ? more often to prevent quoting issues and SQL injection attack
 '''
 
 class pdb2sql(object):
@@ -480,7 +479,7 @@ class pdb2sql(object):
 		
 		# resName of the chains
 		resName1 = np.array(self.get('resName',chainID=chain1))
-		resName2 = np.array(self.get('resName',chainID=chain2))
+		#resName2 = np.array(self.get('resName',chainID=chain2))
 
 		# atomnames of the chains
 		atName1 = np.array(self.get('name',chainID=chain1))
@@ -687,7 +686,7 @@ class pdb2sql(object):
 			for iModel in range(self.nModel):
 				kwargs['model'] = iModel
 				self.update(attribute,values,**kwargs)
-			return 
+			return
 
 		# parse the attribute
 		if ',' in attribute:
@@ -956,8 +955,7 @@ class pdb2sql(object):
 		rx = np.array([[1,0,0],[0,ca,-sa],[0,sa,ca]])
 		ry = np.array([[cb,0,sb],[0,1,0],[-sb,0,cb]])
 		rz = np.array([[cg,-sg,0],[sg,cs,0],[0,0,1]])
-
-		rot_mat = np.dot(rz,np.dot(ry,rz))
+		rot_mat = np.dot(rx,np.dot(ry,rz))
 
 		# apply the rotation
 		xyz = np.dot(rot_mat,(xyz-xyz0).T).T + xyz0

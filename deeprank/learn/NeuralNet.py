@@ -185,7 +185,7 @@ class NeuralNet():
 		# set the optimizer
 		self.optimizer = optim.SGD(self.net.parameters(),lr=0.005,momentum=0.9,weight_decay=0.001)
 
-	def train(self,nepoch=50, divide_set=[0.8,0.2], hdf5='data.hdf5',train_batch_size = 10, 
+	def train(self,nepoch=50, percent_train=0.8, hdf5='data.hdf5',train_batch_size = 10, 
 		      preshuffle = True,export_intermediate=True,num_workers=1):
 
 		'''
@@ -221,6 +221,7 @@ class NeuralNet():
 		
 
 		# divide the set in train+ valid and test
+		divide_set = [percent_train,1.-percent_train]
 		index_train,index_valid,index_test = self._divide_dataset(divide_set,preshuffle)
 
 		print(': %d confs. for training' %len(index_train))

@@ -3,8 +3,6 @@ import os
 import numpy as np
 import sys
 
-import time
-
 from deeprank.tools import pdb2sql
 from deeprank.features import FeatureClass
 
@@ -281,7 +279,7 @@ class AtomicFeature(FeatureClass):
 		self.contact_atoms_A = sorted(set(self.contact_atoms_A))
 		self.contact_atoms_B = sorted(set(self.contact_atoms_B))
 
-		# if no atoms were found	
+		# if no atoms were found
 		if len(self.contact_atoms_A)==0:
 			print('Warning : No contact atoms detected in atomicFeature')
 

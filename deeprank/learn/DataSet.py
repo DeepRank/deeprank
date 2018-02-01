@@ -5,11 +5,9 @@ import h5py
 import pickle
 from itertools import chain
 
-import torch
 from torch import FloatTensor
 import torch.utils.data as data_utils
 
-import subprocess as sp
 import numpy as np
 
 from deeprank.generate import NormParam,MinMaxParam,NormalizeData
@@ -17,7 +15,7 @@ from deeprank.tools import sparse
 
 try:
 	from tqdm import tqdm
-except:
+except ImportError:
 	def tqdm(x):
 		return x
 
@@ -393,12 +391,9 @@ class DataSet(data_utils.Dataset):
 				self.param_norm['features'][feat_type][name] = NormParam()
 		self.param_norm['targets'][self.select_target] = MinMaxParam()
 
-		#try:
+		# read the normalization
 		self._read_norm()
-		#except:
-		#	print('   Could not load normalization data')
-		#	self._compute_norm()
-
+		
 		# make array for fast access
 		self.feature_mean,self.feature_std = [],[]
 		for feat_type,feat_names in self.select_feature.items():

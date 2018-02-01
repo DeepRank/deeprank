@@ -1,6 +1,5 @@
 import numpy as np 
 import subprocess as sp 
-import numpy as np 
 import sys
 
 

@@ -94,7 +94,8 @@ class dropout(object):
 	def __def_str__(self,ilayer):
 		return 'self.convlayer_%03d = nn.Dropout3d(%0.1f)' %(ilayer,self.percent)
 
-	def __use_str__(self,ilayer):
+	@staticmethod
+	def __use_str__(ilayer):
 		return 'x = self.convlayer_%03d(x)' %ilayer
 
 	def __get_params__(self):
@@ -159,7 +160,7 @@ class fc(object):
 #################################
 class NetworkGenerator(object):
 
-	def __init__(self,name='_tmp_model_',fname='_tmp_model_.py',conv_layers=[],fc_layers=[]):
+	def __init__(self,name='_tmp_model_',fname='_tmp_model_.py',conv_layers=None,fc_layers=None):
 
 		# name of the model
 		self.name = name
@@ -168,8 +169,8 @@ class NetworkGenerator(object):
 		self.fname = fname
 
 		# structure of the convolutional/fc layers
-		self.conv_layers = conv_layers
-		self.fc_layers = fc_layers
+		self.conv_layers = conv_layers or []
+		self.fc_layers = fc_layers or []
 
 		# dimension of the final fc layer
 		self.final_dim = 1

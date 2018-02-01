@@ -3,14 +3,14 @@ import subprocess as sp
 from deeprank.tools import StructureSimilarity
 import matplotlib.pyplot as plt
 import time
-import subprocess as sp
+
 
 def test_rmsd():
 
 	# specify wich data to us
 	MOL = './1AK4/'
 	decoys = MOL + '/decoys/'
-	ref    = MOL + '/native/1AK4.pdb' 
+	ref    = MOL + '/native/1AK4.pdb'
 	data   = MOL + '/haddock_data/' 
 
 
@@ -29,6 +29,7 @@ def test_rmsd():
 
 	# extract the data from the haddock files
 	for i,fname in enumerate(haddock_files):
+		
 		# read the file
 		f = open(fname,'r')
 		data = f.readlines()
@@ -123,7 +124,7 @@ def test_rmsd():
 		print('   : Maximum LRMSD deviation %1.3e' %(delta[1]))
 		print('   : Maximum IRMSD deviation %1.3e' %(delta[2]))
 
-	except:
+	except AssertionError:
 		print('\n')
 		print('Failed : %d molecules tested in %f sec.' %(len(decoy_list),t1))
 		print('       : Maximum Fnat  deviation %1.3e' %(delta[0]))

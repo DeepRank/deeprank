@@ -3,16 +3,16 @@ import subprocess as sp
 import os, sys 
 import itertools
 from scipy.signal import bspline
-import scipy.sparse as spsp
 from collections import OrderedDict
 from time import time
 import logging
 
 from deeprank.tools import pdb2sql
 from deeprank.tools import sparse
+
 try:
 	from tqdm import tqdm
-except:
+except ImportError :
 	def tqdm(x):
 		return x 
 
@@ -48,7 +48,7 @@ class GridTools(object):
 
 			dictionary of atom types cand their vdw radius
 			exemple {'CA':3.5, 'CB':3.0}
-			The correspondign atomic densities will be mapped on the grid 
+			The correspondign atomic densities will be mapped on the grid
 			and exported to the hdf5 file
 
 	feature
@@ -110,7 +110,7 @@ class GridTools(object):
 	'''
 
 	def __init__(self, molgrp,
-				number_of_points = [30,30,30],resolution = [1.,1.,1.],
+				number_of_points = 30,resolution = 1.,
 				atomic_densities=None, atomic_densities_mode='ind',
 				feature = None, feature_mode  ='ind',
 				contact_distance = 8.5, hdf5_file=None,
@@ -140,12 +140,16 @@ class GridTools(object):
 
 		# parameter of the grid
 		if number_of_points is not None:
+			if not isinstance(number_of_points,list):
+				number_of_points = [number_of_points]*3
 			self.npts = np.array(number_of_points).astype('int')
 
 		if resolution is not None:
+			if not isinstance(resolution,list):
+				resolution = [resolution]*3
 			self.res  = np.array(resolution)
 
-		# cuda support 
+		# cuda support
 		self.cuda = cuda
 		if self.cuda:
 			self.gpu_block = gpu_block
@@ -367,7 +371,7 @@ class GridTools(object):
 	# compute all the atomic densities data
 	def map_atomic_densities(self,only_contact=True):
 
-		mode = self.atomic_densities_mode		
+		mode = self.atomic_densities_mode	
 		printif('-- Map atomic densities on %dx%dx%d grid (mode=%s)'%(self.npts[0],self.npts[1],self.npts[2],mode),self.time)
 
 		# prepare the cuda memory

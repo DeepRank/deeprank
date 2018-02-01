@@ -22,7 +22,7 @@ printif = lambda string,cond: print(string) if cond else None
 			compute_lrmsd_fast 			
 			compute_lrmsd_pdb2sql
 
-	IRMSD Calculation 
+	IRMSD Calculation
 
 			compute_irmsd_fast 			
 			compute_irmsd_pdb2sql
@@ -95,6 +95,7 @@ class StructureSimilarity(object):
 
 			xyz_decoy_long, xyz_ref_long = [],[]
 			for ind_decoy, at in enumerate(atom_decoy_long):
+
 				try:
 					ind_ref = atom_ref_long.index(at)
 					xyz_decoy_long.append(data_decoy_long[ind_decoy][3:])
@@ -978,7 +979,7 @@ class StructureSimilarity(object):
 		# form the correlation matrix
 		R = np.dot(P.T,Q)
 
-		# form the F matrix (eq. 10 of ref[1])		
+		# form the F matrix (eq. 10 of ref[1])
 		F = np.zeros((4,4))
 
 		F[0,0] = np.trace(R)

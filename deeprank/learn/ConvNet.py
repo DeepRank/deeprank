@@ -5,7 +5,7 @@ from datetime import datetime
 import sys
 import os
 import time
-import h5py
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -19,7 +19,6 @@ import torch.utils.data as data_utils
 
 import torch.cuda
 
-from deeprank.learn import DataSet
 
 class ConvNet:
 
@@ -66,7 +65,7 @@ class ConvNet:
 		Boolean to allow export in the tensorboard format.
 		if set to true the logdir will be written in a dir called ./runs/
 		type 
-			tensorboard --logdir ./runs/ 
+			tensorboard --logdir ./runs/
 		to start tensorboard.
 		Open a web browser and go to localhost:6006 to visualize the data
 
@@ -195,7 +194,7 @@ class ConvNet:
 		# set the optimizer
 		self.optimizer = optim.SGD(self.net.parameters(),lr=0.005,momentum=0.9,weight_decay=0.001)
 
-	def train(self,nepoch=50, divide_set=[0.8,0.2], train_batch_size = 10, 
+	def train(self,nepoch=50, divide_set=0.8, train_batch_size = 10, 
 		      preshuffle = True,plot_intermediate=True,debug=False):
 
 		'''
@@ -229,6 +228,7 @@ class ConvNet:
 			print(': NGPU       : %d' %self.ngpu)
 
 		# divide the set in train+ valid and test
+		divide_set = [divide_set,1 - divide_set]
 		index_train,index_valid,index_test = self._divide_dataset(divide_set,preshuffle)
 
 
@@ -260,7 +260,7 @@ class ConvNet:
 
 
 
-	def train_montecarlo(self,nmc=2,nepoch=50, divide_set=[0.8,0.1], train_batch_size = 10, preshuffle = True):
+	def train_montecarlo(self,nmc=2,nepoch=50, divide_set=0.8, train_batch_size = 10, preshuffle = True):
 
 		'''
 		Perform a monte carlo cross validation calculation
@@ -284,6 +284,7 @@ class ConvNet:
 			tbwrite = None
 
 		# divide the indexes in train+valid and test
+		divide_set = [divide_set, 1 - divide_set]
 		index_train, index_valid, index_test = self._divide_dataset(divide_set,preshuffle)
 		ntrain = len(index_train)
 
@@ -308,7 +309,6 @@ class ConvNet:
 			index_train_valid = index_valid.tolist()+index_train.tolist()
 			np.random.shuffle(index_train_valid)
 			train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=data_utils.sampler.SubsetRandomSampler(index_train_valid[:ntrain]))
-			valid_loader = data_utils.DataLoader(self.data_set,batch_size=1,sampler=data_utils.sampler.SubsetRandomSampler(index_train_valid[ntrain:]))
 
 			# reinit the parameters
 			self._reinit_parameters()
@@ -329,7 +329,7 @@ class ConvNet:
 		if self.tensorboard:
 			tbwriter.close()
 
-	def train_kfold(self,k=2,nepoch=50, divide_set=[0.8,0.1], train_batch_size = 10, preshuffle = True):
+	def train_kfold(self,k=2,nepoch=50, divide_set=0.8, train_batch_size = 10, preshuffle = True):
 
 		'''
 		Perform a kfold cross validation of the model. 
@@ -356,6 +356,7 @@ class ConvNet:
 
 
 		# divide the indexes in train+valid and test
+		divide_set = [divide_set,1-divide_set]
 		index_train, index_valid, index_test = self._divide_dataset(divide_set,preshuffle)
 
 		# get the possible conf of train and valid
@@ -899,7 +900,7 @@ class ConvNet:
 					col = color_plot[int(t)]
 					angle = angles[k]
 					r = F.softmax(torch.FloatTensor(pts)).data.numpy()
-					ax.scatter(r[1]*np.cos(angle),r[1]*np.sin(angle),s=area[idata],c=col,alpha=0.5,marker=marker[idata])
+					ax.scatter(r[1]*np.cos(angle),r[1]*np.sin(angle),s=area[idata],c=col,alpha=0.5,marker=marker[idata],label=labels[idata])
 					k+=1
 		fig.savefig(figname)
 

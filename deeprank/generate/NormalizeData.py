@@ -40,7 +40,7 @@ class NormParam(object):
 		# get the std
 		self.std = self.var
 		self.std += self.sqmean
-		self.std -= self.mean**2 
+		self.std -= self.mean**2
 		self.std = np.sqrt(self.std)
 
 class MinMaxParam(object):

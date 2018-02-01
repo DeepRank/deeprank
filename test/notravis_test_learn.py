@@ -5,7 +5,6 @@ import torch
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.data as data_utils
 
 from deeprank.learn import *
 
@@ -71,7 +70,7 @@ def test_learn():
                     cuda=False,plot=True,outdir='./out/')
 
   # start the training
-  model.train(nepoch = 50,divide_set=[0.8,0.1], train_batch_size = 5,num_workers=5)
+  model.train(nepoch = 50,percent_train=0.8, train_batch_size = 5,num_workers=5)
 
   # save the model
   model.save_model()

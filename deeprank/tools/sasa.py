@@ -120,7 +120,7 @@ class SASA(object):
 
 				resSeq,resName = self.resinfo[chain][i].tolist()
 				key = tuple([chain,int(resSeq),resName])
-				value =  np.linalg.norm(vect) 
+				value =  np.linalg.norm(vect)
 				NV[key]  = value
 
 		return NV

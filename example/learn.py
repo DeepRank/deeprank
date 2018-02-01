@@ -5,7 +5,7 @@ import torch.optim as optim
 # declare the dataset instance
 database = './1ak4.hdf5'
 data_set = DataSet(database,
-                  select_feature={'AtomicDensities_diff' : ['C','CA','O','N'], 
+                  select_feature={'AtomicDensities_diff' : ['C','CA','O','N'],
                                   'atomicFeature_sum' : ['coulomb','vdwaals','charge'] },
                   select_target='DOCKQ')
 

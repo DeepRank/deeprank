@@ -5,20 +5,20 @@ import numpy as np
 import subprocess as sp
 import h5py
 from collections import OrderedDict
-import logging 
+import logging
 from deeprank.tools import pdb2sql
 from deeprank.generate import GridTools as gt
 
 try:
 	from tqdm import tqdm
-except:
+except ImportError:
 	def tqdm(x):
 		return x
 
 try:
 	from pycuda import driver, compiler, gpuarray, tools
 	import pycuda.autoinit 
-except:
+except ImportError:
 	pass
 
 printif = lambda string,cond: print(string) if cond else None
@@ -39,7 +39,7 @@ pdb_source
 
 pdb_native 
 
-		path or list of path where to find the native conformation of the pdbs			
+		path or list of path where to find the native conformation of the pdbs
 		these are required to compute the DockQ score used for training
 
 data_augmentation
@@ -100,13 +100,13 @@ class DataGenerator(object):
 			
 
 		# handle the native
-		if not isinstance(self.pdb_native,list) and self.native is not None:
-			self.native = [self.native]
+		if not isinstance(self.pdb_native,list):
+			self.pdb_native = [self.pdb_native]
 
 		for src_dir in self.pdb_native:
 			self.all_native +=  sp.check_output('find %s -name "*.pdb"' %src_dir,shell=True).decode('utf8').split()
 
-		# filter the cplx if required 
+		# filter the cplx if required
 		self.pdb_path = self.all_pdb
 		if self.pdb_select is not None:
 			self._filter_cplx()
@@ -144,14 +144,15 @@ class DataGenerator(object):
 
 		# open the file
 		self.f5 = h5py.File(self.hdf5,'w')
-
+		self.logger.info('Start Feature calculation')
 
 		# get the local progress bar
 		desc = '{:25s}'.format('Create database')
 		cplx_tqdm = tqdm(self.pdb_path,desc=desc,disable = not prog_bar)
-		
 
-		self.logger.info('Start Feature calculation')
+		if not prog_bar:
+			print(desc, ':', self.hdf5)
+			sys.stdout.flush()
 
 		for cplx in cplx_tqdm:
 
@@ -182,7 +183,7 @@ class DataGenerator(object):
 				else:
 					ref = list(filter(lambda x: ref_name in x,self.all_native))
 					if len(ref)>1:
-						self.logger.warning('Multiple native complexes found for',mol_name)
+						self.logger.warning('Multiple native complexes found')
 					ref = ref[0]
 					if ref == '':
 						ref = None
@@ -227,7 +228,7 @@ class DataGenerator(object):
 
 				################################################
 				#	DATA AUGMENTATION
-				################################################			
+				################################################
 
 				# GET ALL THE NAMES
 				if self.data_augmentation is not None:
@@ -289,7 +290,7 @@ class DataGenerator(object):
 #		ADD FEATURES TO AN EXISTING DATASET
 #
 #====================================================================================
-
+	"""
 	def add_feature(self,compute_features=None,import_features=None,prog_bar=True):
 
 		'''
@@ -324,7 +325,7 @@ class DataGenerator(object):
 			# the internal features
 			if compute_features is not None:
 				featgrp = molgrp['features']
-				self._compute_features(compute_features,featgrp)
+				self._compute_features(self.compute_features, molgrp['complex'].value,molgrp['features'],molgrp['features_raw'])
 
 		# copy the data from the original to the augmented
 		for cplx_name in fnames_augmented:
@@ -338,13 +339,13 @@ class DataGenerator(object):
 
 		# close the file
 		f5.close()
-
+		"""
 #====================================================================================
 #
 #		ADD TARGETS TO AN EXISTING DATASET
 #
 #====================================================================================
-
+	"""
 	def add_target(self,compute_targets=None,import_targets=None,prog_bar=True):
 
 		'''
@@ -393,8 +394,7 @@ class DataGenerator(object):
 
 		# close the file
 		file_hdf5.close()
-
-
+	"""
 #====================================================================================
 #
 #		REMOVE DATA FROM THE DATA SET
@@ -557,6 +557,10 @@ class DataGenerator(object):
 		desc = '{:25s}'.format('Map Features')
 		mol_tqdm = tqdm(mol_names,desc=desc,disable = not prog_bar)
 		
+		if not prog_bar:
+			print(desc, ':', self.hdf5)
+			sys.stdout.flush()
+
 		# loop over the data files
 		for mol in mol_tqdm:
 
@@ -669,7 +673,7 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-	def test_cuda(self,grid_info,gpu_block=[8,8,8],cuda_kernel='kernel_map.c',func='gaussian'):
+	def test_cuda(self,grid_info,gpu_block=8,cuda_kernel='kernel_map.c',func='gaussian'):
 
 		'''
 		Test the CUDA kernel
@@ -705,6 +709,10 @@ class DataGenerator(object):
 		y_gpu = gpuarray.to_gpu(y.astype(np.float32))
 		z_gpu = gpuarray.to_gpu(z.astype(np.float32))
 		grid_gpu = gpuarray.zeros(grid_info['number_of_points'],np.float32)
+
+		#  make sure we have three block value
+		if not isinstance(gpu_block,list):
+			gpu_block = [gpu_block]*3
 
 		#  get the grid
 		gpu_grid = [ int(np.ceil(n/b)) for b,n in zip(gpu_block,grid_info['number_of_points'])]
@@ -858,7 +866,6 @@ class DataGenerator(object):
 
 		# create tthe sqldb and extract positions
 		sqldb = pdb2sql(pdbfile)
-		xyz = sqldb.get('x,y,z')
 
 		# rotate the positions
 		center = sqldb.rotation_around_axis(axis,angle)
