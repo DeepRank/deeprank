@@ -125,6 +125,9 @@ class DataSet(data_utils.Dataset):
 		print('='*40,'\n')		
 		sys.stdout.flush()
 
+		# check if the files are ok
+		self.check_hdf5_files()
+
 		# create the indexing system
 		# alows to associate each mol to an index
 		# and get fname and mol name from the index
@@ -182,6 +185,26 @@ class DataSet(data_utils.Dataset):
 			feature = self.make_feature_pair(feature,self.pair_indexes,self.pair_ind_feature)
 
 		return feature,target
+
+
+	def check_hdf5_files(self):
+
+		print("   Checking dataset Integrity")
+		remove_file = []
+		for f in self.database:
+			try:
+				f = h5py.File(f)
+				mol_names = list(f.keys())
+				if len(mol_names) == 0:
+					print('    -> %s is empty ' %f)
+					remove_file.append(f)
+				f.close()
+			except:
+				print('    -> %s is corrputed ' %f)
+				remove_file.append(f)
+
+		for name in remove_file:
+			self.database.remove(name)
 
 
 	def create_index_molecules(self):
