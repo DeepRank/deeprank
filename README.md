@@ -2,6 +2,9 @@
 
 <a href='https://travis-ci.org/DeepRank/deeprank'><img src='https://secure.travis-ci.org/DeepRank/deeprank.png?branch=master'></a>
 
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/9252e59633cf46a7ada0c3c614c175ea)](https://www.codacy.com/app/NicoRenaud/deeprank?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=DeepRank/deeprank&amp;utm_campaign=Badge_Grade)
+
 These module allows to :
 
    * Create one/multiple HDF5 files containing all the data (structures,features,mapped features,targets) required to use deep learning.
