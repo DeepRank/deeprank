@@ -395,7 +395,8 @@ class AtomicFeature(FeatureClass):
 		self.sqldb.add_column('altRes','TEXT')
 		self.sqldb.update_column('altRes',ataltResName)
 
-	def _get_altResName(self,resName,atNames):
+	@staticmethod
+	def _get_altResName(resName,atNames):
 
 		'''
 		Apply the patch data

@@ -657,7 +657,8 @@ class StructureSimilarity(object):
 
 
 	# get the rowID of all the atoms
-	def get_izone_rowID(self,sql,izone,return_only_backbone_atoms=True):
+	@staticmethod
+	def get_izone_rowID(sql,izone,return_only_backbone_atoms=True):
 
 		# read the file
 		if not os.path.isfile(izone):

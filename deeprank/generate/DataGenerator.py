@@ -273,8 +273,8 @@ class DataGenerator(object):
 				self.feature_error += [mol_name] + mol_aug_name_list
 				self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
 				printif('Error during the feature calculation of %s' %cplx,self.debug)
-				printif(type(inst))
-				printif(inst.args)
+				printif(type(inst),self.debug)
+				printif(inst.args,self.debug)
 
 		# remove the data where we had issues
 		if remove_error:

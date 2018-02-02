@@ -310,7 +310,7 @@ class pdb2sql(object):
 	#
 	#		GET FUNCTIONS
 	#
-	#			get(attribute,selection) -> return the atribute(s) value(s) for the given selection 
+	#			get(attribute,selection) -> return the atribute(s) value(s) for the given selection
 	#			get_contact_atoms()		 -> return a list of rowID  for the contact atoms
 	#			get_contact_residue()	 -> return a list of resSeq for the contact residue
 	#
@@ -445,7 +445,7 @@ class pdb2sql(object):
 		# if atnames == 'rowID':
 		if 'rowID' in atnames:
 			index = atnames.split(',').index('rowID')
-			for i,val in enumerate(data):
+			for i,_ in enumerate(data):
 				data[i][index] -= 1
 
 		# postporcess the output of the SQl query
@@ -557,8 +557,10 @@ class pdb2sql(object):
 		dataB = self.get('chainId,resName,resSeq',rowID=index2)
 
 		# create tuple cause we want to hash through it
-		dataA = list(map(lambda x: tuple(x),dataA))
-		dataB = list(map(lambda x: tuple(x),dataB))
+		#dataA = list(map(lambda x: tuple(x),dataA))
+		#dataB = list(map(lambda x: tuple(x),dataB))
+		dataA = [tuple(x) for x in dataA]
+		dataB = [tuple(x) for x in dataB]
 
 		# extract uniques
 		resA = list(set(dataA))

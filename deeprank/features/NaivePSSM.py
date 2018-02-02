@@ -42,7 +42,7 @@ class NaivePSSM(FeatureClass):
 		self.pdbfile = pdbfile
 		self.pssm_path = pssm_path
 		self.molname = self.get_mol_name(mol_name)
-		self.nmask = nmask 
+		self.nmask = nmask
 		self.nsmooth = nsmooth
 		self.debug = debug
 
