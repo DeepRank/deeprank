@@ -58,11 +58,19 @@ class ResidueDensity(FeatureClass):
 
 		for key,other_res in res.items():
 
+			# some residues are not amino acids
+			if key[2] not in self.residue_types:
+				continue
+
 			if key not in self.residue_densities:
 				self.residue_densities[key] = residue_pair(key,self.residue_types[key[2]])
 			self.residue_densities[key].density['total'] += len(other_res)
 
 			for key2 in other_res:
+
+				# some residues are not amino acids
+				if key2[2] not in self.residue_types:
+					continue
 
 				self.residue_densities[key].density[self.residue_types[key2[2]]] += 1
 				self.residue_densities[key].connections[self.residue_types[key2[2]]].append(key2)
@@ -121,7 +129,7 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 	resdens = ResidueDensity(pdb_data)
 
 	# get the densities
-	resdens.get()
+	resdens.get(cutoff=5.5)
 
 	# extract the features
 	resdens.extract_features()
@@ -139,7 +147,8 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
 if __name__ == '__main__':
 
-	rd = ResidueDensity('1AK4.pdb')
+	path = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/decoys_pdbFLs/1EWY/water/'
+	rd = ResidueDensity(path+'1EWY_100w.pdb')
 	rd.get(cutoff=5.5)
 	rd.print()
 	rd.extract_features()

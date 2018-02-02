@@ -437,7 +437,7 @@ if __name__== '__main__':
 	fc_layers.append(fc(output_size=84,post='relu'))
 	fc_layers.append(fc(input_size=84,output_size=1))
 
-	MG = NetworkGenerator(name='cnntest',fname='model.py',conv_layers=conv_layers,fc_layers=fc_layers)
+	MG = NetworkGenerator(name='cnn',fname='model3d.py',conv_layers=conv_layers,fc_layers=fc_layers)
 	MG.print()
 	MG.write()
 

@@ -2,7 +2,7 @@ import numpy as np
 import pickle
 import torch.optim as optim
 
-from deeprank.learn import NetworkGenerator,ConvNet
+from deeprank.learn import NetworkGenerator,NeuralNet
 import deeprank.learn.modelGenerator
 
 class saved_model(object):
@@ -224,10 +224,10 @@ class MetaQNN(object):
 	def train_model(self,cuda=False,ngpu=0):
 
 		print('QNN : Train model')
-		import model
+		from .model3d import cnn
 
 		# create the ConvNet
-		model = ConvNet(self.data_set,model.conv3d,plot=False,cuda=cuda,ngpu=ngpu)
+		model = NeuralNet(self.data_set,cnn,plot=False,cuda=cuda,ngpu=ngpu)
 
 		# fix optimizer
 		model.optimizer = optim.SGD(model.net.parameters(),

@@ -14,9 +14,27 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as data_utils
 
+
 import torch.cuda
 
 printif = lambda string,cond: print(string) if cond else None
+
+class SubsetSampler(data_utils.sampler.Sampler):
+    """Samples elements randomly from a given list of indices, without replacement.
+
+    Arguments:
+        indices (list): a list of indices
+    """
+
+    def __init__(self, indices):
+        self.indices = indices
+
+    def __iter__(self):
+        return iter(self.indices)
+
+    def __len__(self):
+        return len(self.indices)
+
 
 class NeuralNet():
 
@@ -337,6 +355,10 @@ class NeuralNet():
 		train_sampler = data_utils.sampler.SubsetRandomSampler(index_train)
 		valid_sampler = data_utils.sampler.SubsetRandomSampler(index_valid)
 		test_sampler = data_utils.sampler.SubsetRandomSampler(index_test)
+		# train_sampler = SubsetSampler(index_train)
+		# valid_sampler = SubsetSampler(index_valid)
+		# test_sampler = SubsetSampler(index_test)
+
 
 		# get if we test as well
 		_test_ = len(test_sampler.indices)>0
@@ -362,9 +384,8 @@ class NeuralNet():
 			print('\n: epoch %03d / %03d ' %(epoch,nepoch) + '-'*45)
 			t0 = time.time()
 
-			# train the model
-			self.train_loss,self.data['train'] = self._epoch(train_loader,train_model=True)
-			self.losses['train'].append(self.train_loss)
+			# we valid/test before training so that the data for the three
+			# are calcualted with the same NN
 
 			# validate the model
 			self.valid_loss,self.data['valid'] = self._epoch(valid_loader,train_model=False)
@@ -374,6 +395,14 @@ class NeuralNet():
 			if _test_:
 				test_loss,self.data['test'] = self._epoch(test_loader,train_model=False)
 				self.losses['test'].append(test_loss)
+
+			# process train data without training
+			#self.train_loss,self.data['train'] = self._epoch(train_loader,train_model=False	)
+			#self.losses['train'].append(self.train_loss)
+
+			# train the model
+			self.train_loss,self.data['train'] = self._epoch(train_loader,train_model=True)
+			self.losses['train'].append(self.train_loss)
 
 			# talk a bit about losse
 			print('  train loss       : %1.3e\n  valid loss       : %1.3e' %(self.train_loss, self.valid_loss))
@@ -391,7 +420,7 @@ class NeuralNet():
 			av_time += elapsed
 			nremain = nepoch-(epoch+1)
 			remaining_time = av_time/(epoch+1)*nremain
-			print('  remaining time   :',  time.strftime('%H:%M:%S', time.gmtime(remaining_time)))		
+			print('  remaining time   :',  time.strftime('%H:%M:%S', time.gmtime(remaining_time)))
 
 			# plot the scatter plots
 			if (export_intermediate and epoch%nprint == nprint-1) or epoch==0 or epoch==nepoch-1:
@@ -407,7 +436,7 @@ class NeuralNet():
 
 		return torch.cat([param.data.view(-1) for param in self.net.parameters()],0)
 
-	def _epoch(self,data_loader,train_model=True):
+	def _epoch(self,data_loader,train_model):
 
 		'''
 		Perform one single epoch iteration over a data loader
@@ -429,8 +458,8 @@ class NeuralNet():
 
 			# zero gradient
 			tlearn0 = time.time()
-			if train_model:
-				self.optimizer.zero_grad()
+			#if train_model:
+			#	self.optimizer.zero_grad()
 
 			# forward + loss
 			outputs = self.net(inputs)
@@ -438,8 +467,9 @@ class NeuralNet():
 			running_loss += loss.data[0]
 			n += len(inputs)
 
-			# backward + step
+			# zero + backward + step
 			if train_model:
+				self.optimizer.zero_grad()
 				loss.backward()
 				self.optimizer.step()
 			time_learn += time.time()-tlearn0
@@ -551,7 +581,9 @@ class NeuralNet():
 
 		for l in labels:
 
+
 			if l in self.data:
+
 				targ = self.data[l]['targets']
 				out = self.data[l]['outputs']
 
