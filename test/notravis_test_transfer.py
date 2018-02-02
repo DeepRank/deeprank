@@ -1,11 +1,11 @@
 import os
 from deeprank.learn import *
 from deeprank.learn.model3d import cnn
-
+import torch.nn as nn
 
 # all the import torch fails on TRAVIS
 # so we can only exectute this test locally
-def test_learn():
+def test_transfer():
 
   #adress of the database
   database = '1ak4.hdf5'
@@ -24,11 +24,21 @@ def test_learn():
   model = NeuralNet(data_set,cnn,model_type='3d',task='reg',
                     cuda=False,plot=True,outdir='./out/')
 
-  # start the training
-  model.train(nepoch = 50,percent_train=0.8, train_batch_size = 5,num_workers=0)
 
-  # save the model
-  model.save_model()
+
+  model = NeuralNet(data_set,cnn,outdir='./out_reload/')
+  model.load_model('./out/model.pth.tar')
+
+  #freeze the parameters
+  for param in model.net.parameters():
+    param.require_grad = False
+
+  # get new fc layers
+  size = model.net.fclayer_000.in_features
+  model.net.fclayer_000   = nn.Linear(size,84)
+  model.net.fclayer_001  = nn.Linear(84,1)
+
+  model.train(nepoch = 1,percent_train=0.8, train_batch_size = 5,num_workers=0)
 
 if __name__ == "__main__":
-  test_learn()
+  test_transfer()

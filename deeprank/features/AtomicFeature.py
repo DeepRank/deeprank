@@ -292,8 +292,8 @@ class AtomicFeature(FeatureClass):
 		dataB = self.sqldb.get('chainId,resName,resSeq',rowID=self.contact_atoms_B)
 
 		# create tuple cause we want to hash through it
-		dataA = list(map(lambda x: tuple(x),dataA))
-		dataB = list(map(lambda x: tuple(x),dataB))
+		dataA = [tuple(x) for x in dataA]
+		dataB = [tuple(x) for x in dataB]
 
 		# extract uniques
 		resA = list(set(dataA))

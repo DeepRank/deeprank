@@ -60,9 +60,10 @@ class BSA(FeatureClass):
 
 	def get_structure(self):
 
-		try:
+		# we can have a str or a list of bytes as input
+		if isinstance(self.pdb_data,str):
 			self.complex = freesasa.Structure(self.pdb_data)
-		except:
+		else:
 			self.complex = freesasa.Structure()
 			atomdata = self.sql.get('name,resName,resSeq,chainID,x,y,z')
 			for atomName,residueName,residueNumber,chainLabel,x,y,z in atomdata:

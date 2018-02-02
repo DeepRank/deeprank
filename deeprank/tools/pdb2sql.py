@@ -445,7 +445,7 @@ class pdb2sql(object):
 		# if atnames == 'rowID':
 		if 'rowID' in atnames:
 			index = atnames.split(',').index('rowID')
-			for i in range(len(data)):
+			for i,val in enumerate(data):
 				data[i][index] -= 1
 
 		# postporcess the output of the SQl query
@@ -520,7 +520,7 @@ class pdb2sql(object):
 
 		# extend the list to entire residue
 		if extend_to_residue:
-			index_contact_1,index_contact_2 = self._extend_contact_to_residue(index_contact_1,index_contact_2,only_backbone_atoms)	
+			index_contact_1,index_contact_2 = self._extend_contact_to_residue(index_contact_1,index_contact_2,only_backbone_atoms)
 
 
 		# filter only the backbone atoms

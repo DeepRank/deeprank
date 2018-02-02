@@ -84,6 +84,8 @@ class StructureSimilarity(object):
 		# the check make sure that all the
 		# atoms are in the correct order
 		# I STRONGLY discourage turning the check off
+		# it actually reorder the xyz data of the native/decoy
+		# to match.
 		##################################################
 		if check:
 
@@ -100,7 +102,7 @@ class StructureSimilarity(object):
 					ind_ref = atom_ref_long.index(at)
 					xyz_decoy_long.append(data_decoy_long[ind_decoy][3:])
 					xyz_ref_long.append(data_ref_long[ind_ref][3:])
-				except:
+				except ValueError:
 					pass
 
 			atom_decoy_short = [data[:3] for data in data_decoy_short]
@@ -112,7 +114,7 @@ class StructureSimilarity(object):
 					ind_ref = atom_ref_short.index(at)
 					xyz_decoy_short.append(data_decoy_short[ind_decoy][3:])
 					xyz_ref_short.append(data_ref_short[ind_ref][3:])
-				except:
+				except ValueError:
 					pass
 
 
@@ -219,6 +221,7 @@ class StructureSimilarity(object):
 		# the check make sure that all the
 		# atoms are in the correct order
 		# I STRONGLY discourage turning the check off
+		# it actually fixes the order
 		##################################################
 		if check:
 
@@ -234,7 +237,7 @@ class StructureSimilarity(object):
 					ind_ref = atom_ref.index(at)
 					xyz_contact_decoy.append(data_decoy[ind_decoy][3:])
 					xyz_contact_ref.append(data_ref[ind_ref][3:])
-				except:
+				except ValueError:
 					pass
 
 		# extract the xyz
@@ -597,7 +600,7 @@ class StructureSimilarity(object):
 				index = data_decoy.index(atom)
 				index_contact_decoy.append(index)
 				xyz_contact_decoy.append(xyz_decoy[index])
-			except:
+			except Exception:
 				xyz_contact_ref[iat] = None
 				index_contact_ref[iat] = None
 				clean_ref = True
@@ -1062,7 +1065,7 @@ class StructureSimilarity(object):
 		ry = np.array([[cb,0,sb],[0,1,0],[-sb,0,cb]])
 		rz = np.array([[cg,-sg,0],[sg,cs,0],[0,0,1]])
 
-		rot_mat = np.dot(rz,np.dot(ry,rz))
+		rot_mat = np.dot(rx,np.dot(ry,rz))
 
 		# apply the rotation
 		return np.dot(rot_mat,(xyz-xyz0).T).T + xyz0

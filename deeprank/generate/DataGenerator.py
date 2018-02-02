@@ -224,7 +224,7 @@ class DataGenerator(object):
 					self._import_targets(self.import_targets,mol_name)
 
 				if self.compute_targets is not None:
-					self._compute_targets(self.compute_targets, molgrp['complex'].value,molgrp['targets'])	
+					self._compute_targets(self.compute_targets, molgrp['complex'].value,molgrp['targets'])
 
 				################################################
 				#	DATA AUGMENTATION
@@ -268,12 +268,13 @@ class DataGenerator(object):
 					# rotate the feature
 					self._rotate_feature(molgrp,axis,angle,center)
 
-			except:
+			except Exception as inst:
 
 				self.feature_error += [mol_name] + mol_aug_name_list
 				self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
 				printif('Error during the feature calculation of %s' %cplx,self.debug)
-
+				printif(type(inst))
+				printif(inst.args)
 
 		# remove the data where we had issues
 		if remove_error:
@@ -790,8 +791,8 @@ class DataGenerator(object):
 #		FEATURES ROUTINES
 #
 #====================================================================================
-
-	def _import_features(self,source_files,molgrp):
+	@staticmethod
+	def _import_features(source_files,molgrp):
 
 		# get all the features
 		for src in source_files:
@@ -805,7 +806,8 @@ class DataGenerator(object):
 			else:
 				fsrc.close()
 
-	def _compute_features(self,feat_list,pdb_data,featgrp,featgrp_raw):
+	@staticmethod
+	def _compute_features(feat_list,pdb_data,featgrp,featgrp_raw):
 
 		for feat in feat_list:
 			feat_module = importlib.import_module(feat,package=None)
@@ -817,8 +819,8 @@ class DataGenerator(object):
 #		TARGETS ROUTINES
 #
 #====================================================================================
-
-	def _import_targets(self,source_files,molgrp):
+	@staticmethod
+	def _import_targets(source_files,molgrp):
 
 		# get all the features
 		for src in source_files:
@@ -832,7 +834,8 @@ class DataGenerator(object):
 			else:
 				fsrc.close()
 
-	def _compute_targets(self,targ_list,pdb_data,targrp):
+	@staticmethod
+	def _compute_targets(targ_list,pdb_data,targrp):
 
 		for targ in targ_list:
 			targ_module = importlib.import_module(targ,package=None)
@@ -844,8 +847,8 @@ class DataGenerator(object):
 #		ADD PDB FILE
 #
 #====================================================================================
-
-	def _add_pdb(self,molgrp,pdbfile,name):
+	@staticmethod
+	def _add_pdb(molgrp,pdbfile,name):
 
 		# read the pdb and extract the ATOM lines
 		with open(pdbfile,'r') as fi:
@@ -861,7 +864,8 @@ class DataGenerator(object):
 #====================================================================================
 
 	# add a rotated pdb structure to the database
-	def _add_aug_pdb(self,molgrp,pdbfile,name,axis,angle):
+	@staticmethod
+	def _add_aug_pdb(molgrp,pdbfile,name,axis,angle):
 
 
 		# create tthe sqldb and extract positions
@@ -903,7 +907,8 @@ class DataGenerator(object):
 		return center
 
 	# rotate th xyz-formatted feature in the database
-	def _rotate_feature(self,molgrp,axis,angle,center):
+	@staticmethod
+	def _rotate_feature(molgrp,axis,angle,center):
 
 		feat = list(molgrp['features'].keys())
 		for fn in feat:

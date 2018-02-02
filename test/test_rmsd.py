@@ -1,9 +1,8 @@
 import numpy as np
-import subprocess as sp
 from deeprank.tools import StructureSimilarity
 import matplotlib.pyplot as plt
 import time
-
+import os
 
 def test_rmsd():
 
@@ -13,15 +12,13 @@ def test_rmsd():
 	ref    = MOL + '/native/1AK4.pdb'
 	data   = MOL + '/haddock_data/'
 
-
-
 	# options
 	verbose = True
 	plot = False
 	save = False
 
 	# get the list of decoy names
-	decoy_list = sp.check_output('ls %s/*.pdb' %decoys,shell=True).decode('utf-8').split()
+	decoy_list = [decoys+'/'+n for n in list(filter(lambda x: '.pdb' in x, os.listdir(decoys)))]
 
 	# reference data used to compare ours
 	haddock_data = {}
@@ -115,20 +112,15 @@ def test_rmsd():
 	delta = np.max(np.abs(deep-hdk),0)
 
 	# assert the data
-	try:
-		assert np.all(delta<[1E-3,1,1E-3])
-		print('\n')
-		print('OK : %d molecules tested in %f sec.' %(len(decoy_list),t1))
-		print('   : Maximum Fnat  deviation %1.3e' %(delta[0]))
-		print('   : Maximum LRMSD deviation %1.3e' %(delta[1]))
-		print('   : Maximum IRMSD deviation %1.3e' %(delta[2]))
+	if not np.all(delta<[1E-3,1,1E-3]):
+		raise AssertionError()
 
-	except AssertionError:
-		print('\n')
-		print('Failed : %d molecules tested in %f sec.' %(len(decoy_list),t1))
-		print('       : Maximum Fnat  deviation %1.3e' %(delta[0]))
-		print('       : Maximum LRMSD deviation %1.3e' %(delta[1]))
-		print('       : Maximum IRMSD deviation %1.3e' %(delta[2]))
+	print('\n')
+	print('OK : %d molecules tested in %f sec.' %(len(decoy_list),t1))
+	print('   : Maximum Fnat  deviation %1.3e' %(delta[0]))
+	print('   : Maximum LRMSD deviation %1.3e' %(delta[1]))
+	print('   : Maximum IRMSD deviation %1.3e' %(delta[2]))
+
 
 if __name__ == '__main__':
 	test_rmsd()

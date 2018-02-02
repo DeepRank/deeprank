@@ -1,5 +1,4 @@
 import numpy as np
-import subprocess as sp
 import sys
 
 
@@ -69,7 +68,10 @@ def write_newfile(names_oldfile,name_newfile):
 
 
 oldfile_dir = '../PSSM/'
-oldfiles = sp.check_output('ls %s/*PSSM' %(oldfile_dir),shell=True).decode('utf-8').split()
+oldfiles = list(filter(lambda x: '.PSSM' in x,os.listdir(oldfile_dir)))
+oldfiles = [oldfile_dir + f for f in oldfiles]
+
+#oldfiles = sp.check_output('ls %s/*PSSM' %(oldfile_dir),shell=True).decode('utf-8').split()
 
 nfile = len(oldfiles)
 oldfiles = np.array(oldfiles).reshape(int(nfile/2),2).tolist()
@@ -83,6 +85,7 @@ for filenames in oldfiles:
 	cplx_name.append(filenames[1].split('/')[-1])
 	cplx_name = list(set([cplx_name[0][:4],cplx_name[1][:4]]))
 	print(cplx_name)
+
 	if len(cplx_name)>1:
 		print('error' + cplx_name)
 		sys.exit()

@@ -4,7 +4,6 @@ import numpy as  np
 import argparse
 import subprocess as sp
 import os
-import pickle
 import h5py
 from deeprank.tools import pdb2sql
 from deeprank.tools import sparse

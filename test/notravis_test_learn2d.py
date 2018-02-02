@@ -1,8 +1,4 @@
 import os
-import torch
-from torch.autograd import Variable
-import torch.nn as nn
-import torch.nn.functional as F
 
 from deeprank.learn import *
 from deeprank.learn.model3d import cnn

@@ -1,4 +1,5 @@
 import numpy as np
+import ast
 #################################
 #	CNN layer
 #################################
@@ -229,8 +230,6 @@ class NetworkGenerator(object):
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-import torch.utils.data as data_utils
 
 '''
 
@@ -396,7 +395,7 @@ import torch.utils.data as data_utils
 
 		# create the current layer class instance
 		# and initialize if with the __init_from_dict__() method
-		current_layer = eval(params['name'])()
+		current_layer = ast.list_eval(params['name'])()
 		current_layer.__init_from_dict__(params)
 		self.conv_layers.append(current_layer)
 
@@ -417,7 +416,7 @@ import torch.utils.data as data_utils
 		params['post'] = np.random.choice(self.post_types)
 
 
-		current_layer = eval(params['name'])()
+		current_layer = ast.list_eval(params['name'])()
 		current_layer.__init_from_dict__(params)
 		self.fc_layers.append(current_layer)
 
@@ -437,7 +436,7 @@ if __name__== '__main__':
 	fc_layers.append(fc(output_size=84,post='relu'))
 	fc_layers.append(fc(input_size=84,output_size=1))
 
-	MG = NetworkGenerator(name='cnn',fname='model3d.py',conv_layers=conv_layers,fc_layers=fc_layers)
+	MG = NetworkGenerator(name='test',fname='model_test.py',conv_layers=conv_layers,fc_layers=fc_layers)
 	MG.print()
 	MG.write()
 

@@ -617,8 +617,3 @@ class NeuralNet():
 
 
 
-
-
-
-
-
