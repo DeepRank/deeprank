@@ -135,11 +135,6 @@ class NeuralNet():
 		# plot or not plot
 		self.plot = plot
 
-		# import matplotlib only if we
-		if self.plot:
-			import matplotlib.pyplot as plt
-
-
 		# Set the loss functiom
 		if self.task=='reg':
 			self.criterion = nn.MSELoss(size_average=False)
@@ -257,7 +252,7 @@ class NeuralNet():
 		sampler = data_utils.sampler.SubsetRandomSampler(index)
 		loader = data_utils.DataLoader(self.data_set,sampler=sampler)
 		self.data = {}
-		test_loss,self.data['test'] = self._epoch(loader,train_model=False)
+		_,self.data['test'] = self._epoch(loader,train_model=False)
 		self._plot_scatter_reg(self.outdir+'/test.png')
 
 	def save_model(self,filename='model.pth.tar'):
@@ -613,6 +608,15 @@ class NeuralNet():
 			sg = grp.create_group(k)
 			for kk,vv in v.items():
 				sg.create_dataset(kk,data=vv)
+
+
+	def freeze_conv_layers(self):
+
+		for attr,vals in self.net.__dict__['_modules'].items:
+
+
+		for param in self.net.parameters():
+			param.require_grad = False
 
 
 

@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import sys
 
 from deeprank.tools import pdb2sql
 from deeprank.features import FeatureClass
@@ -516,10 +515,6 @@ class AtomicFeature(FeatureClass):
 		# define the dictionaries
 		charge_data = {}
 		charge_data_xyz = {}
-
-		# total energy terms
-		charge_tot = 0
-
 
 		# entire residue or not
 		if extend_contact_to_residue:

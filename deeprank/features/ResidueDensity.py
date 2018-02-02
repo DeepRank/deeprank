@@ -1,4 +1,3 @@
-import os
 import numpy as np
 import itertools
 from deeprank.tools import pdb2sql

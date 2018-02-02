@@ -119,8 +119,8 @@ class pdb2sql(object):
 		if self.verbose:
 			print('-- Create SQLite3 database')
 
-		 #name of the table
-		table = 'ATOM'
+		#name of the table
+		#table = 'ATOM'
 
 		# column names and types
 		self.col = {'serial' : 'INT',

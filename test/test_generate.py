@@ -1,4 +1,3 @@
-import sys
 from deeprank.generate import *
 import os
 from time import time

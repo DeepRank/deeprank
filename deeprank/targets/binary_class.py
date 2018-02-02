@@ -1,5 +1,4 @@
 import numpy as np
-import os
 
 def __compute_target__(decoy,targrp):
 

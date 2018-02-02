@@ -1,6 +1,5 @@
 from deeprank.features import AtomicFeature
 import numpy as np
-import os
 import pkg_resources
 
 def test():

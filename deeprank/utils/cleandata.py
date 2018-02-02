@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-
-import deeprank.generate
 import h5py
 import os
 
@@ -34,7 +32,6 @@ def clean_dataset(fname,feature=True,pdb=True,points=True,grid=False):
 if __name__ == '__main__':
 
 	import argparse
-	import os
 
 	parser = argparse.ArgumentParser(description='remove data from a hdf5 data set')
 	parser.add_argument('hdf5', help="hdf5 file storing the data set",default=None)

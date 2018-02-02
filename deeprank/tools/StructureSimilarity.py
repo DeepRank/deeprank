@@ -1,6 +1,6 @@
 import numpy as np
 from deeprank.tools import pdb2sql
-import sys,os,time,pickle
+import os,time,pickle
 printif = lambda string,cond: print(string) if cond else None
 
 '''
@@ -273,7 +273,7 @@ class StructureSimilarity(object):
 		index_contact_ref = contact_ref[0]+contact_ref[1]
 
 		# get the xyz and atom identifier of the decoy contact atoms
-		xyz_contact_ref = sql_ref.get('x,y,z',rowID=index_contact_ref)
+		#xyz_contact_ref = sql_ref.get('x,y,z',rowID=index_contact_ref)
 		data_test = [tuple(data) for data in sql_ref.get('chainID,resSeq',rowID=index_contact_ref)]
 		data_test = sorted(set(data_test))
 
@@ -966,9 +966,7 @@ class StructureSimilarity(object):
 		pshape = P.shape
 		qshape = Q.shape
 
-		if pshape[0] == qshape[0]:
-			npts = pshape[0]
-		else:
+		if pshape[0] != qshape[0]:
 			raise ValueError("Matrix don't have the same number of points",P.shape,Q.shape)
 
 		p0,q0 = np.abs(np.mean(P,0)),np.abs(np.mean(Q,0))
@@ -1084,15 +1082,9 @@ class StructureSimilarity(object):
 
 if __name__ == '__main__':
 
-
-	import time
 	BM4 = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
 	decoy = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_324w.pdb'
 	ref = BM4 + 'BM4_dimers_bound/pdbFLs_ori/1AK4.pdb'
-
-
-	#decoy = BM4 + 'decoys_pdbFLs/2BTF/water/2BTF_342w.pdb'
-	#ref = BM4 + 'BM4_dimers_bound/pdbFLs_ori/2BTF.pdb'
 
 	sim = StructureSimilarity(decoy,ref)
 
