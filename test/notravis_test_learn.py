@@ -16,7 +16,10 @@ def test_learn():
   # declare the dataset instance
   data_set = DataSet(database,
                             test_database = database,
-                            select_feature = 'all',select_target='DOCKQ',tqdm=True,
+                            #select_feature = 'all',
+                            select_feature={'AtomicDensities_ind' : 'all',
+                                            'Feature_ind' : ['coulomb','vdwaals','charge','pssm'] },
+                            select_target='DOCKQ',tqdm=True,
                             normalize_features = True, normalize_targets=True,dict_filter={'DOCKQ':[0.,0.6]})
 
 

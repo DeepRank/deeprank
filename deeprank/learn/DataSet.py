@@ -341,7 +341,7 @@ class DataSet(data_utils.Dataset):
 
 				# if for a give type we need all the feature
 				if feat_names == 'all':
-					self.select_feature[feat_type] = [list(mapped_data[feat_type].keys())]
+					self.select_feature[feat_type] = list(mapped_data[feat_type].keys())
 
 				# if we have stored the individual
 				# chainA chainB data we need to expand the feature list
