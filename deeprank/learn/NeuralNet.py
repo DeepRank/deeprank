@@ -145,8 +145,10 @@ class NeuralNet():
 
 		for feat_type,feat_names in self.data_set.select_feature.items():
 			print('=\t features  : %s' %(feat_type))
-			for name in feat_names:	
+			for name in feat_names:
 				print('=\t\t     %s' %(name))
+		if self.data_set.pair_ind_feature is not None:
+			print('=\t Pair      : %s' %self.data_set.pair_ind_feature.__name__)
 		print('=\t targets   : %s' %self.data_set.select_target)
 		print('=\t CUDA      : %s' %str(self.cuda))
 		if self.cuda:
@@ -236,7 +238,8 @@ class NeuralNet():
 		loader = data_utils.DataLoader(self.data_set,sampler=sampler)
 		self.data = {}
 		_,self.data['test'] = self._epoch(loader,train_model=False)
-		self._plot_scatter_reg(self.outdir+'/test.png')
+		self._plot_scatter_reg(self.outdir+'/regression.png')
+		self.plot_hit_rate(self.outdir+'/hitrate.png')
 
 	def save_model(self,filename='model.pth.tar'):
 		'''

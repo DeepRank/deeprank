@@ -1,7 +1,7 @@
 import os
 from deeprank.learn import *
 from deeprank.learn.model3d import cnn
-
+import numpy as np
 
 # all the import torch fails on TRAVIS
 # so we can only exectute this test locally
@@ -20,7 +20,9 @@ def test_learn():
                             select_feature={'AtomicDensities_ind' : 'all',
                                             'Feature_ind' : ['coulomb','vdwaals','charge','pssm'] },
                             select_target='DOCKQ',tqdm=True,
-                            normalize_features = True, normalize_targets=True,dict_filter={'DOCKQ':[0.,0.6]})
+                            normalize_features = True, normalize_targets=True,
+                            pair_chain_feature=np.add,
+                            dict_filter={'DOCKQ':[0.,0.6]})
 
 
   # create the network

@@ -65,7 +65,7 @@ class DataSet(data_utils.Dataset):
 
 	def __init__(self,database,test_database=None,
 		         select_feature='all',select_target='DOCKQ',
-		         pair_ind_feature = False,dict_filter = None,
+		         pair_chain_feature = False,dict_filter = None,
 		         transform_to_2D=False,projection=0,grid_shape = None,
 		         normalize_features=True,normalize_targets=True,tqdm=False):
 
@@ -97,7 +97,7 @@ class DataSet(data_utils.Dataset):
 		self.grid_shape = grid_shape
 
 		# the possible pairing of the ind features
-		self.pair_ind_feature = pair_ind_feature
+		self.pair_ind_feature = pair_chain_feature
 
 		# get the eventual projection
 		self.transform = transform_to_2D
@@ -363,7 +363,7 @@ class DataSet(data_utils.Dataset):
 					self.pair_indexes += [ [i,i+1] for i in range(start,start+nfeat,2)]
 				else:
 					self.pair_indexes += [ [i] for i in range(start,start+nfeat)]
-				start += n
+				start += nfeat
 
 	def get_input_shape(self):
 
