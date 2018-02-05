@@ -17,7 +17,7 @@ def test_learn():
   data_set = DataSet(database,
                             test_database = database,
                             select_feature = 'all',select_target='DOCKQ',tqdm=True,
-                            normalize_features = True, normalize_targets=True)
+                            normalize_features = True, normalize_targets=True,dict_filter={'DOCKQ':[0.,0.6]})
 
 
   # create the network

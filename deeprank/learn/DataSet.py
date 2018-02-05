@@ -65,7 +65,7 @@ class DataSet(data_utils.Dataset):
 
 	def __init__(self,database,test_database=None,
 		         select_feature='all',select_target='DOCKQ',
-		         pair_ind_feature = False,
+		         pair_ind_feature = False,dict_filter = None,
 		         transform_to_2D=False,projection=0,grid_shape = None,
 		         normalize_features=True,normalize_targets=True,tqdm=False):
 
@@ -102,6 +102,9 @@ class DataSet(data_utils.Dataset):
 		# get the eventual projection
 		self.transform = transform_to_2D
 		self.proj2D = projection
+
+		# filter the dataset
+		self.dict_filter = dict_filter
 
 		# print the progress bar or not
 		self.tqdm=tqdm
@@ -182,7 +185,8 @@ class DataSet(data_utils.Dataset):
 		if self.pair_ind_feature:
 			feature = self.make_feature_pair(feature,self.pair_indexes,self.pair_ind_feature)
 
-		return feature,target
+		return {'mol':[fname,mol],'feature':feature,'target':target}
+		#return feature,target
 
 
 	def check_hdf5_files(self):
@@ -239,10 +243,13 @@ class DataSet(data_utils.Dataset):
 			try:
 				fh5 = h5py.File(fdata,'r')
 				mol_names = list(fh5.keys())
-				self.index_complexes += [(fdata,k) for k in mol_names]
+				for k in mol_names:
+					if self.filter(fh5[k]):
+						self.index_complexes += [(fdata,k)]
 				fh5.close()
-			except:
-				print('\t\t-->Ignore File : '+fdata)
+			except Exception as inst:
+				print('\t\t-->Ignore File : ' + fdata)
+				print(inst)
 
 		self.ntrain = len(self.index_complexes)
 		self.index_train = list(range(self.ntrain))
@@ -271,6 +278,35 @@ class DataSet(data_utils.Dataset):
 		self.ntot = len(self.index_complexes)
 		self.index_test = list(range(self.ntrain,self.ntot))
 
+
+	def filter(self,molgrp):
+		'''
+		Filter the molecule according to a dictionary
+		The dictionary must be of the form: { 'name' : [minv,maxv] }
+		or:                                 None
+		if None : no conditions are applied
+		if{'name':[min,max]}
+		'name' must be a valid dataset in fh5[mol/targets/]
+		minv/maxv can be None and are then replaced by -/+ Inf
+		Return True if no condition were provided or if all the test are passed
+		Return False otherwise
+		'''
+		if self.dict_filter is None:
+			return True
+
+		for cond_name,values in self.dict_filter.items():
+
+			minv = -float('Inf') if values[0] is None else values[0]
+			maxv =  float('Inf') if values[1] is None else values[1]
+
+			try:
+				val = molgrp['targets/'+cond_name].value
+				if val < minv or val > maxv:
+					return False
+			except KeyError:
+				print('   :Filter %s not found for mol %s' %(cond_name,mol))
+
+		return True
 
 	def get_feature_name(self):
 
@@ -426,6 +462,8 @@ class DataSet(data_utils.Dataset):
 				for name in feat_names:
 					mean = data['features'][feat_type][name].mean
 					var = data['features'][feat_type][name].var
+					if var == 0:
+						print('  : STD is null for %s in %s' %(name,f5))
 					self.param_norm['features'][feat_type][name].add(mean,var)
 
 			# handle the target
@@ -439,54 +477,9 @@ class DataSet(data_utils.Dataset):
 		for feat_types,feat_dict in self.param_norm['features'].items():
 			for feat in feat_dict:
 				self.param_norm['features'][feat_types][feat].process(nfile)
-
-
-	def _compute_norm(self):
-
-		'''
-		Get the normalization data from the entire data set
-		This is used only if the .pckl files containing the
-		normalization info for each .hdf5 files can't be found
-
-		'''
-
-		desc = '{:25s}'.format('   Normalization')
-		if self.tqdm:
-			data_tqdm = tqdm(self.index_train,desc=desc,file=sys.stdout)
-		else:
-			data_tqdm = self.index_train
-			print('   Normalization')
-		sys.stdout.flush()
-
-		for index in data_tqdm:
-
-			fname,mol = self.index_complexes[index]
-
-			if self.tqdm:
-				data_tqdm.set_postfix(mol=os.path.basename(mol))
-
-			# load the molecule
-			feature, target = self.load_one_molecule(fname,mol)
-
-			# target
-			self.param_norm['targets'][self.select_target].update(target)
-
-			# features
-			ifeat = 0
-			for feat_type,feat_names in self.select_feature.items():
-				for name in feat_names:
-					mean = np.mean(feature[ifeat])
-					var = np.var(feature[ifeat])
-					self.param_norm['features'][feat_type][name].add(mean,var)
-					ifeat += 1
-
-
-		# process the std
-		nmol = len(self.index_train)
-		for feat_types,feat_dict in self.param_norm['features'].items():
-			for feat in feat_dict:
-				self.param_norm['features'][feat_types][feat].process(nmol)
-
+				if self.param_norm['features'][feat_types][feat].std == 0:
+					print('  Final STD Null for %s/%s. Changed it to 1' %(feat_types,feat))
+					self.param_norm['features'][feat_types][feat].std = 1
 
 
 	def _normalize_target(self,target):
@@ -496,19 +489,9 @@ class DataSet(data_utils.Dataset):
 		return target
 
 	def _normalize_feature(self,feature):
-		# we convert the feature back to numpy
-		# normlaize them as np array
-		# and pass them back as torch tensor
-		# that's faster than doing the processing in Torch ....
-		# 400 conf
-		#   -> 12 sec in numpy
-		#   -> 18 sec in torch
-		#feature = feature.numpy()
 		for ic in range(self.data_shape[0]):
 			feature[ic] = (feature[ic]-self.feature_mean[ic])/self.feature_std[ic]
 		return feature
-		#return FloatTensor(feature)
-
 
 	def backtransform_target(self,data):
 		data = FloatTensor(data)

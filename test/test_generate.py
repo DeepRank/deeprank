@@ -9,10 +9,10 @@ def test_generate():
 	pdb_native     = ['./1AK4/native/']
 	h5file = '1ak4.hdf5'
 
-	# pdb_source     = ['./debug/2OUL/decoys/']
-	# pdb_native     = ['./debug/2OUL/native/']
-	# h5file = '2oul.hdf5'
-	
+	# pdb_source     = ['./debug/1ZM4/decoys/']
+	# pdb_native     = ['./debug/1ZM4/native/']
+	# h5file = '1zm4.hdf5'
+
 	#init the data assembler
 	database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
 		                     compute_targets  = ['deeprank.targets.dockQ'],

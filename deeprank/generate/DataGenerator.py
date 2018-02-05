@@ -51,8 +51,6 @@ data_augmentation
 hdf5
 
 		HDF5 file where to store the database
-
-
 '''
 
 class DataGenerator(object):

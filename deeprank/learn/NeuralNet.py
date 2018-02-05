@@ -19,23 +19,6 @@ import torch.cuda
 
 printif = lambda string,cond: print(string) if cond else None
 
-class SubsetSampler(data_utils.sampler.Sampler):
-    """Samples elements randomly from a given list of indices, without replacement.
-
-    Arguments:
-        indices (list): a list of indices
-    """
-
-    def __init__(self, indices):
-        self.indices = indices
-
-    def __iter__(self):
-        return iter(self.indices)
-
-    def __len__(self):
-        return len(self.indices)
-
-
 class NeuralNet():
 
 	'''
@@ -350,10 +333,6 @@ class NeuralNet():
 		train_sampler = data_utils.sampler.SubsetRandomSampler(index_train)
 		valid_sampler = data_utils.sampler.SubsetRandomSampler(index_valid)
 		test_sampler = data_utils.sampler.SubsetRandomSampler(index_test)
-		# train_sampler = SubsetSampler(index_train)
-		# valid_sampler = SubsetSampler(index_valid)
-		# test_sampler = SubsetSampler(index_test)
-
 
 		# get if we test as well
 		_test_ = len(test_sampler.indices)>0
@@ -422,6 +401,10 @@ class NeuralNet():
 				if self.plot:
 					figname = self.outdir+"/prediction_%03d.png" %epoch
 					self._plot_scatter(figname)
+
+					figname = self.outdir+"/hitrate_%03d.png" %epoch
+					self.plot_hit_rate(figname)
+
 				self._export_epoch_hdf5(epoch,self.data)
 
 			sys.stdout.flush()
@@ -441,20 +424,23 @@ class NeuralNet():
 		'''
 
 		running_loss = 0
-		data = {'outputs':[],'targets':[]}
+		data = {'outputs':[],'targets':[],'mol':[]}
 		n = 0
 		debug_time = False
 		time_learn = 0
 
-		for (inputs,targets) in data_loader:
+		for d in data_loader:
+
+			# get the data
+			inputs = d['feature']
+			targets = d['target']
+			mol = d['mol']
 
 			# transform the data
 			inputs,targets = self._get_variables(inputs,targets)
 
 			# zero gradient
 			tlearn0 = time.time()
-			#if train_model:
-			#	self.optimizer.zero_grad()
 
 			# forward + loss
 			outputs = self.net(inputs)
@@ -476,6 +462,9 @@ class NeuralNet():
 			else:
 				data['outputs'] +=  outputs.data.numpy().tolist()
 				data['targets'] += targets.data.numpy().tolist()
+
+			fname,molname = mol[0],mol[1]
+			data['mol'] += [ (f,m) for f,m in zip(fname,molname)]
 
 		# transform the output back
 		if self.data_set.normalize_targets:
@@ -549,18 +538,10 @@ class NeuralNet():
 		'''
 		Plot a scatter plots of predictions VS targets useful '
 		to visualize the performance of the training algorithm
-
-		We can plot either from the loaders or from the indexes of the subset
-
-		loaders should be either None or a list of loaders of maxsize 3
-		loaders = [train_loader,valid_loader,test_loader]
-
-		indexes should be a list of indexes list of maxsize 3
-		indexes = [index_train,index_valid,index_test]
 		'''
 
 		# abort if we don't want to plot
-		if self.plot == False:
+		if self.plot is False:
 			return
 
 
@@ -575,7 +556,6 @@ class NeuralNet():
 		yvalues = np.array([])
 
 		for l in labels:
-
 
 			if l in self.data:
 
@@ -599,24 +579,81 @@ class NeuralNet():
 		plt.close()
 
 
+	def plot_hit_rate(self,figname,irmsd_thr = 4.0,inverse=False):
+
+		'''
+		plot the hit rate of the different training/valid/test sets
+		The hit rate is defined as:
+		the percentage of positive decoys that are included among the top m decoys.
+		a positive decoy is a native-like one with a i-rmsd < 4A
+		'''
+
+		if self.plot is False:
+			return
+
+		print('\n --> Hit Rate :', figname, '\n')
+
+		color_plot = {'train':'red','valid':'blue','test':'green'}
+		labels = ['train','valid','test']
+
+		fig,ax = plt.subplots()
+
+		for l in labels:
+
+			if l in self.data:
+
+				# get the target values
+				out = self.data[l]['outputs']
+
+				# get the irmsd
+				irmsd = []
+				for fname,mol in self.data[l]['mol']:
+
+					f5 = h5py.File(fname,'r')
+					irmsd.append(f5[mol+'/targets/IRMSD'].value)
+					f5.close()
+
+				# sort the data
+				ind_sort = np.argsort(out)
+				if not inverse:
+					ind_sort = ind_sort[::-1]
+				irmsd = np.array(irmsd)[ind_sort]
+
+				# compute the hit rate
+				hit = np.cumsum(irmsd<irmsd_thr)/len(irmsd)
+
+				# plot
+				plt.plot(hit,c = color_plot[l],label=l)
+
+		legend = ax.legend(loc='upper left')
+		ax.set_xlabel('Top M')
+		ax.set_ylabel('Hit Rate')
+
+		fig.savefig(figname)
+		plt.close()
+
+
+
 	def _export_epoch_hdf5(self,epoch,data):
 
 		grp_name = 'epoch_%04d' %epoch
 		grp = self.f5.create_group(grp_name)
 		grp.attrs['type'] = 'epoch'
 		for k,v in data.items():
-			sg = grp.create_group(k)
-			for kk,vv in v.items():
-				sg.create_dataset(kk,data=vv)
+			try:
+				sg = grp.create_group(k)
+				for kk,vv in v.items():
+					sg.create_dataset(kk,data=vv)
+			except TypeError:
+				pass
 
 
-	def freeze_conv_layers(self):
+	# def freeze_conv_layers(self):
 
-		for attr,vals in self.net.__dict__['_modules'].items:
+	# 	for attr,vals in self.net.__dict__['_modules'].items:
 
-
-		for param in self.net.parameters():
-			param.require_grad = False
+	# 	for param in self.net.parameters():
+	# 		param.require_grad = False
 
 
 
