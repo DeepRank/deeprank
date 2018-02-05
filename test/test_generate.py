@@ -7,7 +7,12 @@ def test_generate():
 	# sources to assemble the data base
 	pdb_source     = ['./1AK4/decoys/']
 	pdb_native     = ['./1AK4/native/']
+	h5file = '1ak4.hdf5'
 
+	# pdb_source     = ['./debug/2OUL/decoys/']
+	# pdb_native     = ['./debug/2OUL/native/']
+	# h5file = '2oul.hdf5'
+	
 	#init the data assembler
 	database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
 		                     compute_targets  = ['deeprank.targets.dockQ'],
@@ -16,7 +21,7 @@ def test_generate():
 		                                         'deeprank.features.PSSM_IC',
 		                                         'deeprank.features.BSA',
 		                                         'deeprank.features.ResidueDensity'],
-		                     hdf5='./1ak4.hdf5')
+		                     hdf5=h5file)
 
 	#create new files
 	if not os.path.isfile(database.hdf5):
@@ -42,7 +47,7 @@ def test_generate():
 	# get the normalization
 	t0 =time()
 	print('{:25s}'.format('Normalization') + database.hdf5)
-	norm = NormalizeData('1ak4.hdf5')
+	norm = NormalizeData(h5file)
 	norm.get()
 	print(' '*25 + '--> Done in %f s.' %(time()-t0))
 

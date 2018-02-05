@@ -398,7 +398,8 @@ class StructureSimilarity(object):
 	def compute_residue_pairs_ref(self,cutoff=5.0,save_file=True,filename=None):
 
 		sql_ref = pdb2sql(self.ref,sqlfile='mol2.db')
-		residue_pairs_ref   = sql_ref.get_contact_residue(cutoff=cutoff,return_contact_pairs=True,excludeH=True)
+		residue_pairs_ref   = sql_ref.get_contact_residue(cutoff=cutoff,return_contact_pairs=True,
+			                                              excludeH=True)
 		sql_ref.close()
 
 		if save_file:
@@ -573,7 +574,8 @@ class StructureSimilarity(object):
 
 		# get the contact atoms
 		if izone is None:
-			contact_ref = sql_ref.get_contact_atoms(cutoff=cutoff,extend_to_residue=True,return_only_backbone_atoms=False)
+			contact_ref = sql_ref.get_contact_atoms(cutoff=cutoff,extend_to_residue=True,
+				                                    return_only_backbone_atoms=False)
 			index_contact_ref = contact_ref[0]+contact_ref[1]
 		else:
 			index_contact_ref = self.get_izone_rowID(sql_ref,izone,return_only_backbone_atoms=False)
@@ -685,18 +687,19 @@ class StructureSimilarity(object):
 
 		for chainID,resSeq in resData.items():
 			if return_only_backbone_atoms:
-				index_contact += sql.get('rowID',chainID=chainID,resSeq=resSeq,name=['C','CA','N','O'])
+				index_contact += sql.get('rowID',chainID=chainID,resSeq=resSeq,
+					                      name=['C','CA','N','O'])
 			else:
 				index_contact += sql.get('rowID',chainID=chainID,resSeq=resSeq)
 
 		return index_contact
 
 
-	################################################################################################
+	#############################################################################
 	#
 	#	ROUTINE TO COMPUTE THE FNAT USING PDB2SQL
 	#
-	#################################################################################################
+	#############################################################################
 
 	def compute_Fnat_pdb2sql(self,cutoff=5.0):
 
@@ -704,9 +707,15 @@ class StructureSimilarity(object):
 		sql_decoy = pdb2sql(self.decoy)
 		sql_ref = pdb2sql(self.ref)
 
-		# get the contact atoms
-		residue_pairs_decoy = sql_decoy.get_contact_residue(cutoff=cutoff,return_contact_pairs=True,excludeH=True)
-		residue_pairs_ref   = sql_ref.get_contact_residue(cutoff=cutoff,return_contact_pairs=True,excludeH=True)
+		# get the contact atoms of the decoy
+		residue_pairs_decoy = sql_decoy.get_contact_residue(cutoff=cutoff,
+			                                                return_contact_pairs=True,
+			                                                excludeH=True)
+
+		# get the contact atoms of the ref
+		residue_pairs_ref   = sql_ref.get_contact_residue(cutoff=cutoff,
+			                                              return_contact_pairs=True,
+			                                              excludeH=True)
 
 
 		# form the pair data
@@ -847,9 +856,23 @@ class StructureSimilarity(object):
 		resData = {}
 		for line in data:
 
-			res = line.split()[1].split('-')[0]
-			chainID,resSeq = res[0],int(res[1:])
+			#    line = zone A4-A4   for positive resNum
+			# or line = zone A-4-A-4 for negative resNum
+			# that happens for example in 2OUL
 
+			# split the line
+			res = line.split()[1].split('-')
+
+			# if the resnum was positive
+			# we have e.g res = [A4,A4]
+			if len(res) == 2:
+				res = res[0]
+				chainID,resSeq = res[0],int(res[1:])
+
+			# if the resnum was negative was negtive
+			# we have e.g res = [A,4,A,4]
+			elif len(res) == 4:
+				chainID,resSeq = res[0],-int(res[1])
 
 			if chainID not in resData.keys():
 				resData[chainID] = []
@@ -859,11 +882,11 @@ class StructureSimilarity(object):
 		return resData
 
 
-	################################################################################################
+	###################################################################
 	#
 	#	ROUTINES TO ACTUALY ALIGN THE MOLECULES
 	#
-	#################################################################################################
+	###################################################################
 
 	# compute the DockQ score from the different elements
 	@staticmethod
@@ -1083,7 +1106,7 @@ class StructureSimilarity(object):
 if __name__ == '__main__':
 
 	BM4 = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
-	decoy = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_324w.pdb'
+	decoy = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_1w.pdb'
 	ref = BM4 + 'BM4_dimers_bound/pdbFLs_ori/1AK4.pdb'
 
 	sim = StructureSimilarity(decoy,ref)
