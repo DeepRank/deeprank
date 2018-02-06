@@ -65,7 +65,7 @@ class DataSet(data_utils.Dataset):
 
 	def __init__(self,database,test_database=None,
 		         select_feature='all',select_target='DOCKQ',
-		         pair_chain_feature = False,dict_filter = None,
+		         pair_chain_feature = None,dict_filter = None,
 		         transform_to_2D=False,projection=0,grid_shape = None,
 		         normalize_features=True,normalize_targets=True,tqdm=False):
 
