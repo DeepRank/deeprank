@@ -67,7 +67,7 @@ class DataSet(data_utils.Dataset):
 		         select_feature='all',select_target='DOCKQ',
 		         pair_chain_feature = None,dict_filter = None,
 		         transform_to_2D=False,projection=0,grid_shape = None,
-		         normalize_features=True,normalize_targets=True,tqdm=False):
+		         normalize_features=True,normalize_targets=True,tqdm=False,process=True):
 
 
 		# allow for multiple database
@@ -93,11 +93,11 @@ class DataSet(data_utils.Dataset):
 		self.features = None
 		self.targets  = None
 		self.input_shape = None
-		self.data_hape = None
+		self.data_shape = None
 		self.grid_shape = grid_shape
 
 		# the possible pairing of the ind features
-		self.pair_ind_feature = pair_chain_feature
+		self.pair_chain_feature = pair_chain_feature
 
 		# get the eventual projection
 		self.transform = transform_to_2D
@@ -109,6 +109,11 @@ class DataSet(data_utils.Dataset):
 		# print the progress bar or not
 		self.tqdm=tqdm
 
+		# process the data
+		if process:
+			self.process_dataset()
+
+	def process_dataset(self):
 
 		print('\n')
 		print('='*40)
@@ -125,6 +130,7 @@ class DataSet(data_utils.Dataset):
 		print('=')
 		print('='*40,'\n')
 		sys.stdout.flush()
+
 
 		# check if the files are ok
 		self.check_hdf5_files()
@@ -182,8 +188,8 @@ class DataSet(data_utils.Dataset):
 		if self.transform:
 			feature = self.convert2d(feature,self.proj2D)
 
-		if self.pair_ind_feature:
-			feature = self.make_feature_pair(feature,self.pair_indexes,self.pair_ind_feature)
+		if self.pair_chain_feature:
+			feature = self.make_feature_pair(feature,self.pair_indexes,self.pair_chain_feature)
 
 		return {'mol':[fname,mol],'feature':feature,'target':target}
 		#return feature,target
@@ -322,6 +328,7 @@ class DataSet(data_utils.Dataset):
 		f5 = h5py.File(self.database[0],'r')
 		mol_name = list(f5.keys())[0]
 		mapped_data = f5.get(mol_name + '/mapped_features/')
+		chain_tags = ['_chainA','_chainB']
 
 		# if we select all the features
 		if self.select_feature == "all":
@@ -345,15 +352,22 @@ class DataSet(data_utils.Dataset):
 
 				# if we have stored the individual
 				# chainA chainB data we need to expand the feature list
+				# however when we reload we already come with _chainA, _chainB features
+				# so then we shouldn't add the tags
 				elif '_ind' in feat_type:
-					self.select_feature[feat_type] = list(chain.from_iterable((name+'_chainA',name+'_chainB') for name in feat_names))
-
+					self.select_feature[feat_type] = []
+					for name in feat_names:
+						cond = [tag not in name for tag in chain_tags]
+						if np.all(cond):
+							self.select_feature[feat_type] += [name+tag for tag in chain_tags]
+						else:
+							self.select_feature[feat_type].append(name)
 		f5.close()
 
 
 	def get_pairing_feature(self):
 
-		if self.pair_ind_feature:
+		if self.pair_chain_feature:
 
 			self.pair_indexes = []
 			start = 0
@@ -377,8 +391,8 @@ class DataSet(data_utils.Dataset):
 		feature,_ = self.load_one_molecule(fname)
 		self.data_shape = feature.shape
 
-		if self.pair_ind_feature:
-			feature = self.make_feature_pair(feature,self.pair_indexes,self.pair_ind_feature)
+		if self.pair_chain_feature:
+			feature = self.make_feature_pair(feature,self.pair_indexes,self.pair_chain_feature)
 
 		if self.transform:
 			feature = self.convert2d(feature,self.proj2D)
@@ -556,133 +570,6 @@ class DataSet(data_utils.Dataset):
 		return np.array(feature).astype(outtype),np.array([target]).astype(outtype)
 
 
-
-	############################################
-	# load the feature/target of a single molecule
-	############################################
-	def _old_load_one_molecule(self,fname,mol=None):
-
-		'''
-		load the feature/target of a single molecule
-		- open the hdf5 file
-		- get the molecule group
-		- read the specified features
-		- read the specified target
-		- transform to 2d (optional)
-		- close the hdf5
-		- return the feature/target
-		'''
-
-		fh5 = h5py.File(fname,'r')
-		if mol is None:
-			mol = list(fh5.keys())[0]
-
-		featgrp_name='mapped_features/'
-
-		# get the mol
-		mol_data = fh5.get(mol)
-		if self.grid_shape is not None:
-			shape = self.grid_shape
-		elif 'grid_points' in mol_data:
-			nx = mol_data['grid_points']['x'].shape[0]
-			ny = mol_data['grid_points']['y'].shape[0]
-			nz = mol_data['grid_points']['z'].shape[0]
-			shape=(nx,ny,nz)
-			self.grid_shape = shape
-
-		else:
-			raise ValueError('Impossible to determine sparse grid shape.\n Specify argument grid_shape=(x,y,z)')
-
-		# load all the features
-		if self.select_feature == 'all':
-			# loop through the features
-			feature = []
-			for feat_name, feat_members in mol_data.get(featgrp_name).items():
-				# loop through all the feature keys
-				for name,data in feat_members.items():
-
-					if data.attrs['sparse']:
-						spg = sparse.FLANgrid(sparse=True,
-							                 index=data['index'].value,
-							                 value=data['value'].value,
-							                 shape=shape)
-						feature.append(spg.to_dense())
-					else:
-						feature.append(data['value'].value)
-
-
-		# load selected features
-		else:
-			feature = []
-			for feat_name,feat_channels in self.select_feature.items():
-
-				# see if the feature exists
-				feat_dict = mol_data.get(featgrp_name+feat_name)
-
-				if feat_dict is None:
-
-					print('Error : Feature name %s not found in %s' %(feat_name,mol))
-					opt_names = list(mol_data.get(featgrp_name).keys())
-					print('Error : Possible features are \n\t%s' %'\n\t'.join(opt_names))
-					sys.exit()
-
-				# get the possible channels
-				possible_channels = list(feat_dict.keys())
-
-				# make sure that all the featchanels are in the file
-				if feat_channels != 'all':
-					for fc in feat_channels:
-						if fc not in possible_channels:
-							print("Error : required key %s for feature %s not in the database" %(fc,feat_name))
-							print('Error : Possible features are \n\t%s' %'\n\t'.join(possible_channels))
-							sys.exit()
-
-				# load the feature channels
-				for chanel_name,channel_data in feat_dict.items():
-					if feat_channels == 'all' or chanel_name in feat_channels:
-						if channel_data.attrs['sparse']:
-							spg = sparse.FLANgrid(sparse=True,
-								                  index=channel_data['index'].value,
-								                  value=channel_data['value'].value,
-								                  shape=shape)
-							feature.append(spg.to_dense())
-						else:
-							feature.append(channel_data['value'].value)
-
-
-			# append to the list of features
-			feature = np.array(feature)
-
-		# target
-		opt_names = list(mol_data.get('targets/').keys())
-		fname = list(filter(lambda x: self.select_target in x, opt_names))
-
-
-		if len(fname) == 0:
-			print('Error : Target name %s not found in %s' %(self.select_target,mol))
-			print('Error : Possible targets are \n\t%s' %'\n\t'.join(opt_names))
-			sys.exit()
-
-		if len(fname)>1:
-			print('Error : Multiple Targets Matching %s Found in %s' %(self.select_target,mol))
-			print('Error : Possible targets are \n\t%s' %'\n\t'.join(opt_names))
-			sys.exit()
-
-		fname = fname[0]
-		target = mol_data.get('targets/'+fname).value
-
-		# no TorchTensor transform
-		feature = np.array(feature)
-		target = np.array([target])
-
-		# close
-		fh5.close()
-
-		return feature,target
-
-
-
-
 	#convert the 3d data set to 2d data set
 	@staticmethod
 	def convert2d(feature,proj2d):
@@ -714,9 +601,11 @@ class DataSet(data_utils.Dataset):
 		outtype = feature.dtype
 		new_feat = []
 		for ind in pair_indexes:
+			print(ind)
 			if len(ind) == 1:
 				new_feat.append(feature[ind,...])
 			else:
 				new_feat.append(op(feature[ind[0],...],feature[ind[1],...]))
+
 		return np.array(new_feat).astype(outtype)
 

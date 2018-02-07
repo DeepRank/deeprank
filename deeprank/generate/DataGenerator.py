@@ -2,7 +2,6 @@ import os
 import sys
 import importlib
 import numpy as np
-import subprocess as sp
 import h5py
 from collections import OrderedDict
 import logging
@@ -61,8 +60,8 @@ class DataGenerator(object):
 		         data_augmentation=None, hdf5='database.h5',logger=None,debug=True):
 
 		self.pdb_select  = pdb_select
-		self.pdb_source  = pdb_source
-		self.pdb_native  = pdb_native
+		self.pdb_source  = pdb_source or []
+		self.pdb_native  = pdb_native or []
 
 		self.data_augmentation = data_augmentation
 
@@ -94,20 +93,19 @@ class DataGenerator(object):
 
 		# get all the conformation path
 		for src_dir in self.pdb_source:
-			self.all_pdb += sp.check_output('find %s -name "*.pdb"' %src_dir,shell=True).decode('utf8').split()
-
+			self.all_pdb += [os.path.join(src_dir,fname) for fname in os.listdir(src_dir)]
 
 		# handle the native
 		if not isinstance(self.pdb_native,list):
 			self.pdb_native = [self.pdb_native]
 
 		for src_dir in self.pdb_native:
-			self.all_native +=  sp.check_output('find %s -name "*.pdb"' %src_dir,shell=True).decode('utf8').split()
+			self.all_native +=  [os.path.join(src_dir,fname) for fname in os.listdir(src_dir)]
 
 		# filter the cplx if required
 		self.pdb_path = self.all_pdb
 		if self.pdb_select is not None:
-			self._filter_cplx()
+			self.pdb_path = list(filter(lambda x: self.pdb_select in x, self.all_pdb))
 
 #====================================================================================
 #
@@ -179,11 +177,22 @@ class DataGenerator(object):
 				if mol_name == bare_mol_name:
 					ref = cplx
 				else:
-					ref = list(filter(lambda x: ref_name in x,self.all_native))
-					if len(ref)>1:
-						self.logger.warning('Multiple native complexes found')
-					ref = ref[0]
-					if ref == '':
+
+					if len(self.all_native)>0:
+
+						ref = list(filter(lambda x: ref_name in x,self.all_native))
+
+						if len(ref)>1:
+							raise ValueError('Multiple native nout found')
+						if len(ref) == 0:
+							raise ValueError('Native not found')
+						else:
+							ref = ref[0]
+
+						if ref == '':
+							ref = None
+
+					else:
 						ref = None
 
 				# talk a bit
@@ -289,6 +298,21 @@ class DataGenerator(object):
 #		ADD FEATURES TO AN EXISTING DATASET
 #
 #====================================================================================
+
+	def add_unique_target(self,dict):
+		'''
+		Add identical targets for all the complexes in the datafile
+		This is usefull if you want to add the binary class of all the complexes
+		created from decoys or natives
+		'''
+		f5 = h5py.File(self.hdf5,'a')
+		for mol in list(f5.keys()):
+			targrp = f5[mol].require_group('targets')
+			for name,value in dict.items():
+				targrp.create_dataset(name,data=np.array([value]))
+		f5.close()
+
+
 	"""
 	def add_feature(self,compute_features=None,import_features=None,prog_bar=True):
 
