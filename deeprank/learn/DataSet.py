@@ -3,7 +3,6 @@ import sys
 import time
 import h5py
 import pickle
-from itertools import chain
 
 from torch import FloatTensor
 import torch.utils.data as data_utils

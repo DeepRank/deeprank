@@ -29,17 +29,19 @@ ARGUMENTS
 
 pdb_select
 
-		file containing the name of specfic complexe we want
-		in the database
+		string that must be contained in the pdb names
 
 pdb_source
 
-		path or list of path where to find the pdbs
+		directory or list of directory where to find the pdbs
+		or
+		name or list of pdb names to include in the data
 
 pdb_native
 
-		path or list of path where to find the native conformation of the pdbs
-		these are required to compute the DockQ score used for training
+		directory or list of directory where to find the native
+		or
+		name or list of native pdb names
 
 data_augmentation
 
@@ -92,15 +94,21 @@ class DataGenerator(object):
 			self.pdb_source = [self.pdb_source]
 
 		# get all the conformation path
-		for src_dir in self.pdb_source:
-			self.all_pdb += [os.path.join(src_dir,fname) for fname in os.listdir(src_dir)]
+		for src in self.pdb_source:
+			if os.path.isdir(src):
+				self.all_pdb += [os.path.join(src,fname) for fname in os.listdir(src)]
+			elif os.path.isfile(src):
+				self.all_pdb.append(src)
 
 		# handle the native
 		if not isinstance(self.pdb_native,list):
 			self.pdb_native = [self.pdb_native]
 
-		for src_dir in self.pdb_native:
-			self.all_native +=  [os.path.join(src_dir,fname) for fname in os.listdir(src_dir)]
+		for src in self.pdb_native:
+			if os.path.isdir(src):
+				self.all_native +=  [os.path.join(src,fname) for fname in os.listdir(src)]
+			if os.path.isfile(src):
+				self.all_native.append(src)
 
 		# filter the cplx if required
 		self.pdb_path = self.all_pdb
@@ -299,7 +307,7 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-	def add_unique_target(self,dict):
+	def add_unique_target(self,targdict):
 		'''
 		Add identical targets for all the complexes in the datafile
 		This is usefull if you want to add the binary class of all the complexes
@@ -308,7 +316,7 @@ class DataGenerator(object):
 		f5 = h5py.File(self.hdf5,'a')
 		for mol in list(f5.keys()):
 			targrp = f5[mol].require_group('targets')
-			for name,value in dict.items():
+			for name,value in targdict.items():
 				targrp.create_dataset(name,data=np.array([value]))
 		f5.close()
 

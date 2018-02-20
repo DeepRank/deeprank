@@ -1,7 +1,7 @@
 import os
 from deeprank.learn import *
 from deeprank.learn.model3d import cnn
-import torch.nn as nn
+
 
 # all the import torch fails on TRAVIS
 # so we can only exectute this test locally
@@ -23,6 +23,7 @@ def test_transfer():
 
   # # get new fc layers
   # size = model.net.fclayer_000.in_features
+  # import torch.nn as nn
   # model.net.fclayer_000   = nn.Linear(size,84)
   # model.net.fclayer_001  = nn.Linear(84,1)
 
