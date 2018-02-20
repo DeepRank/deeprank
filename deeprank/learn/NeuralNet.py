@@ -711,7 +711,11 @@ class NeuralNet():
 				irmsd = np.array(irmsd)[ind_sort]
 
 				# compute the hit rate
-				hit = np.cumsum(irmsd<irmsd_thr)/len(irmsd)
+				npos = len(irmsd[irmsd<irmsd_thr])
+				if npos == 0:
+					npos = len(irmsd)
+					print('Warning : Non positive decoys found for hitrate plot')
+				hit = np.cumsum(irmsd<irmsd_thr)/ npos
 
 				# plot
 				plt.plot(hit,c = color_plot[l],label=l)
