@@ -18,10 +18,10 @@ def __compute_target__(decoy,targrp):
 	if '_' not in molname:
 
 		# lrmsd = irmsd = 0 | fnat = dockq = 1
-		targrp.create_dataset('LRMSD',data=np.array([0.0]))
-		targrp.create_dataset('IRMSD',data=np.array([0.0]))
-		targrp.create_dataset('FNAT', data=np.array([1.0]))
-		targrp.create_dataset('DOCKQ',data=np.array([1.0]))
+		targrp.create_dataset('LRMSD',data=np.array(0.0))
+		targrp.create_dataset('IRMSD',data=np.array(0.0))
+		targrp.create_dataset('FNAT', data=np.array(1.0))
+		targrp.create_dataset('DOCKQ',data=np.array(1.0))
 
 	# or it's a decoy
 	else:
