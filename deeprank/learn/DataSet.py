@@ -95,7 +95,7 @@ class DataSet(data_utils.Dataset):
 		         select_feature='all',select_target='DOCKQ',
 		         pair_chain_feature = None,dict_filter = None,
 		         transform_to_2D=False,projection=0,grid_shape = None,
-		         normalize_features=True,normalize_targets=True,tqdm=False):
+		         normalize_features=True,normalize_targets=True,tqdm=False,process=True):
 
 
 		# allow for multiple database
@@ -138,7 +138,8 @@ class DataSet(data_utils.Dataset):
 		self.tqdm=tqdm
 
 		# process the data
-		self.process_dataset()
+		if process:
+			self.process_dataset()
 
 	def process_dataset(self):
 
