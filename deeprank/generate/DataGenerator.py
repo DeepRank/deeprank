@@ -57,8 +57,7 @@ hdf5
 class DataGenerator(object):
 
 	def __init__(self,pdb_select=None,pdb_source=None,pdb_native=None,
-				 compute_targets = None, import_targets = None,
-				 compute_features = None,import_features = None,
+				 compute_targets = None, compute_features = None,
 		         data_augmentation=None, hdf5='database.h5',logger=None,debug=True):
 
 		self.pdb_select  = pdb_select
@@ -70,10 +69,7 @@ class DataGenerator(object):
 		self.hdf5 = hdf5
 
 		self.compute_targets  = compute_targets
-		self.import_targets = import_targets
-
 		self.compute_features = compute_features
-		self.import_features =  import_features
 
 		self.all_pdb = []
 		self.all_native = []
@@ -223,8 +219,6 @@ class DataGenerator(object):
 				# add the features
 				molgrp.require_group('features')
 				molgrp.require_group('features_raw')
-				if self.import_features is not None:
-					self._import_features(self.import_features,featgrp)
 
 				if self.compute_features is not None:
 					self._compute_features(self.compute_features, molgrp['complex'].value,molgrp['features'],molgrp['features_raw'] )
@@ -235,9 +229,6 @@ class DataGenerator(object):
 
 				# add the features
 				molgrp.require_group('targets')
-				if self.import_targets is not None:
-					self._import_targets(self.import_targets,mol_name)
-
 				if self.compute_targets is not None:
 					self._compute_targets(self.compute_targets, molgrp['complex'].value,molgrp['targets'])
 
@@ -402,11 +393,7 @@ class DataGenerator(object):
 			# group of the molecule
 			molgrp = f5[cplx_name]
 
-			# add the features
-			molgrp.require_group('targets')
-			if self.import_targets is not None:
-				self._import_targets(self.import_targets,mol_name)
-
+			# add the targets
 			if self.compute_targets is not None:
 				self._compute_targets(self.compute_targets, molgrp['complex'].value,molgrp['targets'])
 
@@ -818,20 +805,6 @@ class DataGenerator(object):
 #		FEATURES ROUTINES
 #
 #====================================================================================
-	@staticmethod
-	def _import_features(source_files,molgrp):
-
-		# get all the features
-		for src in source_files:
-
-			fsrc  = h5py.File(src,'r')
-			if molgrp.name in fsrc.keys:
-				molgrp.require_group('features')
-				molgrp.copy('features',fsrc[molgrp.name+'/features/'])
-				fsrc.close()
-				break
-			else:
-				fsrc.close()
 
 	@staticmethod
 	def _compute_features(feat_list,pdb_data,featgrp,featgrp_raw):
@@ -846,20 +819,7 @@ class DataGenerator(object):
 #		TARGETS ROUTINES
 #
 #====================================================================================
-	@staticmethod
-	def _import_targets(source_files,molgrp):
 
-		# get all the features
-		for src in source_files:
-
-			fsrc  = h5py.File(src,'r')
-			if molgrp.name in fsrc.keys:
-				molgrp.require_group('targets')
-				molgrp.copy('targets',fsrc[molgrp.name+'/targets/'])
-				fsrc.close()
-				break
-			else:
-				fsrc.close()
 
 	@staticmethod
 	def _compute_targets(targ_list,pdb_data,targrp):
