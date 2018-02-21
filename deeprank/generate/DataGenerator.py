@@ -221,8 +221,8 @@ class DataGenerator(object):
 				################################################
 
 				# add the features
-				featgrp = molgrp.require_group('features')
-				featgrp = molgrp.require_group('features_raw')
+				molgrp.require_group('features')
+				molgrp.require_group('features_raw')
 				if self.import_features is not None:
 					self._import_features(self.import_features,featgrp)
 
@@ -376,16 +376,13 @@ class DataGenerator(object):
 #		ADD TARGETS TO AN EXISTING DATASET
 #
 #====================================================================================
-	"""
-	def add_target(self,compute_targets=None,import_targets=None,prog_bar=True):
+
+	def add_target(self,prog_bar=False):
 
 		'''
 		add a target files to an existing folder arboresence
 		only need an output dir and a target dictionary
-		! Not tested yet !
 		'''
-		self.logger.warning('add_target not fully tested yet')
-		printif("ADD TARGET NOT FULLY TESTED",self.debug)
 
 		# name of the hdf5 file
 		f5 = h5py.File(self.hdf5,'a')
@@ -405,13 +402,13 @@ class DataGenerator(object):
 			# group of the molecule
 			molgrp = f5[cplx_name]
 
-			# external_targets
-			if import_targets is not None:
-				self._import_targets(import_targets, molgrp )
+			# add the features
+			molgrp.require_group('targets')
+			if self.import_targets is not None:
+				self._import_targets(self.import_targets,mol_name)
 
-			if compute_targets is not None:
-				targrp = molgrp['targets']
-				self._compute_targets(compute_targets,targrp)
+			if self.compute_targets is not None:
+				self._compute_targets(self.compute_targets, molgrp['complex'].value,molgrp['targets'])
 
 		# copy the targets of the original to the rotated
 		for cplx_name in fnames_augmented:
@@ -424,8 +421,8 @@ class DataGenerator(object):
 			molgrp.copy('targets',self.f5[mol_name+'/targets/'])
 
 		# close the file
-		file_hdf5.close()
-	"""
+		f5.close()
+
 #====================================================================================
 #
 #		REMOVE DATA FROM THE DATA SET

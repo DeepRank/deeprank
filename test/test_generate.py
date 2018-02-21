@@ -1,6 +1,7 @@
 from deeprank.generate import *
 import os
 from time import time
+
 def test_generate():
 
 
@@ -8,10 +9,6 @@ def test_generate():
 	pdb_source     = ['./1AK4/decoys/']
 	pdb_native     = ['./1AK4/native/']
 	h5file = '1ak4.hdf5'
-
-	# pdb_source     = ['./debug/1ZM4/decoys/']
-	# pdb_native     = ['./debug/1ZM4/native/']
-	# h5file = '1zm4.hdf5'
 
 	#init the data assembler
 	database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
@@ -27,7 +24,7 @@ def test_generate():
 	if not os.path.isfile(database.hdf5):
 		t0 = time()
 		print('{:25s}'.format('Create new database') + database.hdf5)
-		database.create_database(prog_bar=False)
+		database.create_database(prog_bar=True)
 		print(' '*25 + '--> Done in %f s.' %(time()-t0))
 	else:
 		print('{:25s}'.format('Use existing database') + database.hdf5)
@@ -41,7 +38,7 @@ def test_generate():
 
 	t0 =time()
 	print('{:25s}'.format('Map features in database') + database.hdf5)
-	database.map_features(grid_info,try_sparse=True,time=False,prog_bar=False)
+	database.map_features(grid_info,try_sparse=True,time=False,prog_bar=True)
 	print(' '*25 + '--> Done in %f s.' %(time()-t0))
 
 	# get the normalization
@@ -51,7 +48,19 @@ def test_generate():
 	norm.get()
 	print(' '*25 + '--> Done in %f s.' %(time()-t0))
 
+
+def test_add_target():
+
+	h5file = '1ak4.hdf5'
+
+	#init the data assembler
+	database = DataGenerator(pdb_source=None,pdb_native=None,data_augmentation=None,
+		                     compute_targets  = ['deeprank.targets.binary_class'], hdf5=h5file)
+
+	database.add_target(prog_bar=True)
+
 if __name__ == "__main__":
 	test_generate()
+	test_add_target()
 
 
