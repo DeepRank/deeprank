@@ -299,17 +299,32 @@ class DataSet(data_utils.Dataset):
 		if self.dict_filter is None:
 			return True
 
-		for cond_name,values in self.dict_filter.items():
-
-			minv = -float('Inf') if values[0] is None else values[0]
-			maxv =  float('Inf') if values[1] is None else values[1]
+		for cond_name,cond_vals in self.dict_filter.items():
 
 			try:
 				val = molgrp['targets/'+cond_name].value
-				if val < minv or val > maxv:
-					return False
 			except KeyError:
 				print('   :Filter %s not found for mol %s' %(cond_name,mol))
+
+			# if we have a list we assume that we want
+			# the value to be between the bound
+			if isinstance(cond_vals,list):
+
+				minv = -float('Inf') if cond_vals[0] is None else cond_vals[0]
+				maxv =  float('Inf') if cond_vals[1] is None else cond_vals[1]
+
+				if val < minv or val > maxv:
+					return False
+
+			# if we have a string it's more complicated
+			elif isinstance(cond_vals,str):
+
+				ops = ['>','<','==']
+				new_cond_vals = cond_vals
+				for o in ops:
+					new_cond_vals = new_cond_vals.replace(o,'val'+o)
+				if not eval(new_cond_vals):
+					return False
 
 		return True
 
