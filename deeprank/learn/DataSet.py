@@ -23,7 +23,7 @@ printif = lambda string,cond: print(string) if cond else None
 class DataSet(data_utils.Dataset):
 
 	'''
-	Class that generates the data needed for deeprank.
+	Generates the data needed for deeprank.
 
 	The data is stored in memory on the fly.
 	That allows to handle large data set but might alters performance
@@ -54,11 +54,40 @@ class DataSet(data_utils.Dataset):
 	select_target
 
 		the name of the target we want.
-		the name must correspond to a valid group : f[mo/targets/name]
+		the name must correspond to a valid group : f[mol/targets/name]
 
-	USAGE
+	pair_chain_features
 
-		data = DeepRankDataSet(hdf5_file)
+		numpy function to pair features of chainA and chainB
+		example np.sum will add the data of the two chains
+
+	dict_filter
+
+		filter the complexes based on either
+		- {name:[min,max]} the value of name must be between min max
+		- {name:cond} the value must respect the condition e.g {'IRMSD':'>10 or <4'}
+
+	trasnform_to_2d
+
+		Boolean to use 2d maps instead of full 3d
+
+	project
+
+		Projection plane for the transformation to 2D
+		0 -> yz, 1 -> xz, 2 -> xy
+
+	grid_shape
+
+		specify the shape of the grids in the HDF5 files
+		Handy if one has removed the grid points from the data
+
+	normalize_targets/normalize_features
+
+		Specify if the targets/features must be normalized during the training
+
+	tqdm
+
+		Print the progress bar
 
 	'''
 
@@ -66,7 +95,7 @@ class DataSet(data_utils.Dataset):
 		         select_feature='all',select_target='DOCKQ',
 		         pair_chain_feature = None,dict_filter = None,
 		         transform_to_2D=False,projection=0,grid_shape = None,
-		         normalize_features=True,normalize_targets=True,tqdm=False,process=True):
+		         normalize_features=True,normalize_targets=True,tqdm=False):
 
 
 		# allow for multiple database
@@ -109,8 +138,7 @@ class DataSet(data_utils.Dataset):
 		self.tqdm=tqdm
 
 		# process the data
-		if process:
-			self.process_dataset()
+		self.process_dataset()
 
 	def process_dataset(self):
 

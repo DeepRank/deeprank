@@ -374,8 +374,8 @@ class NeuralNet():
 			np.random.shuffle(self.data_set.index_train)
 
 		# size of the subset for training
-		ntrain = int( float(self.data_set.ntrain)*divide_set[0] )
-		nvalid = int( float(self.data_set.ntrain)*divide_set[1] )
+		ntrain = int( np.ceil(float(self.data_set.ntrain)*divide_set[0]) )
+		nvalid = int( np.floor(float(self.data_set.ntrain)*divide_set[1]) )
 
 		# indexes train and valid
 		index_train = self.data_set.index_train[:ntrain]
@@ -714,7 +714,7 @@ class NeuralNet():
 				npos = len(irmsd[irmsd<irmsd_thr])
 				if npos == 0:
 					npos = len(irmsd)
-					print('Warning : Non positive decoys found for hitrate plot')
+					print('Warning : Non positive decoys found in %s for hitrate plot' % l)
 				hit = np.cumsum(irmsd<irmsd_thr)/ npos
 
 				# plot
