@@ -568,8 +568,8 @@ class DataSet(data_utils.Dataset):
 		for ic in range(self.data_shape[0]):
 			minv = self.feature_mean[ic] - w*self.feature_std[ic]
 			maxv = self.feature_mean[ic] + w*self.feature_std[ic]
-			#feature[ic] = np.clip(feature[ic],minv,maxv)
-			feature[ic] = self._mad_based_outliers(feature[ic],minv,maxv)
+			feature[ic] = np.clip(feature[ic],minv,maxv)
+			#feature[ic] = self._mad_based_outliers(feature[ic],minv,maxv)
 		return feature
 
 	@staticmethod
