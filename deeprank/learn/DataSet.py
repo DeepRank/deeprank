@@ -95,7 +95,9 @@ class DataSet(data_utils.Dataset):
 		         select_feature='all',select_target='DOCKQ',
 		         pair_chain_feature = None,dict_filter = None,
 		         transform_to_2D=False,projection=0,grid_shape = None,
-		         normalize_features=True,normalize_targets=True,tqdm=False,process=True):
+		         normalize_features=True,normalize_targets=True,
+		         clip_features=True,clip_factor=10.,
+		         tqdm=False,process=True):
 
 
 		# allow for multiple database
@@ -116,6 +118,10 @@ class DataSet(data_utils.Dataset):
 		# normalization conditions
 		self.normalize_features = normalize_features
 		self.normalize_targets = normalize_targets
+
+		# clip the data
+		self.clip_features = clip_features
+		self.clip_factor = clip_factor
 
 		# final containers
 		self.features = None
@@ -206,6 +212,9 @@ class DataSet(data_utils.Dataset):
 		fname,mol = self.index_complexes[index]
 		feature, target = self.load_one_molecule(fname,mol)
 		printif('        __getitem__ : %f' %(time.time()-t0),debug_time)
+
+		if self.clip_features:
+			feature = self._clip_feature(feature)
 
 		if self.normalize_features:
 			feature = self._normalize_feature(feature)
@@ -470,7 +479,6 @@ class DataSet(data_utils.Dataset):
 
 		fh5.close()
 
-
 	def get_norm(self):
 
 		print("   Normalization factor :")
@@ -538,6 +546,11 @@ class DataSet(data_utils.Dataset):
 					print('  Final STD Null for %s/%s. Changed it to 1' %(feat_types,feat))
 					self.param_norm['features'][feat_types][feat].std = 1
 
+	def backtransform_target(self,data):
+		data = FloatTensor(data)
+		data *= self.target_max
+		data += self.target_min
+		return data.numpy()
 
 	def _normalize_target(self,target):
 
@@ -550,11 +563,13 @@ class DataSet(data_utils.Dataset):
 			feature[ic] = (feature[ic]-self.feature_mean[ic])/self.feature_std[ic]
 		return feature
 
-	def backtransform_target(self,data):
-		data = FloatTensor(data)
-		data *= self.target_max
-		data += self.target_min
-		return data.numpy()
+	def _clip_feature(self,feature):
+		w = self.clip_factor
+		for ic in range(self.data_shape[0]):
+			minv = self.feature_mean[ic] - w*self.feature_std[ic]
+			maxv = self.feature_mean[ic] + w*self.feature_std[ic]
+			feature[ic] = np.clip(feature[ic],minv,maxv)
+		return feature
 
 
 	############################################

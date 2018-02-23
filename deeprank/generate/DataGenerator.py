@@ -298,32 +298,13 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-	def add_unique_target(self,targdict):
-		'''
-		Add identical targets for all the complexes in the datafile
-		This is usefull if you want to add the binary class of all the complexes
-		created from decoys or natives
-		'''
-		f5 = h5py.File(self.hdf5,'a')
-		for mol in list(f5.keys()):
-			targrp = f5[mol].require_group('targets')
-			for name,value in targdict.items():
-				targrp.create_dataset(name,data=np.array([value]))
-		f5.close()
 
-
-	"""
-	def add_feature(self,compute_features=None,import_features=None,prog_bar=True):
+	def add_feature(self,prog_bar=True):
 
 		'''
 		Add a feature file to an existing folder arboresence
 		only need an output dir and a feature dictionary
-		! Not tested yet !
 		'''
-
-		self.logger.warning('add_feature not fully tested yet')
-		printif("ADD FEATURE NOT FULLY TESTED",self.debug)
-
 
 		# get the folder names
 		f5 = h5py.File(self.hdf5,'a')
@@ -335,19 +316,18 @@ class DataGenerator(object):
 
 		# computes the features of the original
 		desc = '{:25s}'.format('Add features')
-		for cplx_name in tqdm(fnames_original,desc=desc,disable=prog_bar):
+		for cplx_name in tqdm(fnames_original,desc=desc,ncols=100,disable = not prog_bar):
 
 			# molgrp
 			molgrp = f5[cplx_name]
 
-			# external features that are read from files
-			if import_features is not None:
-				self._import_features(import_features,molgrp)
-
 			# the internal features
-			if compute_features is not None:
-				featgrp = molgrp['features']
-				self._compute_features(self.compute_features, molgrp['complex'].value,molgrp['features'],molgrp['features_raw'])
+			molgrp.require_group('features')
+			molgrp.require_group('features_raw')
+
+			if self.compute_features is not None:
+				self._compute_features(self.compute_features, molgrp['complex'].value,molgrp['features'],molgrp['features_raw'] )
+
 
 		# copy the data from the original to the augmented
 		for cplx_name in fnames_augmented:
@@ -361,12 +341,27 @@ class DataGenerator(object):
 
 		# close the file
 		f5.close()
-		"""
+
 #====================================================================================
 #
 #		ADD TARGETS TO AN EXISTING DATASET
 #
 #====================================================================================
+
+
+	def add_unique_target(self,targdict):
+		'''
+		Add identical targets for all the complexes in the datafile
+		This is usefull if you want to add the binary class of all the complexes
+		created from decoys or natives
+		'''
+		f5 = h5py.File(self.hdf5,'a')
+		for mol in list(f5.keys()):
+			targrp = f5[mol].require_group('targets')
+			for name,value in targdict.items():
+				targrp.create_dataset(name,data=np.array([value]))
+		f5.close()
+
 
 	def add_target(self,prog_bar=False):
 
