@@ -576,9 +576,11 @@ class DataSet(data_utils.Dataset):
 	def _mad_based_outliers(points, minv, maxv, thresh=3.5):
 
 		median = np.median(points)
-		diff = np.sum((points - median)**2, axis=-1)
-		diff = np.sqrt(diff)
+		diff = np.sqrt((points - median)**2)
 		med_abs_deviation = np.median(diff)
+
+		if med_abs_deviation == 0:
+			return points
 
 		modified_z_score = 0.6745 * diff / med_abs_deviation
 		mask_outliers = modified_z_score > thresh
