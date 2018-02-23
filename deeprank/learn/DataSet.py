@@ -568,8 +568,28 @@ class DataSet(data_utils.Dataset):
 		for ic in range(self.data_shape[0]):
 			minv = self.feature_mean[ic] - w*self.feature_std[ic]
 			maxv = self.feature_mean[ic] + w*self.feature_std[ic]
-			feature[ic] = np.clip(feature[ic],minv,maxv)
+			#feature[ic] = np.clip(feature[ic],minv,maxv)
+			feature[ic] = self._mad_based_outliers(feature[ic],minv,maxv)
 		return feature
+
+	@staticmethod
+	def _mad_based_outliers(points, minv, maxv, thresh=3.5):
+
+		median = np.median(points)
+		diff = np.sum((points - median)**2, axis=-1)
+		diff = np.sqrt(diff)
+		med_abs_deviation = np.median(diff)
+
+		modified_z_score = 0.6745 * diff / med_abs_deviation
+		mask_outliers = modified_z_score > thresh
+
+		mask_max = np.abs(points-maxv) < np.abs(points-minv)
+		mask_min = np.abs(points-maxv) > np.abs(points-minv)
+
+		points[mask_max * mask_outliers] = maxv
+		points[mask_min * mask_outliers] = minv
+
+		return points
 
 
 	############################################
