@@ -19,7 +19,7 @@ def test_learn():
                             select_feature={'AtomicDensities_ind' : 'all',
                                             'Feature_ind' : ['coulomb','vdwaals','charge','pssm'] },
                             select_target='IRMSD',tqdm=True,
-                            normalize_features = True, normalize_targets=True)
+                            normalize_features = True, normalize_targets=True,clip_features=True)
                             #pair_chain_feature=np.add,
                             #dict_filter={'IRMSD':'<4. or >10.'})
 
@@ -29,7 +29,7 @@ def test_learn():
                     cuda=False,plot=True,outdir='./out/')
 
   # start the training
-  model.train(nepoch = 1,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
+  model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
 
   # save the model
   model.save_model()
