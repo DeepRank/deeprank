@@ -1,0 +1,177 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Welcome to DeepRank’s documentation! &#8212; DeepRank 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="First Steps with DeepRank" href="intro.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="First Steps with DeepRank"
+             accesskey="N">next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">DeepRank 0.1 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-deeprank-s-documentation">
+<h1>Welcome to DeepRank’s documentation!<a class="headerlink" href="#welcome-to-deeprank-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">First Steps with DeepRank</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#test-the-installation">Test the installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#requiried-dependencies">Requiried Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#optional-dependencies">Optional dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#data-generation">Data Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#adding-features-targets">Adding Features/Targets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#deep-learning">Deep Learning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="advTuto.html">Advanced Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="advTuto.html#create-your-own-features">Create your own features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advTuto.html#create-your-own-targets">Create your own targets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deeprank.generate.html">Generate Data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.generate.html#module-deeprank.generate.DataGenerator">DataGenerator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.generate.html#module-deeprank.generate.NormalizeData">NormalizeData</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.generate.html#module-deeprank.generate.GridTools">GridTools</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deeprank.learn.html">Deep learning</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.learn.html#dataset-create-a-torch-dataset">DataSet : Create a torch dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.learn.html#module-deeprank.learn.NeuralNet">NeuralNet : perform deep learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.learn.html#modelgenerator-automatically-generate-nn-file">modelGenerator : automatically generate NN file</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deeprank.features.html">Feature</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.features.html#module-deeprank.features.AtomicFeature">Atomic Feature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.features.html#module-deeprank.features.BSA">Burried Surface Area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.features.html#module-deeprank.features.NaivePSSM">NaivePSSM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.features.html#module-deeprank.features.PSSM_IC">Information Content</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.features.html#module-deeprank.features.ResidueDensity">Contact Residue Density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.features.html#module-deeprank.features.FeatureClass">Generic Feature Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.features.html#make-your-own-feature">Make your own Feature</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deeprank.tools.html">Tools</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.tools.html#module-deeprank.tools.pdb2sql">pdb2sql</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.tools.html#module-deeprank.tools.StructureSimilarity">Structure Similarity: a new ProFit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.tools.html#solvent-accessible-surface-area">Solvent Accessible Surface Area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.tools.html#module-deeprank.tools.sparse">Sparse 3D Matrix</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="#">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">First Steps with DeepRank</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advTuto.html">Advanced Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deeprank.generate.html">Generate Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deeprank.learn.html">Deep learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deeprank.features.html">Feature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deeprank.tools.html">Tools</a></li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="intro.html"
+                        title="next chapter">First Steps with DeepRank</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="First Steps with DeepRank"
+             >next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">DeepRank 0.1 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Nicolas Renaud.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>
