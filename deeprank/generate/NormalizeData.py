@@ -4,77 +4,43 @@ import h5py
 import pickle
 from deeprank.tools import sparse
 
-class NormParam(object):
-
-	'''
-	Normalization data to get the mean,var,std of all
-	the data in the hdf5 file
-	The standard deviation of a given channel is calculated from the std of all the individual grids
-	This is done following:
-	https://stats.stackexchange.com/questions/25848/how-to-sum-a-standard-deviation
-
-
-	\sigma_{tot} = \sqrt{ \frac{1}{N} \Sum_i \sigma_i^2 + \frac{1}{N} \sum_i \mu_i^2 - (\frac{1}{N} \Sum_i \mu_i  )^2 }
-
-	'''
-
-	def __init__(self,std=0,mean=0,var=0,sqmean=0):
-		self.std = std
-		self.mean = mean
-		self.var = var
-		self.sqmean = sqmean
-
-
-	def add(self,mean,var):
-		self.mean += mean
-		self.sqmean += mean**2
-		self.var += var
-
-	def process(self,n):
-
-		# normalize the mean and var
-		self.mean   /= n
-		self.var    /= n
-		self.sqmean /= n
-
-		# get the std
-		self.std = self.var
-		self.std += self.sqmean
-		self.std -= self.mean**2
-		self.std = np.sqrt(self.std)
-
-class MinMaxParam(object):
-
-	def __init__(self,minv=None,maxv=None):
-		self.min = minv
-		self.max = maxv
-
-	def update(self,val):
-
-		if self.min is None:
-			self.min = val
-			self.max = val
-		else:
-			self.min = min(self.min,val)
-			self.max = max(self.max,val)
-
 
 class NormalizeData(object):
 
 	def __init__(self,fname,shape=None):
+		"""Compute the normalization factor for the features and targets of a given HDF5 file.
 
+		The normalization of the features is done through the NormParam class that assumes gaussian distribution. 
+		Hence the Normalized data should be normally distributed with a 0 mean value and 1 standard deviation.
+		The normalization of the targets is done vian a min/max normalization. As a result the normalized targets
+		should all lie between 0 and 1. 
+
+		By default the output file containing the normalization dictionary is called <hdf5name>_norm.pckl
+
+		Args:
+			fname (str): name of the hdf5 file
+			shape (tuple(int), optional): shape of the grid in the hdf5 file
+
+		Example:
+
+		>>> norm = NormalizeData('1ak5.hdf5')
+		>>> norm.get()
+
+		"""
 		self.fname = fname
 		self.parameters = {'features':{},'targets':{}}
 		self.shape = shape
 
 	def get(self):
+		"""Get the normalization and write them to file."""
 
-		self.extract_shape()
-		self.extract_data()
-		self.process_data()
-		self.export_data()
+		self._extract_shape()
+		self._extract_data()
+		self._process_data()
+		self._export_data()
 
-	def extract_shape(self):
+	def _extract_shape(self):
+		"""Get the shape of the data in the hdf5 file."""
 
 		if self.shape is not None:
 			return
@@ -91,9 +57,10 @@ class NormalizeData(object):
 			self.shape=(nx,ny,nz)
 
 		else:
-			raise ValueError('Impossible to determine sparse grid shape.\n Specify argument grid_shape=(x,y,z)')
+			raise ValueError('Impossible to determine sparse grid shape.\\n Specify argument grid_shape=(x,y,z)')
 
-	def extract_data(self):
+	def _extract_data(self):
+		"""Extract the data from the different maps."""
 
 		f5 = h5py.File(self.fname,'r')
 		mol_names = list(f5.keys())
@@ -147,11 +114,85 @@ class NormalizeData(object):
 
 		f5.close()
 
-	def process_data(self):
+	def _process_data(self):
+		"""Compute the standard deviation of the data."""
 		for feat_types,feat_dict in self.parameters['features'].items():
 			for feat in feat_dict:
 				self.parameters['features'][feat_types][feat].process(self.nmol)
 
-	def export_data(self):
+	def _export_data(self):
+		"""Pickle the data to file."""
+		
 		fexport = os.path.splitext(self.fname)[0] + '_norm.pckl'
 		pickle.dump(self.parameters,open(fexport,'wb'))
+
+
+class NormParam(object):
+
+	def __init__(self,std=0,mean=0,var=0,sqmean=0):
+		"""Compute gaussian normalization for a given feature.
+
+		This class allows to extract the standard deviation, mean value, variance and square root of the
+		mean value of a mapped feature stored in the hdf5 file. As the entire data set is too large to fit in memory,
+		the standard deviation of a given feature is calculated from the std of all the individual grids. This is done following:
+		https://stats.stackexchange.com/questions/25848/how-to-sum-a-standard-deviation:
+
+		.. math::
+
+			\\sigma_{tot}=\\sqrt{\\frac{1}{N}\\sum_i \\sigma_i^2+\\frac{1}{N}\\sum_i\\mu_i^2-(\\frac{1}{N}\\sum_i\\mu_i)^2}
+		Args:
+			std (float, optional): standard deviation
+			mean (float,optional) : mean value
+			var (float,optional) : variance
+			sqmean (float, optional) : square roo of the variance
+		"""
+
+		self.std = std
+		self.mean = mean
+		self.var = var
+		self.sqmean = sqmean
+
+	def add(self,mean,var):
+		""" Add the mean value, sqmean and variance of a new molecule to the corresponding attributes."""
+		self.mean += mean
+		self.sqmean += mean**2
+		self.var += var
+
+	def process(self,n):
+		"""Compute the standard deviation of the ensemble."""
+
+		# normalize the mean and var
+		self.mean   /= n
+		self.var    /= n
+		self.sqmean /= n
+
+		# get the std
+		self.std = self.var
+		self.std += self.sqmean
+		self.std -= self.mean**2
+		self.std = np.sqrt(self.std)
+
+class MinMaxParam(object):
+
+	"""Compute the min/max of an ensenble of data.
+
+	This is principally used to normalized the target values
+
+	Args:
+		minv (float, optional): minimal value
+		maxv (float, optional): maximal value
+
+	"""
+
+	def __init__(self,minv=None,maxv=None):
+		self.min = minv
+		self.max = maxv
+
+	def update(self,val):
+
+		if self.min is None:
+			self.min = val
+			self.max = val
+		else:
+			self.min = min(self.min,val)
+			self.max = max(self.max,val)

@@ -4,84 +4,63 @@ import os
 import numpy as np
 from time import time
 
-'''
-Class that allows to create a SQL data base for a PDB file
-This allows to easily extract information of the PDB using SQL queries
 
-USAGE db = pdb2sql('XXX.pdb')
-
-A few SQL querry wrappers have been implemented
-
-
-	self.get(attribute_name,**kwargs)
-
-		Get hte value(s) of the attribute(s) for possible selection of the db
-
-		attributename   : 	must be a valid attribute name.
-						 	you can get these names via the get_colnames()
-						 	serial, name, atLoc,resName,chainID, resSeq,iCode,x,y,z,occ,temp
-						 	you can specify more than one attribute name at once e.g 'x,y,z'
-
-		keyword args    :   Several options are possible
-							None : return the entire table
-
-							chain = 'X' return the values of that chain
-							name  = 'CA' only these atoms
-							index = [0,1,2,3] return only those rows (not serial)
-							where = "chainID='B'" general WHERE SQL query
-							query = 'WHERE chainID='B'' general SQL Query
-
-		example         :
-
-							db = pdb2sql(filename)
-							xyz  = db.get('x,y,z',index=[0,1,2,3])
-							name = db.get('name',where="resName='VAL'")
-
-	self.put(attribute_name,value,**kwargs)
-
-		Update the value of the attribute with value specified with possible selection
-
-		attributename   : 	must be a valid attribute name.
-						 	you can get these names via the get_colnames()
-						 	serial, name, atLoc,resName,chainID, resSeq,iCode,x,y,z,occ,temp
-						 	you can specify more than one attribute name at once e.g 'x,y,z'
-
-		keyword args    :   Several options are possible
-							None : put the value in the entire column
-
-							index = [0,1,2,3] in only these indexes (not serial)
-							where = "chainID='B'" only for this chain
-							query = general SQL Query
-
-		example         :
-
-							db = pdb2sql(filename)
-							db.add_column('CHARGE')
-							db.put('CHARGE',1.25,index=[1])
-							db.close()
-
-
-	Other queries have been made user friendly
-
-	- self.add_column(column_name,coltype='FLOAT',default=0)
-	- self.update_column(colname,values,index=None)
-	- self.update_xyz(new_xyz,index=None)
-	- self.commit()
-
-	TO DO
-
-	- Add more user friendly wrappers to SQL queries
-	- Make use of the ? more often to prevent quoting issues and SQL injection attack
-'''
 
 class pdb2sql(object):
 
-	'''
-	CLASS that transsform  PDB file into a sqlite database
-	'''
 
 	def __init__(self,pdbfile,sqlfile=None,fix_chainID=False,verbose=False):
 
+		'''Create a SQL data base for a PDB file.
+		
+		This allows to easily parse and extract information of the PDB using SQL queries.
+
+		Args:
+			pdbfile (str or list(bytes)) : the pdb information can be provided as filename of list of bytes containign the pdb data
+			sqlfile (str, optional): name of the sqlfile. By default it is created in memory only
+			fix_chainID (bool, optinal): check if the name of the chains are A,B,C, .... and fix it if not
+			verbose (bool): probably print stuff.
+
+		Example:
+
+		>>> # create the sql
+		>>> db = pdb2sql('1AK4_100w.pdb')
+		>>> 
+		>>> # print the database
+		>>> db.prettyprint()
+		>>> 
+		>>> # get the names of the columns
+		>>> db.get_colnames()
+		>>> 
+		>>> # extract the xyz position of the atoms with name CB
+		>>> xyz = db.get('*',index=[0,1,2,3])
+		>>> print(xyz)
+		>>> 
+		>>> xyz = db.get('rowID',where="resName='VAL'")
+		>>> print(xyz)
+		>>> 
+		>>> db.add_column('CHARGE','FLOAT')
+		>>> db.put('CHARGE',0.1)
+		>>> db.prettyprint()
+		>>> 
+		>>> db.exportpdb('chainA.pdb',where="chainID='A'")
+		>>> 
+		>>> # close the database
+		>>> db.close()
+
+
+			Other queries have been made user friendly
+
+			- self.add_column(column_name,coltype='FLOAT',default=0)
+			- self.update_column(colname,values,index=None)
+			- self.update_xyz(new_xyz,index=None)
+			- self.commit()
+
+			TO DO
+
+			- Add more user friendly wrappers to SQL queries
+			- Make use of the ? more often to prevent quoting issues and SQL injection attack
+		'''
 		self.pdbfile = pdbfile
 		self.sqlfile = sqlfile
 		self.is_valid = True
@@ -102,16 +81,16 @@ class pdb2sql(object):
 		self.SQLITE_LIMIT_VARIABLE_NUMBER = 999
 		self.max_sql_values = 950
 
+
+
 	##################################################################################
 	#
 	#	CREATION AND PRINTING
 	#
 	##################################################################################
 
-	'''
-	Main function to create the SQL data base
-	'''
 	def _create_sql(self):
+		"""Create the sql database."""
 
 		pdbfile = self.pdbfile
 		sqlfile = self.sqlfile
@@ -258,8 +237,12 @@ class pdb2sql(object):
 		# push in the database
 		self.c.executemany('INSERT INTO ATOM VALUES ({qm})'.format(qm=qm),data_atom)
 
-	# replace the chain ID by A,B,C,D, ..... in that order
+	
 	def _fix_chainID(self):
+		"""Fix the chain ID if necessary.
+
+		Replace the chain ID by A,B,C,D, ..... in that order
+		"""
 
 		from string import ascii_uppercase
 
@@ -316,13 +299,38 @@ class pdb2sql(object):
 	#
 	###############################################################################################
 
-	# get the properties
+
 	def get(self,atnames,**kwargs):
 
-		'''
-		Exectute a simple SQL query that extracts values of attributes for certain condition
-		Ex  db.get('x,y,z',chainID='A', name = ['C','CA'])
-		returns an array containing the value of the attributes
+		'''Get data from the sql database
+
+		Exectute a simple SQL query that extracts values of attributes for certain conditions
+
+		Args:
+
+
+
+			atnames (str): attribute name. They can be printed can get these names via the get_colnames()
+					       serial, name, atLoc,resName,chainID, resSeq,iCode,x,y,z,occ,temp
+							Several attributes can be specified at once e.g 'x,y,z'
+
+			kwargs : Several options are possible
+                     None : return the entire table
+					 chain = 'X' return the values of that chain
+					 name  = 'CA' only these atoms
+					 index = [0,1,2,3] return only those rows (not serial)
+					 where = "chainID='B'" general WHERE SQL query
+					 query = 'WHERE chainID='B'' general SQL Query
+
+		Returns:
+			np.array: data extracted from the pdb file
+
+		Example :
+
+		>>> db = pdb2sql(filename)
+		>>> xyz  = db.get('x,y,z',index=[0,1,2,3])
+		>>> name = db.get('name',where="resName='VAL'")
+
 		'''
 
 		# the asked keys
@@ -469,6 +477,24 @@ class pdb2sql(object):
 		                  extend_to_residue=False,only_backbone_atoms=False,
 		                  excludeH=False,return_only_backbone_atoms=False,return_contact_pairs=False):
 
+		"""Get contact atoms.
+
+		Args:
+			cutoff (float): cutoff for contact atoms (default 8.5)
+			chain1 (str): name of the first chain
+			chain2 (str): name of the first chain
+			extend_to_residue (bool): extend the contact atoms to entire residues
+			only_bacbone_atoms (bool): consider only backbone atoms
+			excludeH (bool): exclude hydrogen atoms
+			return_only_backbone_atoms (bool): only returns backbone atoms
+			return_contact_pairs (bool): return the contact pairs instead of contact atoms
+
+
+		Returns:
+			np.array: index of the contact atoms
+
+		"""
+
 		# xyz of the chains
 		xyz1 = np.array(self.get('x,y,z',chainID=chain1))
 		xyz2 = np.array(self.get('x,y,z',chainID=chain2))
@@ -597,7 +623,21 @@ class pdb2sql(object):
 	# get the contact residue
 	def get_contact_residue(self,cutoff=8.5,chain1='A',chain2='B',excludeH=False,
 		                    only_backbone_atoms=False,return_contact_pairs=False):
+		"""Get contact residues.
 
+		Args:
+			cutoff (float): cutoff for contact atoms (default 8.5)
+			chain1 (str): name of the first chain
+			chain2 (str): name of the first chain
+			only_bacbone_atoms (bool): consider only backbone atoms
+			excludeH (bool): exclude hydrogen atoms
+			return_contact_pairs (bool): return the contact pairs instead of contact atoms
+
+
+		Returns:
+			np.array: index of the contact atoms
+
+		"""
 		# get the contact atoms
 		if return_contact_pairs:
 
@@ -662,9 +702,8 @@ class pdb2sql(object):
 
 	def add_column(self,colname,coltype='FLOAT',default=0):
 
-		'''
-		Add an etra column to the ATOM table
-		'''
+		'''Add an etra column to the ATOM table.'''
+
 		query = "ALTER TABLE ATOM ADD COLUMN '%s' %s DEFAULT %s" %(colname,coltype,str(default))
 		self.c.execute(query)
 		#self.conn.commit()
@@ -706,7 +745,6 @@ class pdb2sql(object):
 			raise ValueError('Number of attribute incompatible with the number of columns in the data')
 
 
-
 		# get the row ID of the selection
 		rowID = self.get('rowID',**kwargs)
 		nselect = len(rowID)
@@ -739,9 +777,7 @@ class pdb2sql(object):
 	def update_column(self,colname,values,index=None):
 
 
-		'''
-		values must contain the correct number of elements
-		'''
+		'''Update an entire column.'''
 
 		if index==None:
 			data = [ [v,i+1] for i,v in enumerate(values) ]
@@ -754,9 +790,14 @@ class pdb2sql(object):
 
 	def update_xyz(self,xyz,index=None):
 
-		'''
-		update the positions of the atoms selected
+		'''Update the xyz informatiom
+		
+		Update the positions of the atoms selected
 		if index=None the position of all the atoms are changed
+
+		Args:
+			xyz (np.array): new xyz position
+			index (None, list(int)): index of the atom to move
 		'''
 
 		if index==None:
@@ -769,11 +810,27 @@ class pdb2sql(object):
 
 	def put(self,colname,value,**kwargs):
 
-		'''
-		Exectute a simple SQL query that put a value in an attributes for certain condition
-		Ex  db.put('resName','XXX',where="chainID=='A'")
-		'''
+		""" Update the value of the attribute with value specified with possible selection
+		
+		Args:
+			colname (str)   : 	must be a valid attribute name.
+							 	you can get these names via the get_colnames()
+							 	serial, name, atLoc,resName,chainID, resSeq,iCode,x,y,z,occ,temp
+							 	you can specify more than one attribute name at once e.g 'x,y,z'
 
+			keyword args    :   Several options are possible
+								None : put the value in the entire column
+								index = [0,1,2,3] in only these indexes (not serial)
+								where = "chainID='B'" only for this chain
+								query = general SQL Query
+
+		Example :
+
+		>>> db = pdb2sql(filename)
+		>>> db.add_column('CHARGE')
+		>>> db.put('CHARGE',1.25,index=[1])
+		>>> db.close()
+		"""
 		arguments = {'where' : "String e.g 'chainID = 'A''",
 					 'index' : "Array e.g. [27,28,30]",
 					 'name'  : "'CA' atome name",

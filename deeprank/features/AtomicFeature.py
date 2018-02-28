@@ -7,68 +7,63 @@ from deeprank.features import FeatureClass
 
 class AtomicFeature(FeatureClass):
 
-	'''
-	Sub class that deals with the electrostatic interaction
-	and van der waals interactions between atoms
-
-
-	USAGE
-
-	pdbfile : pdb file of the molecule
-
-	param_charge : force field fiel containing the charges e.g. protein-allhdg5.4_new.top
-	               must be of the format:
-
-	               CYM  atom O   type=O      charge=-0.500 end
-	               ALA    atom N   type=NH1     charge=-0.570 end
-
-	param_vdw : force field file containing the vdw parameters e.g  protein-allhdg5.4_new.param
-	            must be of the format
-
-	            NONBonded  CYAA    0.105   3.750       0.013    3.750
-	            NONBonded  CCIS    0.105   3.750       0.013    3.750
-
-
-	patch_file : valid patch file for the parameters e.g. patch.top
-	             The way we handle the patching is very manual and should be
-	             made more automatic
-
-	contact_distance : the maximum distance between 2 contact atoms
-
-	include_entire_residue : if atom X of resiue M is a contact atom, include all the atoms
-	                         of resiude M in the contact_atom list
-
-	root_export : root directory where the feature file will be exported
-
-
-	EXAMPLE
-
-	atfeat = atomicFeature(PDB,
-	                       param_charge = FF + 'protein-allhdg5-4_new.top',
-	                       param_vdw    = FF + 'protein-allhdg5-4_new.param',
-	                       patch_file   = FF + 'patch.top')
-
-	# assign the parameters to the atoms
-	atfeat.assign_parameters()
-
-	# only compute the pair interactions here
-	atfeat.evaluate_pair_interaction(print_interactions=True)
-
-	# export the data
-	atfeat.export_data()
-
-	# close the sqldb
-	atfeat.sqldb.close()
-
-
-	'''
-
 	def __init__(self,pdbfile,param_charge=None,param_vdw=None,patch_file=None,
 		contact_distance=8.5, root_export = './',individual_directory=False,verbose=False):
 
 		'''
-		subclass the main feature class
+		Compute the Coulomb, van der Waals interaction and charges
+
+		Args:
+
+			pdbfile (str): pdb file of the molecule
+
+			param_charge (str): file name of the force field fiel containing the charges e.g. protein-allhdg5.4_new.top. Must be of the format:
+
+			    * CYM  atom O   type=O      charge=-0.500 end
+			    * ALA    atom N   type=NH1     charge=-0.570 end
+
+			param_vdw (str): file name of the force field file containing the vdw parameters e.g  protein-allhdg5.4_new.param. Must be of the format
+
+				* NONBonded  CYAA    0.105   3.750       0.013    3.750
+				* NONBonded  CCIS    0.105   3.750       0.013    3.750
+
+
+			patch_file (str): file name of a valid patch file for the parameters e.g. patch.top
+			             The way we handle the patching is very manual and should be
+			             made more automatic
+
+			contact_distance (float): the maximum distance between 2 contact atoms
+
+			include_entire_residue (bool): if atom X of resiue M is a contact atom, include all the atoms
+			                         of resiude M in the contact_atom list
+
+			root_export (str): root directory where the feature file will be exported (deprecated ?)
+
+
+		Example :
+
+		>>> pdb = '1AK4_100w.pdb'
+		>>>
+		>>> # get the force field included in deeprank
+		>>> # if another FF has been used to compute the ref
+		>>> # change also this path to the correct one
+		>>> FF = pkg_resources.resource_filename('deeprank.features','') + '/forcefield/'
+		>>>
+		>>> # declare the feature calculator instance
+		>>> atfeat = AtomicFeature(pdb,
+		>>>                        param_charge = FF + 'protein-allhdg5-4_new.top',
+		>>>                        param_vdw    = FF + 'protein-allhdg5-4_new.param',
+		>>>                        patch_file   = FF + 'patch.top')
+		>>> # assign parameters
+		>>> atfeat.assign_parameters()
+		>>>
+		>>> # only compute the pair interactions here
+		>>> atfeat.evaluate_pair_interaction(save_interactions=test_name)
+		>>>
+		>>> # close the db
+		>>> atfeat.sqldb.close()
 		'''
+
 		super().__init__("Atomic")
 
 		# set a few things
@@ -112,13 +107,13 @@ class AtomicFeature(FeatureClass):
 
 	def read_charge_file(self):
 
-		'''
-		Read the .top file given in entry
-		Create :
+		'''Read the .top file given in entry.
 
-			self.charge : dictionary  {(resname,atname):charge}
-			self.valid_resnames : list ['VAL','ALP', .....]
-			self.at_name_type_convertor : dictionary {(resname,atname):attype}
+		This function creates :
+
+			- self.charge : dictionary  {(resname,atname):charge}
+			- self.valid_resnames : list ['VAL','ALP', .....]
+			- self.at_name_type_convertor : dictionary {(resname,atname):attype}
 
 		'''
 
@@ -161,12 +156,12 @@ class AtomicFeature(FeatureClass):
 
 	def read_patch(self):
 
-		'''
-		Read the patchfile
-		Create
+		'''Read the patchfile.
 
-			self.patch_charge : Dicitionary	{(resName,atName) : charge}
-			self.patch_type   : Dicitionary	{(resName,atName) : type}
+		This function creates
+
+			- self.patch_charge : Dicitionary	{(resName,atName) : charge}
+			- self.patch_type   : Dicitionary	{(resName,atName) : type}
 
 		'''
 
@@ -194,22 +189,21 @@ class AtomicFeature(FeatureClass):
 					type_ = l[ind+5:ind+9]
 					self.patch_type[(words[0],words[3])] = type_.strip()
 
-
-
 	def read_vdw_file(self):
 
-		'''
-		Read the .param file
+		''' Read the .param file
 
-		NONBONDED ATNAME 0.10000 3.298765 0.100000 3.089222
+		The patch file must be of the form:
 
-		First two numbers are for inter-chain interations
-		Last two nmbers are for intra-chain interactions
-		We only compute the interchain here
+			NONBONDED ATNAME 0.10000 3.298765 0.100000 3.089222
 
-		Create
+			- First two numbers are for inter-chain interations
+			- Last two nmbers are for intra-chain interactions
+			  (We only compute the interchain here)
 
-			self.vdw : dictionary {attype:[E1,S1]}
+		This function creates
+
+			- self.vdw : dictionary {attype:[E1,S1]}
 		'''
 
 		f = open(self.param_vdw)
@@ -233,10 +227,12 @@ class AtomicFeature(FeatureClass):
 
 			self.vdw_param[line[1]] = list(map(float,line[2:4]))
 
-
-	# get the contact atoms only select amino acids
-	# no ligand accounted for
 	def get_contact_atoms(self):
+
+		"""Get the contact atoms only select amino acids.
+
+		The ligands are not considered.
+		"""
 
 		# position of the chains
 		xyz1 = np.array(self.sqldb.get('x,y,z',chainID='A'))
@@ -282,9 +278,8 @@ class AtomicFeature(FeatureClass):
 			print('Warning : No contact atoms detected in atomicFeature')
 
 
-	# for some feature we might want to include entore residue to the contact atoms
-	# we can get the indexes of all these atoms with this function
 	def _extend_contact_to_residue(self):
+		"""Extend the contact atoms to entire residue where one atom is contacting."""
 
 		# extract the data
 		dataA = self.sqldb.get('chainId,resName,resSeq',rowID=self.contact_atoms_A)
@@ -327,8 +322,8 @@ class AtomicFeature(FeatureClass):
 
 	def assign_parameters(self):
 
-		'''
-		Assign to each atom in the pdb its charge and vdw interchain parameters
+		'''Assign to each atom in the pdb its charge and vdw interchain parameters.
+
 		Directly deals with the patch so that we don't loop over the residues
 		multiple times
 		'''
@@ -397,13 +392,17 @@ class AtomicFeature(FeatureClass):
 	@staticmethod
 	def _get_altResName(resName,atNames):
 
-		'''
-		Apply the patch data
+		''' Apply the patch data.
+
 		This is adopted from preScan.pl
 		This is very static and I don't quite like it
 		The structure of the dictionary is as following
 
 		{ NEWRESTYPE : [ 'OLDRESTYPE' , [atom types that must be present], [atom types that must NOT be present] }   ]  }
+
+		Args:
+			resName (str): name of the residue
+			atNames (list(str)): names of the atoms
 		'''
 
 		new_type = {
@@ -431,6 +430,13 @@ class AtomicFeature(FeatureClass):
 		return altResName
 
 	def _get_vdw(self,resName,altResName,atNames):
+		"""Get vdw itneraction terms.
+
+		Args:
+			resName (str): name of the residue
+			altResName (str): alternative name of the residue
+			atNames (list(str)): names of the atoms
+		"""
 
 		# in case the resname is not valid
 		if resName not in self.valid_resnames:
@@ -465,6 +471,13 @@ class AtomicFeature(FeatureClass):
 		return vdw_eps,vdw_sigma,type_
 
 	def _get_charge(self,resName,altResName,atNames):
+		"""Get the charge information.
+
+		Args:
+			resName (str): name of the residue
+			altResName (str): alternative name of the residue
+			atNames (list(str)): names of the atoms
+		"""
 
 		# in case the resname is not valid
 		if resName not in self.valid_resnames:
@@ -496,7 +509,12 @@ class AtomicFeature(FeatureClass):
 	#####################################################################################
 
 	def evaluate_charges(self,extend_contact_to_residue=False):
+		""" Evaluate the charges.
 
+		Args:
+			extend_contact_to_residue (bool, optional): extend to res
+
+		"""
 		if self.verbose:
 			print('-- Compute list charge for contact atoms only')
 
@@ -560,6 +578,12 @@ class AtomicFeature(FeatureClass):
 	#####################################################################################
 
 	def evaluate_pair_interaction(self,print_interactions=False,save_interactions=False):
+		"""Evalaute the pair interactions (coulomb and vdw).
+
+		Args:
+			print_itneractions (bool, optional): print data to screen
+			save_interactions (bool, optional): save the itneractions to file.
+		"""
 
 		if self.verbose:
 			print('-- Compute interaction energy for contact pairs only')
@@ -748,6 +772,12 @@ class AtomicFeature(FeatureClass):
 	#####################################################################################
 
 	def compute_coulomb_interchain_only(self,dosum=True,contact_only=False):
+		"""Compute the coulomb interactions between the chains only.
+
+		Args:
+			dosum (bool, optional): sum the interaction terms for each atoms
+			contact_only (bool, optional): consider only contact atoms
+		"""
 
 		if self.verbose:
 			print('-- Compute coulomb energy interchain only')
@@ -830,7 +860,12 @@ class AtomicFeature(FeatureClass):
 
 
 	def compute_vdw_interchain_only(self,dosum=True,contact_only=False):
+		"""Compute the vdw interactions between the chains only.
 
+		Args:
+			dosum (bool, optional): sum the interaction terms for each atoms
+			contact_only (bool, optional): consider only contact atoms
+		"""
 		if self.verbose:
 			print('-- Compute vdw energy interchain only')
 
@@ -914,6 +949,8 @@ class AtomicFeature(FeatureClass):
 
 	@staticmethod
 	def _prefactor_vdw(r):
+		"""prefactor for vdw interactions."""
+
 		r_off,r_on = 8.5,6.5
 		r2 = r**2
 		pref = (r_off**2-r2)**2 * (r_off**2 - r2 - 3*(r_on**2 - r2)) / (r_off**2-r_on**2)**3
@@ -921,20 +958,6 @@ class AtomicFeature(FeatureClass):
 		pref[r<r_on]  = 1.0
 		return pref
 
-	#####################################################################################
-	#
-	#	EXPORT THE DATA
-	#
-	#####################################################################################
-
-	'''
-	def export_data(self):
-		bare_mol_name = self.pdbfile.split('/')[-1][:-4]
-		super().export_data(bare_mol_name)
-
-	def export_data_hdf5(self,featgrp):
-		super().export_data_hdf5(featgrp)
-	'''
 
 #####################################################################################
 #
@@ -944,6 +967,13 @@ class AtomicFeature(FeatureClass):
 
 def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
+	"""Main function called in deeprank for the feature calculations
+
+	Args:
+		pdb_data (list(bytes)): pdb information
+		featgrp (str): name of the group where to save xyz-val data
+		featgrp_raw (str): name of the group where to save human readable data
+	"""
 	path = os.path.dirname(os.path.realpath(__file__))
 	FF = path + '/forcefield/'
 

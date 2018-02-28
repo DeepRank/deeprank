@@ -3,38 +3,36 @@ import numpy as np
 
 class FeatureClass(object):
 
-	'''
-	Master class fron which all the other classes
-	should be derived
-
-
-	self.feature_data : dictionary of features
-	                    {'coulomb':data_dict_clb[(atom info):value]
-	                     'vdwaals':data_dict_vdw[(atom info):value]  }
-
-	self.feature_data_xyz : dictionary of feature
-							dictionary of features
-	                    {'coulomb':data_dict_clb[(chainID atom xyz):value]
-	                     'vdwaals':data_dict_vdw[(chainID atom xyz):value]  }
-
-	'''
-
 	def __init__(self,feature_type):
+
+		''' Master class fron which all the other Feature classes should be derived."""
+
+		Each subclass must compute :
+
+		- self.feature_data : dictionary of features in human readable format
+		   e.g : {'coulomb':data_dict_clb[(atom info):value]
+		          'vdwaals':data_dict_vdw[(atom info):value]  }
+
+		- self.feature_data_xyz : dictionary of feature in xyz-val format
+		   e.g : {'coulomb':data_dict_clb[(chainID atom xyz):value]
+		          'vdwaals':data_dict_vdw[(chainID atom xyz):value]  }
+
+		Args:
+			feature_type (str): 'Atomic' or 'Residue'
+
+		'''
 
 		self.type = feature_type
 		self.feature_data = {}
 		self.feature_data_xyz = {}
 		self.export_directories = {}
 
-	########################################
-	#
-	# export the data in a singl file
-	# Pretty sure we neve use that anymore
-	# I jsut keep it for legacy reasons
-	#
-	########################################
-	def export_data(self,mol_name):
 
+	def export_data(self,mol_name):
+		""" export the data in a single file.
+
+		 Pretty sure we never use that anymore. I jsut keep it for legacy reasons
+		"""
 
 		for name,data in self.feature_data.items():
 
@@ -73,24 +71,13 @@ class FeatureClass(object):
 
 			f.close()
 
-
-	########################################
-	#
-	# export the data in an HDF5 file group
-	# the format of the data is here
-	#
-	# for atomic features
-	# chainID  resSeq resNum name [values]
-	#
-	# for residue features
-	# chainID  resSeq resNum [values]
-	#
-	# PRO : might be usefull for other applications
-	# CON : slow when mapping cause we have to retrive the xyz
-	#
-	########################################
-
 	def export_data_hdf5(self,featgrp):
+		"""Export the data in human readable format in an HDF5 file group.
+
+		- For **atomic features**, the format of the data must be : chainID  resSeq resNum name [values]
+		- For **residue features**, the format must be : chainID  resSeq resNum [values]
+
+		"""
 
 		# loop through the datadict and name
 		for name,data in self.feature_data.items():
@@ -138,6 +125,11 @@ class FeatureClass(object):
 	#
 	########################################
 	def export_dataxyz_hdf5(self,featgrp):
+		"""Export the data in xyz-val format in an HDF5 file group.
+
+		For **atomic** and **residue** the format of the data must be :  x y z [values]
+		"""
+
 
 		# loop through the datadict and name
 		for name,data in self.feature_data_xyz.items():

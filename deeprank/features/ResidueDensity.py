@@ -4,34 +4,23 @@ from deeprank.tools import pdb2sql
 from deeprank.features import FeatureClass
 
 
-class residue_pair(object):
-
-	def __init__(self,res,rtype):
-
-		self.res = res
-		self.type = rtype
-		self.density = {'total':0,'polar':0,'apolar':0,'charged':0}
-		self.connections = {'polar':[],'apolar':[],'charged':[]}
-
-	def print(self):
-		print('')
-		print(self.res, ' : ', self.type)
-		print('  Residue Density')
-		for k,v in self.density.items():
-			print('   '+ k + '\t: '+str(v))
-		print('  Residue contact')
-		for k,keys in self.connections.items():
-			if len(keys)>0:
-				print('   ' + k + '\t:',end='')
-				for i,v in enumerate(keys):
-					print(v,end=' ')
-					if not (i+1) % 5:
-						print('\n\t\t ',end='')
-				print('')
 
 class ResidueDensity(FeatureClass):
 
 	def __init__(self,pdb_data,chainA='A',chainB='B'):
+		"""Compute the residue densities between polar/apolar/charged residues.
+
+		Args :
+			pdb_data (list(byte) or str): pdb data or filename of the pdb
+			chainA (str, optional): name of the first chain
+			chainB (str, optional): name of the second chain
+
+		Example :
+
+		>>> rd = ResidueDensity('1EWY_100w.pdb')
+		>>> rd.get(cutoff=5.5)
+		>>> rd.extract_features()
+		"""
 
 		self.pdb_data = pdb_data
 		self.sql=pdb2sql(pdb_data)
@@ -47,7 +36,7 @@ class ResidueDensity(FeatureClass):
 
 
 	def get(self,cutoff=5.5):
-
+		"""Get the densities."""
 		res = self.sql.get_contact_residue(chain1=self.chains_label[0],
 			                               chain2=self.chains_label[1],
 			                               cutoff = cutoff,
@@ -81,12 +70,13 @@ class ResidueDensity(FeatureClass):
 				self.residue_densities[key2].density[self.residue_types[key[2]]] += 1
 				self.residue_densities[key2].connections[self.residue_types[key[2]]].append(key)
 
-	def print(self):
+	def _print(self):
 
 		for key,res in self.residue_densities.items():
 			res.print()
 
 	def extract_features(self):
+		"""Compute the feature value."""
 
 		self.feature_data['RCD_total'] = {}
 		self.feature_data_xyz['RCD_total'] = {}
@@ -115,6 +105,36 @@ class ResidueDensity(FeatureClass):
 					pairtype = 'RCD_' + r + '-' + res.type
 				self.feature_data[pairtype][key] = [res.density[r]]
 				self.feature_data_xyz[pairtype][xyz_key] = [res.density[r]]
+
+class residue_pair(object):
+
+	def __init__(self,res,rtype):
+		"""Ancillary class that holds information for a given residue."""
+
+		self.res = res
+		self.type = rtype
+		self.density = {'total':0,'polar':0,'apolar':0,'charged':0}
+		self.connections = {'polar':[],'apolar':[],'charged':[]}
+
+	def print(self):
+		""" Print the data."""
+		print('')
+		print(self.res, ' : ', self.type)
+		print('  Residue Density')
+		for k,v in self.density.items():
+			print('   '+ k + '\t: '+str(v))
+		print('  Residue contact')
+		for k,keys in self.connections.items():
+			if len(keys)>0:
+				print('   ' + k + '\t:',end='')
+				for i,v in enumerate(keys):
+					print(v,end=' ')
+					if not (i+1) % 5:
+						print('\n\t\t ',end='')
+				print('')
+
+
+
 
 #####################################################################################
 #

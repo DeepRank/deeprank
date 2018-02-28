@@ -1,160 +1,6 @@
 import numpy as np
 import ast
 #################################
-#	CNN layer
-#################################
-class conv(object):
-
-	def __init__(self,input_size=-1,output_size=None,kernel_size=None,post=None):
-
-		self.__name__ = 'conv'
-		self.input_size = input_size
-		self.output_size =  output_size
-		self.kernel_size = kernel_size
-		self.post = post
-
-
-	def __def_str__(self,ilayer):
-		if ilayer == 0:
-			return 'self.convlayer_%03d = nn.Conv3d(input_shape[0],%d,kernel_size=%d)' %(ilayer,self.output_size,self.kernel_size)
-		else:
-			return 'self.convlayer_%03d = nn.Conv3d(%d,%d,kernel_size=%d)' %(ilayer,self.input_size,self.output_size,self.kernel_size)
-
-	def __use_str__(self,ilayer):
-		if self.post is None:
-			return 'x = self.convlayer_%03d(x)' %ilayer
-		elif isinstance(self.post,str):
-			return 'x = F.%s(self.convlayer_%03d(x))' %(self.post,ilayer)
-		else:
-			print('Error with post processing of conv layer %d' %ilayer)
-			return 'x = self.convlayer_%03d(x)' %ilayer
-
-	def __get_params__(self):
-		params = {}
-		params['name'] = self.__name__
-		params['input_size'] = self.input_size
-		params['output_size'] = self.output_size
-		params['kernel_size'] = self.kernel_size
-		params['post'] = self.post
-		return params
-
-	def __init_from_dict__(self,params):
-		self.input_size = params['input_size']
-		self.output_size =  params['output_size']
-		self.kernel_size = params['kernel_size']
-		self.post = params['post']
-
-	def __human_readable_str__(self,ilayer):
-		return '#conv layer % 3d: conv | input % 2d  output % 2d  kernel % 2d  post %s' %(ilayer,self.input_size,self.output_size,self.kernel_size,self.post)
-
-#################################
-#	POOL layer
-#################################
-class pool(object):
-
-	def __init__(self,kernel_size=None,post=None):
-		self.__name__ = 'pool'
-		self.kernel_size = kernel_size
-		self.post = post
-
-	def __def_str__(self,ilayer):
-		return 'self.convlayer_%03d = nn.MaxPool3d((%d,%d,%d))' %(ilayer,self.kernel_size,self.kernel_size,self.kernel_size)
-
-	def __use_str__(self,ilayer):
-		if self.post is None:
-			return 'x = self.convlayer_%03d(x)' %ilayer
-		elif isinstance(self.post,str):
-			return 'x = F.%s(self.convlayer_%03d(x))' %(self.post,ilayer)
-		else:
-			print('Error with post processing of conv layer %d' %ilayer)
-			return 'x = self.convlayer_%03d(x)' %ilayer
-
-	def __get_params__(self):
-		params = {}
-		params['name'] = self.__name__
-		params['kernel_size'] = self.kernel_size
-		params['post'] = self.post
-		return params
-
-	def __init_from_dict__(self,params):
-		self.kernel_size = params['kernel_size']
-		self.post = params['post']
-
-	def __human_readable_str__(self,ilayer):
-		return '#conv layer % 3d: pool | kernel % 2d  post %s' %(ilayer,self.kernel_size,self.post)
-
-#################################
-#	dropout layer
-#################################
-class dropout(object):
-
-	def __init__(self,percent=0.5):
-		self.__name__ = 'dropout'
-		self.percent=percent
-
-	def __def_str__(self,ilayer):
-		return 'self.convlayer_%03d = nn.Dropout3d(%0.1f)' %(ilayer,self.percent)
-
-	@staticmethod
-	def __use_str__(ilayer):
-		return 'x = self.convlayer_%03d(x)' %ilayer
-
-	def __get_params__(self):
-		params = {}
-		params['name'] = self.__name__
-		params['percent'] = self.percent
-		return params
-
-	def __init_from_dict__(self,params):
-		self.percent = params['percent']
-
-	def __human_readable_str__(self,ilayer):
-		return '#conv layer % 3d: drop | percent %0.1f' %(ilayer,self.percent)
-
-#################################
-#	fully connected layer
-#################################
-class fc(object):
-
-	def __init__(self,input_size=-1,output_size=None,post=None):
-
-		self.__name__ = 'fc'
-		self.input_size = input_size
-		self.output_size = output_size
-		self.post = post
-
-	def __def_str__(self,ilayer):
-		if ilayer == 0:
-			return 'self.fclayer_%03d = nn.Linear(size,%d)' %(ilayer,self.output_size)
-		else:
-			return 'self.fclayer_%03d = nn.Linear(%d,%d)' %(ilayer,self.input_size,self.output_size)
-
-	def __use_str__(self,ilayer):
-		if self.post is None:
-			return 'x = self.fclayer_%03d(x)' %ilayer
-		elif isinstance(self.post,str):
-			return 'x = F.%s(self.fclayer_%03d(x))' %(self.post,ilayer)
-		else:
-			print('Error with post processing of conv layer %d' %ilayer)
-			return 'x = self.fclayer_%03d(x)' %ilayer
-
-	def __get_params__(self):
-		params = {}
-		params['name'] = self.__name__
-		params['input_size'] = self.input_size
-		params['output_size'] = self.output_size
-		params['post'] = self.post
-		return params
-
-	def __init_from_dict__(self,params):
-		self.input_size = params['input_size']
-		self.output_size =  params['output_size']
-		self.post = params['post']
-
-	def __human_readable_str__(self,ilayer):
-		return '#fc   layer % 3d: fc   | input % 2d  output % 2d  post %s' %(ilayer,self.input_size,self.output_size,self.post)
-
-#################################
 #
 #	MODEL GENERATOR
 #
@@ -162,7 +8,34 @@ class fc(object):
 class NetworkGenerator(object):
 
 	def __init__(self,name='_tmp_model_',fname='_tmp_model_.py',conv_layers=None,fc_layers=None):
+		"""Automatic generation of NN files.
 
+		This class allows for automatic generation of python file containing the definition of
+		torch formatted neural network.
+
+		Args:
+			name (str, optional): name of the model in the python file
+			fname (str, optional): name of the file containing the model
+			conv_layers (list(layers)): list of convolutional layers
+			fc_layers (list(layers)): list of fully connected layers
+
+		Example:
+
+		>>> conv_layers = []
+		>>> conv_layers.append(conv(output_size=4,kernel_size=2,post='relu'))
+		>>> conv_layers.append(pool(kernel_size=2))
+		>>> conv_layers.append(conv(input_size=4,output_size=5,kernel_size=2,post='relu'))
+		>>> conv_layers.append(pool(kernel_size=2))
+		>>>
+		>>> fc_layers = []
+		>>> fc_layers.append(fc(output_size=84,post='relu'))
+		>>> fc_layers.append(fc(input_size=84,output_size=1))
+		>>>
+		>>> MG = NetworkGenerator(name='test',fname='model_test.py',conv_layers=conv_layers,fc_layers=fc_layers)
+		>>> MG.print()
+		>>> MG.write()
+
+		"""
 		# name of the model
 		self.name = name
 
@@ -212,6 +85,7 @@ class NetworkGenerator(object):
 	#######################################
 
 	def write(self):
+		"""Write the model to file."""
 
 		f = open(self.fname,'w')
 		self._write_import(f)
@@ -309,6 +183,8 @@ import torch.nn.functional as F
 
 	# print the definition of the network to screen
 	def print(self):
+		"""Print the model to screen."""
+
 		ndash = 70
 
 		print('#'+'-'*ndash)
@@ -326,6 +202,7 @@ import torch.nn.functional as F
 	#
 	#########################################
 	def get_new_random_model(self):
+		"""Get a new Random Model."""
 
 		# number of conv/fc layers
 		nconv = np.random.choice(self.num_conv_layers)
@@ -421,6 +298,199 @@ import torch.nn.functional as F
 		self.fc_layers.append(current_layer)
 
 
+#################################
+#	CNN layer
+#################################
+class conv(object):
+
+	def __init__(self,input_size=-1,output_size=None,kernel_size=None,post=None):
+		"""Wrapper around the convolutional layer.
+
+		Args:
+			input_size (int, optional): input size (default, let the generator figure it out)
+			output_size (int, optional): output size
+			kernel_size (int, optional): kernel size
+			post (str, optional): post process of the data
+
+		Example :
+
+		>>> conv_layers.append(conv(output_size=4,kernel_size=2,post='relu'))
+		"""
+		self.__name__ = 'conv'
+		self.input_size = input_size
+		self.output_size =  output_size
+		self.kernel_size = kernel_size
+		self.post = post
+
+
+	def __def_str__(self,ilayer):
+		if ilayer == 0:
+			return 'self.convlayer_%03d = nn.Conv3d(input_shape[0],%d,kernel_size=%d)' %(ilayer,self.output_size,self.kernel_size)
+		else:
+			return 'self.convlayer_%03d = nn.Conv3d(%d,%d,kernel_size=%d)' %(ilayer,self.input_size,self.output_size,self.kernel_size)
+
+	def __use_str__(self,ilayer):
+		if self.post is None:
+			return 'x = self.convlayer_%03d(x)' %ilayer
+		elif isinstance(self.post,str):
+			return 'x = F.%s(self.convlayer_%03d(x))' %(self.post,ilayer)
+		else:
+			print('Error with post processing of conv layer %d' %ilayer)
+			return 'x = self.convlayer_%03d(x)' %ilayer
+
+	def __get_params__(self):
+		params = {}
+		params['name'] = self.__name__
+		params['input_size'] = self.input_size
+		params['output_size'] = self.output_size
+		params['kernel_size'] = self.kernel_size
+		params['post'] = self.post
+		return params
+
+	def __init_from_dict__(self,params):
+		self.input_size = params['input_size']
+		self.output_size =  params['output_size']
+		self.kernel_size = params['kernel_size']
+		self.post = params['post']
+
+	def __human_readable_str__(self,ilayer):
+		return '#conv layer % 3d: conv | input % 2d  output % 2d  kernel % 2d  post %s' %(ilayer,self.input_size,self.output_size,self.kernel_size,self.post)
+
+#################################
+#	POOL layer
+#################################
+class pool(object):
+
+	def __init__(self,kernel_size=None,post=None):
+		"""Wrapper around the pool layer.
+
+		Args:
+			kernel_size (int, optional): kernel size
+			post (str, optional): post process of the data
+
+		Example :
+
+		>>> conv_layers.append(pool(kernel_size=2))
+		"""
+		self.__name__ = 'pool'
+		self.kernel_size = kernel_size
+		self.post = post
+
+	def __def_str__(self,ilayer):
+		return 'self.convlayer_%03d = nn.MaxPool3d((%d,%d,%d))' %(ilayer,self.kernel_size,self.kernel_size,self.kernel_size)
+
+	def __use_str__(self,ilayer):
+		if self.post is None:
+			return 'x = self.convlayer_%03d(x)' %ilayer
+		elif isinstance(self.post,str):
+			return 'x = F.%s(self.convlayer_%03d(x))' %(self.post,ilayer)
+		else:
+			print('Error with post processing of conv layer %d' %ilayer)
+			return 'x = self.convlayer_%03d(x)' %ilayer
+
+	def __get_params__(self):
+		params = {}
+		params['name'] = self.__name__
+		params['kernel_size'] = self.kernel_size
+		params['post'] = self.post
+		return params
+
+	def __init_from_dict__(self,params):
+		self.kernel_size = params['kernel_size']
+		self.post = params['post']
+
+	def __human_readable_str__(self,ilayer):
+		return '#conv layer % 3d: pool | kernel % 2d  post %s' %(ilayer,self.kernel_size,self.post)
+
+#################################
+#	dropout layer
+#################################
+class dropout(object):
+
+	def __init__(self,percent=0.5):
+		"""Wrapper around the dropout layer layer.
+
+		Args:
+			percent (float): percent of dropout
+
+		Example :
+
+		>>> fc_layers.append(dropout(precent=0.25))
+		"""
+		self.__name__ = 'dropout'
+		self.percent=percent
+
+	def __def_str__(self,ilayer):
+		return 'self.convlayer_%03d = nn.Dropout3d(%0.1f)' %(ilayer,self.percent)
+
+	@staticmethod
+	def __use_str__(ilayer):
+		return 'x = self.convlayer_%03d(x)' %ilayer
+
+	def __get_params__(self):
+		params = {}
+		params['name'] = self.__name__
+		params['percent'] = self.percent
+		return params
+
+	def __init_from_dict__(self,params):
+		self.percent = params['percent']
+
+	def __human_readable_str__(self,ilayer):
+		return '#conv layer % 3d: drop | percent %0.1f' %(ilayer,self.percent)
+
+#################################
+#	fully connected layer
+#################################
+class fc(object):
+
+	def __init__(self,input_size=-1,output_size=None,post=None):
+		"""Wrapper around the fully conneceted layer.
+
+		Args:
+			input_size (int, optional): input size (default, let the generator figure it out)
+			output_size (int, optional): output size
+			post (str, optional): post process of the data
+
+		Example :
+
+		>>> fc_layers.append(fc(output_size=84,post='relu'))
+		"""
+		self.__name__ = 'fc'
+		self.input_size = input_size
+		self.output_size = output_size
+		self.post = post
+
+	def __def_str__(self,ilayer):
+		if ilayer == 0:
+			return 'self.fclayer_%03d = nn.Linear(size,%d)' %(ilayer,self.output_size)
+		else:
+			return 'self.fclayer_%03d = nn.Linear(%d,%d)' %(ilayer,self.input_size,self.output_size)
+
+	def __use_str__(self,ilayer):
+		if self.post is None:
+			return 'x = self.fclayer_%03d(x)' %ilayer
+		elif isinstance(self.post,str):
+			return 'x = F.%s(self.fclayer_%03d(x))' %(self.post,ilayer)
+		else:
+			print('Error with post processing of conv layer %d' %ilayer)
+			return 'x = self.fclayer_%03d(x)' %ilayer
+
+	def __get_params__(self):
+		params = {}
+		params['name'] = self.__name__
+		params['input_size'] = self.input_size
+		params['output_size'] = self.output_size
+		params['post'] = self.post
+		return params
+
+	def __init_from_dict__(self,params):
+		self.input_size = params['input_size']
+		self.output_size =  params['output_size']
+		self.post = params['post']
+
+	def __human_readable_str__(self,ilayer):
+		return '#fc   layer % 3d: fc   | input % 2d  output % 2d  post %s' %(ilayer,self.input_size,self.output_size,self.post)
 
 
 if __name__== '__main__':

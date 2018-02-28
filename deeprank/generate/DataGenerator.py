@@ -22,44 +22,45 @@ except ImportError:
 
 printif = lambda string,cond: print(string) if cond else None
 
-'''
-Assemble the data set from different sources of  decoys/natives/features/targets
-
-ARGUMENTS
-
-pdb_select
-
-		string that must be contained in the pdb names
-
-pdb_source
-
-		directory or list of directory where to find the pdbs
-		or
-		name or list of pdb names to include in the data
-
-pdb_native
-
-		directory or list of directory where to find the native
-		or
-		name or list of native pdb names
-
-data_augmentation
-
-		None or integers
-		if integers (N), each compound will be copied N times
-		each copy having a different rotation randomly defined
-
-hdf5
-
-		HDF5 file where to store the database
-'''
-
 class DataGenerator(object):
 
 	def __init__(self,pdb_select=None,pdb_source=None,pdb_native=None,
 				 compute_targets = None, compute_features = None,
 		         data_augmentation=None, hdf5='database.h5',logger=None,debug=True):
+		"""Generates the data (features/targets/maps) required for deeprank.
 
+		Args:
+			pdb_select (list(str), optional): List of individual conformation for mapping
+			pdb_source (list(str), optional): List of folders where to find the pdbs for mapping
+			pdb_native (list(str), optional): List of folders where to find the native comformations
+			compute_targets (list(str), optional): List of python files computing the features
+			compute_features (list(str), optional): List of python files computing the features
+			data_augmentation (int, optional): Number of rotation performed one each complex
+			hdf5 (str, optional): name of the hdf5 file where the data is saved
+			logger (None, optional): logger file
+			debug (bool, optional): print debuf info
+
+		Raises:
+		    NotADirectoryError: if the source are not found
+
+		Example :
+
+		>>> from deeprank.generate import *
+		>>> # sources to assemble the data base
+		>>> pdb_source     = ['./1AK4/decoys/']
+		>>> pdb_native     = ['./1AK4/native/']
+		>>> h5file = '1ak4.hdf5'
+		>>>
+		>>> #init the data assembler
+		>>> database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
+		>>> 	                     compute_targets  = ['deeprank.targets.dockQ'],
+		>>> 	                     compute_features = ['deeprank.features.AtomicFeature',
+		>>> 	                                         'deeprank.features.NaivePSSM',
+		>>> 	                                         'deeprank.features.PSSM_IC',
+		>>> 	                                         'deeprank.features.BSA'],
+		>>> 	                     hdf5=h5file)
+
+		"""
 		self.pdb_select  = pdb_select
 		self.pdb_source  = pdb_source or []
 		self.pdb_native  = pdb_native or []
@@ -119,28 +120,35 @@ class DataGenerator(object):
 
 	def create_database(self,verbose=False,remove_error=True,prog_bar=False):
 
-		'''
-		main function for the creation of the database
-		For each molecule, creates the following structure
+		'''Create the hdf5 file architecture and compute the features/targets.
 
-		mol
-		 |_complex
-		 |_native
-		 |_features
-		 |    |_feature_1
-		 |    |_feature_2
-		 |    ...
-		 |_targets
-		 |    |_target_1
-		 |    |_target_2
-		 |    ...
-		 |_grid_points
-		 |_mapped_features
-		 |    |_map_1
-		 |    |_map_2
-		      ....
+		Args:
+			verbose (bool, optional): Print creation details
+			remove_error (bool, optional): remove the groups that errored
+			prog_bar (bool, optional): use tqdm
 
-		'''
+		Raises:
+		    ValueError: If creation of the group errored.
+
+		Example :
+
+		>>> # sources to assemble the data base
+		>>> pdb_source     = ['./1AK4/decoys/']
+		>>> pdb_native     = ['./1AK4/native/']
+		>>> h5file = '1ak4.hdf5'
+		>>>
+		>>> #init the data assembler
+		>>> database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
+		>>> 	                     compute_targets  = ['deeprank.targets.dockQ'],
+		>>> 	                     compute_features = ['deeprank.features.AtomicFeature',
+		>>> 	                                         'deeprank.features.NaivePSSM',
+		>>> 	                                         'deeprank.features.PSSM_IC',
+		>>> 	                                         'deeprank.features.BSA'],
+		>>> 	                     hdf5=h5file)
+		>>>
+		>>> #create new files
+		>>> database.create_database(prog_bar=True)
+		>>> '''
 
 		# open the file
 		self.f5 = h5py.File(self.hdf5,'w')
@@ -292,6 +300,7 @@ class DataGenerator(object):
 		# close the file
 		self.f5.close()
 
+
 #====================================================================================
 #
 #		ADD FEATURES TO AN EXISTING DATASET
@@ -301,9 +310,20 @@ class DataGenerator(object):
 
 	def add_feature(self,prog_bar=True):
 
-		'''
-		Add a feature file to an existing folder arboresence
-		only need an output dir and a feature dictionary
+		''' Add a feature to an existing hdf5 file
+
+		Args:
+			prog_bar (bool, optional): use tqdm
+
+		Example:
+
+		>>> h5file = '1ak4.hdf5'
+		>>>
+		>>> #init the data assembler
+		>>> database = DataGenerator(compute_features  = ['deeprank.features.ResidueDensity'],
+		>>>                          hdf5=h5file)
+		>>>
+		>>> database.add_feature(prog_bar=True)
 		'''
 
 		# get the folder names
@@ -350,10 +370,16 @@ class DataGenerator(object):
 
 
 	def add_unique_target(self,targdict):
-		'''
-		Add identical targets for all the complexes in the datafile
+		'''Add identical targets for all the complexes in the datafile.
+
 		This is usefull if you want to add the binary class of all the complexes
 		created from decoys or natives
+
+		Args:
+			targdict (dict): Example : {'DOCKQ':1.0}
+
+		>>> database = DataGenerator(hdf5='1ak4.hdf5')
+		>>> database.add_unique_target({'DOCKQ':1.0})
 		'''
 		f5 = h5py.File(self.hdf5,'a')
 		for mol in list(f5.keys()):
@@ -365,9 +391,20 @@ class DataGenerator(object):
 
 	def add_target(self,prog_bar=False):
 
-		'''
-		add a target files to an existing folder arboresence
-		only need an output dir and a target dictionary
+		''' Add a target to an existing hdf5 file
+
+		Args:
+			prog_bar (bool, optional): Use tqdm
+
+		Example :
+
+		>>> h5file = '1ak4.hdf5'
+		>>>
+		>>> #init the data assembler
+		>>> database = DataGenerator(compute_targets =['deeprank.targets.binary_class'],
+		>>>                          hdf5=h5file)
+		>>>
+		>>> database.add_target(prog_bar=True)
 		'''
 
 		# name of the hdf5 file
@@ -405,47 +442,6 @@ class DataGenerator(object):
 		# close the file
 		f5.close()
 
-#====================================================================================
-#
-#		REMOVE DATA FROM THE DATA SET
-#
-#====================================================================================
-
-	def remove(self,feature=True,pdb=True,points=True,grid=False):
-
-		'''
-		Remove data from the data set
-		Equivalent to the cleandata command line tool
-		'''
-
-		printif('Remove features',self.debug)
-
-		# name of the hdf5 file
-		f5 = h5py.File(self.hdf5,'a')
-
-		# get the folder names
-		mol_names = f5.keys()
-
-		for name in mol_names:
-
-			mol_grp = f5[name]
-
-			if feature and 'features' in mol_grp:
-				del mol_grp['features']
-			if pdb and 'complex' in mol_grp and 'native' in mol_grp:
-				del mol_grp['complex']
-				del mol_grp['native']
-			if points and 'grid_points' in mol_grp:
-				del mol_grp['grid_points']
-			if grid and 'mapped_features' in mol_grp:
-				del mol_grp['mapped_features']
-
-		f5.close()
-
-		# reclaim the space
-		os.system('h5repack %s _tmp.h5py' %self.hdf5)
-		os.system('mv _tmp.h5py %s' %self.hdf5)
-
 
 #====================================================================================
 #
@@ -464,48 +460,38 @@ class DataGenerator(object):
 		             prog_bar=True,grid_prog_bar=False,
 		             remove_error=True):
 
-		'''
-		Generate the input/output data on the grids for a series of prot-prot conformations
-		The calculation is actually performed by the gridtools class in GridTools.py
+		''' Map the feature on a grid of points centered at the interface
 
-		ARGUMENTS:
+		Args:
+			grid_info (dict): Informaton for the grid see deeprank.generate.GridTool.py for details
+			cuda (bool, optional): Use CUDA
+			gpu_block (None, optional): GPU block size to be used
+			cuda_kernel (str, optional): filename containing CUDA kernel
+			cuda_func_name (str, optional): The name of the function in the kernel
+			try_sparse (bool, optional): Try to save the grids as sparse format
+			reset (bool, optional): remove grids if some are already present
+			use_tmpdir (bool, optional): use a scratch directory
+			time (bool, optional): time the mapping process
+			prog_bar (bool, optional): use tqdm for each molecule
+			grid_prog_bar (bool, optional): use tqdm for each grid
+			remove_error (bool, optional): remove the data that errored
 
-		grid info
+		Example :
 
-				dictionay containing the grid information
-				see deeprank.generate.GridTool.py for details
-
-		cuda
-				Use CUDA for the mapping
-
-		gpu_block
-
-				Define the the gpu block size to be uses
-				e.g. [8,8,8]
-
-		cuda_kernel
-
-				CUDA kernel file to be compiled and used for the mapping
-
-		cuda_func_name
-
-				CUDA function present in the kernel to be used
-				for the mapping of the features
-
-		try_sparse
-
-				Store the mapped features in a sparse formar
-				See deeprank.tools.sparse.py for details
-
-		reset
-				Boolean to force the removal of all data
-
-
-		use_tmpdir
-				Use the tmp dir to export the data
-				to avoid transferring files between computing and head nodes
+		>>> #init the data assembler
+		>>> database = DataGenerator(hdf5='1ak4.hdf5')
+		>>>
+		>>> # map the features
+		>>> grid_info = {
+		>>> 	'number_of_points' : [30,30,30],
+		>>> 	'resolution' : [1.,1.,1.],
+		>>> 	'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
+		>>> }
+		>>>
+		>>> database.map_features(grid_info,try_sparse=True,time=False,prog_bar=True)
 
 		'''
+
 		# default CUDA
 		cuda_func = None
 		cuda_atomic = None
@@ -613,15 +599,76 @@ class DataGenerator(object):
 
 #====================================================================================
 #
+#		REMOVE DATA FROM THE DATA SET
+#
+#====================================================================================
+
+	def remove(self,feature=True,pdb=True,points=True,grid=False):
+
+		'''Remove data from the data set.
+
+		Equivalent to the cleandata command line tool. Once the data has been
+		removed from the file it is impossible to add new features/targets
+
+		Args:
+			feature (bool, optional): Remove the features
+			pdb (bool, optional): Remove the pdbs
+			points (bool, optional): remove teh grid points
+			grid (bool, optional): remove the maps
+
+		'''
+
+		printif('Remove features',self.debug)
+
+		# name of the hdf5 file
+		f5 = h5py.File(self.hdf5,'a')
+
+		# get the folder names
+		mol_names = f5.keys()
+
+		for name in mol_names:
+
+			mol_grp = f5[name]
+
+			if feature and 'features' in mol_grp:
+				del mol_grp['features']
+			if pdb and 'complex' in mol_grp and 'native' in mol_grp:
+				del mol_grp['complex']
+				del mol_grp['native']
+			if points and 'grid_points' in mol_grp:
+				del mol_grp['grid_points']
+			if grid and 'mapped_features' in mol_grp:
+				del mol_grp['mapped_features']
+
+		f5.close()
+
+		# reclaim the space
+		os.system('h5repack %s _tmp.h5py' %self.hdf5)
+		os.system('mv _tmp.h5py %s' %self.hdf5)
+
+
+
+
+
+#====================================================================================
+#
 #		Simply tune or test the kernel
 #
 #====================================================================================
 
-	def tune_cuda_kernel(self,grid_info,cuda_kernel='kernel_map.c',func='gaussian'):
+	def _tune_cuda_kernel(self,grid_info,cuda_kernel='kernel_map.c',func='gaussian'):
 
 		'''
 		Tune the CUDA kernel using the kernel tuner
 		http://benvanwerkhoven.github.io/kernel_tuner/
+
+		Args:
+			grid_info (dict): information for the grid definition
+			cuda_kernel (str, optional): file containing the kernel
+			func (str, optional): function in the kernel to be used
+
+		Raises:
+		    ValueError: If the tuner has not been used
 		'''
 
 
@@ -683,10 +730,19 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-	def test_cuda(self,grid_info,gpu_block=8,cuda_kernel='kernel_map.c',func='gaussian'):
+	def _test_cuda(self,grid_info,gpu_block=8,cuda_kernel='kernel_map.c',func='gaussian'):
 
 		'''
 		Test the CUDA kernel
+
+		Args:
+			grid_info (dict): Information for the grid definition
+			gpu_block (int, optional): GPU block size to be used
+			cuda_kernel (str, optional): File containing the kernel
+			func (str, optional): function in the kernel to be used
+
+		Raises:
+		    ValueError: If the kernel has not been installed
 		'''
 
 		from time import time
@@ -700,8 +756,8 @@ class DataGenerator(object):
 		# get the cuda function
 		npts = grid_info['number_of_points']
 		res = grid_info['resolution']
-		module = self.compile_cuda_kernel(cuda_kernel,npts,res)
-		cuda_func = self.get_cuda_function(module,func)
+		module = self._compile_cuda_kernel(cuda_kernel,npts,res)
+		cuda_func = self._get_cuda_function(module,func)
 
 		# define the grid
 		center_contact = np.zeros(3)
@@ -746,8 +802,17 @@ class DataGenerator(object):
 #====================================================================================
 
 	@staticmethod
-	def compile_cuda_kernel(cuda_kernel,npts,res):
+	def _compile_cuda_kernel(cuda_kernel,npts,res):
+		"""Compile the cuda kernel
 
+		Args:
+			cuda_kernel (str): filename
+			npts (tuple(int)): number of grid points in each direction
+			res (tuple(float)): resolution in each direction
+
+		Returns:
+		    compiler.SourceModule: compiled kernel
+		"""
 		# get the cuda kernel path
 		kernel = os.path.dirname(os.path.abspath(__file__)) + '/' + cuda_kernel
 		kernel_code_template = open(kernel, 'r').read()
@@ -758,13 +823,30 @@ class DataGenerator(object):
 		return mod
 
 	@staticmethod
-	def get_cuda_function(module,func_name):
+	def _get_cuda_function(module,func_name):
+		"""Get a single function from the compiled kernel
+
+		Args:
+			module (compiler.SourceModule): compiled kernel module
+			func_name (str): Name of the funtion
+
+		Returns:
+		    func: cuda function
+		"""
 		cuda_func = module.get_function(func_name)
 		return cuda_func
 
 	# tranform the kernel to a tunable one
 	@staticmethod
 	def _tunable_kernel(kernel):
+		"""Make a tunale kernel
+
+		Args:
+		 	kernel (str): String of the kernel
+
+		Returns:
+		    TYPE: tunable kernel
+		"""
 		switch_name = { 'blockDim.x' : 'block_size_x', 'blockDim.y' : 'block_size_y','blockDim.z' : 'block_size_z' }
 		for old,new in switch_name.items():
 			kernel = kernel.replace(old,new)
@@ -778,6 +860,7 @@ class DataGenerator(object):
 #===================================================================================
 
 	def _filter_cplx(self):
+		"""Filter the name of the complexes."""
 
 		# read the class ID
 		f = open(self.pdb_select)
@@ -803,7 +886,14 @@ class DataGenerator(object):
 
 	@staticmethod
 	def _compute_features(feat_list,pdb_data,featgrp,featgrp_raw):
+		"""Compute the features
 
+		Args:
+			feat_list (list(str)): list of function name
+			pdb_data (bytes): PDB translated in btes
+			featgrp (str): name of the group where to store the xyz feature
+			featgrp_raw (str): name of the group where to store the raw feature
+		"""
 		for feat in feat_list:
 			feat_module = importlib.import_module(feat,package=None)
 			feat_module.__compute_feature__(pdb_data,featgrp,featgrp_raw)
@@ -818,7 +908,13 @@ class DataGenerator(object):
 
 	@staticmethod
 	def _compute_targets(targ_list,pdb_data,targrp):
+		"""Compute the targets
 
+		Args:
+			targ_list (list(str)): list of function name
+			pdb_data (bytes): PDB translated in btes
+			targrp (str): name of the group where to store the targets
+		"""
 		for targ in targ_list:
 			targ_module = importlib.import_module(targ,package=None)
 			targ_module.__compute_target__(pdb_data,targrp)
@@ -831,7 +927,13 @@ class DataGenerator(object):
 #====================================================================================
 	@staticmethod
 	def _add_pdb(molgrp,pdbfile,name):
+		""" Add a pdb to a molgrp.
 
+		Args:
+			molgrp (str): mopl group where tp add the pdb
+			pdbfile (str): psb file to add
+			name (str): dataset name in the hdf5 molgroup
+		"""
 		# read the pdb and extract the ATOM lines
 		with open(pdbfile,'r') as fi:
 			data = [line.split('\n')[0] for line in fi if line.startswith('ATOM')]
@@ -848,8 +950,18 @@ class DataGenerator(object):
 	# add a rotated pdb structure to the database
 	@staticmethod
 	def _add_aug_pdb(molgrp,pdbfile,name,axis,angle):
+		"""Add augmented pdbs to the dataset
 
+		Args:
+			molgrp (str): name of the molgroup
+			pdbfile (str): pdb file name
+			name (str): name of the dataset
+			axis (list(float)): axis of rotation
+			angle (folat): angle of rotation
 
+		Returns:
+		    list(float): center of the molecule
+		"""
 		# create tthe sqldb and extract positions
 		sqldb = pdb2sql(pdbfile)
 
@@ -891,7 +1003,14 @@ class DataGenerator(object):
 	# rotate th xyz-formatted feature in the database
 	@staticmethod
 	def _rotate_feature(molgrp,axis,angle,center):
+		"""Rotate the raw feature values
 
+		Args:
+			molgrp (str): name pf the molgrp
+			axis (list(float)): axis of rotation
+			angle (float): angle of rotation
+			center (list(float)): center of rotation
+		"""
 		feat = list(molgrp['features'].keys())
 		for fn in feat:
 
@@ -921,7 +1040,12 @@ class DataGenerator(object):
 	# get rotation axis and angle
 	@staticmethod
 	def _get_aug_rot():
+		"""Get the rotation angle/axis
 
+		Returns:
+			list(float): axis of rotation
+			float: angle of rotation
+		"""
 		# define the axis
 		# uniform distribution on a sphere
 		# http://mathworld.wolfram.com/SpherePointPicking.html

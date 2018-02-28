@@ -1,4 +1,3 @@
-#import subprocess as sp
 import os
 import numpy as np
 
@@ -21,19 +20,35 @@ printif = lambda string,cond: print(string) if cond else None
 
 class NaivePSSM(FeatureClass):
 
-	'''
-	Sub Class that deals with the PSSM information
-	I don't quite know how to do that so it its the bare minimum
-
-	More advanced methods could be developped see e.g
-	Simplified Sequence-based method for ATP-binding prediction using contextual local evolutionary conservation
-	Algorithms for Molecular Biology 2014 9:7
-
-	USAGE
-
-	'''
-
 	def __init__(self,mol_name=None,pdbfile=None,pssm_path=None,nmask=17,nsmooth=3,debug=False):
+
+		'''Compute compressed PSSM data.
+
+		The method is adapted from:
+		Simplified Sequence-based method for ATP-binding prediction using contextual local evolutionary conservation
+		Algorithms for Molecular Biology 2014 9:7
+
+		Args:
+			mol_name (str): name of the molecule
+			pdbfile (str): name of the dbfile
+			pssm_path (str): path to the pssm data
+			nmask (int, optional):
+			nsmooth (int, optional):
+
+		Example:
+
+		>>> path = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/PSSM_newformat/'
+		>>> pssm = NaivePSSM(mol_name = '2ABZ', pdbfile='2ABZ_1w.pdb',pssm_path=path)
+		>>> 
+		>>> # get the surface accessible solvent area
+		>>> pssm.get_sasa()
+		>>> 
+		>>> # get the pssm smoothed sum score
+		>>> pssm.read_PSSM_data()
+		>>> pssm.process_pssm_data()
+		>>> pssm.get_feature_value()
+		>>> print(pssm.feature_data_xyz)
+		'''
 
 		super().__init__("Residue")
 
@@ -49,14 +64,17 @@ class NaivePSSM(FeatureClass):
 			self.mol_name = os.path.splitext(pdbfile)[0]
 
 	def get_sasa(self):
+		"""Get the sasa of the residues."""
 		sasa = SASA(self.pdbfile)
 		self.sasa = sasa.neighbor_vector()
 
 	@staticmethod
 	def get_mol_name(mol_name):
+		"""Get the bared mol name."""
 		return mol_name.split('_')[0]
 
 	def read_PSSM_data(self):
+		"""Read the PSSM data."""
 
 		names = os.listdir(self.pssm_path)
 		fname = [n for n in names if n.find(self.molname)==0]
@@ -78,6 +96,7 @@ class NaivePSSM(FeatureClass):
 		self.pssm_data = np.array(raw_data)[:,3:].astype(np.float)
 
 	def process_pssm_data(self):
+		"""Process the PSSM data."""
 
 		self.pssm_data = self._mask_pssm(self.pssm_data,nmask=self.nmask)
 		self.pssm_data = self._filter_pssm(self.pssm_data)
@@ -117,6 +136,7 @@ class NaivePSSM(FeatureClass):
 
 
 	def get_feature_value(self,contact_only=True):
+		"""get the feature value."""
 
 		sql = pdb2sql(self.pdbfile)
 		xyz_info = sql.get('chainID,resSeq,resName',name='CB')

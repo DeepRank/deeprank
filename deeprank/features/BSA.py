@@ -11,42 +11,45 @@ except ImportError:
 
 class BSA(FeatureClass):
 
-	'''
-	Class to compute the burried surface area
-
-
-
-	Freesasa is required
-
-	# get the code and go in its dir from github (some issues with configure)
-	git clone https://github.com/mittinatten/freesasa.git
-	cd freesasa
-	autoconf -i configure.ac
-
-	# OR dowload it directly (preferred method)
-	wget http://freesasa.github.io/freesasa-2.0.2.tar.gz
-	tar -xvf freesasa-2.0.2.tar.gz
-
-	# go there
-	cd freesasa
-
-	# configure with fPIC flag on Ubuntu
-	./configure --enable-python-bindings CFLAGS=-fPIC
-
-	# make the code possibly sudo that
-	make
-	make install
-
-	# If the install of the python bindings fails
-	# because no python (problem with anaconda)
-	cd ./bindings/python
-	python setup.py install
-
-
-
-	'''
-
 	def __init__(self,pdb_data,chainA='A',chainB='B'):
+
+		'''Compute the burried surface area feature
+
+		Freesasa is required for this feature.
+
+		Install Freesasa option 1
+
+		>>> git clone https://github.com/mittinatten/freesasa.git
+		>>> cd freesasa
+		>>> autoconf -i configure.ac``
+
+		Install Freesasa option 2 (preferred)
+
+		>>> wget http://freesasa.github.io/freesasa-2.0.2.tar.gz
+		>>> tar -xvf freesasa-2.0.2.tar.gz
+		>>> cd freesasa
+		>>> ./configure --enable-python-bindings CFLAGS=-fPIC
+		>>> make
+		>>> make install
+
+		If the install of the python bindings fails because no python (problem with anaconda)
+
+		>>> cd ./bindings/python
+		>>> python setup.py install
+
+		Args :
+			pdb_data (list(byte) or str): pdb data or filename of the pdb
+			chainA (str, optional): name of the first chain
+			chainB (str, optional): name of the second chain
+
+		Example :
+
+		>>> bsa = BSA('1AK4.pdb')
+		>>> bsa.get_structure()
+		>>> bsa.get_contact_residue_sasa()
+		>>> bsa.sql.close()
+
+		'''
 
 		self.pdb_data = pdb_data
 		self.sql = pdb2sql(pdb_data)
@@ -59,6 +62,7 @@ class BSA(FeatureClass):
 		freesasa.setVerbosity(freesasa.nowarnings)
 
 	def get_structure(self):
+		"""Get the pdb structure of the molecule."""
 
 		# we can have a str or a list of bytes as input
 		if isinstance(self.pdb_data,str):
@@ -82,6 +86,7 @@ class BSA(FeatureClass):
 			self.result_chains[label] = freesasa.calc(self.chains[label])
 
 	def get_contact_residue_sasa(self):
+		"""Compute the feature value."""
 
 		bsa_data = {}
 		bsa_data_xyz = {}

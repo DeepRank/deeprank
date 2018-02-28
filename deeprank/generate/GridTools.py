@@ -1,3 +1,4 @@
+
 import numpy as np
 import subprocess as sp
 import os, sys
@@ -21,94 +22,6 @@ printif = lambda string,cond: print(string) if cond else None
 # the main gridtool class
 class GridTools(object):
 
-	'''
-
-	Map the feature of a complex on the grid
-
-
-	ARGUMENTS
-
-	molgrp
-
-			the name of the group of the molecule in the HDF5 file
-
-	hdf5_file
-
-			the file handler of th HDF5 file where to store the grids
-
-	number_of_points
-
-			the number of points we want in each direction of the grid
-
-	resolution
-
-			the distance (in Angs) between two points we want.
-
-	atomic_densities
-
-			dictionary of atom types cand their vdw radius
-			exemple {'CA':3.5, 'CB':3.0}
-			The correspondign atomic densities will be mapped on the grid
-			and exported to the hdf5 file
-
-	feature
-
-			Name of the features to be mapped. By default all the features
-			present in hdf5_file['<molgrp>/features/] will be mapped
-
-	atomic_densities_mode
-	feature_mode
-
-			The mode for mapping
-			'sum'  --> chainA + chainB
-			'diff' --> chainA - chainB
-			'ind'  --> chainA and chainB in separate grids
-
-	contact distance
-			the dmaximum distance between two contact atoms default 8.5 A
-
-
-	cuda
-			Use CUDA or not
-
-	gpu_block
-			GPU block size to be used e.g. [8,8,8]
-
-
-	cuda_func
-			Name of the CUDA function to be used for the mapping
-			of the features. Must be present in kernel_cuda.c
-
-	cuda_atomic
-			Name of the CUDA function to be used for the mapping
-			of the atomic densities. Must be present in kernel_cuda.c
-
-	prog_bar
-			print progression bar for individual grid (default False)
-
-	time
-			print timimg statistic for individual grid (default False)
-
-	try_sparse
-			Try to store the matrix in sparse format (default True)
-
-	logger
-			logger
-
-
-	USAGE
-
-
-	grid = GridTools(mogrp='1AK4_1w',hdf5_file=fhandle
-		             atomic_densities={'CA':3.5},
-		             number_of_points = [30,30,30],
-		             resolution = [1.,1.,1.])
-
-
-	OUTPUT : all files are stored in the HDF5 file
-
-	'''
-
 	def __init__(self, molgrp,
 				number_of_points = 30,resolution = 1.,
 				atomic_densities=None, atomic_densities_mode='ind',
@@ -117,10 +30,34 @@ class GridTools(object):
 				cuda=False, gpu_block=None, cuda_func=None, cuda_atomic=None,
 				prog_bar = False,time=False,try_sparse=True,logger=None):
 
+
+
+		"""Map the feature of a complex on the grid.
+
+		Args:
+			molgrp (str): name of the group of the molecule in the HDF5 file
+			number_of_points (int, optional): number of points we want in each direction of the grid
+			resolution (float, optional): distance (in Angs) between two points
+			atomic_densities (dict, optional): dictionary of atom types cand their vdw radius exemple {'CA':3.5, 'CB':3.0}
+			atomic_densities_mode (str, optional): Mode for mapping (deprecated must be 'ind')
+			feature (None, optional): Name of the features to be mapped. By default all the features present in hdf5_file['<molgrp>/features/] will be mapped
+			feature_mode (str, optional): Mode for mapping (deprecated must be 'ind')
+			contact_distance (float, optional): the dmaximum distance between two contact atoms default 8.5 A
+			hdf5_file (str, optional): the file handler of th HDF5 file where to store the grids
+			cuda (bool, optional): Use CUDA or not
+			gpu_block (tuple(int), optional): GPU block size to use
+			cuda_func (None, optional): Name of the CUDA function to be used for the mapping of the features. Must be present in kernel_cuda.c
+			cuda_atomic (None, optional): Name of the CUDA function to be used for the mapping of the atomic densities. Must be present in kernel_cuda.c
+			prog_bar (bool, optional): print progression bar for individual grid (default False)
+			time (bool, optional): print timimg statistic for individual grid (default False)
+			try_sparse (bool, optional): Try to store the matrix in sparse format (default True)
+			logger (None, optional): logger
+		"""
+
 		# mol file
 		self.molgrp = molgrp
 
-		# feature requestedOO
+		# feature requested
 		self.atomic_densities = atomic_densities
 		self.feature = feature
 
@@ -208,6 +145,7 @@ class GridTools(object):
 	################################################################
 
 	def create_new_data(self):
+		"""Create new feature for a given complex."""
 
 		# get the position/atom type .. of the complex
 		self.read_pdb()
@@ -233,6 +171,7 @@ class GridTools(object):
 	################################################################
 
 	def update_feature(self):
+		"""Update existing feature in a complex."""
 
 		# get the position/atom type .. of the complex
 		self.read_pdb()
@@ -267,11 +206,14 @@ class GridTools(object):
 
 
 	def read_pdb(self):
+		""" Create a sql databse for the pdb."""
+
 		self.sqldb = pdb2sql(self.molgrp['complex'].value)
 
 
 	# get the contact atoms
 	def get_contact_atoms(self):
+		"""Get the contact atoms."""
 
 		xyz1 = np.array(self.sqldb.get('x,y,z',chainID='A'))
 		xyz2 = np.array(self.sqldb.get('x,y,z',chainID='B'))
@@ -301,6 +243,7 @@ class GridTools(object):
 
 	# add all the residue features to the data
 	def add_all_features(self):
+		"""Add all the features toa given molecule."""
 
 		#map the features
 		if self.feature is not None:
@@ -317,6 +260,7 @@ class GridTools(object):
 
 	# add all the atomic densities to the data
 	def add_all_atomic_densities(self):
+		"""Add all atomic densities."""
 
 		# if we wnat the atomic densisties
 		if self.atomic_densities is not None:
@@ -341,6 +285,7 @@ class GridTools(object):
 	################################################################
 
 	def define_grid_points(self):
+		"""Define the grid points."""
 
 		printif('-- Define %dx%dx%d grid ' %(self.npts[0],self.npts[1],self.npts[2]),self.time)
 		printif('-- Resolution of %1.2fx%1.2fx%1.2f Angs' %(self.res[0],self.res[1],self.res[2]),self.time)
@@ -369,7 +314,14 @@ class GridTools(object):
 
 	# compute all the atomic densities data
 	def map_atomic_densities(self,only_contact=True):
+		"""Map the atomic densities to the grid
 
+		Args:
+		    only_contact (bool, optional): Map only the contact atoms
+
+		Raises:
+		    ImportError: Description
+		"""
 		mode = self.atomic_densities_mode
 		printif('-- Map atomic densities on %dx%dx%d grid (mode=%s)'%(self.npts[0],self.npts[1],self.npts[2],mode),self.time)
 
@@ -470,9 +422,18 @@ class GridTools(object):
 	# compute the atomic denisties on the grid
 	def densgrid(self,center,vdw_radius):
 
-		'''
-		the formula is equation (1) of the Koes paper
+		''' Function to map individual atomic density on the grid.
+
+
+		The formula is equation (1) of the Koes paper
 		Protein-Ligand Scoring with Convolutional NN Arxiv:1612.02751v1
+
+		Args:
+		    center (list(float)): position of the atoms
+		    vdw_radius (float): vdw radius of the atom
+
+		Returns:
+		    TYPE: np.array (mapped density)
 		'''
 
 		x0,y0,z0 = center
@@ -491,12 +452,24 @@ class GridTools(object):
 	# map residue a feature on the grid
 	def map_features(self, featlist, transform=None):
 
-		'''
+		'''Map individual feature to the grid.
+
 		For residue based feature the feature file must be of the format
 		chainID    residue_name(3-letter)     residue_number     [values]
 
 		For atom based feature it must be
 		chainID    residue_name(3-letter)     residue_number   atome_name  [values]
+
+		Args:
+		    featlist (list(str)): list of features to be mapped
+		    transform (callable, optional): transformation of the feature (?)
+
+		Returns:
+		    np.array: Mapped features
+
+		Raises:
+		    ImportError: Description
+		    ValueError: Description
 		'''
 
 		# declare the total dictionary
@@ -692,10 +665,19 @@ class GridTools(object):
 	# compute the a given feature on the grid
 	def featgrid(self,center,value,type_='fast_gaussian'):
 
-		'''
-		map a given feature (atomic or residue) on the grid
-		center is the center  of the fragment (pos of the atom or center of the resiude)
-		value is the value of the feature
+		'''Map an individual feature (atomic or residue) on the grid
+
+
+		Args:
+		    center (list(float)): position of the feature center
+		    value (float): value of the feature
+		    type_ (str, optional): method to map
+
+		Returns:
+		    np.array: Mapped feature
+
+		Raises:
+		    ValueError: Description
 		'''
 
 		# shortcut for th center
@@ -777,8 +759,8 @@ class GridTools(object):
 	################################################################
 
 	def export_grid_points(self):
+		"""export the grid points to the hdf5 file."""
 
-		# or to the the hdf5
 		grd = self.hdf5.require_group(self.mol_basename+'/grid_points')
 		grd.create_dataset('x',data=self.x)
 		grd.create_dataset('y',data=self.y)
@@ -787,7 +769,12 @@ class GridTools(object):
 
 	# save the data in the hdf5 file
 	def hdf5_grid_data(self,dict_data,data_name):
+		"""Save the mapped feature to the hdf5 file
 
+		Args:
+		    dict_data (dict): feature values stored as a dict
+		    data_name (str): feature name
+		"""
 		# get the group og the feature
 		feat_group = self.hdf5.require_group(self.mol_basename+'/mapped_features/'+data_name)
 

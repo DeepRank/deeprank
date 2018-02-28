@@ -11,7 +11,7 @@ def test_generate():
 	h5file = '1ak4.hdf5'
 
 	#init the data assembler
-	database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
+	database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,
 		                     compute_targets  = ['deeprank.targets.dockQ'],
 		                     compute_features = ['deeprank.features.AtomicFeature',
 		                                         'deeprank.features.NaivePSSM',
@@ -56,7 +56,7 @@ def test_add_target():
 	database = DataGenerator(pdb_source=None,pdb_native=None,data_augmentation=None,
 		                     compute_targets  = ['deeprank.targets.binary_class'], hdf5=h5file)
 
-	t0 =time()
+	t0 = time()
 	print('{:25s}'.format('Add new target in database') + database.hdf5)
 	database.add_target(prog_bar=True)
 	print(' '*25 + '--> Done in %f s.' %(time()-t0))

@@ -17,12 +17,24 @@ printif = lambda string,cond: print(string) if cond else None
 
 class PSSM_IC(FeatureClass):
 
-	'''
-	Deals with the information content of the PSSM
-	'''
-
 	def __init__(self,mol_name=None,pdbfile=None,pssmic_path=None,debug=False):
+		"""Compute the information content of the PSSM.
 
+		Args:
+			mol_name (str): name of the molecule
+			pdbfile (str): name of the dbfile
+			pssmic_path (str): path to the pssm data
+			debug (bool, optional): print debug info
+
+		Example :
+
+		>>> path = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/PSSM_IC/'
+		>>> pssmic = PSSM_IC(mol_name = '1AK4', pdbfile='1AK4.pdb',pssmic_path=path)
+		>>> 
+		>>> # get the pssm smoothed sum score
+		>>> pssmic.read_PSSMIC_data()
+		>>> pssmic.get_feature_value()
+		"""
 		super().__init__("Residue")
 
 		self.mol_name = mol_name
@@ -33,9 +45,11 @@ class PSSM_IC(FeatureClass):
 
 	@staticmethod
 	def get_mol_name(mol_name):
+		"""Get bare mol name."""
 		return mol_name.split('_')[0]
 
 	def read_PSSMIC_data(self):
+		""" Read the PSSM data."""
 
 		names = os.listdir(self.pssmic_path)
 		fname = [n for n in names if n.find(self.molname)==0]
@@ -57,6 +71,7 @@ class PSSM_IC(FeatureClass):
 		self.pssmic_data = np.array(raw_data)[:,-1].astype(np.float)
 
 	def get_feature_value(self,contact_only=True):
+		"""Compute the feature value."""
 
 		sql = pdb2sql(self.pdbfile)
 		xyz_info = sql.get('chainID,resSeq,resName',name='CB')
