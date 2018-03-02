@@ -11,7 +11,7 @@ These module allows to :
 
 
 The documentation of the module can be found on readthedocs
-http://deeprank.readthedocs.io/en/latest/advTuto.html
+http://deeprank.readthedocs.io/en/latest/
 
 ## 1 . Installation
 
