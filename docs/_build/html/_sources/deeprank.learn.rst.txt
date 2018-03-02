@@ -34,14 +34,14 @@ The details of the submodules are presented here. The two main ones are ``deepra
 :note: The module ``deeprank.learn.modelGenerator`` can automatically create the file defining the neural network architecture.
 
 DataSet : Create a torch dataset
--------------------------------
+---------------------------------
 
 .. automodule:: deeprank.learn.DataSet
     :members:
     :undoc-members:
 
 NeuralNet : perform deep learning
----------------------------------
+----------------------------------
 
 .. automodule:: deeprank.learn.NeuralNet
     :members:
@@ -49,7 +49,7 @@ NeuralNet : perform deep learning
 
 
 modelGenerator : automatically generate NN file
---------------------------------------
+------------------------------------------------
 
 .. automodule:: deeprank.learn.modelGenerator
     :members:

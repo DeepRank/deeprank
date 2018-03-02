@@ -87,9 +87,9 @@
 </tr>
 </tbody>
 </table>
-<div class="section" id="dataset-create-a-torch-dataset">
-<h2>DataSet : Create a torch dataset<a class="headerlink" href="#dataset-create-a-torch-dataset" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-deeprank.learn.DataSet"></span><dl class="class">
+<div class="section" id="module-deeprank.learn.DataSet">
+<span id="dataset-create-a-torch-dataset"></span><h2>DataSet : Create a torch dataset<a class="headerlink" href="#module-deeprank.learn.DataSet" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
 <dt id="deeprank.learn.DataSet.DataSet">
 <em class="property">class </em><code class="descclassname">deeprank.learn.DataSet.</code><code class="descname">DataSet</code><span class="sig-paren">(</span><em>database</em>, <em>test_database=None</em>, <em>select_feature='all'</em>, <em>select_target='DOCKQ'</em>, <em>normalize_features=True</em>, <em>normalize_targets=True</em>, <em>dict_filter=None</em>, <em>pair_chain_feature=None</em>, <em>transform_to_2D=False</em>, <em>projection=0</em>, <em>grid_shape=None</em>, <em>clip_features=True</em>, <em>clip_factor=10.0</em>, <em>tqdm=False</em>, <em>process=True</em><span class="sig-paren">)</span><a class="headerlink" href="#deeprank.learn.DataSet.DataSet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates the dataset needed for pytorch.</p>
@@ -176,7 +176,7 @@ by setting <code class="docutils literal"><span class="pre">process=False</span>
 <dl class="method">
 <dt id="deeprank.learn.DataSet.DataSet.check_hdf5_files">
 <code class="descname">check_hdf5_files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#deeprank.learn.DataSet.DataSet.check_hdf5_files" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check if the dat contained in the hdf5 file is ok.</p>
+<dd><p>Check if the data contained in the hdf5 file is ok.</p>
 </dd></dl>
 
 <dl class="method">
@@ -216,6 +216,12 @@ that must be either of the form: { ‘name’ : cond } or None</p>
 <p>Add _chainA, _chainB to each feature names if we have individual storage
 create the dict if selec_features == ‘all’
 create the dict if selec_features[‘XXX’]  == ‘all’</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deeprank.learn.DataSet.DataSet.print_possible_features">
+<code class="descname">print_possible_features</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#deeprank.learn.DataSet.DataSet.print_possible_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the possible features in the group.</p>
 </dd></dl>
 
 <dl class="method">
@@ -362,7 +368,7 @@ the stack along the x dimension is considered as extra channels</p>
 :raises: <code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code> – if dataset format is not recognized</p>
 <dl class="method">
 <dt id="deeprank.learn.NeuralNet.NeuralNet.train">
-<code class="descname">train</code><span class="sig-paren">(</span><em>nepoch=50</em>, <em>divide_trainset=None</em>, <em>hdf5='data.hdf5'</em>, <em>train_batch_size=10</em>, <em>preshuffle=True</em>, <em>export_intermediate=True</em>, <em>num_workers=1</em><span class="sig-paren">)</span><a class="headerlink" href="#deeprank.learn.NeuralNet.NeuralNet.train" title="Permalink to this definition">¶</a></dt>
+<code class="descname">train</code><span class="sig-paren">(</span><em>nepoch=50</em>, <em>divide_trainset=None</em>, <em>hdf5='data.hdf5'</em>, <em>train_batch_size=10</em>, <em>preshuffle=True</em>, <em>export_intermediate=True</em>, <em>num_workers=1</em>, <em>save_model_name='model.pth.tar'</em><span class="sig-paren">)</span><a class="headerlink" href="#deeprank.learn.NeuralNet.NeuralNet.train" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform a simple training of the model. The data set is divided in training/validation sets.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -487,9 +493,9 @@ a positive decoy is a native-like one with a i-rmsd &lt; 4A</dd>
 </dd></dl>
 
 </div>
-<div class="section" id="modelgenerator-automatically-generate-nn-file">
-<h2>modelGenerator : automatically generate NN file<a class="headerlink" href="#modelgenerator-automatically-generate-nn-file" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-deeprank.learn.modelGenerator"></span><dl class="class">
+<div class="section" id="module-deeprank.learn.modelGenerator">
+<span id="modelgenerator-automatically-generate-nn-file"></span><h2>modelGenerator : automatically generate NN file<a class="headerlink" href="#module-deeprank.learn.modelGenerator" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
 <dt id="deeprank.learn.modelGenerator.NetworkGenerator">
 <em class="property">class </em><code class="descclassname">deeprank.learn.modelGenerator.</code><code class="descname">NetworkGenerator</code><span class="sig-paren">(</span><em>name='_tmp_model_'</em>, <em>fname='_tmp_model_.py'</em>, <em>conv_layers=None</em>, <em>fc_layers=None</em><span class="sig-paren">)</span><a class="headerlink" href="#deeprank.learn.modelGenerator.NetworkGenerator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Automatic generation of NN files.</p>
@@ -645,13 +651,14 @@ torch formatted neural network.</p>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">First Steps with DeepRank</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial : Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_deeplearning.html">Tutorial : Deep learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="advTuto.html">Advanced Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deeprank.generate.html">Generate Data</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Deep learning</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#dataset-create-a-torch-dataset">DataSet : Create a torch dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-deeprank.learn.DataSet">DataSet : Create a torch dataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-deeprank.learn.NeuralNet">NeuralNet : perform deep learning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#modelgenerator-automatically-generate-nn-file">modelGenerator : automatically generate NN file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-deeprank.learn.modelGenerator">modelGenerator : automatically generate NN file</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deeprank.features.html">Feature</a></li>

@@ -33,7 +33,7 @@ Structure Similarity: a new ProFit
 
 
 Solvent Accessible Surface Area
-----------------------------
+---------------------------------
 
 .. automodule:: deeprank.tools.sasa
     :members:

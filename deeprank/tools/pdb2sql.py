@@ -237,7 +237,7 @@ class pdb2sql(object):
         # push in the database
         self.c.executemany('INSERT INTO ATOM VALUES ({qm})'.format(qm=qm),data_atom)
 
-    
+
     def _fix_chainID(self):
         """Fix the chain ID if necessary.
 

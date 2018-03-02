@@ -1,16 +1,9 @@
 
-Tutorial
-=========================
+Tutorial : Data Generation
+===========================
 
-This page gives a introduction of the two mains steps user must perform to use DeepRank:
+This page gives a introduction of the data generation process in DeepRank. This is a breakdown of the file ``test/test_generate.py``.
 
-	- Generate data from a series of PDB files
-	- Use this data to train a CNN
-
-The example are based on the test included in the ``test/`` folder.
-
-Data Generation
-------------------
 
 The data generation process allows to compute features and targets of a collections of PDB files and store all the data in a single HDF5 file. The use of HDF5 files not only allows to save diskspace through compression but also reduce I/O time during the deep learning phase.
 
@@ -20,7 +13,12 @@ The file of course starts with
 
 >>> from deeprank.generate import *
 
-That imports all the submodules required to generate data. The generation of the data also require a series of PDB file for which we want to compute features and targets. To specify where these files are located you can simply provide the path of the directory where these files are stored. This is called here ``pdb_source``. In the test file we set:
+That imports all the submodules required to generate data.
+
+Create the database
+---------------------
+
+The generation of the data also require a series of PDB file for which we want to compute features and targets. To specify where these files are located you can simply provide the path of the directory where these files are stored. This is called here ``pdb_source``. In the test file we set:
 
 >>> pdb_source = ['./1AK4/decoys']
 
@@ -52,25 +50,11 @@ The above statement initalize the calss instance but do not compute anything. To
 
 >>> database.create_database(prog_bar=True)
 
-Once you punch that in the code will fo through all the complex specified as input and compute all the feature/targets require in the definition of the class. The next step consists in mapping the features calculated above to a grid of points centered around the molecule interface. Before mapping the feature, we must specify basic information about the grid. This can be done via a dictionnary:
+Once you punch that in the code will fo through all the complex specified as input and compute all the feature/targets require in the definition of the class.
 
-
->>> grid_info = {
->>> 	'number_of_points' : [30,30,30],
->>> 	'resolution' : [1.,1.,1.],
->>> 	'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
->>> }
-
-Here we specify that we want 30 points in each direction with distance of 1 Angs between each points. We must also here sepcify the atomic densities we want. While atomic densities are really a feature of the conformation, they do not require any precalculation unlike, the other features calculated above. Hence they can be directly specified in the ``grid_info``. We will see how to create a feature calculator that does the same job below to illustrate the creation of new features.
-
-We are now able to map all the features we have calculated on the grid. This is simply done with the method call:
-
->>> database.map_features(grid_info,try_sparse=True)
-
-By setting ``try_sparse`` to True the code will try to store the 3D maps as a built-in sparse format. This can seriously reduce the disck space required by the datase. As a result you must have now a file called ``1ak4.hdf5`` that contains all the data of the 10 decoys located in ``1AK4/decoys/``. You can easily explore this file and visualized the data using the DeepXplorer interface (https://github.com/DeepRank/DeepXplorer).
 
 Adding Features/Targets
-------------------------
+-------------------------
 
 Suppose you've finised creating a huge database and you jusr realize you forgot to compute a specific feature or target. Do you have to recompute everything ? Well that would be silly. You can add features and targets to an existing database very simply:
 
@@ -88,84 +72,27 @@ Suppose you've finised creating a huge database and you jusr realize you forgot 
 
 Voila. Here we simply sepcify the name of an existing hdf5 file containing the database and new features/targets to add to this database. The methods ``add_target`` ``add_feature'' are then simply called to add data to the file. Don't forget to map the new features afterwards.
 
-DeepLearning: 3D CNN
------------------------
 
-The deep learning module of DeepRank allows to use the HDF5 files generated above in pyTorch and run simply deep learning experiment using different combinations of conformations, features, targets, network architecture. We will illutrate how the process work using the file ``test/notravis_test_learn.py``
+Map the features
+------------------
+The next step consists in mapping the features calculated above to a grid of points centered around the molecule interface. Before mapping the feature, we must specify basic information about the grid. This can be done via a dictionnary:
 
-The two first lines of the code are to import the module we need
 
->>> from deeprank.learn import *
->>> from deeprank.learn.model3d import cnn
+>>> grid_info = {
+>>> 	'number_of_points' : [30,30,30],
+>>> 	'resolution' : [1.,1.,1.],
+>>> 	'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
+>>> }
 
-The first lines import the ``DataSet`` and ``NeuralNetwork`` class that are in charge of deep learning. The second import a pre-generated 3D convolution neural network. This file has been generated automatically using ``deeprank.learn.modelGenerator``.
+Here we specify that we want 30 points in each direction with distance of 1 Angs between each points. We must also here sepcify the atomic densities we want. While atomic densities are really a feature of the conformation, they do not require any precalculation unlike, the other features calculated above. Hence they can be directly specified in the ``grid_info``. We will see how to create a feature calculator that does the same job below to illustrate the creation of new features.
 
-The first thing we then need to do is to define which database contains the information we want to use to train the network. This is done by:
+We are now able to map all the features we have calculated on the grid. This is simply done with the method call:
 
->>> database = '1ak4.hdf5'
+>>> database.map_features(grid_info,try_sparse=True)
 
-This is the file we have generated above. Note that more than one file can be specified here. Hence the command
+By setting ``try_sparse`` to True the code will try to store the 3D maps as a built-in sparse format. This can seriously reduce the disck space required by the datase. As a result you must have now a file called ``1ak4.hdf5`` that contains all the data of the 10 decoys located in ``1AK4/decoys/``. You can easily explore this file and visualized the data using the DeepXplorer interface (https://github.com/DeepRank/DeepXplorer).
 
->>> database = ['1ak4.hdf5','1atn.hdf5']
 
-will use all the data contained in both of these files to train the network. We can now create an instance of deeprank.DataSet
-
->>> data_set = DataSet(database,
->>>                    select_feature={
->>>                     'AtomicDensities_ind' : 'all',
->>>                     'Feature_ind' : ['coulomb','vdwaals','charge','pssm']},
->>>                    pair_chain_feature=np.add,
->>>                    select_target='IRMSD',
->>>                    dict_filter={'IRMSD':'<4. or >10.'})
-
-On top of the database that specify which files to use we also must specify which features and which targets must be used during the traing. The feature selection is done via the argument ``select_features``. Several options are possible for this argument.
-
-The simplest (and default) option is to use all the features stored in the HDF5 file. To do that simply use:
-
->>> # select all the features
->>> select_feature = 'all'
-
-Most of the time one want to specify which feature to use. We must then use a *dictionary*. As you cans ee in the HDF5 file, the ``mapped_features`` subgroup of each complex contains two groups ``AtomicDensities_ind`` and ``Feature_ind``. We'll forget about the ``_ind`` that is for legacy reasons, but these two groups contains the atomic densities and other features respectively. Therefore the value used in the example above:
-
->>> select_feature={ 'AtomicDensities_ind' : 'all',
->>>                  'Feature_ind' : ['coulomb','vdwaals','charge','pssm']}
-
-Specify that we want to use all the atomic densities and only a few features that are named here. If for example one want to only use the pssm_ic feature then the arguments should be set to:
-
->>> select_feature={'Feature_ind':['pssm_ic']}
-
-As you can see in the HDF5 file the for each feature, the data of chainA and chainB are stored separately. But it is possible to combine the feature of both chains in a single channel via the argument ``pair_chain_feature``. For example here this argument is set to:
-
->>> pair_chain_feature = np.add
-
-which means that the map of chainA and chainB will be added to each other to create a single channel. By default this ``pair_chain_feature=None`` and therefore the individual maps are kept.
-
-You must also specify which target values must be used for the training. It is the IRMSD of the complex. Finally it is possible to screen the complex contained in ``database`` and only select a few via the ``dict_filter`` argument. For example here
-
->>> dict_filter={'IRMSD':'<4. or >10.'}
-
-will only select the complexes whose IRMSD are inferior to 4. and superior to 10. Angs. If one wants to select the complexes with only high dockQ score, one can use
-
->>> dict_filter={'DOCKQ':'>0.2'}
-
-Other filter can be set similarly. We are now all set to start the deep learning experiment. For that we just need to create an instance of the ``NeuralNetwork`` class
-
->>> model = NeuralNet(data_set,cnn)
-
-``data_set`` is the dataset created above and ``cnn`` is the automatically generated network. Other options can be specified here but that will do for now. Creating an instance of ``NeuralNet`` initialize all the required parts to do deep learning. The only thing we therefore need to do is to train the network
-
->>> model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
-
-We specify here the number of epoch, the amount of data used for training (the remaining data is for validation 0.2 here), the batch size and the number of workers (CPU threads) in charge of batch preparation. This will start the training process and output regression plots and the corresponding data ``data.hdf5``.
-
-DeepLearning: 2D CNN
------------------------
-
-Deeprank also allows to transform the 3D volumetric data in 2D data by slicing planes of the data and using each plane as given channel. Very little modification of the code are necessary to do so. The creation of the dataset is identical to the 3D case, you must simply specify ``model_type=2D`` in the definition of the NeuralNet
-
->>> model = NeuralNet(data_set,cnn,model_type='2d')
-
-And that's it. However the ``cnn`` used here also must be a 2D CNN and not a 3D CNN.
 
 
 

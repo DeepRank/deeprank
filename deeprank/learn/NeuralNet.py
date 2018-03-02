@@ -215,7 +215,7 @@ class NeuralNet():
             sys.exit()
 
     def train(self,nepoch=50, divide_trainset=None, hdf5='data.hdf5',train_batch_size = 10,
-              preshuffle = True,export_intermediate=True,num_workers=1):
+              preshuffle = True,export_intermediate=True,num_workers=1,save_model_name = 'model.pth.tar'):
 
         """Perform a simple training of the model. The data set is divided in training/validation sets.
 
@@ -286,6 +286,9 @@ class NeuralNet():
                     num_workers=num_workers)
         self.f5.close()
         print(' --> Training done in ', time.strftime('%H:%M:%S', time.gmtime(time.time()-t0)))
+
+        # save the model
+        self.save_model(filename=os.path.join(self.outdir,save_model_name))
 
     def test(self):
         """ Test a predefined model on a new dataset.

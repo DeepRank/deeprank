@@ -7,11 +7,12 @@ Welcome to DeepRank's documentation!
 ====================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    intro
    tutorial
+   tutorial_deeplearning
    advTuto
    deeprank.generate
    deeprank.learn
