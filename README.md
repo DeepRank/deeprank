@@ -10,6 +10,9 @@ These module allows to :
    * Train convolutional neural networks to predict possible targets (binary class, haddock-score ...) from the mapped feataures
 
 
+The documentation of the module can be found on readthedocs
+http://deeprank.readthedocs.io/en/latest/advTuto.html
+
 ## 1 . Installation
 
 Minimal information to install the module
