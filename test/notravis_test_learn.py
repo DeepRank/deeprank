@@ -24,7 +24,7 @@ def test_learn():
                             #dict_filter={'IRMSD':'<4. or >10.'})
 
 
-  # create the network
+  # create the networkt
   model = NeuralNet(data_set,cnn,model_type='3d',task='reg',
                     cuda=False,plot=True,outdir='./out/')
 
