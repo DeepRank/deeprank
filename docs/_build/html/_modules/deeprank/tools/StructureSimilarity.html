@@ -1,0 +1,1255 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>deeprank.tools.StructureSimilarity &#8212; DeepRank 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">DeepRank 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for deeprank.tools.StructureSimilarity</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">deeprank.tools</span> <span class="k">import</span> <span class="n">pdb2sql</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">time</span><span class="o">,</span><span class="nn">pickle</span>
+<span class="n">printif</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">string</span><span class="p">,</span><span class="n">cond</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span> <span class="k">if</span> <span class="n">cond</span> <span class="k">else</span> <span class="kc">None</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Replacement of ProFit by an internal module for simpler worflow</span>
+
+<span class="sd">    ARGUMENTS</span>
+
+<span class="sd">    decoy</span>
+<span class="sd">            path to a decoy pdb file</span>
+
+<span class="sd">    ref</span>
+<span class="sd">            path to a native pdb file</span>
+
+
+<span class="sd">    METHODS</span>
+
+<span class="sd">    LRMSD Calculation</span>
+
+<span class="sd">            compute_lrmsd_fast</span>
+<span class="sd">            compute_lrmsd_pdb2sql</span>
+
+<span class="sd">    IRMSD Calculation</span>
+
+<span class="sd">            compute_irmsd_fast</span>
+<span class="sd">            compute_irmsd_pdb2sql</span>
+
+<span class="sd">    FNAT Calculation</span>
+
+<span class="sd">            compute_Fnat_fast</span>
+<span class="sd">            compute_Fnat_pdb2sql</span>
+
+<span class="sd">    DockQ calculation</span>
+
+<span class="sd">            compute_DockQScore</span>
+
+<span class="sd">    zone calculation</span>
+
+<span class="sd">            compute_izone</span>
+<span class="sd">            compute_lzone</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="StructureSimilarity"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity">[docs]</a><span class="k">class</span> <span class="nc">StructureSimilarity</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">decoy</span><span class="p">,</span><span class="n">ref</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoy</span> <span class="o">=</span> <span class="n">decoy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="n">ref</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+
+
+    <span class="c1">################################################################################################</span>
+    <span class="c1">#</span>
+    <span class="c1">#   FAST ROUTINE TO COMPUTE THE L-RMSD</span>
+    <span class="c1">#   Require the precalculation of the lzone</span>
+    <span class="c1">#   A dedicated routine is implemented to comoute the lzone</span>
+    <span class="c1">#   if lzone is not given in argument the routine will compute them automatically</span>
+    <span class="c1">#</span>
+    <span class="c1">#################################################################################################</span>
+
+    <span class="c1"># compute the L-RMSD</span>
+<div class="viewcode-block" id="StructureSimilarity.compute_lrmsd_fast"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_lrmsd_fast">[docs]</a>    <span class="k">def</span> <span class="nf">compute_lrmsd_fast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">lzone</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">,</span><span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models</span>
+<span class="sd">              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879</span>
+<span class="sd">        L-RMSD is computed by aligning the longest chain of the decoy to the one of the reference</span>
+<span class="sd">        and computing the RMSD of the shortest chain between decoy and ref</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># create/read the lzone file</span>
+        <span class="k">if</span> <span class="n">lzone</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">resData</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_lzone</span><span class="p">(</span><span class="n">save_file</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">lzone</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compute_lzone</span><span class="p">(</span><span class="n">save_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="n">lzone</span><span class="p">)</span>
+            <span class="n">resData</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_zone</span><span class="p">(</span><span class="n">lzone</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">resData</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_zone</span><span class="p">(</span><span class="n">lzone</span><span class="p">)</span>
+
+        <span class="c1">##################################################</span>
+        <span class="c1"># the check make sure that all the</span>
+        <span class="c1"># atoms are in the correct order</span>
+        <span class="c1"># I STRONGLY discourage turning the check off</span>
+        <span class="c1"># it actually reorder the xyz data of the native/decoy</span>
+        <span class="c1"># to match.</span>
+        <span class="c1">##################################################</span>
+        <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
+
+            <span class="n">data_decoy_long</span><span class="p">,</span> <span class="n">data_decoy_short</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_data_zone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">,</span><span class="n">resData</span><span class="p">,</span><span class="n">return_not_in_zone</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">data_ref_long</span><span class="p">,</span>   <span class="n">data_ref_short</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_data_zone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span><span class="n">resData</span><span class="p">,</span><span class="n">return_not_in_zone</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="n">atom_decoy_long</span> <span class="o">=</span> <span class="p">[</span> <span class="n">data</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">data_decoy_long</span> <span class="p">]</span>
+            <span class="n">atom_ref_long</span>   <span class="o">=</span> <span class="p">[</span> <span class="n">data</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">data_ref_long</span> <span class="p">]</span>
+
+            <span class="n">xyz_decoy_long</span><span class="p">,</span> <span class="n">xyz_ref_long</span> <span class="o">=</span> <span class="p">[],[]</span>
+            <span class="k">for</span> <span class="n">ind_decoy</span><span class="p">,</span> <span class="n">at</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atom_decoy_long</span><span class="p">):</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">ind_ref</span> <span class="o">=</span> <span class="n">atom_ref_long</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">at</span><span class="p">)</span>
+                    <span class="n">xyz_decoy_long</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_decoy_long</span><span class="p">[</span><span class="n">ind_decoy</span><span class="p">][</span><span class="mi">3</span><span class="p">:])</span>
+                    <span class="n">xyz_ref_long</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_ref_long</span><span class="p">[</span><span class="n">ind_ref</span><span class="p">][</span><span class="mi">3</span><span class="p">:])</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+            <span class="n">atom_decoy_short</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">data_decoy_short</span><span class="p">]</span>
+            <span class="n">atom_ref_short</span>   <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">data_ref_short</span><span class="p">]</span>
+
+            <span class="n">xyz_decoy_short</span><span class="p">,</span> <span class="n">xyz_ref_short</span> <span class="o">=</span> <span class="p">[],[]</span>
+            <span class="k">for</span> <span class="n">ind_decoy</span><span class="p">,</span> <span class="n">at</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atom_decoy_short</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">ind_ref</span> <span class="o">=</span> <span class="n">atom_ref_short</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">at</span><span class="p">)</span>
+                    <span class="n">xyz_decoy_short</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_decoy_short</span><span class="p">[</span><span class="n">ind_decoy</span><span class="p">][</span><span class="mi">3</span><span class="p">:])</span>
+                    <span class="n">xyz_ref_short</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_ref_short</span><span class="p">[</span><span class="n">ind_ref</span><span class="p">][</span><span class="mi">3</span><span class="p">:])</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+
+        <span class="c1"># extract the xyz</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;WARNING : The atom order have not been checked. Switch to check=True or continue at your own risk&#39;</span><span class="p">)</span>
+            <span class="n">xyz_decoy_long</span><span class="p">,</span><span class="n">xyz_decoy_short</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_xyz_zone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">,</span><span class="n">resData</span><span class="p">,</span><span class="n">return_not_in_zone</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">xyz_ref_long</span><span class="p">,</span><span class="n">xyz_ref_short</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_xyz_zone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span><span class="n">resData</span><span class="p">,</span><span class="n">return_not_in_zone</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># get the translation so that both A chains are centered</span>
+        <span class="n">tr_decoy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_trans_vect</span><span class="p">(</span><span class="n">xyz_decoy_long</span><span class="p">)</span>
+        <span class="n">tr_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_trans_vect</span><span class="p">(</span><span class="n">xyz_ref_long</span><span class="p">)</span>
+
+        <span class="c1"># translate everything for 1</span>
+        <span class="n">xyz_decoy_short</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_decoy_short</span><span class="p">,</span><span class="n">tr_decoy</span><span class="p">)</span>
+        <span class="n">xyz_decoy_long</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_decoy_long</span><span class="p">,</span><span class="n">tr_decoy</span><span class="p">)</span>
+
+        <span class="c1"># translate everuthing for 2</span>
+        <span class="n">xyz_ref_short</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_ref_short</span><span class="p">,</span><span class="n">tr_ref</span><span class="p">)</span>
+        <span class="n">xyz_ref_long</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_ref_long</span><span class="p">,</span><span class="n">tr_ref</span><span class="p">)</span>
+
+        <span class="c1"># get the ideql rotation matrix</span>
+        <span class="c1"># to superimpose the A chains</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rotation_matrix</span><span class="p">(</span><span class="n">xyz_decoy_long</span><span class="p">,</span><span class="n">xyz_ref_long</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+
+        <span class="c1"># rotate the entire fragment</span>
+        <span class="n">xyz_decoy_short</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation_matrix</span><span class="p">(</span><span class="n">xyz_decoy_short</span><span class="p">,</span><span class="n">U</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># compute the RMSD</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rmsd</span><span class="p">(</span><span class="n">xyz_decoy_short</span><span class="p">,</span><span class="n">xyz_ref_short</span><span class="p">)</span></div>
+
+
+    <span class="c1"># compute the lzone file</span>
+<div class="viewcode-block" id="StructureSimilarity.compute_lzone"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_lzone">[docs]</a>    <span class="k">def</span> <span class="nf">compute_lzone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">save_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">sql_ref</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span>
+        <span class="n">nA</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sql_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">))</span>
+        <span class="n">nB</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sql_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">))</span>
+
+        <span class="c1"># detect which chain is the longest</span>
+        <span class="n">long_chain</span> <span class="o">=</span> <span class="s1">&#39;A&#39;</span>
+        <span class="k">if</span> <span class="n">nA</span><span class="o">&lt;</span><span class="n">nB</span><span class="p">:</span>
+            <span class="n">long_chain</span> <span class="o">=</span> <span class="s1">&#39;B&#39;</span>
+
+        <span class="c1"># extract data about the residue</span>
+        <span class="n">data_test</span> <span class="o">=</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">sql_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;chainID,resSeq&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="n">long_chain</span><span class="p">)]</span>
+        <span class="n">data_test</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">data_test</span><span class="p">))</span>
+
+        <span class="c1"># close the sql</span>
+        <span class="n">sql_ref</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">save_file</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;.lzone&#39;</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">data_test</span><span class="p">:</span>
+                <span class="n">chain</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;zone </span><span class="si">%s%d</span><span class="s1">-</span><span class="si">%s%d</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">chain</span><span class="p">,</span><span class="n">num</span><span class="p">,</span><span class="n">chain</span><span class="p">,</span><span class="n">num</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">resData</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">data_test</span><span class="p">:</span>
+                <span class="n">chain</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">chain</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">resData</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">resData</span><span class="p">[</span><span class="n">chain</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">resData</span><span class="p">[</span><span class="n">chain</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">resData</span></div>
+
+    <span class="c1">################################################################################################</span>
+    <span class="c1">#</span>
+    <span class="c1">#   FAST ROUTINE TO COMPUTE THE I-RMSD</span>
+    <span class="c1">#   Require the precalculation of the izone</span>
+    <span class="c1">#   A dedicated routine is implemented to comoute the izone</span>
+    <span class="c1">#   if izone is not given in argument the routine will compute them autimatcally</span>
+    <span class="c1">#</span>
+    <span class="c1">#################################################################################################</span>
+
+<div class="viewcode-block" id="StructureSimilarity.compute_irmsd_fast"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_irmsd_fast">[docs]</a>    <span class="k">def</span> <span class="nf">compute_irmsd_fast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">izone</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models</span>
+<span class="sd">              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879</span>
+<span class="sd">        i-RMSD is computed selecting the back bone of the contact residue with a cutoff of 10A</span>
+<span class="sd">        in the decoy. Align these as best as possible with their coutner part in the ref</span>
+<span class="sd">        and and compute the RMSD</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># read the izone file</span>
+        <span class="k">if</span> <span class="n">izone</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">resData</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_izone</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span><span class="n">save_file</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">izone</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compute_izone</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span><span class="n">save_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="n">izone</span><span class="p">)</span>
+            <span class="n">resData</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_zone</span><span class="p">(</span><span class="n">izone</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">resData</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_zone</span><span class="p">(</span><span class="n">izone</span><span class="p">)</span>
+
+        <span class="c1">##################################################</span>
+        <span class="c1"># the check make sure that all the</span>
+        <span class="c1"># atoms are in the correct order</span>
+        <span class="c1"># I STRONGLY discourage turning the check off</span>
+        <span class="c1"># it actually fixes the order</span>
+        <span class="c1">##################################################</span>
+        <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
+
+            <span class="n">data_decoy</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_data_zone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">,</span><span class="n">resData</span><span class="p">,</span><span class="n">return_not_in_zone</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">data_ref</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_data_zone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span><span class="n">resData</span><span class="p">,</span><span class="n">return_not_in_zone</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="n">atom_decoy</span> <span class="o">=</span> <span class="p">[</span> <span class="n">data</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">data_decoy</span><span class="p">]</span>
+            <span class="n">atom_ref</span>   <span class="o">=</span> <span class="p">[</span> <span class="n">data</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">data_ref</span> <span class="p">]</span>
+
+            <span class="n">xyz_contact_decoy</span><span class="p">,</span> <span class="n">xyz_contact_ref</span> <span class="o">=</span> <span class="p">[],[]</span>
+            <span class="k">for</span> <span class="n">ind_decoy</span><span class="p">,</span> <span class="n">at</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atom_decoy</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">ind_ref</span> <span class="o">=</span> <span class="n">atom_ref</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">at</span><span class="p">)</span>
+                    <span class="n">xyz_contact_decoy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_decoy</span><span class="p">[</span><span class="n">ind_decoy</span><span class="p">][</span><span class="mi">3</span><span class="p">:])</span>
+                    <span class="n">xyz_contact_ref</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_ref</span><span class="p">[</span><span class="n">ind_ref</span><span class="p">][</span><span class="mi">3</span><span class="p">:])</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+        <span class="c1"># extract the xyz</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;WARNING : The atom order have not been checked. Switch to check=True or continue at your own risk&#39;</span><span class="p">)</span>
+            <span class="n">xyz_contact_decoy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_xyz_zone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">,</span><span class="n">resData</span><span class="p">)</span>
+            <span class="n">xyz_contact_ref</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_xyz_zone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span><span class="n">resData</span><span class="p">)</span>
+
+        <span class="c1"># get the translation so that both A chains are centered</span>
+        <span class="n">tr_decoy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_trans_vect</span><span class="p">(</span><span class="n">xyz_contact_decoy</span><span class="p">)</span>
+        <span class="n">tr_ref</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_trans_vect</span><span class="p">(</span><span class="n">xyz_contact_ref</span><span class="p">)</span>
+
+        <span class="c1"># translate everything</span>
+        <span class="n">xyz_contact_decoy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_contact_decoy</span><span class="p">,</span><span class="n">tr_decoy</span><span class="p">)</span>
+        <span class="n">xyz_contact_ref</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_contact_ref</span><span class="p">,</span><span class="n">tr_ref</span><span class="p">)</span>
+
+        <span class="c1"># get the ideql rotation matrix</span>
+        <span class="c1"># to superimpose the A chains</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rotation_matrix</span><span class="p">(</span><span class="n">xyz_contact_decoy</span><span class="p">,</span><span class="n">xyz_contact_ref</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+
+        <span class="c1"># rotate the entire fragment</span>
+        <span class="n">xyz_contact_decoy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation_matrix</span><span class="p">(</span><span class="n">xyz_contact_decoy</span><span class="p">,</span><span class="n">U</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># return the RMSD</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rmsd</span><span class="p">(</span><span class="n">xyz_contact_decoy</span><span class="p">,</span><span class="n">xyz_contact_ref</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="StructureSimilarity.compute_izone"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_izone">[docs]</a>    <span class="k">def</span> <span class="nf">compute_izone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span><span class="n">save_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">sql_ref</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span>
+        <span class="n">contact_ref</span> <span class="o">=</span> <span class="n">sql_ref</span><span class="o">.</span><span class="n">get_contact_atoms</span><span class="p">(</span><span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span><span class="n">extend_to_residue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">return_only_backbone_atoms</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">index_contact_ref</span> <span class="o">=</span> <span class="n">contact_ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">contact_ref</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># get the xyz and atom identifier of the decoy contact atoms</span>
+        <span class="c1">#xyz_contact_ref = sql_ref.get(&#39;x,y,z&#39;,rowID=index_contact_ref)</span>
+        <span class="n">data_test</span> <span class="o">=</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">sql_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;chainID,resSeq&#39;</span><span class="p">,</span><span class="n">rowID</span><span class="o">=</span><span class="n">index_contact_ref</span><span class="p">)]</span>
+        <span class="n">data_test</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">data_test</span><span class="p">))</span>
+
+        <span class="c1"># close the sql</span>
+        <span class="n">sql_ref</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">save_file</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;.izone&#39;</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">data_test</span><span class="p">:</span>
+                <span class="n">chain</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;zone </span><span class="si">%s%d</span><span class="s1">-</span><span class="si">%s%d</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">chain</span><span class="p">,</span><span class="n">num</span><span class="p">,</span><span class="n">chain</span><span class="p">,</span><span class="n">num</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">resData</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">data_test</span><span class="p">:</span>
+                <span class="n">chain</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">chain</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">resData</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">resData</span><span class="p">[</span><span class="n">chain</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">resData</span><span class="p">[</span><span class="n">chain</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">resData</span></div>
+
+    <span class="c1">################################################################################################</span>
+    <span class="c1">#</span>
+    <span class="c1">#   ROUTINE TO COMPUTE THE FNAT QUICKLY</span>
+    <span class="c1">#</span>
+    <span class="c1">#################################################################################################</span>
+
+<div class="viewcode-block" id="StructureSimilarity.compute_Fnat_fast"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_Fnat_fast">[docs]</a>    <span class="k">def</span> <span class="nf">compute_Fnat_fast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ref_pairs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+
+
+        <span class="c1"># read the izone file</span>
+        <span class="k">if</span> <span class="n">ref_pairs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">residue_pairs_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_residue_pairs_ref</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span><span class="n">save_file</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">ref_pairs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compute_residue_pairs_ref</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span><span class="n">save_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="n">ref_pairs</span><span class="p">)</span>
+            <span class="n">residue_pairs_ref</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">ref_pairs</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">))</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">residue_pairs_ref</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">ref_pairs</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">))</span>
+
+        <span class="c1"># create a dict of the ecoy data</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">,</span><span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">data_decoy</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+            <span class="n">decoy_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">data_decoy</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">]</span>
+            <span class="n">decoy_name</span> <span class="o">=</span> <span class="s1">&#39;decoy&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Decoy not found&#39;</span><span class="p">)</span>
+
+        <span class="c1"># read the decoy data</span>
+        <span class="n">atom_decoy</span><span class="p">,</span> <span class="n">xyz_decoy</span> <span class="o">=</span> <span class="p">[],[]</span>
+        <span class="n">residue_xyz</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">residue_name</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># go through all the lines</span>
+        <span class="c1"># that starts with ATOM</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">data_decoy</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;ATOM&#39;</span><span class="p">):</span>
+
+                <span class="c1"># chain ID</span>
+                <span class="n">chainID</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">21</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">chainID</span> <span class="o">==</span> <span class="s1">&#39; &#39;</span><span class="p">:</span>
+                    <span class="n">chainID</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">72</span><span class="p">]</span>
+
+                <span class="c1"># atom info</span>
+                <span class="n">resSeq</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">22</span><span class="p">:</span><span class="mi">26</span><span class="p">])</span>
+                <span class="n">resName</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">17</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">12</span><span class="p">:</span><span class="mi">16</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+                <span class="c1"># position</span>
+                <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">30</span><span class="p">:</span><span class="mi">38</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">38</span><span class="p">:</span><span class="mi">46</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">46</span><span class="p">:</span><span class="mi">54</span><span class="p">])</span>
+
+                <span class="c1"># dict entry</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">chainID</span><span class="p">,</span><span class="n">resSeq</span><span class="p">,</span><span class="n">resName</span><span class="p">)</span>
+
+                <span class="c1"># create the dict entry if necessary</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">residue_xyz</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">residue_xyz</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">residue_name</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+                <span class="c1"># we exclude the Hydrogens from the search</span>
+                <span class="k">if</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;H&#39;</span><span class="p">:</span>
+                    <span class="n">residue_xyz</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">])</span>
+                    <span class="n">residue_name</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="c1"># loop over the residue pairs of the</span>
+        <span class="c1"># and increment common if an atom pair is close enough</span>
+        <span class="n">nCommon</span><span class="p">,</span><span class="n">nTotal</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span>
+        <span class="k">for</span> <span class="n">resA</span><span class="p">,</span><span class="n">resB_list</span> <span class="ow">in</span> <span class="n">residue_pairs_ref</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">resA</span> <span class="ow">in</span> <span class="n">residue_xyz</span><span class="p">:</span>
+                <span class="n">xyzA</span> <span class="o">=</span> <span class="n">residue_xyz</span><span class="p">[</span><span class="n">resA</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">resB</span> <span class="ow">in</span> <span class="n">resB_list</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">resB</span> <span class="ow">in</span> <span class="n">residue_xyz</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">xyzB</span> <span class="o">=</span> <span class="n">residue_xyz</span><span class="p">[</span><span class="n">resB</span><span class="p">]</span>
+                        <span class="n">dist_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>  <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p2</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="k">for</span> <span class="n">p1</span> <span class="ow">in</span> <span class="n">xyzA</span> <span class="k">for</span> <span class="n">p2</span> <span class="ow">in</span> <span class="n">xyzB</span>  <span class="p">]))</span>
+                        <span class="k">if</span> <span class="n">dist_min</span><span class="o">&lt;=</span><span class="n">cutoff</span><span class="p">:</span>
+                            <span class="n">nCommon</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">nTotal</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\t</span><span class="s1"> FNAT Warning could not find residue: &#39;</span><span class="p">,</span> <span class="n">resA</span><span class="p">,</span> <span class="s1">&#39; in: &#39;</span><span class="p">,</span><span class="n">decoy_name</span>
+                <span class="n">printif</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
+
+        <span class="c1"># normalize</span>
+        <span class="k">return</span> <span class="n">nCommon</span><span class="o">/</span><span class="n">nTotal</span></div>
+
+
+    <span class="c1"># compute the residue pair of the reference</span>
+<div class="viewcode-block" id="StructureSimilarity.compute_residue_pairs_ref"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_residue_pairs_ref">[docs]</a>    <span class="k">def</span> <span class="nf">compute_residue_pairs_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span><span class="n">save_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">sql_ref</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span><span class="n">sqlfile</span><span class="o">=</span><span class="s1">&#39;mol2.db&#39;</span><span class="p">)</span>
+        <span class="n">residue_pairs_ref</span>   <span class="o">=</span> <span class="n">sql_ref</span><span class="o">.</span><span class="n">get_contact_residue</span><span class="p">(</span><span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span><span class="n">return_contact_pairs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                          <span class="n">excludeH</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">sql_ref</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">save_file</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;residue_contact_pairs.pckl&#39;</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+
+            <span class="c1"># save as pickle</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">residue_pairs_ref</span><span class="p">,</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">residue_pairs_ref</span></div>
+
+
+
+    <span class="c1">################################################################################################</span>
+    <span class="c1">#</span>
+    <span class="c1">#   ROUTINE TO COMPUTE THE L-RMSD USING PDB2SQL</span>
+    <span class="c1">#   DOES NOT REQUIRE THE PRECALCULATION OF ANYTHONG</span>
+    <span class="c1">#   CAN OUTPUT THE SUPERIMPOSED STRUCTURES</span>
+    <span class="c1">#   MUCH SLOWER THAN THE FAST ROUTINES BUT EASIER TO USE</span>
+    <span class="c1">#</span>
+    <span class="c1">#################################################################################################</span>
+
+    <span class="c1"># compute the L-RMSD</span>
+<div class="viewcode-block" id="StructureSimilarity.compute_lrmsd_pdb2sql"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_lrmsd_pdb2sql">[docs]</a>    <span class="k">def</span> <span class="nf">compute_lrmsd_pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">exportpath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">):</span>
+
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models</span>
+<span class="sd">              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879</span>
+<span class="sd">        L-RMSD is computed by aligning the longest chain of the decoy to the one of the  reference</span>
+<span class="sd">        and computing the RMSD of the shortest chain between decoy and ref</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># create the sql</span>
+        <span class="n">sql_decoy</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">,</span><span class="n">sqlfile</span><span class="o">=</span><span class="s1">&#39;decoy.db&#39;</span><span class="p">)</span>
+        <span class="n">sql_ref</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span><span class="n">sqlfile</span><span class="o">=</span><span class="s1">&#39;ref.db&#39;</span><span class="p">)</span>
+
+        <span class="c1"># extract the pos of chains A</span>
+        <span class="n">xyz_decoy_A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sql_decoy</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">))</span>
+        <span class="n">xyz_ref_A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sql_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">))</span>
+
+        <span class="c1"># extract the pos of chains B</span>
+        <span class="n">xyz_decoy_B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sql_decoy</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">))</span>
+        <span class="n">xyz_ref_B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sql_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">))</span>
+
+
+        <span class="c1"># check the lengthes</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">xyz_decoy_A</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">xyz_ref_A</span><span class="p">):</span>
+            <span class="n">xyz_decoy_A</span><span class="p">,</span> <span class="n">xyz_ref_A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identical_atoms</span><span class="p">(</span><span class="n">sql_decoy</span><span class="p">,</span><span class="n">sql_ref</span><span class="p">,</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">xyz_decoy_B</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">xyz_ref_B</span><span class="p">):</span>
+            <span class="n">xyz_decoy_B</span><span class="p">,</span> <span class="n">xyz_ref_B</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identical_atoms</span><span class="p">(</span><span class="n">sql_decoy</span><span class="p">,</span><span class="n">sql_ref</span><span class="p">,</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
+
+
+        <span class="c1"># detect which chain is the longest</span>
+        <span class="n">nA</span><span class="p">,</span><span class="n">nB</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">xyz_decoy_A</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">xyz_decoy_B</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nA</span><span class="o">&gt;</span><span class="n">nB</span><span class="p">:</span>
+            <span class="n">xyz_decoy_long</span> <span class="o">=</span> <span class="n">xyz_decoy_A</span>
+            <span class="n">xyz_ref_long</span> <span class="o">=</span> <span class="n">xyz_ref_A</span>
+
+            <span class="n">xyz_decoy_short</span> <span class="o">=</span> <span class="n">xyz_decoy_B</span>
+            <span class="n">xyz_ref_short</span> <span class="o">=</span> <span class="n">xyz_ref_B</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">xyz_decoy_long</span> <span class="o">=</span> <span class="n">xyz_decoy_B</span>
+            <span class="n">xyz_ref_long</span> <span class="o">=</span> <span class="n">xyz_ref_B</span>
+
+            <span class="n">xyz_decoy_short</span> <span class="o">=</span> <span class="n">xyz_decoy_A</span>
+            <span class="n">xyz_ref_short</span> <span class="o">=</span> <span class="n">xyz_ref_A</span>
+
+        <span class="c1"># get the translation so that both A chains are centered</span>
+        <span class="n">tr_decoy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_trans_vect</span><span class="p">(</span><span class="n">xyz_decoy_long</span><span class="p">)</span>
+        <span class="n">tr_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_trans_vect</span><span class="p">(</span><span class="n">xyz_ref_long</span><span class="p">)</span>
+
+        <span class="c1"># translate everything for 1</span>
+        <span class="n">xyz_decoy_short</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_decoy_short</span><span class="p">,</span><span class="n">tr_decoy</span><span class="p">)</span>
+        <span class="n">xyz_decoy_long</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_decoy_long</span><span class="p">,</span><span class="n">tr_decoy</span><span class="p">)</span>
+
+        <span class="c1"># translate everuthing for 2</span>
+        <span class="n">xyz_ref_short</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_ref_short</span><span class="p">,</span><span class="n">tr_ref</span><span class="p">)</span>
+        <span class="n">xyz_ref_long</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_ref_long</span><span class="p">,</span><span class="n">tr_ref</span><span class="p">)</span>
+
+        <span class="c1"># get the ideal rotation matrix</span>
+        <span class="c1"># to superimpose the A chains</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rotation_matrix</span><span class="p">(</span><span class="n">xyz_decoy_long</span><span class="p">,</span><span class="n">xyz_ref_long</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+
+        <span class="c1"># rotate the entire fragment</span>
+        <span class="n">xyz_decoy_short</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation_matrix</span><span class="p">(</span><span class="n">xyz_decoy_short</span><span class="p">,</span><span class="n">U</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+        <span class="c1"># compute the RMSD</span>
+        <span class="n">lrmsd</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">get_rmsd</span><span class="p">(</span><span class="n">xyz_decoy_short</span><span class="p">,</span><span class="n">xyz_ref_short</span><span class="p">)</span>
+
+        <span class="c1"># export the pdb for verifiactions</span>
+        <span class="k">if</span> <span class="n">exportpath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="c1"># extract the pos of the dimer</span>
+            <span class="n">xyz_decoy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sql_decoy</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">))</span>
+            <span class="n">xyz_ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sql_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">))</span>
+
+            <span class="c1"># translate</span>
+            <span class="n">xyz_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_ref</span><span class="p">,</span><span class="n">tr_ref</span><span class="p">)</span>
+            <span class="n">xyz_decoy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_decoy</span><span class="p">,</span><span class="n">tr_decoy</span><span class="p">)</span>
+
+            <span class="c1"># rotate decoy</span>
+            <span class="n">xyz_decoy</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation_matrix</span><span class="p">(</span><span class="n">xyz_decoy</span><span class="p">,</span><span class="n">U</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="c1"># update the sql database</span>
+            <span class="n">sql_decoy</span><span class="o">.</span><span class="n">update_xyz</span><span class="p">(</span><span class="n">xyz_decoy</span><span class="p">)</span>
+            <span class="n">sql_ref</span><span class="o">.</span><span class="n">update_xyz</span><span class="p">(</span><span class="n">xyz_ref</span><span class="p">)</span>
+
+            <span class="c1"># export</span>
+            <span class="n">sql_decoy</span><span class="o">.</span><span class="n">exportpdb</span><span class="p">(</span><span class="n">exportpath</span><span class="o">+</span><span class="s1">&#39;/lrmsd_decoy.pdb&#39;</span><span class="p">)</span>
+            <span class="n">sql_ref</span><span class="o">.</span><span class="n">exportpdb</span><span class="p">(</span><span class="n">exportpath</span><span class="o">+</span><span class="s1">&#39;/lrmsd_aligned.pdb&#39;</span><span class="p">)</span>
+
+        <span class="c1"># close the db</span>
+        <span class="n">sql_decoy</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">sql_ref</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">lrmsd</span></div>
+
+    <span class="c1"># RETURN THE ATOMS THAT ARE SHARED BY THE TWO DB</span>
+    <span class="c1"># FOR A GIVEN CHAINID</span>
+<div class="viewcode-block" id="StructureSimilarity.get_identical_atoms"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.get_identical_atoms">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_identical_atoms</span><span class="p">(</span><span class="n">db1</span><span class="p">,</span><span class="n">db2</span><span class="p">,</span><span class="n">chain</span><span class="p">):</span>
+
+        <span class="c1"># get data</span>
+        <span class="n">data1</span> <span class="o">=</span> <span class="n">db1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;chainID,resSeq,name&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="n">chain</span><span class="p">)</span>
+        <span class="n">data2</span> <span class="o">=</span> <span class="n">db2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;chainID,resSeq,name&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="n">chain</span><span class="p">)</span>
+
+        <span class="c1"># tuplify</span>
+        <span class="n">data1</span> <span class="o">=</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">d1</span><span class="p">)</span> <span class="k">for</span> <span class="n">d1</span> <span class="ow">in</span> <span class="n">data1</span><span class="p">]</span>
+        <span class="n">data2</span> <span class="o">=</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">d2</span><span class="p">)</span> <span class="k">for</span> <span class="n">d2</span> <span class="ow">in</span> <span class="n">data2</span><span class="p">]</span>
+
+        <span class="c1"># get the intersection</span>
+        <span class="n">shared_data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">data1</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">data2</span><span class="p">))</span>
+
+        <span class="c1"># get the xyz</span>
+        <span class="n">xyz1</span><span class="p">,</span><span class="n">xyz2</span> <span class="o">=</span> <span class="p">[],[]</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">shared_data</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;SELECT x,y,z from ATOM WHERE chainID=? AND resSeq=? and name=?&#39;</span>
+            <span class="n">xyz1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">db1</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">data</span><span class="p">))[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">xyz2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">db2</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">data</span><span class="p">))[</span><span class="mi">0</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">xyz1</span><span class="p">,</span><span class="n">xyz2</span></div>
+
+    <span class="c1">################################################################################################</span>
+    <span class="c1">#</span>
+    <span class="c1">#   ROUTINE TO COMPUTE THE I-RMSD USING PDB2SQL</span>
+    <span class="c1">#   DOES NOT REQUIRE THE PRECALCULATION OF ANYTHiNG</span>
+    <span class="c1">#   BUT CAN READ AN IZONE FILE AS WELL</span>
+    <span class="c1">#   CAN OUTPUT THE SUPERIMPOSED STRUCTURES</span>
+    <span class="c1">#   MUCH SLOWER THAN THE FAST ROUTINES BUT EASIER TO USE</span>
+    <span class="c1">#</span>
+    <span class="c1">#################################################################################################</span>
+
+<div class="viewcode-block" id="StructureSimilarity.compute_irmsd_pdb2sql"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_irmsd_pdb2sql">[docs]</a>    <span class="k">def</span> <span class="nf">compute_irmsd_pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">,</span><span class="n">izone</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">exportpath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models</span>
+<span class="sd">              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879</span>
+<span class="sd">        i-RMSD is computed selecting the back bone of the contact residue with a cutoff of 10A</span>
+<span class="sd">        in the decoy. Align these as best as possible with their coutner part in the ref</span>
+<span class="sd">        and and compute the RMSD</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># create thes sql</span>
+        <span class="n">sql_decoy</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">)</span>
+        <span class="n">sql_ref</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span>
+
+        <span class="c1"># get the contact atoms</span>
+        <span class="k">if</span> <span class="n">izone</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">contact_ref</span> <span class="o">=</span> <span class="n">sql_ref</span><span class="o">.</span><span class="n">get_contact_atoms</span><span class="p">(</span><span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span><span class="n">extend_to_residue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                    <span class="n">return_only_backbone_atoms</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">index_contact_ref</span> <span class="o">=</span> <span class="n">contact_ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">contact_ref</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">index_contact_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_izone_rowID</span><span class="p">(</span><span class="n">sql_ref</span><span class="p">,</span><span class="n">izone</span><span class="p">,</span><span class="n">return_only_backbone_atoms</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+        <span class="c1"># get the xyz and atom identifier of the decoy contact atoms</span>
+        <span class="n">xyz_contact_ref</span> <span class="o">=</span> <span class="n">sql_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">,</span><span class="n">rowID</span><span class="o">=</span><span class="n">index_contact_ref</span><span class="p">)</span>
+        <span class="n">data_contact_ref</span> <span class="o">=</span> <span class="n">sql_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;chainID,resSeq,resName,name&#39;</span><span class="p">,</span><span class="n">rowID</span><span class="o">=</span><span class="n">index_contact_ref</span><span class="p">)</span>
+
+        <span class="c1"># get the xyz and atom indeitifier of the reference</span>
+        <span class="n">xyz_decoy</span> <span class="o">=</span> <span class="n">sql_decoy</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">)</span>
+        <span class="n">data_decoy</span> <span class="o">=</span> <span class="n">sql_decoy</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;chainID,resSeq,resName,name&#39;</span><span class="p">)</span>
+
+        <span class="c1"># loop through the ref label</span>
+        <span class="c1"># check if the atom is in the decoy</span>
+        <span class="c1"># if yes -&gt; add xyz to xyz_contact_decoy</span>
+        <span class="c1"># if no  -&gt; remove the corresponding to xyz_contact_ref</span>
+        <span class="n">xyz_contact_decoy</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">index_contact_decoy</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">clean_ref</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">iat</span><span class="p">,</span><span class="n">atom</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data_contact_ref</span><span class="p">):</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">data_decoy</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">atom</span><span class="p">)</span>
+                <span class="n">index_contact_decoy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+                <span class="n">xyz_contact_decoy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xyz_decoy</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">xyz_contact_ref</span><span class="p">[</span><span class="n">iat</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">index_contact_ref</span><span class="p">[</span><span class="n">iat</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">clean_ref</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># clean the xyz</span>
+        <span class="k">if</span> <span class="n">clean_ref</span><span class="p">:</span>
+            <span class="n">xyz_contact_ref</span> <span class="o">=</span> <span class="p">[</span><span class="n">xyz</span> <span class="k">for</span> <span class="n">xyz</span> <span class="ow">in</span> <span class="n">xyz_contact_ref</span> <span class="k">if</span> <span class="n">xyz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="n">index_contact_ref</span> <span class="o">=</span> <span class="p">[</span><span class="n">ind</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">index_contact_ref</span> <span class="k">if</span> <span class="n">ind</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+
+
+        <span class="c1"># check that we still have atoms in both chains</span>
+        <span class="n">chain_decoy</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">sql_decoy</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;chainID&#39;</span><span class="p">,</span><span class="n">rowID</span><span class="o">=</span><span class="n">index_contact_decoy</span><span class="p">)))</span>
+        <span class="n">chain_ref</span>   <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">sql_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;chainID&#39;</span><span class="p">,</span><span class="n">rowID</span><span class="o">=</span><span class="n">index_contact_ref</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">chain_decoy</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">1</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">chain_ref</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Error in i-rmsd: only one chain represented in one chain&#39;</span><span class="p">)</span>
+
+
+        <span class="c1"># get the translation so that both A chains are centered</span>
+        <span class="n">tr_decoy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_trans_vect</span><span class="p">(</span><span class="n">xyz_contact_decoy</span><span class="p">)</span>
+        <span class="n">tr_ref</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_trans_vect</span><span class="p">(</span><span class="n">xyz_contact_ref</span><span class="p">)</span>
+
+        <span class="c1"># translate everything</span>
+        <span class="n">xyz_contact_decoy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_contact_decoy</span><span class="p">,</span><span class="n">tr_decoy</span><span class="p">)</span>
+        <span class="n">xyz_contact_ref</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="n">xyz_contact_ref</span><span class="p">,</span><span class="n">tr_ref</span><span class="p">)</span>
+
+        <span class="c1"># get the ideql rotation matrix</span>
+        <span class="c1"># to superimpose the A chains</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rotation_matrix</span><span class="p">(</span><span class="n">xyz_contact_decoy</span><span class="p">,</span><span class="n">xyz_contact_ref</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+
+        <span class="c1"># rotate the entire fragment</span>
+        <span class="n">xyz_contact_decoy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation_matrix</span><span class="p">(</span><span class="n">xyz_contact_decoy</span><span class="p">,</span><span class="n">U</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># compute the RMSD</span>
+        <span class="n">irmsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rmsd</span><span class="p">(</span><span class="n">xyz_contact_decoy</span><span class="p">,</span><span class="n">xyz_contact_ref</span><span class="p">)</span>
+
+
+
+        <span class="c1"># export the pdb for verifiactions</span>
+        <span class="k">if</span> <span class="n">exportpath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="c1"># update the sql database</span>
+            <span class="n">sql_decoy</span><span class="o">.</span><span class="n">update_xyz</span><span class="p">(</span><span class="n">xyz_contact_decoy</span><span class="p">,</span><span class="n">index</span><span class="o">=</span><span class="n">index_contact_decoy</span><span class="p">)</span>
+            <span class="n">sql_ref</span><span class="o">.</span><span class="n">update_xyz</span><span class="p">(</span><span class="n">xyz_contact_ref</span><span class="p">,</span><span class="n">index</span><span class="o">=</span><span class="n">index_contact_ref</span><span class="p">)</span>
+
+            <span class="n">sql_decoy</span><span class="o">.</span><span class="n">exportpdb</span><span class="p">(</span><span class="n">exportpath</span><span class="o">+</span><span class="s1">&#39;/irmsd_decoy.pdb&#39;</span><span class="p">,</span><span class="n">index</span><span class="o">=</span><span class="n">index_contact_decoy</span><span class="p">)</span>
+            <span class="n">sql_ref</span><span class="o">.</span><span class="n">exportpdb</span><span class="p">(</span><span class="n">exportpath</span><span class="o">+</span><span class="s1">&#39;/irmsd_ref.pdb&#39;</span><span class="p">,</span><span class="n">index</span><span class="o">=</span><span class="n">index_contact_ref</span><span class="p">)</span>
+
+        <span class="c1"># close the db</span>
+        <span class="n">sql_decoy</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">sql_ref</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">irmsd</span></div>
+
+
+    <span class="c1"># get the rowID of all the atoms</span>
+<div class="viewcode-block" id="StructureSimilarity.get_izone_rowID"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.get_izone_rowID">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_izone_rowID</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span><span class="n">izone</span><span class="p">,</span><span class="n">return_only_backbone_atoms</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+        <span class="c1"># read the file</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">izone</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s1">&#39;i-zone file not found&#39;</span><span class="p">,</span><span class="n">izone</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">izone</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+
+        <span class="c1"># get the data out of it</span>
+        <span class="n">resData</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+
+            <span class="n">res</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">chainID</span><span class="p">,</span><span class="n">resSeq</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="nb">int</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+
+            <span class="k">if</span> <span class="n">chainID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">resData</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">resData</span><span class="p">[</span><span class="n">chainID</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="n">resData</span><span class="p">[</span><span class="n">chainID</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">resSeq</span><span class="p">)</span>
+
+        <span class="c1"># get the rowID</span>
+        <span class="n">index_contact</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">chainID</span><span class="p">,</span><span class="n">resSeq</span> <span class="ow">in</span> <span class="n">resData</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">return_only_backbone_atoms</span><span class="p">:</span>
+                <span class="n">index_contact</span> <span class="o">+=</span> <span class="n">sql</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;rowID&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="n">chainID</span><span class="p">,</span><span class="n">resSeq</span><span class="o">=</span><span class="n">resSeq</span><span class="p">,</span>
+                                          <span class="n">name</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span><span class="s1">&#39;CA&#39;</span><span class="p">,</span><span class="s1">&#39;N&#39;</span><span class="p">,</span><span class="s1">&#39;O&#39;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">index_contact</span> <span class="o">+=</span> <span class="n">sql</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;rowID&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="n">chainID</span><span class="p">,</span><span class="n">resSeq</span><span class="o">=</span><span class="n">resSeq</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">index_contact</span></div>
+
+
+    <span class="c1">#############################################################################</span>
+    <span class="c1">#</span>
+    <span class="c1">#   ROUTINE TO COMPUTE THE FNAT USING PDB2SQL</span>
+    <span class="c1">#</span>
+    <span class="c1">#############################################################################</span>
+
+<div class="viewcode-block" id="StructureSimilarity.compute_Fnat_pdb2sql"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_Fnat_pdb2sql">[docs]</a>    <span class="k">def</span> <span class="nf">compute_Fnat_pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">5.0</span><span class="p">):</span>
+
+        <span class="c1"># create the sql</span>
+        <span class="n">sql_decoy</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">)</span>
+        <span class="n">sql_ref</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span>
+
+        <span class="c1"># get the contact atoms of the decoy</span>
+        <span class="n">residue_pairs_decoy</span> <span class="o">=</span> <span class="n">sql_decoy</span><span class="o">.</span><span class="n">get_contact_residue</span><span class="p">(</span><span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span>
+                                                            <span class="n">return_contact_pairs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                            <span class="n">excludeH</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># get the contact atoms of the ref</span>
+        <span class="n">residue_pairs_ref</span>   <span class="o">=</span> <span class="n">sql_ref</span><span class="o">.</span><span class="n">get_contact_residue</span><span class="p">(</span><span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span>
+                                                          <span class="n">return_contact_pairs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                          <span class="n">excludeH</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+        <span class="c1"># form the pair data</span>
+        <span class="n">data_pair_decoy</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">resA</span><span class="p">,</span><span class="n">resB_list</span> <span class="ow">in</span> <span class="n">residue_pairs_decoy</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">data_pair_decoy</span> <span class="o">+=</span> <span class="p">[</span>  <span class="p">(</span><span class="n">resA</span><span class="p">,</span><span class="n">resB</span><span class="p">)</span> <span class="k">for</span> <span class="n">resB</span> <span class="ow">in</span> <span class="n">resB_list</span>   <span class="p">]</span>
+
+        <span class="c1"># form the pair data</span>
+        <span class="n">data_pair_ref</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">resA</span><span class="p">,</span><span class="n">resB_list</span> <span class="ow">in</span> <span class="n">residue_pairs_ref</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">data_pair_ref</span> <span class="o">+=</span> <span class="p">[</span>  <span class="p">(</span><span class="n">resA</span><span class="p">,</span><span class="n">resB</span><span class="p">)</span> <span class="k">for</span> <span class="n">resB</span> <span class="ow">in</span> <span class="n">resB_list</span>     <span class="p">]</span>
+
+
+        <span class="c1"># find the umber of residue that ref and decoys hace in common</span>
+        <span class="n">nCommon</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">data_pair_ref</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">data_pair_decoy</span><span class="p">))</span>
+
+        <span class="c1"># normalize</span>
+        <span class="n">Fnat</span> <span class="o">=</span> <span class="n">nCommon</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">data_pair_ref</span><span class="p">)</span>
+
+        <span class="n">sql_decoy</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">sql_ref</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">Fnat</span></div>
+
+
+
+    <span class="c1">################################################################################################</span>
+    <span class="c1">#</span>
+    <span class="c1">#   HELPER ROUTINES TO HANDLE THE ZONE FILES</span>
+    <span class="c1">#</span>
+    <span class="c1">#################################################################################################</span>
+
+
+<div class="viewcode-block" id="StructureSimilarity.read_xyz_zone"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.read_xyz_zone">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">read_xyz_zone</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">,</span><span class="n">resData</span><span class="p">,</span><span class="n">return_not_in_zone</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="c1"># read the ref file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+
+        <span class="c1"># get the xyz of the</span>
+        <span class="n">xyz_in_zone</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">xyz_not_in_zone</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;ATOM&#39;</span><span class="p">):</span>
+
+                <span class="n">chainID</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">21</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">chainID</span> <span class="o">==</span> <span class="s1">&#39; &#39;</span><span class="p">:</span>
+                    <span class="n">chainID</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">72</span><span class="p">]</span>
+
+                <span class="n">resSeq</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">22</span><span class="p">:</span><span class="mi">26</span><span class="p">])</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">12</span><span class="p">:</span><span class="mi">16</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+                <span class="n">x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">30</span><span class="p">:</span><span class="mi">38</span><span class="p">])</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">38</span><span class="p">:</span><span class="mi">46</span><span class="p">])</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">46</span><span class="p">:</span><span class="mi">54</span><span class="p">])</span>
+
+                <span class="k">if</span> <span class="n">chainID</span> <span class="ow">in</span> <span class="n">resData</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+
+                    <span class="k">if</span> <span class="n">resSeq</span> <span class="ow">in</span> <span class="n">resData</span><span class="p">[</span><span class="n">chainID</span><span class="p">]</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span><span class="s1">&#39;CA&#39;</span><span class="p">,</span><span class="s1">&#39;N&#39;</span><span class="p">,</span><span class="s1">&#39;O&#39;</span><span class="p">]:</span>
+                        <span class="n">xyz_in_zone</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">])</span>
+
+                    <span class="k">elif</span> <span class="n">resSeq</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">resData</span><span class="p">[</span><span class="n">chainID</span><span class="p">]</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span><span class="s1">&#39;CA&#39;</span><span class="p">,</span><span class="s1">&#39;N&#39;</span><span class="p">,</span><span class="s1">&#39;O&#39;</span><span class="p">]:</span>
+                        <span class="n">xyz_not_in_zone</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">])</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span><span class="s1">&#39;CA&#39;</span><span class="p">,</span><span class="s1">&#39;N&#39;</span><span class="p">,</span><span class="s1">&#39;O&#39;</span><span class="p">]:</span>
+                        <span class="n">xyz_not_in_zone</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">return_not_in_zone</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">xyz_in_zone</span><span class="p">,</span><span class="n">xyz_not_in_zone</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">xyz_in_zone</span></div>
+
+
+<div class="viewcode-block" id="StructureSimilarity.read_data_zone"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.read_data_zone">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">read_data_zone</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">,</span><span class="n">resData</span><span class="p">,</span><span class="n">return_not_in_zone</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="c1"># read the ref file</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">,</span><span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span>  <span class="p">[</span><span class="n">l</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">pdb_file</span><span class="p">]</span>
+
+        <span class="c1"># get the xyz of the</span>
+        <span class="n">data_in_zone</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">data_not_in_zone</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;ATOM&#39;</span><span class="p">):</span>
+
+                <span class="n">chainID</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">21</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">chainID</span> <span class="o">==</span> <span class="s1">&#39; &#39;</span><span class="p">:</span>
+                    <span class="n">chainID</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">72</span><span class="p">]</span>
+
+                <span class="n">resSeq</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">22</span><span class="p">:</span><span class="mi">26</span><span class="p">])</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">12</span><span class="p">:</span><span class="mi">16</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+                <span class="n">x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">30</span><span class="p">:</span><span class="mi">38</span><span class="p">])</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">38</span><span class="p">:</span><span class="mi">46</span><span class="p">])</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">46</span><span class="p">:</span><span class="mi">54</span><span class="p">])</span>
+
+                <span class="k">if</span> <span class="n">chainID</span> <span class="ow">in</span> <span class="n">resData</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+
+                    <span class="k">if</span> <span class="n">resSeq</span> <span class="ow">in</span> <span class="n">resData</span><span class="p">[</span><span class="n">chainID</span><span class="p">]</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span><span class="s1">&#39;CA&#39;</span><span class="p">,</span><span class="s1">&#39;N&#39;</span><span class="p">,</span><span class="s1">&#39;O&#39;</span><span class="p">]:</span>
+                        <span class="n">data_in_zone</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">chainID</span><span class="p">,</span><span class="n">resSeq</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">])</span>
+
+                    <span class="k">elif</span> <span class="n">resSeq</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">resData</span><span class="p">[</span><span class="n">chainID</span><span class="p">]</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span><span class="s1">&#39;CA&#39;</span><span class="p">,</span><span class="s1">&#39;N&#39;</span><span class="p">,</span><span class="s1">&#39;O&#39;</span><span class="p">]:</span>
+                        <span class="n">data_not_in_zone</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">chainID</span><span class="p">,</span><span class="n">resSeq</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">])</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span><span class="s1">&#39;CA&#39;</span><span class="p">,</span><span class="s1">&#39;N&#39;</span><span class="p">,</span><span class="s1">&#39;O&#39;</span><span class="p">]:</span>
+                        <span class="n">data_not_in_zone</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">chainID</span><span class="p">,</span><span class="n">resSeq</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">return_not_in_zone</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">data_in_zone</span><span class="p">,</span><span class="n">data_not_in_zone</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">data_in_zone</span></div>
+
+
+<div class="viewcode-block" id="StructureSimilarity.read_zone"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.read_zone">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">read_zone</span><span class="p">(</span><span class="n">zone_file</span><span class="p">):</span>
+
+        <span class="c1"># read the izone file</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">zone_file</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s1">&#39;i-zone file not found&#39;</span><span class="p">,</span><span class="n">zone_file</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">zone_file</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+
+        <span class="c1"># get the data out of it</span>
+        <span class="n">resData</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+
+            <span class="c1">#    line = zone A4-A4   for positive resNum</span>
+            <span class="c1"># or line = zone A-4-A-4 for negative resNum</span>
+            <span class="c1"># that happens for example in 2OUL</span>
+
+            <span class="c1"># split the line</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+
+            <span class="c1"># if the resnum was positive</span>
+            <span class="c1"># we have e.g res = [A4,A4]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">chainID</span><span class="p">,</span><span class="n">resSeq</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="nb">int</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+            <span class="c1"># if the resnum was negative was negtive</span>
+            <span class="c1"># we have e.g res = [A,4,A,4]</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                <span class="n">chainID</span><span class="p">,</span><span class="n">resSeq</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">chainID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">resData</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">resData</span><span class="p">[</span><span class="n">chainID</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="n">resData</span><span class="p">[</span><span class="n">chainID</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">resSeq</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">resData</span></div>
+
+
+    <span class="c1">###################################################################</span>
+    <span class="c1">#</span>
+    <span class="c1">#   ROUTINES TO ACTUALY ALIGN THE MOLECULES</span>
+    <span class="c1">#</span>
+    <span class="c1">###################################################################</span>
+
+    <span class="c1"># compute the DockQ score from the different elements</span>
+<div class="viewcode-block" id="StructureSimilarity.compute_DockQScore"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_DockQScore">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">compute_DockQScore</span><span class="p">(</span><span class="n">Fnat</span><span class="p">,</span><span class="n">lrmsd</span><span class="p">,</span><span class="n">irmsd</span><span class="p">,</span><span class="n">d1</span><span class="o">=</span><span class="mf">8.5</span><span class="p">,</span><span class="n">d2</span><span class="o">=</span><span class="mf">1.5</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">scale_rms</span><span class="p">(</span><span class="n">rms</span><span class="p">,</span><span class="n">d</span><span class="p">):</span>
+            <span class="k">return</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="p">(</span><span class="n">rms</span><span class="o">/</span><span class="n">d</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="mf">1.</span><span class="o">/</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span>  <span class="n">Fnat</span> <span class="o">+</span> <span class="n">scale_rms</span><span class="p">(</span><span class="n">lrmsd</span><span class="p">,</span><span class="n">d1</span><span class="p">)</span> <span class="o">+</span> <span class="n">scale_rms</span><span class="p">(</span><span class="n">irmsd</span><span class="p">,</span><span class="n">d2</span><span class="p">))</span></div>
+
+
+    <span class="c1"># compute the RMSD of two sets of points</span>
+<div class="viewcode-block" id="StructureSimilarity.get_rmsd"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.get_rmsd">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_rmsd</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">P</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">n</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">P</span><span class="o">-</span><span class="n">Q</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span></div>
+
+
+    <span class="c1"># compute the translation vector to center a set of points</span>
+<div class="viewcode-block" id="StructureSimilarity.get_trans_vect"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.get_trans_vect">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_trans_vect</span><span class="p">(</span><span class="n">P</span><span class="p">):</span>
+        <span class="k">return</span>  <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+    <span class="c1"># main switch for the rotation matrix</span>
+    <span class="c1"># add new methods here if necessary</span>
+<div class="viewcode-block" id="StructureSimilarity.get_rotation_matrix"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.get_rotation_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">get_rotation_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">):</span>
+
+        <span class="c1"># get the matrix with Kabsh method</span>
+        <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">==</span><span class="s1">&#39;svd&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rotation_matrix_Kabsh</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">)</span>
+
+        <span class="c1"># or with the quaternion method</span>
+        <span class="k">elif</span> <span class="n">method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">==</span><span class="s1">&#39;quaternion&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rotation_matrix_quaternion</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> is not a valid method for rmsd alignement.</span><span class="se">\n</span><span class="s1"> Options are svd or quaternions&#39;</span> <span class="o">%</span><span class="n">method</span><span class="p">)</span></div>
+
+    <span class="c1"># get the rotation matrix via a SVD</span>
+    <span class="c1"># decomposition of the correlation matrix</span>
+<div class="viewcode-block" id="StructureSimilarity.get_rotation_matrix_Kabsh"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.get_rotation_matrix_Kabsh">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_rotation_matrix_Kabsh</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">):</span>
+
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        based on</span>
+<span class="sd">        [1] Molecular Distance Measure</span>
+<span class="sd">            https://cnx.org/contents/HV-RsdwL@23/Molecular-Distance-Measures</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">pshape</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">qshape</span> <span class="o">=</span> <span class="n">Q</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="k">if</span> <span class="n">pshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">qshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">npts</span> <span class="o">=</span> <span class="n">pshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Matrix don&#39;t have the same number of points&quot;</span><span class="p">,</span><span class="n">P</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+
+        <span class="n">p0</span><span class="p">,</span><span class="n">q0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="mi">0</span><span class="p">)),</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">eps</span> <span class="o">=</span> <span class="mf">1E-6</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">p0</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="n">q0</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;You must center the fragment first&#39;</span><span class="p">,</span><span class="n">p0</span><span class="p">,</span><span class="n">q0</span><span class="p">)</span>
+
+
+        <span class="c1"># form the covariance matrix</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">Q</span><span class="p">)</span><span class="o">/</span><span class="n">npts</span>
+
+        <span class="c1"># SVD the matrix</span>
+        <span class="n">V</span><span class="p">,</span><span class="n">S</span><span class="p">,</span><span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+        <span class="c1"># the W matrix returned here is</span>
+        <span class="c1"># already its transpose</span>
+        <span class="c1"># https://docs.scipy.org/doc/numpy-1.13.0/reference/generated/numpy.linalg.svd.html</span>
+        <span class="n">W</span> <span class="o">=</span> <span class="n">W</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="c1"># determinant</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">W</span><span class="p">,</span><span class="n">V</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+
+        <span class="c1"># form the U matrix</span>
+        <span class="n">Id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">d</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">Id</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">W</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">V</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">U</span></div>
+
+    <span class="c1"># get the rotation amtrix via the quaternion approach</span>
+    <span class="c1"># doesn&#39;t work great so far</span>
+<div class="viewcode-block" id="StructureSimilarity.get_rotation_matrix_quaternion"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.get_rotation_matrix_quaternion">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_rotation_matrix_quaternion</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">):</span>
+
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        based on</span>
+<span class="sd">        [1] Using quaternions to calculate RMSD</span>
+<span class="sd">            http://www.ams.stonybrook.edu/~coutsias/papers/rmsd17.pdf</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">pshape</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">qshape</span> <span class="o">=</span> <span class="n">Q</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="k">if</span> <span class="n">pshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">qshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Matrix don&#39;t have the same number of points&quot;</span><span class="p">,</span><span class="n">P</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="n">p0</span><span class="p">,</span><span class="n">q0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="mi">0</span><span class="p">)),</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">eps</span> <span class="o">=</span> <span class="mf">1E-6</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">p0</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="n">q0</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;You must center the fragment first&#39;</span><span class="p">,</span><span class="n">p0</span><span class="p">,</span><span class="n">q0</span><span class="p">)</span>
+
+        <span class="c1"># form the correlation matrix</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">Q</span><span class="p">)</span>
+
+        <span class="c1"># form the F matrix (eq. 10 of ref[1])</span>
+        <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+
+        <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">R</span><span class="p">)</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="n">R</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">R</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">F</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="n">R</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">R</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">R</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">R</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">R</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">F</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">R</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=-</span><span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">R</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">R</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">R</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">F</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">R</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">R</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">R</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span> <span class="o">=-</span><span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">R</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">R</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="c1"># diagonalize it</span>
+        <span class="n">l</span><span class="p">,</span><span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eig</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+
+        <span class="c1"># extract the eigenvect of the highest eigenvalues</span>
+        <span class="n">indmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+        <span class="n">q0</span><span class="p">,</span><span class="n">q1</span><span class="p">,</span><span class="n">q2</span><span class="p">,</span><span class="n">q3</span> <span class="o">=</span> <span class="n">U</span><span class="p">[:,</span><span class="n">indmax</span><span class="p">]</span>
+
+        <span class="c1"># form the rotation matrix (eq. 33 ref[1])</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+
+        <span class="n">U</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">q0</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">q1</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="n">q2</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="n">q3</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">U</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">q1</span><span class="o">*</span><span class="n">q2</span><span class="o">-</span><span class="n">q0</span><span class="o">*</span><span class="n">q3</span><span class="p">)</span>
+        <span class="n">U</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">q1</span><span class="o">*</span><span class="n">q3</span><span class="o">+</span><span class="n">q0</span><span class="o">*</span><span class="n">q2</span><span class="p">)</span>
+        <span class="n">U</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">q1</span><span class="o">*</span><span class="n">q2</span><span class="o">+</span><span class="n">q0</span><span class="o">*</span><span class="n">q3</span><span class="p">)</span>
+        <span class="n">U</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">q0</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="n">q1</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">q2</span><span class="o">*</span><span class="mi">2</span><span class="o">-</span><span class="n">q3</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">U</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">q2</span><span class="o">*</span><span class="n">q3</span><span class="o">-</span><span class="n">q0</span><span class="o">*</span><span class="n">q1</span><span class="p">)</span>
+        <span class="n">U</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">q1</span><span class="o">*</span><span class="n">q3</span><span class="o">-</span><span class="n">q0</span><span class="o">*</span><span class="n">q2</span><span class="p">)</span>
+        <span class="n">U</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">q2</span><span class="o">*</span><span class="n">q3</span><span class="o">+</span><span class="n">q0</span><span class="o">*</span><span class="n">q1</span><span class="p">)</span>
+        <span class="n">U</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">q0</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="n">q1</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="n">q2</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">q3</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="k">return</span> <span class="n">U</span></div>
+
+
+<div class="viewcode-block" id="StructureSimilarity.translation"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.translation">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">translation</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span><span class="n">vect</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">xyz</span> <span class="o">+</span> <span class="n">vect</span></div>
+
+<div class="viewcode-block" id="StructureSimilarity.rotation_around_axis"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.rotation_around_axis">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">rotation_around_axis</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span><span class="n">axis</span><span class="p">,</span><span class="n">angle</span><span class="p">):</span>
+
+        <span class="c1"># get the data</span>
+        <span class="n">ct</span><span class="p">,</span><span class="n">st</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+        <span class="n">ux</span><span class="p">,</span><span class="n">uy</span><span class="p">,</span><span class="n">uz</span> <span class="o">=</span> <span class="n">axis</span>
+
+        <span class="c1"># get the center of the molecule</span>
+        <span class="n">xyz0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># definition of the rotation matrix</span>
+        <span class="c1"># see https://en.wikipedia.org/wiki/Rotation_matrix</span>
+        <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="p">[</span><span class="n">ct</span> <span class="o">+</span> <span class="n">ux</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ct</span><span class="p">),</span>         <span class="n">ux</span><span class="o">*</span><span class="n">uy</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ct</span><span class="p">)</span> <span class="o">-</span> <span class="n">uz</span><span class="o">*</span><span class="n">st</span><span class="p">,</span>       <span class="n">ux</span><span class="o">*</span><span class="n">uz</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ct</span><span class="p">)</span> <span class="o">+</span> <span class="n">uy</span><span class="o">*</span><span class="n">st</span><span class="p">],</span>
+        <span class="p">[</span><span class="n">uy</span><span class="o">*</span><span class="n">ux</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ct</span><span class="p">)</span> <span class="o">+</span> <span class="n">uz</span><span class="o">*</span><span class="n">st</span><span class="p">,</span>      <span class="n">ct</span> <span class="o">+</span> <span class="n">uy</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ct</span><span class="p">),</span>          <span class="n">uy</span><span class="o">*</span><span class="n">uz</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ct</span><span class="p">)</span> <span class="o">-</span> <span class="n">ux</span><span class="o">*</span><span class="n">st</span><span class="p">],</span>
+        <span class="p">[</span><span class="n">uz</span><span class="o">*</span><span class="n">ux</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ct</span><span class="p">)</span> <span class="o">-</span> <span class="n">uy</span><span class="o">*</span><span class="n">st</span><span class="p">,</span>      <span class="n">uz</span><span class="o">*</span><span class="n">uy</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ct</span><span class="p">)</span> <span class="o">+</span> <span class="n">ux</span><span class="o">*</span><span class="n">st</span><span class="p">,</span>       <span class="n">ct</span> <span class="o">+</span> <span class="n">uz</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ct</span><span class="p">)</span>   <span class="p">]])</span>
+
+        <span class="c1"># apply the rotation</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">,(</span><span class="n">xyz</span><span class="o">-</span><span class="n">xyz0</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="n">xyz0</span></div>
+
+<div class="viewcode-block" id="StructureSimilarity.rotation_euler"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.rotation_euler">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">rotation_euler</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span><span class="n">alpha</span><span class="p">,</span><span class="n">beta</span><span class="p">,</span><span class="n">gamma</span><span class="p">):</span>
+
+        <span class="c1"># precomte the trig</span>
+        <span class="n">ca</span><span class="p">,</span><span class="n">sa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">cb</span><span class="p">,</span><span class="n">sb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+        <span class="n">cg</span><span class="p">,</span><span class="n">sg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">gamma</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">gamma</span><span class="p">)</span>
+
+
+        <span class="c1"># get the center of the molecule</span>
+        <span class="n">xyz0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># rotation matrices</span>
+        <span class="n">rx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="n">ca</span><span class="p">,</span><span class="o">-</span><span class="n">sa</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="n">sa</span><span class="p">,</span><span class="n">ca</span><span class="p">]])</span>
+        <span class="n">ry</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">cb</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">sb</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="o">-</span><span class="n">sb</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">cb</span><span class="p">]])</span>
+        <span class="n">rz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">cg</span><span class="p">,</span><span class="o">-</span><span class="n">sg</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="n">sg</span><span class="p">,</span><span class="n">cs</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+
+        <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">rx</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">ry</span><span class="p">,</span><span class="n">rz</span><span class="p">))</span>
+
+        <span class="c1"># apply the rotation</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">,(</span><span class="n">xyz</span><span class="o">-</span><span class="n">xyz0</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="n">xyz0</span></div>
+
+
+<div class="viewcode-block" id="StructureSimilarity.rotation_matrix"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.rotation_matrix">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">rotation_matrix</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span><span class="n">rot_mat</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">center</span><span class="p">:</span>
+            <span class="n">xyz0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">xyz</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">,(</span><span class="n">xyz</span><span class="o">-</span><span class="n">xyz0</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="n">xyz0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">,(</span><span class="n">xyz</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span></div></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="n">BM4</span> <span class="o">=</span> <span class="s1">&#39;/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/&#39;</span>
+    <span class="n">decoy</span> <span class="o">=</span> <span class="n">BM4</span> <span class="o">+</span> <span class="s1">&#39;decoys_pdbFLs/1AK4/water/1AK4_1w.pdb&#39;</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">BM4</span> <span class="o">+</span> <span class="s1">&#39;BM4_dimers_bound/pdbFLs_ori/1AK4.pdb&#39;</span>
+
+    <span class="n">sim</span> <span class="o">=</span> <span class="n">StructureSimilarity</span><span class="p">(</span><span class="n">decoy</span><span class="p">,</span><span class="n">ref</span><span class="p">)</span>
+
+    <span class="c1">#----------------------------------------------------------------------</span>
+
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">irmsd_fast</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">compute_irmsd_fast</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">,</span><span class="n">izone</span><span class="o">=</span><span class="s1">&#39;1AK4.izone&#39;</span><span class="p">)</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">IRMSD TIME FAST </span><span class="si">%f</span><span class="s1"> in </span><span class="si">%f</span><span class="s1"> sec&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">irmsd_fast</span><span class="p">,</span><span class="n">t1</span><span class="p">))</span>
+
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">irmsd</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">compute_irmsd_pdb2sql</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">,</span><span class="n">izone</span><span class="o">=</span><span class="s1">&#39;1AK4.izone&#39;</span><span class="p">)</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;IRMSD TIME SQL </span><span class="si">%f</span><span class="s1"> in </span><span class="si">%f</span><span class="s1"> sec&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">irmsd</span><span class="p">,</span><span class="n">t1</span><span class="p">))</span>
+
+    <span class="c1">#----------------------------------------------------------------------</span>
+
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">lrmsd_fast</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">compute_lrmsd_fast</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">,</span><span class="n">lzone</span><span class="o">=</span><span class="s1">&#39;1AK4.lzone&#39;</span><span class="p">,</span><span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">LRMSD TIME FAST </span><span class="si">%f</span><span class="s1"> in </span><span class="si">%f</span><span class="s1"> sec&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">lrmsd_fast</span><span class="p">,</span><span class="n">t1</span><span class="p">))</span>
+
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">lrmsd</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">compute_lrmsd_pdb2sql</span><span class="p">(</span><span class="n">exportpath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">)</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;LRMSD TIME SQL </span><span class="si">%f</span><span class="s1"> in </span><span class="si">%f</span><span class="s1"> sec&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">lrmsd</span><span class="p">,</span><span class="n">t1</span><span class="p">))</span>
+
+    <span class="c1">#----------------------------------------------------------------------</span>
+
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">Fnat</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">compute_Fnat_pdb2sql</span><span class="p">()</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">FNAT TIME SQL </span><span class="si">%f</span><span class="s1"> in </span><span class="si">%f</span><span class="s1"> sec&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">Fnat</span><span class="p">,</span><span class="n">t1</span><span class="p">))</span>
+
+
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">Fnat_fast</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">compute_Fnat_fast</span><span class="p">(</span><span class="n">ref_pairs</span><span class="o">=</span><span class="s1">&#39;1AK4.ref_pairs&#39;</span><span class="p">)</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;LRMSD TIME FAST </span><span class="si">%f</span><span class="s1"> in </span><span class="si">%f</span><span class="s1"> sec&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">Fnat_fast</span><span class="p">,</span><span class="n">t1</span><span class="p">))</span>
+
+    <span class="c1">#----------------------------------------------------------------------</span>
+
+    <span class="n">dockQ</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">compute_DockQScore</span><span class="p">(</span><span class="n">Fnat_fast</span><span class="p">,</span><span class="n">lrmsd_fast</span><span class="p">,</span><span class="n">irmsd_fast</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">DockQ  </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">dockQ</span> <span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../../../index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../intro.html">First Steps with DeepRank</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial : Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial_deeplearning.html">Tutorial : Deep learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advTuto.html">Advanced Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.generate.html">Generate Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.learn.html">Deep learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.features.html">Feature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.tools.html">Tools</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">DeepRank 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Nicolas Renaud.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>

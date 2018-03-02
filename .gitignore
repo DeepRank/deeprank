@@ -23,6 +23,6 @@ example/workflow/test_out
 *.ref_pairs
 
 # docs
-docs/_build
-docs/_static
-docs/_templates
+#docs/_build
+#docs/_static
+#docs/_templates

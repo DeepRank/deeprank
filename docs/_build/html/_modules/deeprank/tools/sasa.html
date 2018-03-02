@@ -1,0 +1,267 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>deeprank.tools.sasa &#8212; DeepRank 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">DeepRank 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for deeprank.tools.sasa</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">deeprank.tools</span> <span class="k">import</span> <span class="n">pdb2sql</span>
+
+<div class="viewcode-block" id="SASA"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA">[docs]</a><span class="k">class</span> <span class="nc">SASA</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Simple class that computes Surface Accessible Solvent Area following some of the methods presented in</span>
+
+<span class="sd">    [1] Solvent accessible surface area approximations for rapid and accurate protein structure prediction</span>
+<span class="sd">        J Mol Model (2009) 15:1093–1108</span>
+<span class="sd">        DOI 10.1007/s00894-009-0454-9</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pdbfile</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pdbfile</span> <span class="o">=</span> <span class="n">pdbfile</span>
+
+<div class="viewcode-block" id="SASA.get_center"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA.get_center">[docs]</a>    <span class="k">def</span> <span class="nf">get_center</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">chainA</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="s1">&#39;cb&#39;</span><span class="p">):</span>
+
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Get the center of the resiudes</span>
+<span class="sd">        center = cb --&gt; the center is located on the carbon beta of each residue</span>
+<span class="sd">        center = &#39;center&#39; --&gt; average position of all atoms of the residue</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="n">center</span> <span class="o">==</span> <span class="s1">&#39;center&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_residue_center</span><span class="p">(</span><span class="n">chainA</span><span class="o">=</span><span class="n">chainA</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="n">chainB</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">center</span> <span class="o">==</span> <span class="s1">&#39;cb&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_residue_carbon_beta</span><span class="p">(</span><span class="n">chainA</span><span class="o">=</span><span class="n">chainA</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="n">chainB</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Options </span><span class="si">%s</span><span class="s1"> not recognized in SASA.get_center&#39;</span> <span class="o">%</span><span class="n">center</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SASA.get_residue_center"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA.get_residue_center">[docs]</a>    <span class="k">def</span> <span class="nf">get_residue_center</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">chainA</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">):</span>
+
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Compute the average position of all the residues</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">sql</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pdbfile</span><span class="p">)</span>
+        <span class="n">resA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sql</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;resSeq,resName,x,y,z&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="n">chainA</span><span class="p">))</span>
+        <span class="n">resB</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sql</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;resSeq,resName,x,y,z&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="n">chainB</span><span class="p">))</span>
+        <span class="n">sql</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="n">resSeqA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">resA</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">))</span>
+        <span class="n">resSeqB</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">resB</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">[</span><span class="n">chainA</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span> <span class="n">resA</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">resA</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">==</span><span class="n">r</span><span class="p">),</span><span class="mi">2</span><span class="p">:],</span><span class="mi">0</span> <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">resSeqA</span> <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">[</span><span class="n">chainB</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span> <span class="n">resB</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">resB</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">==</span><span class="n">r</span><span class="p">),</span><span class="mi">2</span><span class="p">:],</span><span class="mi">0</span> <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">resSeqB</span> <span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">resinfo</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resinfo</span><span class="p">[</span><span class="n">chainA</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">res_seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">resA</span><span class="p">[:,:</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">r</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">res_seen</span><span class="p">:</span>
+                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">resinfo</span><span class="p">[</span><span class="n">chainA</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+
+        <span class="n">res_seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resinfo</span><span class="p">[</span><span class="n">chainB</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">resB</span><span class="p">[:,:</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">r</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">res_seen</span><span class="p">:</span>
+                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">resinfo</span><span class="p">[</span><span class="n">chainB</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SASA.get_residue_carbon_beta"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA.get_residue_carbon_beta">[docs]</a>    <span class="k">def</span> <span class="nf">get_residue_carbon_beta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">chainA</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">):</span>
+
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Extract the position of the carbon beta of each residue</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">sql</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pdbfile</span><span class="p">)</span>
+        <span class="n">resA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sql</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;resSeq,resName,x,y,z&#39;</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;CB&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="n">chainA</span><span class="p">))</span>
+        <span class="n">resB</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sql</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;resSeq,resName,x,y,z&#39;</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;CB&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="n">chainB</span><span class="p">))</span>
+        <span class="n">sql</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">resA</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">resA</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">))</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">resB</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">resB</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">))</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">[</span><span class="n">chainA</span><span class="p">]</span> <span class="o">=</span> <span class="n">resA</span><span class="p">[:,</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">[</span><span class="n">chainB</span><span class="p">]</span> <span class="o">=</span> <span class="n">resB</span><span class="p">[:,</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">resinfo</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resinfo</span><span class="p">[</span><span class="n">chainA</span><span class="p">]</span> <span class="o">=</span> <span class="n">resA</span><span class="p">[:,:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resinfo</span><span class="p">[</span><span class="n">chainB</span><span class="p">]</span> <span class="o">=</span> <span class="n">resB</span><span class="p">[:,:</span><span class="mi">2</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="SASA.neighbor_vector"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA.neighbor_vector">[docs]</a>    <span class="k">def</span> <span class="nf">neighbor_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">lbound</span><span class="o">=</span><span class="mf">3.3</span><span class="p">,</span><span class="n">ubound</span><span class="o">=</span><span class="mf">11.1</span><span class="p">,</span><span class="n">chainA</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="s1">&#39;cb&#39;</span><span class="p">):</span>
+
+
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Compute teh SASA folowing the neighbour vector approach.</span>
+<span class="sd">        Eq on page 1097 of Ref[1]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># get the center</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_center</span><span class="p">(</span><span class="n">chainA</span><span class="o">=</span><span class="n">chainA</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="n">chainB</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">)</span>
+
+        <span class="n">NV</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">chain</span> <span class="ow">in</span> <span class="p">[</span><span class="n">chainA</span><span class="p">,</span><span class="n">chainB</span><span class="p">]:</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">xyz</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">[</span><span class="n">chain</span><span class="p">]):</span>
+
+                <span class="n">vect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">[</span><span class="n">chain</span><span class="p">]</span><span class="o">-</span><span class="n">xyz</span>
+                <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">[</span><span class="n">chain</span><span class="p">]</span><span class="o">-</span><span class="n">xyz</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+
+                <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">vect</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vect</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+                <span class="n">vect</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vect</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+                <span class="n">weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_weight</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span><span class="n">lbound</span><span class="o">=</span><span class="n">lbound</span><span class="p">,</span><span class="n">ubound</span><span class="o">=</span><span class="n">ubound</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">vect</span> <span class="o">*=</span> <span class="n">weight</span>
+
+                <span class="n">vect</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">vect</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">vect</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weight</span><span class="p">)</span>
+
+                <span class="n">resSeq</span><span class="p">,</span><span class="n">resName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resinfo</span><span class="p">[</span><span class="n">chain</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">chain</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">resSeq</span><span class="p">),</span><span class="n">resName</span><span class="p">])</span>
+                <span class="n">value</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vect</span><span class="p">)</span>
+                <span class="n">NV</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>  <span class="o">=</span> <span class="n">value</span>
+
+        <span class="k">return</span> <span class="n">NV</span></div>
+
+
+<div class="viewcode-block" id="SASA.neighbor_count"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA.neighbor_count">[docs]</a>    <span class="k">def</span> <span class="nf">neighbor_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">lbound</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span><span class="n">ubound</span><span class="o">=</span><span class="mf">11.4</span><span class="p">,</span><span class="n">chainA</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="s1">&#39;cb&#39;</span><span class="p">):</span>
+
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Compute the neighbourhood count of each residue</span>
+<span class="sd">        Eq on page 1097 of Ref[1]</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># get the center</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_center</span><span class="p">(</span><span class="n">chainA</span><span class="o">=</span><span class="n">chainA</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="n">chainB</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">)</span>
+
+        <span class="c1"># dict of NC</span>
+        <span class="n">NC</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">chain</span> <span class="ow">in</span> <span class="p">[</span><span class="n">chainA</span><span class="p">,</span><span class="n">chainB</span><span class="p">]:</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">xyz</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">[</span><span class="n">chain</span><span class="p">]):</span>
+                <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">[</span><span class="n">chain</span><span class="p">]</span><span class="o">-</span><span class="n">xyz</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+                <span class="n">resSeq</span><span class="p">,</span><span class="n">resname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resinfo</span><span class="p">[</span><span class="n">chain</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">chain</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">resSeq</span><span class="p">),</span><span class="n">resName</span><span class="p">])</span>
+                <span class="n">value</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neighbor_weight</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span><span class="n">lbound</span><span class="p">,</span><span class="n">ubound</span><span class="p">))</span>
+                <span class="n">NC</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>  <span class="o">=</span> <span class="n">value</span>
+
+        <span class="k">return</span> <span class="n">NC</span></div>
+
+<div class="viewcode-block" id="SASA.neighbor_weight"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA.neighbor_weight">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">neighbor_weight</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span><span class="n">lbound</span><span class="p">,</span><span class="n">ubound</span><span class="p">):</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span>  <span class="p">(</span><span class="n">dist</span><span class="o">&gt;</span><span class="n">lbound</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">dist</span><span class="o">&lt;</span><span class="n">ubound</span><span class="p">)</span> <span class="p">)</span>
+        <span class="n">dist</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">dist</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">-</span><span class="n">lbound</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">ubound</span><span class="o">-</span><span class="n">lbound</span><span class="p">)</span> <span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">)</span>
+        <span class="n">dist</span><span class="p">[</span><span class="n">dist</span><span class="o">&lt;=</span><span class="n">lbound</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">dist</span><span class="p">[</span><span class="n">dist</span><span class="o">&gt;=</span><span class="n">ubound</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">dist</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="n">sasa</span> <span class="o">=</span> <span class="n">SASA</span><span class="p">(</span><span class="s1">&#39;1AK4_1w.pdb&#39;</span><span class="p">)</span>
+    <span class="n">NV</span> <span class="o">=</span> <span class="n">sasa</span><span class="o">.</span><span class="n">neighbor_vector</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">NV</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../../../index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../intro.html">First Steps with DeepRank</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial : Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial_deeplearning.html">Tutorial : Deep learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advTuto.html">Advanced Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.generate.html">Generate Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.learn.html">Deep learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.features.html">Feature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.tools.html">Tools</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">DeepRank 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Nicolas Renaud.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,617 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>deeprank.learn.modelGenerator &#8212; DeepRank 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">DeepRank 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for deeprank.learn.modelGenerator</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">ast</span>
+<span class="c1">#################################</span>
+<span class="c1">#</span>
+<span class="c1">#   MODEL GENERATOR</span>
+<span class="c1">#</span>
+<span class="c1">#################################</span>
+<div class="viewcode-block" id="NetworkGenerator"><a class="viewcode-back" href="../../../deeprank.learn.html#deeprank.learn.modelGenerator.NetworkGenerator">[docs]</a><span class="k">class</span> <span class="nc">NetworkGenerator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;_tmp_model_&#39;</span><span class="p">,</span><span class="n">fname</span><span class="o">=</span><span class="s1">&#39;_tmp_model_.py&#39;</span><span class="p">,</span><span class="n">conv_layers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">fc_layers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Automatic generation of NN files.</span>
+
+<span class="sd">        This class allows for automatic generation of python file containing the definition of</span>
+<span class="sd">        torch formatted neural network.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str, optional): name of the model in the python file</span>
+<span class="sd">            fname (str, optional): name of the file containing the model</span>
+<span class="sd">            conv_layers (list(layers)): list of convolutional layers</span>
+<span class="sd">            fc_layers (list(layers)): list of fully connected layers</span>
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; conv_layers = []</span>
+<span class="sd">        &gt;&gt;&gt; conv_layers.append(conv(output_size=4,kernel_size=2,post=&#39;relu&#39;))</span>
+<span class="sd">        &gt;&gt;&gt; conv_layers.append(pool(kernel_size=2))</span>
+<span class="sd">        &gt;&gt;&gt; conv_layers.append(conv(input_size=4,output_size=5,kernel_size=2,post=&#39;relu&#39;))</span>
+<span class="sd">        &gt;&gt;&gt; conv_layers.append(pool(kernel_size=2))</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; fc_layers = []</span>
+<span class="sd">        &gt;&gt;&gt; fc_layers.append(fc(output_size=84,post=&#39;relu&#39;))</span>
+<span class="sd">        &gt;&gt;&gt; fc_layers.append(fc(input_size=84,output_size=1))</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; MG = NetworkGenerator(name=&#39;test&#39;,fname=&#39;model_test.py&#39;,conv_layers=conv_layers,fc_layers=fc_layers)</span>
+<span class="sd">        &gt;&gt;&gt; MG.print()</span>
+<span class="sd">        &gt;&gt;&gt; MG.write()</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># name of the model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="c1"># filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fname</span> <span class="o">=</span> <span class="n">fname</span>
+
+        <span class="c1"># structure of the convolutional/fc layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv_layers</span> <span class="o">=</span> <span class="n">conv_layers</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc_layers</span> <span class="o">=</span> <span class="n">fc_layers</span> <span class="ow">or</span> <span class="p">[]</span>
+
+        <span class="c1"># dimension of the final fc layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">final_dim</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># possible number of randomly generated conv/fc layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_conv_layers</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">11</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_fc_layers</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="c1"># possible types of conv layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv_types</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;conv&#39;</span><span class="p">,</span><span class="s1">&#39;dropout&#39;</span><span class="p">,</span><span class="s1">&#39;pool&#39;</span><span class="p">]</span>
+
+        <span class="c1"># conv parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv_params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv_params</span><span class="p">[</span><span class="s1">&#39;output_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv_params</span><span class="p">[</span><span class="s1">&#39;kernel_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="c1"># pool parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool_params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool_params</span><span class="p">[</span><span class="s1">&#39;kernel_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="c1"># params of the dropout layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout_params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout_params</span><span class="p">[</span><span class="s1">&#39;percent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">,</span><span class="mi">9</span><span class="p">)</span>
+
+        <span class="c1"># params for the automatic generation of fc layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc_params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc_params</span><span class="p">[</span><span class="s1">&#39;output_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">11</span><span class="p">)]</span>
+
+        <span class="c1"># types of post processing</span>
+        <span class="c1"># must be in torch.nn.functional</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post_types</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;relu&#39;</span><span class="p">]</span>
+
+    <span class="c1">#######################################</span>
+    <span class="c1">#</span>
+    <span class="c1"># Routines used to write dow the</span>
+    <span class="c1"># file containing the model</span>
+    <span class="c1">#</span>
+    <span class="c1">#######################################</span>
+
+<div class="viewcode-block" id="NetworkGenerator.write"><a class="viewcode-back" href="../../../deeprank.learn.html#deeprank.learn.modelGenerator.NetworkGenerator.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write the model to file.&quot;&quot;&quot;</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fname</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_import</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_definition</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_init</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_conv_output</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_forward_feature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_forward</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># import statement</span>
+    <span class="k">def</span> <span class="nf">_write_import</span><span class="p">(</span><span class="n">fhandle</span><span class="p">):</span>
+
+        <span class="n">modules</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;import torch</span>
+<span class="s1">from torch.autograd import Variable</span>
+<span class="s1">import torch.nn as nn</span>
+<span class="s1">import torch.nn.functional as F</span>
+
+<span class="s1">&#39;&#39;&#39;</span>
+
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
+
+    <span class="c1"># comment and such</span>
+    <span class="k">def</span> <span class="nf">_write_definition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fhandle</span><span class="p">):</span>
+        <span class="n">ndash</span> <span class="o">=</span> <span class="mi">70</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="o">*</span><span class="n">ndash</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">#</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;# Model automatically generated by modelGenerator</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span><span class="s1">&#39;#&#39;</span><span class="o">*</span><span class="n">ndash</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="n">ndash</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;# Network Structure</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="n">ndash</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ilayer</span><span class="p">,</span><span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_layers</span><span class="p">):</span>
+            <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">__human_readable_str__</span><span class="p">(</span><span class="n">ilayer</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">ilayer</span><span class="p">,</span><span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc_layers</span><span class="p">):</span>
+            <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">__human_readable_str__</span><span class="p">(</span><span class="n">ilayer</span><span class="p">))</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="n">ndash</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="c1"># initialization of the  model</span>
+    <span class="c1"># here all the layers are defined</span>
+    <span class="k">def</span> <span class="nf">_write_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fhandle</span><span class="p">):</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;class &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;(nn.Module):</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">def __init__(self,input_shape):</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">super(</span><span class="si">%s</span><span class="s1">,self).__init__()</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># write the conv layer</span>
+        <span class="k">for</span> <span class="n">ilayer</span><span class="p">,</span><span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_layers</span><span class="p">):</span>
+            <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">__def_str__</span><span class="p">(</span><span class="n">ilayer</span><span class="p">))</span>
+
+        <span class="c1"># the size determination between the conv and fc blocks</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">size = self._get_conv_output(input_shape)</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># write the fc layers</span>
+        <span class="k">for</span> <span class="n">ilayer</span><span class="p">,</span><span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc_layers</span><span class="p">):</span>
+            <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">__def_str__</span><span class="p">(</span><span class="n">ilayer</span><span class="p">))</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># get the size of the output at the end of the conv block</span>
+    <span class="k">def</span> <span class="nf">_write_conv_output</span><span class="p">(</span><span class="n">fhandle</span><span class="p">):</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;</span>
+<span class="se">\t</span><span class="s1">def _get_conv_output(self,shape):</span>
+<span class="se">\t\t</span><span class="s1">inp = Variable(torch.rand(1,*shape))</span>
+<span class="se">\t\t</span><span class="s1">out = self._forward_features(inp)</span>
+<span class="se">\t\t</span><span class="s1">return out.data.view(1,-1).size(1)</span>
+
+<span class="s1">&#39;&#39;&#39;</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+    <span class="c1"># forward feature conatining all the conv layers</span>
+    <span class="c1"># here all the conv layers are defined</span>
+    <span class="k">def</span> <span class="nf">_write_forward_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fhandle</span><span class="p">):</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">def _forward_features(self,x):</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ilayer</span><span class="p">,</span><span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_layers</span><span class="p">):</span>
+            <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">__use_str__</span><span class="p">(</span><span class="n">ilayer</span><span class="p">))</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">return x</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="c1"># total forward pass</span>
+    <span class="c1"># here _forward_features is used</span>
+    <span class="c1"># and all the fc layers are used</span>
+    <span class="k">def</span> <span class="nf">_write_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fhandle</span><span class="p">):</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">def forward(self,x):</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">x = self._forward_features(x)</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">x = x.view(x.size(0),-1)</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ilayer</span><span class="p">,</span><span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc_layers</span><span class="p">):</span>
+            <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">__use_str__</span><span class="p">(</span><span class="n">ilayer</span><span class="p">))</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">return x</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">fhandle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="c1"># print the definition of the network to screen</span>
+<div class="viewcode-block" id="NetworkGenerator.print"><a class="viewcode-back" href="../../../deeprank.learn.html#deeprank.learn.modelGenerator.NetworkGenerator.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print the model to screen.&quot;&quot;&quot;</span>
+
+        <span class="n">ndash</span> <span class="o">=</span> <span class="mi">70</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="n">ndash</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;# Network Structure&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="n">ndash</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ilayer</span><span class="p">,</span><span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_layers</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">__human_readable_str__</span><span class="p">(</span><span class="n">ilayer</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">ilayer</span><span class="p">,</span><span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc_layers</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">__human_readable_str__</span><span class="p">(</span><span class="n">ilayer</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="n">ndash</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+    <span class="c1">#########################################</span>
+    <span class="c1">#</span>
+    <span class="c1"># get a new random model</span>
+    <span class="c1">#</span>
+    <span class="c1">#########################################</span>
+<div class="viewcode-block" id="NetworkGenerator.get_new_random_model"><a class="viewcode-back" href="../../../deeprank.learn.html#deeprank.learn.modelGenerator.NetworkGenerator.get_new_random_model">[docs]</a>    <span class="k">def</span> <span class="nf">get_new_random_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a new Random Model.&quot;&quot;&quot;</span>
+
+        <span class="c1"># number of conv/fc layers</span>
+        <span class="n">nconv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_conv_layers</span><span class="p">)</span>
+        <span class="n">nfc</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_fc_layers</span><span class="p">)</span>
+
+        <span class="c1"># generate the conv layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv_layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ilayer</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nconv</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_conv_layer_random</span><span class="p">(</span><span class="n">ilayer</span><span class="p">)</span>
+
+        <span class="c1"># generate the fc layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc_layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ilayer</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nfc</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_fc_layer_random</span><span class="p">(</span><span class="n">ilayer</span><span class="p">)</span>
+
+        <span class="c1"># fix the final dimension</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc_layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">final_dim</span></div>
+
+
+    <span class="c1"># pick a layer type</span>
+    <span class="k">def</span> <span class="nf">_init_conv_layer_random</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ilayer</span><span class="p">):</span>
+
+        <span class="c1"># determine wih type of layer we want</span>
+        <span class="c1"># first layer is a conv</span>
+        <span class="c1"># we can&#39;t have 2 pool in a row</span>
+        <span class="k">if</span> <span class="n">ilayer</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_types</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># if rpevious layer is pool, next can&#39;t be pool</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_layers</span><span class="p">[</span><span class="n">ilayer</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;pool&#39;</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_types</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="c1"># else it can be anything</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_types</span><span class="p">)</span>
+
+        <span class="c1"># init the parms of the layer</span>
+        <span class="c1"># each layer type has its own params</span>
+        <span class="c1"># the output/input size matching is done automatically</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;conv&#39;</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+
+            <span class="k">if</span> <span class="n">ilayer</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="c1">#fixed by input shape</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">isearch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ilayer</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_layers</span><span class="p">[</span><span class="n">isearch</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;conv&#39;</span><span class="p">:</span>
+                        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_layers</span><span class="p">[</span><span class="n">isearch</span><span class="p">]</span><span class="o">.</span><span class="n">output_size</span>
+                        <span class="k">break</span>
+
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_params</span><span class="p">[</span><span class="s1">&#39;output_size&#39;</span><span class="p">])</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;kernel_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_params</span><span class="p">[</span><span class="s1">&#39;kernel_size&#39;</span><span class="p">])</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;post&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">post_types</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;pool&#39;</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;kernel_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pool_params</span><span class="p">[</span><span class="s1">&#39;kernel_size&#39;</span><span class="p">])</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;post&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">post_types</span><span class="p">)</span>
+
+
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;dropout&#39;</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;percent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout_params</span><span class="p">[</span><span class="s1">&#39;percent&#39;</span><span class="p">])</span>
+
+        <span class="c1"># create the current layer class instance</span>
+        <span class="c1"># and initialize if with the __init_from_dict__() method</span>
+        <span class="n">current_layer</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">list_eval</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])()</span>
+        <span class="n">current_layer</span><span class="o">.</span><span class="n">__init_from_dict__</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_layer</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_init_fc_layer_random</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ilayer</span><span class="p">):</span>
+
+        <span class="c1"># init the parms of the layer</span>
+        <span class="c1"># each layer type has its own params</span>
+        <span class="c1"># the output/input size matching is done automatically</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;fc&#39;</span> <span class="c1"># so far only fc layer here</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">if</span> <span class="n">ilayer</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="c1"># fixed by the conv layers</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc_layers</span><span class="p">[</span><span class="n">ilayer</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output_size</span>
+
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc_params</span><span class="p">[</span><span class="s1">&#39;output_size&#39;</span><span class="p">])</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;post&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">post_types</span><span class="p">)</span>
+
+
+        <span class="n">current_layer</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">list_eval</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])()</span>
+        <span class="n">current_layer</span><span class="o">.</span><span class="n">__init_from_dict__</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_layer</span><span class="p">)</span></div>
+
+
+<span class="c1">#################################</span>
+<span class="c1">#   CNN layer</span>
+<span class="c1">#################################</span>
+<div class="viewcode-block" id="conv"><a class="viewcode-back" href="../../../deeprank.learn.html#deeprank.learn.modelGenerator.conv">[docs]</a><span class="k">class</span> <span class="nc">conv</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">input_size</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">output_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">kernel_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">post</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper around the convolutional layer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_size (int, optional): input size (default, let the generator figure it out)</span>
+<span class="sd">            output_size (int, optional): output size</span>
+<span class="sd">            kernel_size (int, optional): kernel size</span>
+<span class="sd">            post (str, optional): post process of the data</span>
+
+<span class="sd">        Example :</span>
+
+<span class="sd">        &gt;&gt;&gt; conv_layers.append(conv(output_size=4,kernel_size=2,post=&#39;relu&#39;))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s1">&#39;conv&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_size</span> <span class="o">=</span> <span class="n">input_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_size</span> <span class="o">=</span>  <span class="n">output_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span> <span class="o">=</span> <span class="n">kernel_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post</span> <span class="o">=</span> <span class="n">post</span>
+
+
+    <span class="k">def</span> <span class="nf">__def_str__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ilayer</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ilayer</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;self.convlayer_</span><span class="si">%03d</span><span class="s1"> = nn.Conv3d(input_shape[0],</span><span class="si">%d</span><span class="s1">,kernel_size=</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ilayer</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">output_size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;self.convlayer_</span><span class="si">%03d</span><span class="s1"> = nn.Conv3d(</span><span class="si">%d</span><span class="s1">,</span><span class="si">%d</span><span class="s1">,kernel_size=</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ilayer</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">input_size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">output_size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__use_str__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ilayer</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">post</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;x = self.convlayer_</span><span class="si">%03d</span><span class="s1">(x)&#39;</span> <span class="o">%</span><span class="n">ilayer</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">,</span><span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s1">&#39;x = F.</span><span class="si">%s</span><span class="s1">(self.convlayer_</span><span class="si">%03d</span><span class="s1">(x))&#39;</span> <span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">,</span><span class="n">ilayer</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Error with post processing of conv layer </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">ilayer</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s1">&#39;x = self.convlayer_</span><span class="si">%03d</span><span class="s1">(x)&#39;</span> <span class="o">%</span><span class="n">ilayer</span>
+
+    <span class="k">def</span> <span class="nf">__get_params__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_size</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_size</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;kernel_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;post&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">def</span> <span class="nf">__init_from_dict__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_size</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_size&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_size</span> <span class="o">=</span>  <span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_size&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;kernel_size&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;post&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__human_readable_str__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ilayer</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;#conv layer </span><span class="si">% 3d</span><span class="s1">: conv | input </span><span class="si">% 2d</span><span class="s1">  output </span><span class="si">% 2d</span><span class="s1">  kernel </span><span class="si">% 2d</span><span class="s1">  post </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ilayer</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">input_size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">output_size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">)</span></div>
+
+<span class="c1">#################################</span>
+<span class="c1">#   POOL layer</span>
+<span class="c1">#################################</span>
+<div class="viewcode-block" id="pool"><a class="viewcode-back" href="../../../deeprank.learn.html#deeprank.learn.modelGenerator.pool">[docs]</a><span class="k">class</span> <span class="nc">pool</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">kernel_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">post</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper around the pool layer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            kernel_size (int, optional): kernel size</span>
+<span class="sd">            post (str, optional): post process of the data</span>
+
+<span class="sd">        Example :</span>
+
+<span class="sd">        &gt;&gt;&gt; conv_layers.append(pool(kernel_size=2))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s1">&#39;pool&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span> <span class="o">=</span> <span class="n">kernel_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post</span> <span class="o">=</span> <span class="n">post</span>
+
+    <span class="k">def</span> <span class="nf">__def_str__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ilayer</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;self.convlayer_</span><span class="si">%03d</span><span class="s1"> = nn.MaxPool3d((</span><span class="si">%d</span><span class="s1">,</span><span class="si">%d</span><span class="s1">,</span><span class="si">%d</span><span class="s1">))&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ilayer</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__use_str__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ilayer</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">post</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;x = self.convlayer_</span><span class="si">%03d</span><span class="s1">(x)&#39;</span> <span class="o">%</span><span class="n">ilayer</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">,</span><span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s1">&#39;x = F.</span><span class="si">%s</span><span class="s1">(self.convlayer_</span><span class="si">%03d</span><span class="s1">(x))&#39;</span> <span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">,</span><span class="n">ilayer</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Error with post processing of conv layer </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">ilayer</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s1">&#39;x = self.convlayer_</span><span class="si">%03d</span><span class="s1">(x)&#39;</span> <span class="o">%</span><span class="n">ilayer</span>
+
+    <span class="k">def</span> <span class="nf">__get_params__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;kernel_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;post&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">def</span> <span class="nf">__init_from_dict__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;kernel_size&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;post&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__human_readable_str__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ilayer</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;#conv layer </span><span class="si">% 3d</span><span class="s1">: pool | kernel </span><span class="si">% 2d</span><span class="s1">  post </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ilayer</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">)</span></div>
+
+<span class="c1">#################################</span>
+<span class="c1">#   dropout layer</span>
+<span class="c1">#################################</span>
+<div class="viewcode-block" id="dropout"><a class="viewcode-back" href="../../../deeprank.learn.html#deeprank.learn.modelGenerator.dropout">[docs]</a><span class="k">class</span> <span class="nc">dropout</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">percent</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper around the dropout layer layer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            percent (float): percent of dropout</span>
+
+<span class="sd">        Example :</span>
+
+<span class="sd">        &gt;&gt;&gt; fc_layers.append(dropout(precent=0.25))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s1">&#39;dropout&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">percent</span><span class="o">=</span><span class="n">percent</span>
+
+    <span class="k">def</span> <span class="nf">__def_str__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ilayer</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;self.convlayer_</span><span class="si">%03d</span><span class="s1"> = nn.Dropout3d(</span><span class="si">%0.1f</span><span class="s1">)&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ilayer</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">percent</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__use_str__</span><span class="p">(</span><span class="n">ilayer</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;x = self.convlayer_</span><span class="si">%03d</span><span class="s1">(x)&#39;</span> <span class="o">%</span><span class="n">ilayer</span>
+
+    <span class="k">def</span> <span class="nf">__get_params__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;percent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">percent</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">def</span> <span class="nf">__init_from_dict__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">percent</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;percent&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__human_readable_str__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ilayer</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;#conv layer </span><span class="si">% 3d</span><span class="s1">: drop | percent </span><span class="si">%0.1f</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ilayer</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">percent</span><span class="p">)</span></div>
+
+<span class="c1">#################################</span>
+<span class="c1">#   fully connected layer</span>
+<span class="c1">#################################</span>
+<div class="viewcode-block" id="fc"><a class="viewcode-back" href="../../../deeprank.learn.html#deeprank.learn.modelGenerator.fc">[docs]</a><span class="k">class</span> <span class="nc">fc</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">input_size</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">output_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">post</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper around the fully conneceted layer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_size (int, optional): input size (default, let the generator figure it out)</span>
+<span class="sd">            output_size (int, optional): output size</span>
+<span class="sd">            post (str, optional): post process of the data</span>
+
+<span class="sd">        Example :</span>
+
+<span class="sd">        &gt;&gt;&gt; fc_layers.append(fc(output_size=84,post=&#39;relu&#39;))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s1">&#39;fc&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_size</span> <span class="o">=</span> <span class="n">input_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_size</span> <span class="o">=</span> <span class="n">output_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post</span> <span class="o">=</span> <span class="n">post</span>
+
+    <span class="k">def</span> <span class="nf">__def_str__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ilayer</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ilayer</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;self.fclayer_</span><span class="si">%03d</span><span class="s1"> = nn.Linear(size,</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ilayer</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">output_size</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;self.fclayer_</span><span class="si">%03d</span><span class="s1"> = nn.Linear(</span><span class="si">%d</span><span class="s1">,</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ilayer</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">input_size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">output_size</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__use_str__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ilayer</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">post</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;x = self.fclayer_</span><span class="si">%03d</span><span class="s1">(x)&#39;</span> <span class="o">%</span><span class="n">ilayer</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">,</span><span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s1">&#39;x = F.</span><span class="si">%s</span><span class="s1">(self.fclayer_</span><span class="si">%03d</span><span class="s1">(x))&#39;</span> <span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">,</span><span class="n">ilayer</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Error with post processing of conv layer </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">ilayer</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s1">&#39;x = self.fclayer_</span><span class="si">%03d</span><span class="s1">(x)&#39;</span> <span class="o">%</span><span class="n">ilayer</span>
+
+    <span class="k">def</span> <span class="nf">__get_params__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_size</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_size</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;post&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">def</span> <span class="nf">__init_from_dict__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_size</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_size&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_size</span> <span class="o">=</span>  <span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_size&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;post&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__human_readable_str__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ilayer</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;#fc   layer </span><span class="si">% 3d</span><span class="s1">: fc   | input </span><span class="si">% 2d</span><span class="s1">  output </span><span class="si">% 2d</span><span class="s1">  post </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">ilayer</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">input_size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">output_size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+
+
+    <span class="n">conv_layers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">conv_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conv</span><span class="p">(</span><span class="n">output_size</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">post</span><span class="o">=</span><span class="s1">&#39;relu&#39;</span><span class="p">))</span>
+    <span class="n">conv_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pool</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">conv_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conv</span><span class="p">(</span><span class="n">input_size</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">output_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">post</span><span class="o">=</span><span class="s1">&#39;relu&#39;</span><span class="p">))</span>
+    <span class="n">conv_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pool</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="n">fc_layers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">fc_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fc</span><span class="p">(</span><span class="n">output_size</span><span class="o">=</span><span class="mi">84</span><span class="p">,</span><span class="n">post</span><span class="o">=</span><span class="s1">&#39;relu&#39;</span><span class="p">))</span>
+    <span class="n">fc_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fc</span><span class="p">(</span><span class="n">input_size</span><span class="o">=</span><span class="mi">84</span><span class="p">,</span><span class="n">output_size</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">MG</span> <span class="o">=</span> <span class="n">NetworkGenerator</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">,</span><span class="n">fname</span><span class="o">=</span><span class="s1">&#39;model_test.py&#39;</span><span class="p">,</span><span class="n">conv_layers</span><span class="o">=</span><span class="n">conv_layers</span><span class="p">,</span><span class="n">fc_layers</span><span class="o">=</span><span class="n">fc_layers</span><span class="p">)</span>
+    <span class="n">MG</span><span class="o">.</span><span class="n">print</span><span class="p">()</span>
+    <span class="n">MG</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+
+    <span class="c1"># MGR = NetworkGenerator(name=&#39;cnnrand&#39;,fname=&#39;modelrandom.py&#39;)</span>
+    <span class="c1"># MGR.get_new_random_model()</span>
+    <span class="c1"># MGR.print()</span>
+    <span class="c1"># MGR.write()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../../../index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../intro.html">First Steps with DeepRank</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial : Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial_deeplearning.html">Tutorial : Deep learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advTuto.html">Advanced Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.generate.html">Generate Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.learn.html">Deep learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.features.html">Feature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.tools.html">Tools</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">DeepRank 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Nicolas Renaud.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>
