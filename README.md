@@ -2,8 +2,7 @@
 
 [![Build Status](https://secure.travis-ci.org/DeepRank/deeprank.svg?branch=master)](https://travis-ci.org/DeepRank/deeprank)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/9252e59633cf46a7ada0c3c614c175ea)](https://www.codacy.com/app/NicoRenaud/deeprank?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=DeepRank/deeprank&amp;utm_campaign=Badge_Grade)
-[![RTD Badge]](https://readthedocs.org/projects/deeprank/badge/?version=latest)
-These module allows to :
+[![Documentation Status](https://readthedocs.org/projects/deeprank/badge/?version=latest)](http://deeprank.readthedocs.io/?badge=latest)
 
    * Create one/multiple HDF5 files containing all the data (structures,features,mapped features,targets) required to use deep learning.
 
