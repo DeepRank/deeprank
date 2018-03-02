@@ -4,48 +4,48 @@ import numpy as np
 
 def __compute_target__(decoy,targrp):
 
-	# fet the mol group
-	molgrp = targrp.parent
-	molname = molgrp.name
+    # fet the mol group
+    molgrp = targrp.parent
+    molname = molgrp.name
 
-	path = os.path.dirname(os.path.realpath(__file__))
-	ZONE = path + '/zones/'
+    path = os.path.dirname(os.path.realpath(__file__))
+    ZONE = path + '/zones/'
 
-	if not os.path.isdir(ZONE):
-		os.mkdir(ZONE)
+    if not os.path.isdir(ZONE):
+        os.mkdir(ZONE)
 
-	# if we have a ref
-	if '_' not in molname:
+    # if we have a ref
+    if '_' not in molname:
 
-		# lrmsd = irmsd = 0 | fnat = dockq = 1
-		targrp.create_dataset('LRMSD',data=np.array(0.0))
-		targrp.create_dataset('IRMSD',data=np.array(0.0))
-		targrp.create_dataset('FNAT', data=np.array(1.0))
-		targrp.create_dataset('DOCKQ',data=np.array(1.0))
+        # lrmsd = irmsd = 0 | fnat = dockq = 1
+        targrp.create_dataset('LRMSD',data=np.array(0.0))
+        targrp.create_dataset('IRMSD',data=np.array(0.0))
+        targrp.create_dataset('FNAT', data=np.array(1.0))
+        targrp.create_dataset('DOCKQ',data=np.array(1.0))
 
-	# or it's a decoy
-	else:
+    # or it's a decoy
+    else:
 
-		# compute the izone/lzone/ref_pairs
-		molname = molname.split('_')[0]
-		lzone = ZONE + molname+'.lzone'
-		izone = ZONE + molname+'.izone'
-		ref_pairs = ZONE + molname + '.ref_pairs'
+        # compute the izone/lzone/ref_pairs
+        molname = molname.split('_')[0]
+        lzone = ZONE + molname+'.lzone'
+        izone = ZONE + molname+'.izone'
+        ref_pairs = ZONE + molname + '.ref_pairs'
 
-		# init the class
-		decoy = molgrp['complex'].value
-		ref = molgrp['native'].value
-		sim = StructureSimilarity(decoy,ref)
+        # init the class
+        decoy = molgrp['complex'].value
+        ref = molgrp['native'].value
+        sim = StructureSimilarity(decoy,ref)
 
-		lrmsd = sim.compute_lrmsd_fast(method='svd',lzone=lzone)
-		targrp.create_dataset('LRMSD',data=np.array(lrmsd))
+        lrmsd = sim.compute_lrmsd_fast(method='svd',lzone=lzone)
+        targrp.create_dataset('LRMSD',data=np.array(lrmsd))
 
-		irmsd = sim.compute_irmsd_fast(method='svd',izone=izone)
-		targrp.create_dataset('IRMSD',data=np.array(irmsd))
+        irmsd = sim.compute_irmsd_fast(method='svd',izone=izone)
+        targrp.create_dataset('IRMSD',data=np.array(irmsd))
 
-		Fnat = sim.compute_Fnat_fast(ref_pairs=ref_pairs)
-		targrp.create_dataset('FNAT',data=np.array(Fnat))
+        Fnat = sim.compute_Fnat_fast(ref_pairs=ref_pairs)
+        targrp.create_dataset('FNAT',data=np.array(Fnat))
 
-		dockQ = sim.compute_DockQScore(Fnat,lrmsd,irmsd)
-		targrp.create_dataset('DOCKQ',data=np.array(dockQ))
+        dockQ = sim.compute_DockQScore(Fnat,lrmsd,irmsd)
+        targrp.create_dataset('DOCKQ',data=np.array(dockQ))
 

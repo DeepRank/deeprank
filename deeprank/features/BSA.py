@@ -4,157 +4,157 @@ from deeprank.tools import pdb2sql
 from deeprank.features import FeatureClass
 
 try:
-	import freesasa
+    import freesasa
 
 except ImportError:
-	print('Freesasa not found')
+    print('Freesasa not found')
 
 class BSA(FeatureClass):
 
-	def __init__(self,pdb_data,chainA='A',chainB='B'):
+    def __init__(self,pdb_data,chainA='A',chainB='B'):
 
-		'''Compute the burried surface area feature
+        '''Compute the burried surface area feature
 
-		Freesasa is required for this feature.
+        Freesasa is required for this feature.
 
-		Install Freesasa option 1
+        Install Freesasa option 1
 
-		>>> git clone https://github.com/mittinatten/freesasa.git
-		>>> cd freesasa
-		>>> autoconf -i configure.ac``
+        >>> git clone https://github.com/mittinatten/freesasa.git
+        >>> cd freesasa
+        >>> autoconf -i configure.ac``
 
-		Install Freesasa option 2 (preferred)
+        Install Freesasa option 2 (preferred)
 
-		>>> wget http://freesasa.github.io/freesasa-2.0.2.tar.gz
-		>>> tar -xvf freesasa-2.0.2.tar.gz
-		>>> cd freesasa
-		>>> ./configure --enable-python-bindings CFLAGS=-fPIC
-		>>> make
-		>>> make install
+        >>> wget http://freesasa.github.io/freesasa-2.0.2.tar.gz
+        >>> tar -xvf freesasa-2.0.2.tar.gz
+        >>> cd freesasa
+        >>> ./configure --enable-python-bindings CFLAGS=-fPIC
+        >>> make
+        >>> make install
 
-		If the install of the python bindings fails because no python (problem with anaconda)
+        If the install of the python bindings fails because no python (problem with anaconda)
 
-		>>> cd ./bindings/python
-		>>> python setup.py install
+        >>> cd ./bindings/python
+        >>> python setup.py install
 
-		Args :
-			pdb_data (list(byte) or str): pdb data or filename of the pdb
-			chainA (str, optional): name of the first chain
-			chainB (str, optional): name of the second chain
+        Args :
+            pdb_data (list(byte) or str): pdb data or filename of the pdb
+            chainA (str, optional): name of the first chain
+            chainB (str, optional): name of the second chain
 
-		Example :
+        Example :
 
-		>>> bsa = BSA('1AK4.pdb')
-		>>> bsa.get_structure()
-		>>> bsa.get_contact_residue_sasa()
-		>>> bsa.sql.close()
+        >>> bsa = BSA('1AK4.pdb')
+        >>> bsa.get_structure()
+        >>> bsa.get_contact_residue_sasa()
+        >>> bsa.sql.close()
 
-		'''
+        '''
 
-		self.pdb_data = pdb_data
-		self.sql = pdb2sql(pdb_data)
-		self.chains_label =  [chainA,chainB]
+        self.pdb_data = pdb_data
+        self.sql = pdb2sql(pdb_data)
+        self.chains_label =  [chainA,chainB]
 
-		self.feature_data = {}
-		self.feature_data_xyz = {}
+        self.feature_data = {}
+        self.feature_data_xyz = {}
 
 
-		freesasa.setVerbosity(freesasa.nowarnings)
+        freesasa.setVerbosity(freesasa.nowarnings)
 
-	def get_structure(self):
-		"""Get the pdb structure of the molecule."""
+    def get_structure(self):
+        """Get the pdb structure of the molecule."""
 
-		# we can have a str or a list of bytes as input
-		if isinstance(self.pdb_data,str):
-			self.complex = freesasa.Structure(self.pdb_data)
-		else:
-			self.complex = freesasa.Structure()
-			atomdata = self.sql.get('name,resName,resSeq,chainID,x,y,z')
-			for atomName,residueName,residueNumber,chainLabel,x,y,z in atomdata:
-				atomName = '{:>2}'.format(atomName[0])
-				self.complex.addAtom(atomName,residueName,residueNumber,chainLabel,x,y,z)
-		self.result_complex = freesasa.calc(self.complex)
+        # we can have a str or a list of bytes as input
+        if isinstance(self.pdb_data,str):
+            self.complex = freesasa.Structure(self.pdb_data)
+        else:
+            self.complex = freesasa.Structure()
+            atomdata = self.sql.get('name,resName,resSeq,chainID,x,y,z')
+            for atomName,residueName,residueNumber,chainLabel,x,y,z in atomdata:
+                atomName = '{:>2}'.format(atomName[0])
+                self.complex.addAtom(atomName,residueName,residueNumber,chainLabel,x,y,z)
+        self.result_complex = freesasa.calc(self.complex)
 
-		self.chains = {}
-		self.result_chains = {}
-		for label in self.chains_label:
-			self.chains[label] = freesasa.Structure()
-			atomdata = self.sql.get('name,resName,resSeq,chainID,x,y,z',chainID=label)
-			for atomName,residueName,residueNumber,chainLabel,x,y,z in atomdata:
-				atomName = '{:>2}'.format(atomName[0])
-				self.chains[label].addAtom(atomName,residueName,residueNumber,chainLabel,x,y,z)
-			self.result_chains[label] = freesasa.calc(self.chains[label])
+        self.chains = {}
+        self.result_chains = {}
+        for label in self.chains_label:
+            self.chains[label] = freesasa.Structure()
+            atomdata = self.sql.get('name,resName,resSeq,chainID,x,y,z',chainID=label)
+            for atomName,residueName,residueNumber,chainLabel,x,y,z in atomdata:
+                atomName = '{:>2}'.format(atomName[0])
+                self.chains[label].addAtom(atomName,residueName,residueNumber,chainLabel,x,y,z)
+            self.result_chains[label] = freesasa.calc(self.chains[label])
 
-	def get_contact_residue_sasa(self):
-		"""Compute the feature value."""
+    def get_contact_residue_sasa(self):
+        """Compute the feature value."""
 
-		bsa_data = {}
-		bsa_data_xyz = {}
+        bsa_data = {}
+        bsa_data_xyz = {}
 
-		res = self.sql.get_contact_residue()
-		res = res[0]+res[1]
+        res = self.sql.get_contact_residue()
+        res = res[0]+res[1]
 
-		for r in res:
+        for r in res:
 
-			# define the selection string and the bsa for the complex
-			select_str = ('res, (resi %d) and (chain %s)' %(r[1],r[0]),)
-			asa_complex = freesasa.selectArea(select_str,self.complex,self.result_complex)['res']
+            # define the selection string and the bsa for the complex
+            select_str = ('res, (resi %d) and (chain %s)' %(r[1],r[0]),)
+            asa_complex = freesasa.selectArea(select_str,self.complex,self.result_complex)['res']
 
-			# define the selection string and the bsa for the isolated
-			select_str = ('res, resi %d' %r[1],)
-			asa_unbound = freesasa.selectArea(select_str,self.chains[r[0]],self.result_chains[r[0]])['res']
+            # define the selection string and the bsa for the isolated
+            select_str = ('res, resi %d' %r[1],)
+            asa_unbound = freesasa.selectArea(select_str,self.chains[r[0]],self.result_chains[r[0]])['res']
 
-			# define the bsa
-			bsa = asa_unbound-asa_complex
+            # define the bsa
+            bsa = asa_unbound-asa_complex
 
-			# define the xyz key : (chain,x,y,z)
-			chain = {'A':0,'B':1}[r[0]]
-			xyz = np.mean(self.sql.get('x,y,z',resSeq=r[1],chainID=r[0]),0)
-			xyzkey = tuple([chain]+xyz.tolist())
+            # define the xyz key : (chain,x,y,z)
+            chain = {'A':0,'B':1}[r[0]]
+            xyz = np.mean(self.sql.get('x,y,z',resSeq=r[1],chainID=r[0]),0)
+            xyzkey = tuple([chain]+xyz.tolist())
 
-			# put the data in dict
-			bsa_data[r]           =  [bsa]
-			bsa_data_xyz[xyzkey]  =  [bsa]
+            # put the data in dict
+            bsa_data[r]           =  [bsa]
+            bsa_data_xyz[xyzkey]  =  [bsa]
 
-		# pyt the data in dict
-		self.feature_data['bsa'] = bsa_data
-		self.feature_data_xyz['bsa'] = bsa_data_xyz
+        # pyt the data in dict
+        self.feature_data['bsa'] = bsa_data
+        self.feature_data_xyz['bsa'] = bsa_data_xyz
 
 #####################################################################################
 #
-#	THE MAIN FUNCTION CALLED IN THE INTERNAL FEATURE CALCULATOR
+#   THE MAIN FUNCTION CALLED IN THE INTERNAL FEATURE CALCULATOR
 #
 #####################################################################################
 
 def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
-	# create the BSA instance
-	bsa = BSA(pdb_data)
+    # create the BSA instance
+    bsa = BSA(pdb_data)
 
-	# get the structure/calc
-	bsa.get_structure()
+    # get the structure/calc
+    bsa.get_structure()
 
-	# get the feature info
-	bsa.get_contact_residue_sasa()
+    # get the feature info
+    bsa.get_contact_residue_sasa()
 
-	# export in the hdf5 file
-	bsa.export_dataxyz_hdf5(featgrp)
-	bsa.export_data_hdf5(featgrp_raw)
+    # export in the hdf5 file
+    bsa.export_dataxyz_hdf5(featgrp)
+    bsa.export_data_hdf5(featgrp_raw)
 
-	# close the file
-	bsa.sql.close()
+    # close the file
+    bsa.sql.close()
 
 
 #####################################################################################
 #
-#		TEST THE CLASS
+#       TEST THE CLASS
 #
 #####################################################################################
 
 if __name__ == '__main__':
 
-	bsa = BSA('1AK4.pdb')
-	bsa.get_structure()
-	#bsa.get_contact_residue_sasa()
-	bsa.sql.close()
+    bsa = BSA('1AK4.pdb')
+    bsa.get_structure()
+    #bsa.get_contact_residue_sasa()
+    bsa.sql.close()
 

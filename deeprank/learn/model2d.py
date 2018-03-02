@@ -24,34 +24,34 @@ import torch.nn.functional as F
 
 class cnn(nn.Module):
 
-	def __init__(self,input_shape):
-		super(cnn,self).__init__()
+    def __init__(self,input_shape):
+        super(cnn,self).__init__()
 
-		self.convlayer2D_000 = nn.Conv2d(input_shape[0],4,kernel_size=2)
-		self.convlayer2D_001 = nn.MaxPool2d((2,2))
-		self.convlayer2D_002 = nn.Conv2d(4,2,kernel_size=2)
-		self.convlayer2D_003 = nn.MaxPool2d((2,2))
+        self.convlayer2D_000 = nn.Conv2d(input_shape[0],4,kernel_size=2)
+        self.convlayer2D_001 = nn.MaxPool2d((2,2))
+        self.convlayer2D_002 = nn.Conv2d(4,2,kernel_size=2)
+        self.convlayer2D_003 = nn.MaxPool2d((2,2))
 
-		size = self._get_conv_output(input_shape)
+        size = self._get_conv_output(input_shape)
 
-		self.fclayer2D_000   = nn.Linear(size,84)
-		self.fclayer2D_001   = nn.Linear(84,1)
+        self.fclayer2D_000   = nn.Linear(size,84)
+        self.fclayer2D_001   = nn.Linear(84,1)
 
-	def _get_conv_output(self,shape):
-		inp = Variable(torch.rand(1,*shape))
-		out = self._forward_features(inp)
-		return out.data.view(1,-1).size(1)
+    def _get_conv_output(self,shape):
+        inp = Variable(torch.rand(1,*shape))
+        out = self._forward_features(inp)
+        return out.data.view(1,-1).size(1)
 
-	def _forward_features(self,x):
-		x = F.relu(self.convlayer2D_000(x))
-		x = self.convlayer2D_001(x)
-		x = F.relu(self.convlayer2D_002(x))
-		x = self.convlayer2D_003(x)
-		return x
+    def _forward_features(self,x):
+        x = F.relu(self.convlayer2D_000(x))
+        x = self.convlayer2D_001(x)
+        x = F.relu(self.convlayer2D_002(x))
+        x = self.convlayer2D_003(x)
+        return x
 
-	def forward(self,x):
-		x = self._forward_features(x)
-		x = x.view(x.size(0),-1)
-		x = F.relu(self.fclayer2D_000(x))
-		x = self.fclayer2D_001(x)
-		return x
+    def forward(self,x):
+        x = self._forward_features(x)
+        x = x.view(x.size(0),-1)
+        x = F.relu(self.fclayer2D_000(x))
+        x = self.fclayer2D_001(x)
+        return x
