@@ -88,8 +88,8 @@ Suppose you've finised creating a huge database and you jusr realize you forgot 
 
 Voila. Here we simply sepcify the name of an existing hdf5 file containing the database and new features/targets to add to this database. The methods ``add_target`` ``add_feature'' are then simply called to add data to the file. Don't forget to map the new features afterwards.
 
-Deep Learning
-------------------
+DeepLearning: 3D CNN
+-----------------------
 
 The deep learning module of DeepRank allows to use the HDF5 files generated above in pyTorch and run simply deep learning experiment using different combinations of conformations, features, targets, network architecture. We will illutrate how the process work using the file ``test/notravis_test_learn.py``
 
@@ -157,6 +157,15 @@ Other filter can be set similarly. We are now all set to start the deep learning
 >>> model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
 
 We specify here the number of epoch, the amount of data used for training (the remaining data is for validation 0.2 here), the batch size and the number of workers (CPU threads) in charge of batch preparation. This will start the training process and output regression plots and the corresponding data ``data.hdf5``.
+
+DeepLearning: 2D CNN
+-----------------------
+
+Deeprank also allows to transform the 3D volumetric data in 2D data by slicing planes of the data and using each plane as given channel. Very little modification of the code are necessary to do so. The creation of the dataset is identical to the 3D case, you must simply specify ``model_type=2D`` in the definition of the NeuralNet
+
+>>> model = NeuralNet(data_set,cnn,model_type='2d')
+
+And that's it. However the ``cnn`` used here also must be a 2D CNN and not a 3D CNN.
 
 
 

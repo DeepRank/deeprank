@@ -132,8 +132,8 @@
 </div>
 <p>Voila. Here we simply sepcify the name of an existing hdf5 file containing the database and new features/targets to add to this database. The methods <code class="docutils literal"><span class="pre">add_target</span></code> <a href="#id1"><span class="problematic" id="id2">``</span></a>add_feature’’ are then simply called to add data to the file. Don’t forget to map the new features afterwards.</p>
 </div>
-<div class="section" id="deep-learning">
-<h2>Deep Learning<a class="headerlink" href="#deep-learning" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="deeplearning-3d-cnn">
+<h2>DeepLearning: 3D CNN<a class="headerlink" href="#deeplearning-3d-cnn" title="Permalink to this headline">¶</a></h2>
 <p>The deep learning module of DeepRank allows to use the HDF5 files generated above in pyTorch and run simply deep learning experiment using different combinations of conformations, features, targets, network architecture. We will illutrate how the process work using the file <code class="docutils literal"><span class="pre">test/notravis_test_learn.py</span></code></p>
 <p>The two first lines of the code are to import the module we need</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">deeprank.learn</span> <span class="k">import</span> <span class="o">*</span>
@@ -197,6 +197,14 @@
 </div>
 <p>We specify here the number of epoch, the amount of data used for training (the remaining data is for validation 0.2 here), the batch size and the number of workers (CPU threads) in charge of batch preparation. This will start the training process and output regression plots and the corresponding data <code class="docutils literal"><span class="pre">data.hdf5</span></code>.</p>
 </div>
+<div class="section" id="deeplearning-2d-cnn">
+<h2>DeepLearning: 2D CNN<a class="headerlink" href="#deeplearning-2d-cnn" title="Permalink to this headline">¶</a></h2>
+<p>Deeprank also allows to transform the 3D volumetric data in 2D data by slicing planes of the data and using each plane as given channel. Very little modification of the code are necessary to do so. The creation of the dataset is identical to the 3D case, you must simply specify <code class="docutils literal"><span class="pre">model_type=2D</span></code> in the definition of the NeuralNet</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">NeuralNet</span><span class="p">(</span><span class="n">data_set</span><span class="p">,</span><span class="n">cnn</span><span class="p">,</span><span class="n">model_type</span><span class="o">=</span><span class="s1">&#39;2d&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And that’s it. However the <code class="docutils literal"><span class="pre">cnn</span></code> used here also must be a 2D CNN and not a 3D CNN.</p>
+</div>
 </div>
 
 
@@ -212,7 +220,8 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#data-generation">Data Generation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#adding-features-targets">Adding Features/Targets</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#deep-learning">Deep Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#deeplearning-3d-cnn">DeepLearning: 3D CNN</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#deeplearning-2d-cnn">DeepLearning: 2D CNN</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="advTuto.html">Advanced Tutorial</a></li>
