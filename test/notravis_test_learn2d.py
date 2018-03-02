@@ -1,7 +1,7 @@
 import os
-
+import numpy as np
 from deeprank.learn import *
-from deeprank.learn.model3d import cnn
+from deeprank.learn.model2d import cnn
 
 
 # all the import torch fails on TRAVIS
@@ -17,8 +17,9 @@ def test_learn():
   # declare the dataset instance
   data_set = DataSet(database,
             test_database = database,
-            select_feature={'AtomicDensities_sum' : ['C','CA','O','N'],
-                            'Feature_sum' : ['coulomb','vdwaals','charge'] },
+            select_feature={'AtomicDensities_ind' : 'all',
+                            'Feature_ind' : ['coulomb','vdwaals','charge'] },
+            pair_chain_feature=None,
             select_target='DOCKQ')
 
 
@@ -27,7 +28,7 @@ def test_learn():
                     cuda=False,plot=True,outdir='./out/')
 
   # start the training
-  model.train(nepoch = 50,percent_train=0.8, train_batch_size = 5)
+  model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5)
 
   # save the model
   model.save_model()

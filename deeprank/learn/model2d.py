@@ -30,7 +30,7 @@ class cnn(nn.Module):
 		self.convlayer2D_000 = nn.Conv2d(input_shape[0],4,kernel_size=2)
 		self.convlayer2D_001 = nn.MaxPool2d((2,2))
 		self.convlayer2D_002 = nn.Conv2d(4,2,kernel_size=2)
-		self.convlayer2D_002 = nn.MaxPool2d((2,2))
+		self.convlayer2D_003 = nn.MaxPool2d((2,2))
 
 		size = self._get_conv_output(input_shape)
 

@@ -263,7 +263,7 @@ class DataSet(data_utils.Dataset):
 
 
 	def check_hdf5_files(self):
-		"""Check if the dat contained in the hdf5 file is ok."""
+		"""Check if the data contained in the hdf5 file is ok."""
 
 		print("   Checking dataset Integrity")
 		remove_file = []
@@ -415,7 +415,11 @@ class DataSet(data_utils.Dataset):
 
 				# if for a give type we need all the feature
 				if feat_names == 'all':
-					self.select_feature[feat_type] = list(mapped_data[feat_type].keys())
+					if feat_type in mapped_data:
+						self.select_feature[feat_type] = list(mapped_data[feat_type].keys())
+					else:
+						self.print_possible_features()
+						raise KeyError('Feature type %s not found')
 
 				# if we have stored the individual
 				# chainA chainB data we need to expand the feature list
@@ -429,8 +433,40 @@ class DataSet(data_utils.Dataset):
 							self.select_feature[feat_type] += [name+tag for tag in chain_tags]
 						else:
 							self.select_feature[feat_type].append(name)
+
+				else:
+					self.print_possible_features()
+					raise ValueError('Feature selection not recognized')
 		f5.close()
 
+	def print_possible_features(self):
+		"""Print the possible features in the group."""
+
+		f5 = h5py.File(self.database[0],'r')
+		mol_name = list(f5.keys())[0]
+		mapgrp = f5.get(mol_name + '/mapped_features/')
+
+		print('\nPossible Features:')
+		print('-'*20)
+		for feat_type in list(mapgrp.keys()):
+			print('== %s' %feat_type)
+			for fname in list(mapgrp[feat_type].keys()):
+				print('   -- %s' %fname)
+
+		if self.select_feature is not None:
+			print('\nYour selection was:')
+			for feat_type,feat in self.select_feature.items():
+				if feat_type not in list(mapgrp.keys()):
+					print('== \x1b[0;37;41m' + feat_type + '\x1b[0m')
+				else:
+					print('== %s' %feat_type)
+					if isinstance(feat,str):
+						print('   -- %s' %feat)
+					if isinstance(feat,list):
+						for f in feat:
+							print('  -- %s' %f)
+
+		print("You don't need to specify _chainA _chainB for each feature. The code will append it automatically")
 
 	def get_pairing_feature(self):
 		"""Creates the index of paired features.
@@ -674,7 +710,7 @@ class DataSet(data_utils.Dataset):
 		    mol (None or str, optional): name of the complex in the hdf5
 
 		Returns:
-		    np.array,float: features, targets 
+		    np.array,float: features, targets
 		'''
 
 		outtype = 'float32'
@@ -691,13 +727,22 @@ class DataSet(data_utils.Dataset):
 		for feat_type,feat_names in self.select_feature.items():
 
 			# see if the feature exists
-			feat_dict = mol_data.get('mapped_features/'+feat_type)
+			try:
+				feat_dict = mol_data.get('mapped_features/'+feat_type)
+			except KeyError:
+				print('Feature type %s not found in file %s for molecule %s' %(feat_type,fname,mol))
+				print('Possible feature types are : ' + '\n\t'.join(list(mol_data['mapped_features'].keys())))
 
 			# loop through all the desired feat names
 			for name in feat_names:
 
 				# extract the group
-				data = feat_dict[name]
+				try:
+					data = feat_dict[name]
+				except KeyError:
+					print('Feature %s not found in file %s for mol %s and feature type %s' %(name,fname,mol,feat_type))
+					print('Possible feature are : ' + '\n\t'.join(list(mol_data['mapped_features/'+feat_type].keys())))
+
 
 				# check its sparse attribute
 				# if true get a FLAN
@@ -773,7 +818,6 @@ class DataSet(data_utils.Dataset):
 		outtype = feature.dtype
 		new_feat = []
 		for ind in pair_indexes:
-			print(ind)
 			if len(ind) == 1:
 				new_feat.append(feature[ind,...])
 			else:
