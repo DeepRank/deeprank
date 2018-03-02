@@ -21,3 +21,8 @@ example/workflow/test_out
 *.izone
 *.lzone
 *.ref_pairs
+
+# docs
+docs/_build
+docs/_static
+docs/_templates
