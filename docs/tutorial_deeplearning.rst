@@ -200,4 +200,4 @@ In many cases after you've trained the network you would like to reuse the model
 >>> model = NeuralNet(database,cnn,pretrained_model='model.pth.tar')
 >>> model.test()
 
-Note that here the database is simply the name of the hdf5 file we want to test the model on. All the processing of the dataset will be automatically done in the exact same way than it was done during the training of the model. Hence you do not have to copy the ``select_features`` ``select_target`` arguments, all that is done for you.
+Note that here the database is simply the name of the hdf5 file we want to test the model on. All the processing of the dataset will be automatically done in the exact same way than it was done during the training of the model. Hence you do not have to copy the ``select_features`` and ``select_target`` .... arguments, all that is done for you.

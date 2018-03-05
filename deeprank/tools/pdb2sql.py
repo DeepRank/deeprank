@@ -308,8 +308,6 @@ class pdb2sql(object):
 
         Args:
 
-
-
             atnames (str): attribute name. They can be printed can get these names via the get_colnames()
                            serial, name, atLoc,resName,chainID, resSeq,iCode,x,y,z,occ,temp
                             Several attributes can be specified at once e.g 'x,y,z'
