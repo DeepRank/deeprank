@@ -51,73 +51,60 @@
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">time</span><span class="o">,</span><span class="nn">pickle</span>
 <span class="n">printif</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">string</span><span class="p">,</span><span class="n">cond</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span> <span class="k">if</span> <span class="n">cond</span> <span class="k">else</span> <span class="kc">None</span>
 
-<span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Replacement of ProFit by an internal module for simpler worflow</span>
-
-<span class="sd">    ARGUMENTS</span>
-
-<span class="sd">    decoy</span>
-<span class="sd">            path to a decoy pdb file</span>
-
-<span class="sd">    ref</span>
-<span class="sd">            path to a native pdb file</span>
-
-
-<span class="sd">    METHODS</span>
-
-<span class="sd">    LRMSD Calculation</span>
-
-<span class="sd">            compute_lrmsd_fast</span>
-<span class="sd">            compute_lrmsd_pdb2sql</span>
-
-<span class="sd">    IRMSD Calculation</span>
-
-<span class="sd">            compute_irmsd_fast</span>
-<span class="sd">            compute_irmsd_pdb2sql</span>
-
-<span class="sd">    FNAT Calculation</span>
-
-<span class="sd">            compute_Fnat_fast</span>
-<span class="sd">            compute_Fnat_pdb2sql</span>
-
-<span class="sd">    DockQ calculation</span>
-
-<span class="sd">            compute_DockQScore</span>
-
-<span class="sd">    zone calculation</span>
-
-<span class="sd">            compute_izone</span>
-<span class="sd">            compute_lzone</span>
-
-<span class="sd">&#39;&#39;&#39;</span>
-
 <div class="viewcode-block" id="StructureSimilarity"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity">[docs]</a><span class="k">class</span> <span class="nc">StructureSimilarity</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">decoy</span><span class="p">,</span><span class="n">ref</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the structure similarity between different molecules.</span>
+
+<span class="sd">        This class allows to compute the i-RMSD, L-RMSD, Fnat and DockQ score of a given conformation.</span>
+<span class="sd">        This can be a replacement for ProFIT. Note that the calculation of the zones are done by the class itself</span>
+<span class="sd">        and does not require any extra input. This local class could be replaced by pdb2sql.StructureSimilarity.</span>
+<span class="sd">        (https://github.com/DeepRank/pdb2sql)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            decoy (str): file name of the decoy</span>
+<span class="sd">            ref (str): file name of the reference</span>
+<span class="sd">            verbose (bool, optional): print debug information</span>
+
+
+<span class="sd">        Example :</span>
+
+<span class="sd">        &gt;&gt;&gt; from deeprank.tools import StructureSimilarity</span>
+<span class="sd">        &gt;&gt;&gt; decoy = &#39;1AK4_1w.pdb&#39;</span>
+<span class="sd">        &gt;&gt;&gt; ref = &#39;1AK4.pdb&#39;</span>
+<span class="sd">        &gt;&gt;&gt; sim = StructureSimilarity(decoy,ref)</span>
+<span class="sd">        &gt;&gt;&gt; irmsd_fast = sim.compute_irmsd_fast(method=&#39;svd&#39;,izone=&#39;1AK4.izone&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; irmsd = sim.compute_irmsd_pdb2sql(method=&#39;svd&#39;,izone=&#39;1AK4.izone&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; lrmsd_fast = sim.compute_lrmsd_fast(method=&#39;svd&#39;,lzone=&#39;1AK4.lzone&#39;,check=True)</span>
+<span class="sd">        &gt;&gt;&gt; lrmsd = sim.compute_lrmsd_pdb2sql(exportpath=None,method=&#39;svd&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Fnat = sim.compute_Fnat_pdb2sql()</span>
+<span class="sd">        &gt;&gt;&gt; Fnat_fast = sim.compute_Fnat_fast(ref_pairs=&#39;1AK4.ref_pairs&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; dockQ = sim.compute_DockQScore(Fnat_fast,lrmsd_fast,irmsd_fast)</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">decoy</span> <span class="o">=</span> <span class="n">decoy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="n">ref</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
 
-
-    <span class="c1">################################################################################################</span>
-    <span class="c1">#</span>
-    <span class="c1">#   FAST ROUTINE TO COMPUTE THE L-RMSD</span>
-    <span class="c1">#   Require the precalculation of the lzone</span>
-    <span class="c1">#   A dedicated routine is implemented to comoute the lzone</span>
-    <span class="c1">#   if lzone is not given in argument the routine will compute them automatically</span>
-    <span class="c1">#</span>
-    <span class="c1">#################################################################################################</span>
-
-    <span class="c1"># compute the L-RMSD</span>
 <div class="viewcode-block" id="StructureSimilarity.compute_lrmsd_fast"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_lrmsd_fast">[docs]</a>    <span class="k">def</span> <span class="nf">compute_lrmsd_fast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">lzone</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">,</span><span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fast routine to compute the L-RMSD.</span>
 
-        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        This routine parse the PDB directly without using pdb2sql.</span>
+<span class="sd">        L-RMSD is computed by aligning the longest chain of the decoy to the one of the reference</span>
+<span class="sd">        and computing the RMSD of the shortest chain between decoy and reference.</span>
+
 <span class="sd">        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models</span>
 <span class="sd">              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879</span>
-<span class="sd">        L-RMSD is computed by aligning the longest chain of the decoy to the one of the reference</span>
-<span class="sd">        and computing the RMSD of the shortest chain between decoy and ref</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lzone (None, optional): name of the file containing the zone definition. If None the file will be calculated first</span>
+<span class="sd">            method (str, optional): Method to align the fragments (&#39;svd&#39;,&#39;quaternion&#39;)</span>
+<span class="sd">            check (bool, optional): Check if the sequences are aligned and fix it if not. Should be True</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: L-RMSD value of the conformation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># create/read the lzone file</span>
         <span class="k">if</span> <span class="n">lzone</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -194,10 +181,16 @@
         <span class="c1"># compute the RMSD</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rmsd</span><span class="p">(</span><span class="n">xyz_decoy_short</span><span class="p">,</span><span class="n">xyz_ref_short</span><span class="p">)</span></div>
 
-
-    <span class="c1"># compute the lzone file</span>
 <div class="viewcode-block" id="StructureSimilarity.compute_lzone"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_lzone">[docs]</a>    <span class="k">def</span> <span class="nf">compute_lzone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">save_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the zone for L-RMSD calculation</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            save_file (bool, optional): save the zone file</span>
+<span class="sd">            filename (str, optional): name of the file</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: definition of the zone</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sql_ref</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span>
         <span class="n">nA</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sql_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">))</span>
         <span class="n">nB</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sql_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">))</span>
@@ -237,24 +230,29 @@
                 <span class="n">resData</span><span class="p">[</span><span class="n">chain</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">resData</span></div>
 
-    <span class="c1">################################################################################################</span>
-    <span class="c1">#</span>
-    <span class="c1">#   FAST ROUTINE TO COMPUTE THE I-RMSD</span>
-    <span class="c1">#   Require the precalculation of the izone</span>
-    <span class="c1">#   A dedicated routine is implemented to comoute the izone</span>
-    <span class="c1">#   if izone is not given in argument the routine will compute them autimatcally</span>
-    <span class="c1">#</span>
-    <span class="c1">#################################################################################################</span>
+<div class="viewcode-block" id="StructureSimilarity.compute_irmsd_fast"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_irmsd_fast">[docs]</a>    <span class="k">def</span> <span class="nf">compute_irmsd_fast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">izone</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span><span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fast method to compute the i-rmsd</span>
 
-<div class="viewcode-block" id="StructureSimilarity.compute_irmsd_fast"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_irmsd_fast">[docs]</a>    <span class="k">def</span> <span class="nf">compute_irmsd_fast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">izone</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="sd">        Require the precalculation of the izone</span>
+<span class="sd">        A dedicated routine is implemented to comoute the izone</span>
+<span class="sd">        if izone is not given in argument the routine will compute them automatically</span>
 
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models</span>
-<span class="sd">              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879</span>
 <span class="sd">        i-RMSD is computed selecting the back bone of the contact residue with a cutoff of 10A</span>
 <span class="sd">        in the decoy. Align these as best as possible with their coutner part in the ref</span>
 <span class="sd">        and and compute the RMSD</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+
+<span class="sd">        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models</span>
+<span class="sd">              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            izone (None, optional): file name of the zone. if None the zones will be calculated first</span>
+<span class="sd">            method (str, optional): Method to align the fragments (&#39;svd&#39;,&#39;quaternion&#39;)</span>
+<span class="sd">            cutoff (float, optional): cutoff for the contact atoms</span>
+<span class="sd">            check (bool, optional): Check if the sequences are aligned and fix it if not. Should be True</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: i-RMSD value of the conformation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># read the izone file</span>
         <span class="k">if</span> <span class="n">izone</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -312,9 +310,17 @@
         <span class="c1"># return the RMSD</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rmsd</span><span class="p">(</span><span class="n">xyz_contact_decoy</span><span class="p">,</span><span class="n">xyz_contact_ref</span><span class="p">)</span></div>
 
-
-
 <div class="viewcode-block" id="StructureSimilarity.compute_izone"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_izone">[docs]</a>    <span class="k">def</span> <span class="nf">compute_izone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span><span class="n">save_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the zones  for i-rmsd calculationss</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cutoff (float, optional): cutoff for the contact atoms</span>
+<span class="sd">            save_file (bool, optional): svae file containing the zone</span>
+<span class="sd">            filename (str, optional): filename</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: i-zone definition</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">sql_ref</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span>
         <span class="n">contact_ref</span> <span class="o">=</span> <span class="n">sql_ref</span><span class="o">.</span><span class="n">get_contact_atoms</span><span class="p">(</span><span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span><span class="n">extend_to_residue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">return_only_backbone_atoms</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -353,15 +359,19 @@
                 <span class="n">resData</span><span class="p">[</span><span class="n">chain</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">resData</span></div>
 
-    <span class="c1">################################################################################################</span>
-    <span class="c1">#</span>
-    <span class="c1">#   ROUTINE TO COMPUTE THE FNAT QUICKLY</span>
-    <span class="c1">#</span>
-    <span class="c1">#################################################################################################</span>
-
 <div class="viewcode-block" id="StructureSimilarity.compute_Fnat_fast"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_Fnat_fast">[docs]</a>    <span class="k">def</span> <span class="nf">compute_Fnat_fast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ref_pairs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the FNAT of the conformation</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            ref_pairs (str, optional): file name describing the pairs</span>
+<span class="sd">            cutoff (int, optional): cutoff for the contact atoms</span>
 
+<span class="sd">        Returns:</span>
+<span class="sd">            float: FNAT value</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: if the decoy file is not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># read the izone file</span>
         <span class="k">if</span> <span class="n">ref_pairs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">residue_pairs_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_residue_pairs_ref</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span><span class="n">save_file</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -441,10 +451,17 @@
         <span class="c1"># normalize</span>
         <span class="k">return</span> <span class="n">nCommon</span><span class="o">/</span><span class="n">nTotal</span></div>
 
-
-    <span class="c1"># compute the residue pair of the reference</span>
 <div class="viewcode-block" id="StructureSimilarity.compute_residue_pairs_ref"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_residue_pairs_ref">[docs]</a>    <span class="k">def</span> <span class="nf">compute_residue_pairs_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span><span class="n">save_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the residue pair on the reference conformation</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            cutoff (float, optional): cutoff for the contact atoms</span>
+<span class="sd">            save_file (bool, optional): save the file containing the residue pairs</span>
+<span class="sd">            filename (None, optional): filename</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: defintition of the residue pairs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sql_ref</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span><span class="n">sqlfile</span><span class="o">=</span><span class="s1">&#39;mol2.db&#39;</span><span class="p">)</span>
         <span class="n">residue_pairs_ref</span>   <span class="o">=</span> <span class="n">sql_ref</span><span class="o">.</span><span class="n">get_contact_residue</span><span class="p">(</span><span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span><span class="n">return_contact_pairs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                                           <span class="n">excludeH</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -462,26 +479,24 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">residue_pairs_ref</span></div>
 
-
-
-    <span class="c1">################################################################################################</span>
-    <span class="c1">#</span>
-    <span class="c1">#   ROUTINE TO COMPUTE THE L-RMSD USING PDB2SQL</span>
-    <span class="c1">#   DOES NOT REQUIRE THE PRECALCULATION OF ANYTHONG</span>
-    <span class="c1">#   CAN OUTPUT THE SUPERIMPOSED STRUCTURES</span>
-    <span class="c1">#   MUCH SLOWER THAN THE FAST ROUTINES BUT EASIER TO USE</span>
-    <span class="c1">#</span>
-    <span class="c1">#################################################################################################</span>
-
-    <span class="c1"># compute the L-RMSD</span>
 <div class="viewcode-block" id="StructureSimilarity.compute_lrmsd_pdb2sql"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_lrmsd_pdb2sql">[docs]</a>    <span class="k">def</span> <span class="nf">compute_lrmsd_pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">exportpath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">):</span>
 
-        <span class="sd">&#39;&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;Slow routine to compute the L-RMSD.</span>
+
+<span class="sd">        This routine parse the PDB directly using pdb2sql.</span>
+<span class="sd">        L-RMSD is computed by aligning the longest chain of the decoy to the one of the reference</span>
+<span class="sd">        and computing the RMSD of the shortest chain between decoy and reference.</span>
+
 <span class="sd">        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models</span>
 <span class="sd">              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879</span>
-<span class="sd">        L-RMSD is computed by aligning the longest chain of the decoy to the one of the  reference</span>
-<span class="sd">        and computing the RMSD of the shortest chain between decoy and ref</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            exportpath (str, optional): file name where the aligned pdbs are exported</span>
+<span class="sd">            method (str, optional): Method to align the fragments (&#39;svd&#39;,&#39;quaternion&#39;)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: L-RMSD value of the conformation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># create the sql</span>
         <span class="n">sql_decoy</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">,</span><span class="n">sqlfile</span><span class="o">=</span><span class="s1">&#39;decoy.db&#39;</span><span class="p">)</span>
@@ -571,11 +586,18 @@
 
         <span class="k">return</span> <span class="n">lrmsd</span></div>
 
-    <span class="c1"># RETURN THE ATOMS THAT ARE SHARED BY THE TWO DB</span>
-    <span class="c1"># FOR A GIVEN CHAINID</span>
 <div class="viewcode-block" id="StructureSimilarity.get_identical_atoms"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.get_identical_atoms">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_identical_atoms</span><span class="p">(</span><span class="n">db1</span><span class="p">,</span><span class="n">db2</span><span class="p">,</span><span class="n">chain</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return that atoms shared by both databse for a specific chain</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            db1 (TYPE): pdb2sql database of the first conformation</span>
+<span class="sd">            db2 (TYPE): pdb2sql database of the 2nd conformation</span>
+<span class="sd">            chain (str): chain name</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list, list: list of xyz for both database</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># get data</span>
         <span class="n">data1</span> <span class="o">=</span> <span class="n">db1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;chainID,resSeq,name&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="n">chain</span><span class="p">)</span>
         <span class="n">data2</span> <span class="o">=</span> <span class="n">db2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;chainID,resSeq,name&#39;</span><span class="p">,</span><span class="n">chainID</span><span class="o">=</span><span class="n">chain</span><span class="p">)</span>
@@ -596,25 +618,28 @@
 
         <span class="k">return</span> <span class="n">xyz1</span><span class="p">,</span><span class="n">xyz2</span></div>
 
-    <span class="c1">################################################################################################</span>
-    <span class="c1">#</span>
-    <span class="c1">#   ROUTINE TO COMPUTE THE I-RMSD USING PDB2SQL</span>
-    <span class="c1">#   DOES NOT REQUIRE THE PRECALCULATION OF ANYTHiNG</span>
-    <span class="c1">#   BUT CAN READ AN IZONE FILE AS WELL</span>
-    <span class="c1">#   CAN OUTPUT THE SUPERIMPOSED STRUCTURES</span>
-    <span class="c1">#   MUCH SLOWER THAN THE FAST ROUTINES BUT EASIER TO USE</span>
-    <span class="c1">#</span>
-    <span class="c1">#################################################################################################</span>
-
 <div class="viewcode-block" id="StructureSimilarity.compute_irmsd_pdb2sql"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_irmsd_pdb2sql">[docs]</a>    <span class="k">def</span> <span class="nf">compute_irmsd_pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">,</span><span class="n">izone</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">exportpath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Slow method to compute the i-rmsd</span>
 
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models</span>
-<span class="sd">              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879</span>
+<span class="sd">        Require the precalculation of the izone. A dedicated routine is implemented to comoute the izone</span>
+<span class="sd">        if izone is not given in argument the routine will compute them automatically</span>
+
 <span class="sd">        i-RMSD is computed selecting the back bone of the contact residue with a cutoff of 10A</span>
 <span class="sd">        in the decoy. Align these as best as possible with their coutner part in the ref</span>
 <span class="sd">        and and compute the RMSD</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+
+<span class="sd">        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models</span>
+<span class="sd">              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            izone (None, optional): file name of the zone. if None the zones will be calculated first</span>
+<span class="sd">            method (str, optional): Method to align the fragments (&#39;svd&#39;,&#39;quaternion&#39;)</span>
+<span class="sd">            cutoff (float, optional): cutoff for the contact atoms</span>
+<span class="sd">            exportpath (str, optional): file name where the aligned pdbs are exported</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: i-RMSD value of the conformation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># create thes sql</span>
         <span class="n">sql_decoy</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">)</span>
@@ -705,11 +730,21 @@
 
         <span class="k">return</span> <span class="n">irmsd</span></div>
 
-
-    <span class="c1"># get the rowID of all the atoms</span>
 <div class="viewcode-block" id="StructureSimilarity.get_izone_rowID"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.get_izone_rowID">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_izone_rowID</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span><span class="n">izone</span><span class="p">,</span><span class="n">return_only_backbone_atoms</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the idnex of the izone atoms</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            sql (pdb2sql): database of the conformation</span>
+<span class="sd">            izone (str): filename to store the zone</span>
+<span class="sd">            return_only_backbone_atoms (bool, optional): Returns only the backbone atoms</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            lis(int): index of the atoms in the zone</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: if the izone file is not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># read the file</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">izone</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s1">&#39;i-zone file not found&#39;</span><span class="p">,</span><span class="n">izone</span><span class="p">)</span>
@@ -742,15 +777,15 @@
 
         <span class="k">return</span> <span class="n">index_contact</span></div>
 
-
-    <span class="c1">#############################################################################</span>
-    <span class="c1">#</span>
-    <span class="c1">#   ROUTINE TO COMPUTE THE FNAT USING PDB2SQL</span>
-    <span class="c1">#</span>
-    <span class="c1">#############################################################################</span>
-
 <div class="viewcode-block" id="StructureSimilarity.compute_Fnat_pdb2sql"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_Fnat_pdb2sql">[docs]</a>    <span class="k">def</span> <span class="nf">compute_Fnat_pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">5.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Slow method to compute the FNAT usign pdb2sql</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            cutoff (float, optional): cutoff for the contact atoms</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: Fnat value for the conformation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># create the sql</span>
         <span class="n">sql_decoy</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoy</span><span class="p">)</span>
         <span class="n">sql_ref</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span>
@@ -799,7 +834,16 @@
 
 <div class="viewcode-block" id="StructureSimilarity.read_xyz_zone"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.read_xyz_zone">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">read_xyz_zone</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">,</span><span class="n">resData</span><span class="p">,</span><span class="n">return_not_in_zone</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read the xyz of the zone atoms</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            pdb_file (str): filename containing the pdb of the molecule</span>
+<span class="sd">            resData (dict): information about the residues</span>
+<span class="sd">            return_not_in_zone (bool, optional): Do we return the atoms not in the zone</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list(float): XYZ of the atoms in the zone</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># read the ref file</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
@@ -844,7 +888,16 @@
 
 <div class="viewcode-block" id="StructureSimilarity.read_data_zone"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.read_data_zone">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">read_data_zone</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">,</span><span class="n">resData</span><span class="p">,</span><span class="n">return_not_in_zone</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read the data of the atoms in the zone.</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            pdb_file (str): filename containing the pdb of the molecule</span>
+<span class="sd">            resData (dict): information about the residues</span>
+<span class="sd">            return_not_in_zone (bool, optional): Do we return the atoms not in the zone</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list(float): data of the atoms in the zone</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># read the ref file</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">,</span><span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">):</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
@@ -892,10 +945,20 @@
 
 <div class="viewcode-block" id="StructureSimilarity.read_zone"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.read_zone">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">read_zone</span><span class="p">(</span><span class="n">zone_file</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read the zone file.</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            zone_file (str): name of the file</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Info aboyt the residues in the zone</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: if the zone file is not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># read the izone file</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">zone_file</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s1">&#39;i-zone file not found&#39;</span><span class="p">,</span><span class="n">zone_file</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s1">&#39;zone file not found&#39;</span><span class="p">,</span><span class="n">zone_file</span><span class="p">)</span>
 
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">zone_file</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">data</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
@@ -936,26 +999,46 @@
     <span class="c1">#</span>
     <span class="c1">###################################################################</span>
 
-    <span class="c1"># compute the DockQ score from the different elements</span>
 <div class="viewcode-block" id="StructureSimilarity.compute_DockQScore"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.compute_DockQScore">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">compute_DockQScore</span><span class="p">(</span><span class="n">Fnat</span><span class="p">,</span><span class="n">lrmsd</span><span class="p">,</span><span class="n">irmsd</span><span class="p">,</span><span class="n">d1</span><span class="o">=</span><span class="mf">8.5</span><span class="p">,</span><span class="n">d2</span><span class="o">=</span><span class="mf">1.5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the DockQ Score</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            Fnat (float): Fnat value</span>
+<span class="sd">            lrmsd (float): lrmsd value</span>
+<span class="sd">            irmsd (float): irmsd value</span>
+<span class="sd">            d1 (float, optional): first coefficient for the DockQ calculations</span>
+<span class="sd">            d2 (float, optional): second coefficient for the DockQ calculations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">def</span> <span class="nf">scale_rms</span><span class="p">(</span><span class="n">rms</span><span class="p">,</span><span class="n">d</span><span class="p">):</span>
             <span class="k">return</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="p">(</span><span class="n">rms</span><span class="o">/</span><span class="n">d</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="mf">1.</span><span class="o">/</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span>  <span class="n">Fnat</span> <span class="o">+</span> <span class="n">scale_rms</span><span class="p">(</span><span class="n">lrmsd</span><span class="p">,</span><span class="n">d1</span><span class="p">)</span> <span class="o">+</span> <span class="n">scale_rms</span><span class="p">(</span><span class="n">irmsd</span><span class="p">,</span><span class="n">d2</span><span class="p">))</span></div>
 
-
-    <span class="c1"># compute the RMSD of two sets of points</span>
 <div class="viewcode-block" id="StructureSimilarity.get_rmsd"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.get_rmsd">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_rmsd</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;compute the RMSD</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            P (np.array(nx3)): position of the points in the first molecule</span>
+<span class="sd">            Q (np.array(nx3)): position of the points in the second molecule</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: RMSD value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">P</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">n</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">P</span><span class="o">-</span><span class="n">Q</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span></div>
 
-
-    <span class="c1"># compute the translation vector to center a set of points</span>
 <div class="viewcode-block" id="StructureSimilarity.get_trans_vect"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.get_trans_vect">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_trans_vect</span><span class="p">(</span><span class="n">P</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the translationv vector to the origin</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            P (np.array(nx3)): position of the points in the molecule</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: minus mean value of the xyz columns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span>  <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span></div>
 
 
@@ -974,15 +1057,22 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> is not a valid method for rmsd alignement.</span><span class="se">\n</span><span class="s1"> Options are svd or quaternions&#39;</span> <span class="o">%</span><span class="n">method</span><span class="p">)</span></div>
 
-    <span class="c1"># get the rotation matrix via a SVD</span>
-    <span class="c1"># decomposition of the correlation matrix</span>
 <div class="viewcode-block" id="StructureSimilarity.get_rotation_matrix_Kabsh"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.get_rotation_matrix_Kabsh">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_rotation_matrix_Kabsh</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get the rotation matrix to aligh two point clouds.</span>
 
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        based on</span>
-<span class="sd">        [1] Molecular Distance Measure</span>
-<span class="sd">            https://cnx.org/contents/HV-RsdwL@23/Molecular-Distance-Measures</span>
+<span class="sd">        The method is based on th Kabsh approach</span>
+<span class="sd">        https://cnx.org/contents/HV-RsdwL@23/Molecular-Distance-Measures</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            P (np.array): xyz of the first point cloud</span>
+<span class="sd">            Q (np.array): xyz of the second point cloud</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.array: rotation matrix</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: matrix have different sizes</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="n">pshape</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">shape</span>
@@ -1023,15 +1113,22 @@
 
         <span class="k">return</span> <span class="n">U</span></div>
 
-    <span class="c1"># get the rotation amtrix via the quaternion approach</span>
-    <span class="c1"># doesn&#39;t work great so far</span>
 <div class="viewcode-block" id="StructureSimilarity.get_rotation_matrix_quaternion"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.get_rotation_matrix_quaternion">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_rotation_matrix_quaternion</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get the rotation matrix to aligh two point clouds</span>
 
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        based on</span>
-<span class="sd">        [1] Using quaternions to calculate RMSD</span>
-<span class="sd">            http://www.ams.stonybrook.edu/~coutsias/papers/rmsd17.pdf</span>
+<span class="sd">        The method is based on the quaternion approach</span>
+<span class="sd">        http://www.ams.stonybrook.edu/~coutsias/papers/rmsd17.pdf</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            P (np.array): xyz of the first point cloud</span>
+<span class="sd">            Q (np.array): xyz of the second point cloud</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.array: rotation matrix</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: matrix have different sizes</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="n">pshape</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">shape</span>
@@ -1096,10 +1193,29 @@
 
 <div class="viewcode-block" id="StructureSimilarity.translation"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.translation">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">translation</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span><span class="n">vect</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Translate a fragment</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            xyz (np.array): position of the fragment</span>
+<span class="sd">            vect (np.array): translation vector</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.array: translated positions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">xyz</span> <span class="o">+</span> <span class="n">vect</span></div>
 
 <div class="viewcode-block" id="StructureSimilarity.rotation_around_axis"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.rotation_around_axis">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">rotation_around_axis</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span><span class="n">axis</span><span class="p">,</span><span class="n">angle</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rotate a fragment around an axis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            xyz (np.array): original positions</span>
+<span class="sd">            axis (np.array): axis of rotation</span>
+<span class="sd">            angle (float): angle of rotation (radians)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.array: Rotated positions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># get the data</span>
         <span class="n">ct</span><span class="p">,</span><span class="n">st</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
@@ -1120,8 +1236,18 @@
 
 <div class="viewcode-block" id="StructureSimilarity.rotation_euler"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.rotation_euler">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">rotation_euler</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span><span class="n">alpha</span><span class="p">,</span><span class="n">beta</span><span class="p">,</span><span class="n">gamma</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rotate a fragment from Euler rotation angle</span>
 
-        <span class="c1"># precomte the trig</span>
+<span class="sd">        Args:</span>
+<span class="sd">            xyz (np.array): original positions</span>
+<span class="sd">            alpha (float): rotation angle around the x axis</span>
+<span class="sd">            beta (float): rotation angle around the x axis</span>
+<span class="sd">            gamma (float): rotation angle around the x axis</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.array: Rotated positions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># precompute the trig</span>
         <span class="n">ca</span><span class="p">,</span><span class="n">sa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
         <span class="n">cb</span><span class="p">,</span><span class="n">sb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
         <span class="n">cg</span><span class="p">,</span><span class="n">sg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">gamma</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">gamma</span><span class="p">)</span>
@@ -1143,6 +1269,16 @@
 
 <div class="viewcode-block" id="StructureSimilarity.rotation_matrix"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.StructureSimilarity.StructureSimilarity.rotation_matrix">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">rotation_matrix</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span><span class="n">rot_mat</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rotate a fragment from a roation matrix</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            xyz (np.array): original positions</span>
+<span class="sd">            rot_mat (np.array): rotation matrix</span>
+<span class="sd">            center (bool, optional): Center the fragment before rotation</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.array: rotated positions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">center</span><span class="p">:</span>
             <span class="n">xyz0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">xyz</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">,(</span><span class="n">xyz</span><span class="o">-</span><span class="n">xyz0</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="n">xyz0</span>

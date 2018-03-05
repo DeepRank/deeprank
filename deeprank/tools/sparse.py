@@ -1,13 +1,18 @@
 import numpy as np
-printif = lambda string,cond: print(string) if cond else None
+_printif = lambda string,cond: print(string) if cond else None
 
-'''
-Routines to handle sparse tensors
-'''
 
 class COOgrid(object):
 
     def __init__(self,sparse=None,index=None,value=None,shape=None):
+        """COO 3d Sparse matrix class
+
+        Args:
+            sparse (bool, optional): Sparse or Not
+            index (Nx3 array, optional): index of the non zero elements
+            value (float, optional): values of the non-zero elements
+            shape (3x3 array, optional): shape of the matrix
+        """
 
         self.sparse=sparse
         self.index = index
@@ -15,9 +20,15 @@ class COOgrid(object):
         self.shape = shape
 
     def from_dense(self,data,beta=None,debug=False):
-        '''
+        '''Create a sparse matrix from a dense one.
+
         data : the 3D tensor to encode
         beta : threshold to determine if a sparse rep is valuable
+
+        Args:
+            data (np.array): full matrix
+            beta (float, optional): threshold to determine if a sparse rep is valuable
+            debug (bool, optional): print debug information
         '''
         if beta is not None:
             thr = beta*np.mean(np.abs(data))
@@ -34,20 +45,31 @@ class COOgrid(object):
         # decide if we store sparse or not
         # if enough elements are sparse
         if mem_sparse < mem_dense:
-            printif('--> COO sparse %d bits/%d bits' %(mem_sparse,mem_dense),debug)
+            _printif('--> COO sparse %d bits/%d bits' %(mem_sparse,mem_dense),debug)
             self.sparse = True
             self.index = index.astype(np.uint8)
             self.value= value.astype(np.float32)
             self.shape = data.shape
 
         else:
-            printif('--> dense %d bits/%d bits' %(mem_sparse,mem_dense),debug)
+            _printif('--> dense %d bits/%d bits' %(mem_sparse,mem_dense),debug)
             self.sparse = False
             self.shape = data.shape
             self.index=None
             self.value=data.astype(np.float32)
 
     def to_dense(self,shape=None):
+        """Create a dense matrix from a sparse one
+
+        Args:
+            shape (3x3 array, optional): shape of the matrix
+
+        Returns:
+            np.array: Dense 3D matrix
+
+        Raises:
+            ValueError: Shape not defined
+        """
         if not self.sparse:
             raise ValueError('Not a sparse matrix')
         if shape is None and self.shape is None:
@@ -59,22 +81,30 @@ class COOgrid(object):
         data[[ i for i in self.index.T ]] = self.value[:,0]
         return data
 
-'''
-Flat Array Normalized
-'''
+
 class FLANgrid(object):
 
     def __init__(self,sparse=None,index=None,value=None,shape=None):
+        """Flat Array sparse matrix
 
+        Args:
+            sparse (bool, optional): Sparse or Not
+            index (list(int), optional): single index of each non-zero elements
+            value (list(float), optional): values of the non-zero elements
+            shape (3x3 array, optional): Shape of the matrix
+        """
         self.sparse=sparse
         self.index = index
         self.value = value
         self.shape = shape
 
     def from_dense(self,data,beta=None,debug=False):
-        '''
-        data : the 3D tensor to encode
-        beta : threshold to determine if a sparse rep is valuable
+        '''Create a sparse matrix from a dense one.
+
+        Args:
+            data (np.array): Dense matrix
+            beta (float, optional): threshold to determine if a sparse rep is valuable
+            debug (bool, optional): print debug information
         '''
         if beta is not None:
             thr = beta*np.mean(np.abs(data))
@@ -103,7 +133,7 @@ class FLANgrid(object):
         # if enough elements are sparse
         if mem_sparse < mem_dense:
 
-            printif('--> FLAN sparse %d bits/%d bits' %(mem_sparse,mem_dense),debug)
+            _printif('--> FLAN sparse %d bits/%d bits' %(mem_sparse,mem_dense),debug)
             self.sparse = True
             self.index = self._get_single_index_array(index).astype(index_type)
             self.value= value.astype(np.float32)
@@ -111,12 +141,23 @@ class FLANgrid(object):
 
         else:
 
-            printif('--> FLAN dense %d bits/%d bits' %(mem_sparse,mem_dense),debug)
+            _printif('--> FLAN dense %d bits/%d bits' %(mem_sparse,mem_dense),debug)
             self.sparse = False
             self.index=None
             self.value=data.astype(np.float32)
 
     def to_dense(self,shape=None):
+        """Create a dense matrix
+
+        Args:
+            shape (3x3 array, optional): Shape of the matrix
+
+        Returns:
+            np.array: Dense 3D matrix
+
+        Raises:
+            ValueError: shape not defined
+        """
         if not self.sparse:
             raise ValueError('Not a sparse matrix')
         if shape is None and self.shape is None:
@@ -128,11 +169,19 @@ class FLANgrid(object):
         data[self.index] = self.value[:,0]
         return data.reshape(self.shape)
 
-    # get the index can be used with a map
-    # self.index = np.array( list( map(self._get_single_index,index) ) ).astype(index_type)
-    # however that is remarkably slow compared to the array version
     def _get_single_index(self,index):
+        """Get the single index for a single element.
 
+        # get the index can be used with a map
+        # self.index = np.array( list( map(self._get_single_index,index) ) ).astype(index_type)
+        # however that is remarkably slow compared to the array version
+
+        Args:
+            index (array): COO  index
+
+        Returns:
+            int: index
+        """
         ndim = len(index)
         assert ndim == len(self.shape)
 
@@ -141,9 +190,19 @@ class FLANgrid(object):
             ind += index[i] * np.prod(self.shape[i+1:])
         return ind
 
-    # get the sing index using np array
-    # that is much faster than using a map ...
     def _get_single_index_array(self,index):
+        """Get the single index for multiple elements
+
+        # get the index can be used with a map
+        # self.index = np.array( list( map(self._get_single_index,index) ) ).astype(index_type)
+        # however that is remarkably slow compared to the array version
+
+        Args:
+            index (array): COO  index
+
+        Returns:
+            list(int): index
+        """
 
         single_ind = index[:,-1]
         ndim = index.shape[-1]

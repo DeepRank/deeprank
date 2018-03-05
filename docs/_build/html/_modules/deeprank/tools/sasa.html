@@ -51,25 +51,42 @@
 
 <div class="viewcode-block" id="SASA"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA">[docs]</a><span class="k">class</span> <span class="nc">SASA</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
-
-    <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Simple class that computes Surface Accessible Solvent Area following some of the methods presented in</span>
-
-<span class="sd">    [1] Solvent accessible surface area approximations for rapid and accurate protein structure prediction</span>
-<span class="sd">        J Mol Model (2009) 15:1093–1108</span>
-<span class="sd">        DOI 10.1007/s00894-009-0454-9</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pdbfile</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot;Simple class that computes Surface Accessible Solvent Area.</span>
+
+<span class="sd">        The method follows some of the approaches presented in :</span>
+
+<span class="sd">        Solvent accessible surface area approximations for rapid and accurate protein structure prediction</span>
+<span class="sd">        https://link.springer.com/article/10.1007%2Fs00894-009-0454-9</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; sasa = SASA(&#39;1AK4_1w.pdb&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; NV = sasa.neighbor_vector()</span>
+<span class="sd">            &gt;&gt;&gt; print(NV)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pdbfile (str): PDB file of the conformation</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">pdbfile</span> <span class="o">=</span> <span class="n">pdbfile</span>
 
 <div class="viewcode-block" id="SASA.get_center"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA.get_center">[docs]</a>    <span class="k">def</span> <span class="nf">get_center</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">chainA</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="s1">&#39;cb&#39;</span><span class="p">):</span>
 
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        Get the center of the resiudes</span>
+        <span class="sd">&#39;&#39;&#39;Get the center of the resiudes.</span>
+
 <span class="sd">        center = cb --&gt; the center is located on the carbon beta of each residue</span>
 <span class="sd">        center = &#39;center&#39; --&gt; average position of all atoms of the residue</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            chainA (str, optional): Name of the first chain</span>
+<span class="sd">            chainB (str, optional): Name of the second chain</span>
+<span class="sd">            center (str, optional): Specify the center.</span>
+<span class="sd">                center = &#39;cb&#39; --&gt; the center is located on the carbon beta of each residue</span>
+<span class="sd">                center = &#39;center&#39; --&gt; average position of all atoms of the residue</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the center is not recpgnized</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="k">if</span> <span class="n">center</span> <span class="o">==</span> <span class="s1">&#39;center&#39;</span><span class="p">:</span>
@@ -82,8 +99,11 @@
 
 <div class="viewcode-block" id="SASA.get_residue_center"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA.get_residue_center">[docs]</a>    <span class="k">def</span> <span class="nf">get_residue_center</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">chainA</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">):</span>
 
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        Compute the average position of all the residues</span>
+        <span class="sd">&#39;&#39;&#39;Compute the average position of all the residues.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            chainA (str, optional): Name of the first chain</span>
+<span class="sd">            chainB (str, optional): Name of the second chain</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="n">sql</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pdbfile</span><span class="p">)</span>
@@ -115,8 +135,11 @@
 
 <div class="viewcode-block" id="SASA.get_residue_carbon_beta"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA.get_residue_carbon_beta">[docs]</a>    <span class="k">def</span> <span class="nf">get_residue_carbon_beta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">chainA</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">):</span>
 
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        Extract the position of the carbon beta of each residue</span>
+        <span class="sd">&#39;&#39;&#39;Extract the position of the carbon beta of each residue.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            chainA (str, optional): Name of the first chain</span>
+<span class="sd">            chainB (str, optional): Name of the second chain</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="n">sql</span> <span class="o">=</span> <span class="n">pdb2sql</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pdbfile</span><span class="p">)</span>
@@ -138,9 +161,19 @@
 <div class="viewcode-block" id="SASA.neighbor_vector"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA.neighbor_vector">[docs]</a>    <span class="k">def</span> <span class="nf">neighbor_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">lbound</span><span class="o">=</span><span class="mf">3.3</span><span class="p">,</span><span class="n">ubound</span><span class="o">=</span><span class="mf">11.1</span><span class="p">,</span><span class="n">chainA</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="s1">&#39;cb&#39;</span><span class="p">):</span>
 
 
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        Compute teh SASA folowing the neighbour vector approach.</span>
-<span class="sd">        Eq on page 1097 of Ref[1]</span>
+        <span class="sd">&#39;&#39;&#39;Compute teh SASA folowing the neighbour vector approach.</span>
+
+<span class="sd">        The method is based on Eq on page 1097 of https://link.springer.com/article/10.1007%2Fs00894-009-0454-9</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lbound (float, optional): lower boubd</span>
+<span class="sd">            ubound (float, optional): upper bound</span>
+<span class="sd">            chainA (str, optional): name of the first chain</span>
+<span class="sd">            chainB (str, optional): name of the second chain</span>
+<span class="sd">            center (str, optional): specify the center (see get_residue_center)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: neighbouring vectors</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="c1"># get the center</span>
@@ -176,9 +209,19 @@
 
 <div class="viewcode-block" id="SASA.neighbor_count"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA.neighbor_count">[docs]</a>    <span class="k">def</span> <span class="nf">neighbor_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">lbound</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span><span class="n">ubound</span><span class="o">=</span><span class="mf">11.4</span><span class="p">,</span><span class="n">chainA</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="n">chainB</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="s1">&#39;cb&#39;</span><span class="p">):</span>
 
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        Compute the neighbourhood count of each residue</span>
-<span class="sd">        Eq on page 1097 of Ref[1]</span>
+        <span class="sd">&#39;&#39;&#39;Compute the neighbourhood count of each residue.</span>
+
+<span class="sd">        The method is based on Eq on page 1097 of https://link.springer.com/article/10.1007%2Fs00894-009-0454-9</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lbound (float, optional): lower boubd</span>
+<span class="sd">            ubound (float, optional): upper bound</span>
+<span class="sd">            chainA (str, optional): name of the first chain</span>
+<span class="sd">            chainB (str, optional): name of the second chain</span>
+<span class="sd">            center (str, optional): specify the center (see get_residue_center)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Neighborhood count</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="c1"># get the center</span>
@@ -200,6 +243,16 @@
 
 <div class="viewcode-block" id="SASA.neighbor_weight"><a class="viewcode-back" href="../../../deeprank.tools.html#deeprank.tools.sasa.SASA.neighbor_weight">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">neighbor_weight</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span><span class="n">lbound</span><span class="p">,</span><span class="n">ubound</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Neighboor weight</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dist (np.array): distance from neighboors</span>
+<span class="sd">            lbound (float): lower bound</span>
+<span class="sd">            ubound (float): upper bound</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: distance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span>  <span class="p">(</span><span class="n">dist</span><span class="o">&gt;</span><span class="n">lbound</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">dist</span><span class="o">&lt;</span><span class="n">ubound</span><span class="p">)</span> <span class="p">)</span>
         <span class="n">dist</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">dist</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">-</span><span class="n">lbound</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">ubound</span><span class="o">-</span><span class="n">lbound</span><span class="p">)</span> <span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">)</span>
         <span class="n">dist</span><span class="p">[</span><span class="n">dist</span><span class="o">&lt;=</span><span class="n">lbound</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>

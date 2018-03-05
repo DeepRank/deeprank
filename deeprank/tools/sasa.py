@@ -3,25 +3,42 @@ from deeprank.tools import pdb2sql
 
 class SASA(object):
 
-
-    '''
-    Simple class that computes Surface Accessible Solvent Area following some of the methods presented in
-
-    [1] Solvent accessible surface area approximations for rapid and accurate protein structure prediction
-        J Mol Model (2009) 15:1093–1108
-        DOI 10.1007/s00894-009-0454-9
-    '''
-
     def __init__(self,pdbfile):
+
+        """Simple class that computes Surface Accessible Solvent Area.
+
+        The method follows some of the approaches presented in :
+
+        Solvent accessible surface area approximations for rapid and accurate protein structure prediction
+        https://link.springer.com/article/10.1007%2Fs00894-009-0454-9
+
+        Example:
+            >>> sasa = SASA('1AK4_1w.pdb')
+            >>> NV = sasa.neighbor_vector()
+            >>> print(NV)
+
+        Args:
+            pdbfile (str): PDB file of the conformation
+
+        """
 
         self.pdbfile = pdbfile
 
     def get_center(self,chainA='A',chainB='B',center='cb'):
 
-        '''
-        Get the center of the resiudes
+        '''Get the center of the resiudes.
+
         center = cb --> the center is located on the carbon beta of each residue
         center = 'center' --> average position of all atoms of the residue
+
+        Args:
+            chainA (str, optional): Name of the first chain
+            chainB (str, optional): Name of the second chain
+            center (str, optional): Specify the center.
+                center = 'cb' --> the center is located on the carbon beta of each residue
+                center = 'center' --> average position of all atoms of the residue
+        Raises:
+            ValueError: If the center is not recpgnized
         '''
 
         if center == 'center':
@@ -34,8 +51,11 @@ class SASA(object):
 
     def get_residue_center(self,chainA='A',chainB='B'):
 
-        '''
-        Compute the average position of all the residues
+        '''Compute the average position of all the residues.
+
+        Args:
+            chainA (str, optional): Name of the first chain
+            chainB (str, optional): Name of the second chain
         '''
 
         sql = pdb2sql(self.pdbfile)
@@ -67,8 +87,11 @@ class SASA(object):
 
     def get_residue_carbon_beta(self,chainA='A',chainB='B'):
 
-        '''
-        Extract the position of the carbon beta of each residue
+        '''Extract the position of the carbon beta of each residue.
+
+        Args:
+            chainA (str, optional): Name of the first chain
+            chainB (str, optional): Name of the second chain
         '''
 
         sql = pdb2sql(self.pdbfile)
@@ -90,9 +113,19 @@ class SASA(object):
     def neighbor_vector(self,lbound=3.3,ubound=11.1,chainA='A',chainB='B',center='cb'):
 
 
-        '''
-        Compute teh SASA folowing the neighbour vector approach.
-        Eq on page 1097 of Ref[1]
+        '''Compute teh SASA folowing the neighbour vector approach.
+
+        The method is based on Eq on page 1097 of https://link.springer.com/article/10.1007%2Fs00894-009-0454-9
+
+        Args:
+            lbound (float, optional): lower boubd
+            ubound (float, optional): upper bound
+            chainA (str, optional): name of the first chain
+            chainB (str, optional): name of the second chain
+            center (str, optional): specify the center (see get_residue_center)
+
+        Returns:
+            dict: neighbouring vectors
         '''
 
         # get the center
@@ -128,9 +161,19 @@ class SASA(object):
 
     def neighbor_count(self,lbound=4.0,ubound=11.4,chainA='A',chainB='B',center='cb'):
 
-        '''
-        Compute the neighbourhood count of each residue
-        Eq on page 1097 of Ref[1]
+        '''Compute the neighbourhood count of each residue.
+
+        The method is based on Eq on page 1097 of https://link.springer.com/article/10.1007%2Fs00894-009-0454-9
+
+        Args:
+            lbound (float, optional): lower boubd
+            ubound (float, optional): upper bound
+            chainA (str, optional): name of the first chain
+            chainB (str, optional): name of the second chain
+            center (str, optional): specify the center (see get_residue_center)
+
+        Returns:
+            dict: Neighborhood count
         '''
 
         # get the center
@@ -152,6 +195,16 @@ class SASA(object):
 
     @staticmethod
     def neighbor_weight(dist,lbound,ubound):
+        """Neighboor weight
+
+        Args:
+            dist (np.array): distance from neighboors
+            lbound (float): lower bound
+            ubound (float): upper bound
+
+        Returns:
+            float: distance
+        """
         ind = np.argwhere(  (dist>lbound) & (dist<ubound) )
         dist[ind] = 0.5*( np.cos( np.pi*(dist[ind]-lbound)/(ubound-lbound) ) + 1 )
         dist[dist<=lbound] = 1

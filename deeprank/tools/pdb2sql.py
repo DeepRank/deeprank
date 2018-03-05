@@ -13,7 +13,9 @@ class pdb2sql(object):
 
         '''Create a SQL data base for a PDB file.
 
-        This allows to easily parse and extract information of the PDB using SQL queries.
+        This allows to easily parse and extract information of the PDB using SQL queries. This is a local
+        version of the pdb2sql tool (https://github.com/DeepRank/pdb2sql). Of pdb2sql is further developped as
+        a standalone we should use the library directly.
 
         Args:
             pdbfile (str or list(bytes)) : the pdb information can be provided as filename of list of bytes containign the pdb data
@@ -48,18 +50,6 @@ class pdb2sql(object):
         >>> # close the database
         >>> db.close()
 
-
-            Other queries have been made user friendly
-
-            - self.add_column(column_name,coltype='FLOAT',default=0)
-            - self.update_column(colname,values,index=None)
-            - self.update_xyz(new_xyz,index=None)
-            - self.commit()
-
-            TO DO
-
-            - Add more user friendly wrappers to SQL queries
-            - Make use of the ? more often to prevent quoting issues and SQL injection attack
         '''
         self.pdbfile = pdbfile
         self.sqlfile = sqlfile
@@ -270,6 +260,8 @@ class pdb2sql(object):
 
     # get the names of the columns
     def get_colnames(self):
+        """Print the colom names of the database."""
+
         cd = self.conn.execute('select * from atom')
         print('Possible column names are:')
         names = list(map(lambda x: x[0], cd.description))
@@ -279,11 +271,15 @@ class pdb2sql(object):
 
     # print the database
     def prettyprint(self):
+        """Print the database with pandas."""
+
         import pandas.io.sql as psql
         df = psql.read_sql("SELECT * FROM ATOM",self.conn)
         print(df)
 
     def uglyprint(self):
+        """Raw print of the database."""
+
         ctmp = self.conn.cursor()
         ctmp.execute("SELECT * FROM ATOM")
         print(ctmp.fetchall())
@@ -304,30 +300,44 @@ class pdb2sql(object):
 
         '''Get data from the sql database.
 
-        Exectute a simple SQL query that extracts values of attributes for certain conditions.
+        Get the values of specified attributes for a specific selection.
 
         Args:
 
             atnames (str): attribute name. They can be printed can get these names via the get_colnames()
-                           serial, name, atLoc,resName,chainID, resSeq,iCode,x,y,z,occ,temp
+                           - serial
+                           - name
+                           - atLoc
+                           - resName
+                           - chainID
+                           - resSeq,
+                           - iCode,
+                           - x/y/z
                            Several attributes can be specified at once e.g 'x,y,z'
 
-            kwargs : Several options are possible
-                     None : return the entire table
-                     chain = 'X' return the values of that chain
-                     name  = 'CA' only these atoms
-                     index = [0,1,2,3] return only those rows (not serial)
-                     where = "chainID='B'" general WHERE SQL query
-                     query = 'WHERE chainID='B'' general SQL Query
+            kwargs : Several options are possible to select atoms. Each column can be used as a keyword argument.
+                     Several keywords can be combined assuming a AND logical combination
 
-        Returns:
-            np.array: data extracted from the pdb file
+                     None : return the entire table
+
+                     chainID = 'A' select chain from name
+
+                     resIndex = [1,2,3] select residue from index
+
+                     resName = ['VAL','LEU'] select residue from name
+
+                     name  = ['CA','N'] select atoms from names
+
+                     rowID = [1,2,3] select atoms from index
+
+        Returns: Numpy array containig the requested data
+            np.array:
 
         Example :
 
         >>> db = pdb2sql(filename)
-        >>> xyz  = db.get('x,y,z',index=[0,1,2,3])
-        >>> name = db.get('name',where="resName='VAL'")
+        >>> xyz = db.get('x,y,z',name = ['CA','CB'])
+        >>> xyz = db.get('x,y,z',chainID='A',resName=['VAL',LEU])
 
         '''
 
@@ -475,7 +485,10 @@ class pdb2sql(object):
                           extend_to_residue=False,only_backbone_atoms=False,
                           excludeH=False,return_only_backbone_atoms=False,return_contact_pairs=False):
 
-        """Get contact atoms.
+        """Get contact atoms of the interface.
+
+        The cutoff distance is by default 8.5 Angs but can be changed at will. A few more options allows to
+        precisely define how the contact atoms are identified and returned.
 
         Args:
             cutoff (float): cutoff for contact atoms (default 8.5)
@@ -490,6 +503,11 @@ class pdb2sql(object):
 
         Returns:
             np.array: index of the contact atoms
+
+        Example:
+
+        >>> db = pdb2sql(filename)
+        >>> db.get_contact_atoms(cutoff=5.0,return_contact_pairs=True)
 
         """
 
@@ -621,7 +639,9 @@ class pdb2sql(object):
     # get the contact residue
     def get_contact_residue(self,cutoff=8.5,chain1='A',chain2='B',excludeH=False,
                             only_backbone_atoms=False,return_contact_pairs=False):
-        """Get contact residues.
+
+        """Get contact residues of the interface. The cutoff distance is by default 8.5 Angs but can be changed at will. A few more options allows to
+        precisely define how the contact residues are identified and returned.
 
         Args:
             cutoff (float): cutoff for contact atoms (default 8.5)
@@ -634,6 +654,11 @@ class pdb2sql(object):
 
         Returns:
             np.array: index of the contact atoms
+
+        Example:
+
+        >>> db = pdb2sql(filename)
+        >>> db.get_contact_residue(cutoff=5.0,return_contact_pairs=True)
 
         """
         # get the contact atoms
@@ -699,14 +724,13 @@ class pdb2sql(object):
 
 
     def add_column(self,colname,coltype='FLOAT',default=0):
-
-        '''Add an etra column to the ATOM table.'''
+        '''Add an extra column to the ATOM table.'''
 
         query = "ALTER TABLE ATOM ADD COLUMN '%s' %s DEFAULT %s" %(colname,coltype,str(default))
         self.c.execute(query)
-        #self.conn.commit()
 
     def update(self,attribute,values,**kwargs):
+        """Update the database."""
 
         # the asked keys
         keys = kwargs.keys()
@@ -773,9 +797,7 @@ class pdb2sql(object):
         self.c.executemany(query,data)
 
     def update_column(self,colname,values,index=None):
-
-
-        '''Update an entire column.'''
+        '''Update a single column.'''
 
         if index==None:
             data = [ [v,i+1] for i,v in enumerate(values) ]
@@ -787,9 +809,8 @@ class pdb2sql(object):
         #self.conn.commit()
 
     def update_xyz(self,xyz,index=None):
+        '''Update the xyz information.
 
-        '''Update the xyz informatiom
-        
         Update the positions of the atoms selected
         if index=None the position of all the atoms are changed
 
@@ -807,9 +828,8 @@ class pdb2sql(object):
         self.c.executemany(query,data)
 
     def put(self,colname,value,**kwargs):
+        """ Update the value of the attribute with value specified with possible selection.
 
-        """ Update the value of the attribute with value specified with possible selection
-        
         Args:
             colname (str)   :   must be a valid attribute name.
                                 you can get these names via the get_colnames()
@@ -900,16 +920,24 @@ class pdb2sql(object):
 
     # comit changes
     def commit(self):
+        """Commit the database."""
         self.conn.commit()
 
     # export to pdb file
+
     def exportpdb(self,fname,**kwargs):
+        """Export a PDB file with kwargs selection
 
-        '''
-        Export a PDB file with kwargs selection
-        not pretty so far but functional
-        '''
+        Args:
+            fname (str): Name of the file
+            **kwargs: Selection (see pdb2sql.get())
 
+        Example:
+
+        >>> db = pdb2sql('1AK4.pdb')
+        >>> db.exportpdb('CA.pdb',name='CA')
+
+        """
         # get the data
         data = self.get('*',**kwargs)
 
@@ -944,6 +972,11 @@ class pdb2sql(object):
 
     # close the database
     def close(self,rmdb = True):
+        """Close the database.
+
+        Args:
+            rmdb (bool, optional): Remove the database file
+        """
 
         if self.sqlfile is None:
             self.conn.close()
@@ -965,12 +998,24 @@ class pdb2sql(object):
 
 
     def translation(self,vect,**kwargs):
+        """Translate a part or all of the molecule
+
+        Args:
+            vect (np.array): translation vector
+            **kwargs: keyword argument to select the atoms. See pdb2sql.get()
+        """
         xyz = self.get('x,y,z',**kwargs)
         xyz += vect
         self.update('x,y,z',xyz,**kwargs)
 
     def rotation_around_axis(self,axis,angle,**kwargs):
+        """Rotate a part or all of the molecule around a specified axis
 
+        Args:
+            axis (np.array): axis of rotation
+            angle (float): angle of rotation in radian
+            **kwargs: keyword argument to select the atoms. See pdb2sql.get()
+        """
         xyz = self.get('x,y,z',**kwargs)
 
         # get the data
@@ -995,7 +1040,14 @@ class pdb2sql(object):
         return xyz0
 
     def rotation_euler(self,alpha,beta,gamma,**kwargs):
+        """Rotate a part or all of the molecule from Euler rotation axis
 
+        Args:
+            alpha (float): angle of rotation around the x axis
+            beta (float): angle of rotation around the y axis
+            gamma (float): angle of rotation around the z axis
+            **kwargs: keyword argument to select the atoms. See pdb2sql.get()
+        """
         xyz = self.get('x,y,z',**kwargs)
 
         # precomte the trig
@@ -1019,7 +1071,13 @@ class pdb2sql(object):
         self.update('x,y,z',xyz,**kwargs)
 
     def rotation_matrix(self,rot_mat,center=True,**kwargs):
+        """Rotate a part or all of the molecule from a rotation matrix
 
+        Args:
+            rot_mat (np.array): 3x3 rotation matrix
+            center (bool, optional): center the molecule before applying the rotation
+            **kwargs: keyword argument to select the atoms. See pdb2sql.get()
+        """
         xyz = self.get('x,y,z',**kwargs)
 
         if center:
@@ -1028,33 +1086,3 @@ class pdb2sql(object):
         else:
             xyz = np.dot(rot_mat,(xyz).T).T
         self.update('x,y,z',xyz,**kwargs)
-
-
-if __name__ == '__main__':
-
-    import numpy as np
-
-    # create the sql
-    db = pdb2sql('1AK4_100w.pdb')
-
-    # print the database
-    db.prettyprint()
-
-    # get the names of the columns
-    db.get_colnames()
-
-    # extract the xyz position of the atoms with name CB
-    xyz = db.get('*',index=[0,1,2,3])
-    print(xyz)
-
-    xyz = db.get('rowID',where="resName='VAL'")
-    print(xyz)
-
-    db.add_column('CHARGE','FLOAT')
-    db.put('CHARGE',0.1)
-    db.prettyprint()
-
-    db.exportpdb('chainA.pdb',where="chainID='A'")
-
-    # close the database
-    db.close()
