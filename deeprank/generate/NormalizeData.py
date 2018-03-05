@@ -10,14 +10,13 @@ class NormalizeData(object):
     def __init__(self,fname,shape=None):
         """Compute the normalization factor for the features and targets of a given HDF5 file.
 
-        The normalization of the features is done through the NormParam class that assumes gaussian distribution. 
+        The normalization of the features is done through the NormParam class that assumes gaussian distribution.
         Hence the Normalized data should be normally distributed with a 0 mean value and 1 standard deviation.
         The normalization of the targets is done vian a min/max normalization. As a result the normalized targets
-        should all lie between 0 and 1.
-
-        By default the output file containing the normalization dictionary is called <hdf5name>_norm.pckl
+        should all lie between 0 and 1. By default the output file containing the normalization dictionary is called <hdf5name>_norm.pckl
 
         Args:
+
             fname (str): name of the hdf5 file
             shape (tuple(int), optional): shape of the grid in the hdf5 file
 

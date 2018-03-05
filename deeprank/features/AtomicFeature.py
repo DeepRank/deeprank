@@ -4,7 +4,6 @@ import numpy as np
 from deeprank.tools import pdb2sql
 from deeprank.features import FeatureClass
 
-
 class AtomicFeature(FeatureClass):
 
     def __init__(self,pdbfile,param_charge=None,param_vdw=None,patch_file=None,

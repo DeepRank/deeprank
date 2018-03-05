@@ -25,7 +25,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Deep learning" href="deeprank.learn.html" />
-    <link rel="prev" title="Advanced Tutorial" href="advTuto.html" /> 
+    <link rel="prev" title="Documentation" href="Documentation.html" /> 
   </head>
   <body>
     <div class="related" role="navigation" aria-label="related navigation">
@@ -41,9 +41,10 @@
           <a href="deeprank.learn.html" title="Deep learning"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="advTuto.html" title="Advanced Tutorial"
+          <a href="Documentation.html" title="Documentation"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="Documentation.html" accesskey="U">Documentation</a> &#187;</li> 
       </ul>
     </div>  
 
@@ -67,7 +68,7 @@
 <li>Contact Residue Densities</li>
 </ul>
 </div></blockquote>
-<p>More features can be easily implemented and integrated in the data generation workflow. You can see example here: <span class="xref std std-ref">_ref_own_feature</span>. The calculation of a number of target values have also been implemented:</p>
+<p>More features can be easily implemented and integrated in the data generation workflow. You can see example here. The calculation of a number of target values have also been implemented:</p>
 <blockquote>
 <div><ul class="simple">
 <li>i-RMSD</li>
@@ -126,26 +127,26 @@
 <dl class="class">
 <dt id="deeprank.generate.DataGenerator.DataGenerator">
 <em class="property">class </em><code class="descclassname">deeprank.generate.DataGenerator.</code><code class="descname">DataGenerator</code><span class="sig-paren">(</span><em>pdb_select=None</em>, <em>pdb_source=None</em>, <em>pdb_native=None</em>, <em>compute_targets=None</em>, <em>compute_features=None</em>, <em>data_augmentation=None</em>, <em>hdf5='database.h5'</em>, <em>logger=None</em>, <em>debug=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeprank/generate/DataGenerator.html#DataGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deeprank.generate.DataGenerator.DataGenerator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Generates the data (features/targets/maps) required for deeprank.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>pdb_select</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – List of individual conformation for mapping</li>
-<li><strong>pdb_source</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – List of folders where to find the pdbs for mapping</li>
-<li><strong>pdb_native</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – List of folders where to find the native comformations</li>
-<li><strong>compute_targets</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – List of python files computing the features</li>
-<li><strong>compute_features</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – List of python files computing the features</li>
-<li><strong>data_augmentation</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of rotation performed one each complex</li>
-<li><strong>hdf5</strong> (<em>str</em><em>, </em><em>optional</em>) – name of the hdf5 file where the data is saved</li>
-<li><strong>logger</strong> (<em>None</em><em>, </em><em>optional</em>) – logger file</li>
-<li><strong>debug</strong> (<em>bool</em><em>, </em><em>optional</em>) – print debuf info</li>
+<li><strong>pdb_select</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>)</em><em>, </em><em>optional</em>) – List of individual conformation for mapping</li>
+<li><strong>pdb_source</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>)</em><em>, </em><em>optional</em>) – List of folders where to find the pdbs for mapping</li>
+<li><strong>pdb_native</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>)</em><em>, </em><em>optional</em>) – List of folders where to find the native comformations</li>
+<li><strong>compute_targets</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>)</em><em>, </em><em>optional</em>) – List of python files computing the features</li>
+<li><strong>compute_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>)</em><em>, </em><em>optional</em>) – List of python files computing the features</li>
+<li><strong>data_augmentation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a><em>, </em><em>optional</em>) – Number of rotation performed one each complex</li>
+<li><strong>hdf5</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>, </em><em>optional</em>) – name of the hdf5 file where the data is saved</li>
+<li><strong>logger</strong> (<a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><em>None</em></a><em>, </em><em>optional</em>) – logger file</li>
+<li><strong>debug</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – print debuf info</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">NotADirectoryError</span></code> – if the source are not found</p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#NotADirectoryError" title="(in Python v3.6)"><code class="xref py py-exc docutils literal"><span class="pre">NotADirectoryError</span></code></a> – if the source are not found</p>
 </td>
 </tr>
 </tbody>
@@ -176,13 +177,13 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em>) – Print creation details</li>
-<li><strong>remove_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – remove the groups that errored</li>
-<li><strong>prog_bar</strong> (<em>bool</em><em>, </em><em>optional</em>) – use tqdm</li>
+<li><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – Print creation details</li>
+<li><strong>remove_error</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – remove the groups that errored</li>
+<li><strong>prog_bar</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – use tqdm</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code> – If creation of the group errored.</p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.6)"><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code></a> – If creation of the group errored.</p>
 </td>
 </tr>
 </tbody>
@@ -217,7 +218,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>prog_bar</strong> (<em>bool</em><em>, </em><em>optional</em>) – use tqdm</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>prog_bar</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – use tqdm</td>
 </tr>
 </tbody>
 </table>
@@ -243,7 +244,7 @@ created from decoys or natives</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targdict</strong> (<em>dict</em>) – Example : {‘DOCKQ’:1.0}</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targdict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – Example : {‘DOCKQ’:1.0}</td>
 </tr>
 </tbody>
 </table>
@@ -261,7 +262,7 @@ created from decoys or natives</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>prog_bar</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use tqdm</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>prog_bar</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – Use tqdm</td>
 </tr>
 </tbody>
 </table>
@@ -286,18 +287,18 @@ created from decoys or natives</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>grid_info</strong> (<em>dict</em>) – Informaton for the grid see deeprank.generate.GridTool.py for details</li>
-<li><strong>cuda</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use CUDA</li>
-<li><strong>gpu_block</strong> (<em>None</em><em>, </em><em>optional</em>) – GPU block size to be used</li>
-<li><strong>cuda_kernel</strong> (<em>str</em><em>, </em><em>optional</em>) – filename containing CUDA kernel</li>
-<li><strong>cuda_func_name</strong> (<em>str</em><em>, </em><em>optional</em>) – The name of the function in the kernel</li>
-<li><strong>try_sparse</strong> (<em>bool</em><em>, </em><em>optional</em>) – Try to save the grids as sparse format</li>
-<li><strong>reset</strong> (<em>bool</em><em>, </em><em>optional</em>) – remove grids if some are already present</li>
-<li><strong>use_tmpdir</strong> (<em>bool</em><em>, </em><em>optional</em>) – use a scratch directory</li>
-<li><strong>time</strong> (<em>bool</em><em>, </em><em>optional</em>) – time the mapping process</li>
-<li><strong>prog_bar</strong> (<em>bool</em><em>, </em><em>optional</em>) – use tqdm for each molecule</li>
-<li><strong>grid_prog_bar</strong> (<em>bool</em><em>, </em><em>optional</em>) – use tqdm for each grid</li>
-<li><strong>remove_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – remove the data that errored</li>
+<li><strong>grid_info</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – Informaton for the grid see deeprank.generate.GridTool.py for details</li>
+<li><strong>cuda</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – Use CUDA</li>
+<li><strong>gpu_block</strong> (<a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><em>None</em></a><em>, </em><em>optional</em>) – GPU block size to be used</li>
+<li><strong>cuda_kernel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>, </em><em>optional</em>) – filename containing CUDA kernel</li>
+<li><strong>cuda_func_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>, </em><em>optional</em>) – The name of the function in the kernel</li>
+<li><strong>try_sparse</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – Try to save the grids as sparse format</li>
+<li><strong>reset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – remove grids if some are already present</li>
+<li><strong>use_tmpdir</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – use a scratch directory</li>
+<li><strong>time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – time the mapping process</li>
+<li><strong>prog_bar</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – use tqdm for each molecule</li>
+<li><strong>grid_prog_bar</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – use tqdm for each grid</li>
+<li><strong>remove_error</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – remove the data that errored</li>
 </ul>
 </td>
 </tr>
@@ -330,10 +331,10 @@ removed from the file it is impossible to add new features/targets</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>feature</strong> (<em>bool</em><em>, </em><em>optional</em>) – Remove the features</li>
-<li><strong>pdb</strong> (<em>bool</em><em>, </em><em>optional</em>) – Remove the pdbs</li>
-<li><strong>points</strong> (<em>bool</em><em>, </em><em>optional</em>) – remove teh grid points</li>
-<li><strong>grid</strong> (<em>bool</em><em>, </em><em>optional</em>) – remove the maps</li>
+<li><strong>feature</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – Remove the features</li>
+<li><strong>pdb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – Remove the pdbs</li>
+<li><strong>points</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – remove teh grid points</li>
+<li><strong>grid</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – remove the maps</li>
 </ul>
 </td>
 </tr>
@@ -353,15 +354,14 @@ removed from the file it is impossible to add new features/targets</p>
 <p>The normalization of the features is done through the NormParam class that assumes gaussian distribution.
 Hence the Normalized data should be normally distributed with a 0 mean value and 1 standard deviation.
 The normalization of the targets is done vian a min/max normalization. As a result the normalized targets
-should all lie between 0 and 1.</p>
-<p>By default the output file containing the normalization dictionary is called &lt;hdf5name&gt;_norm.pckl</p>
+should all lie between 0 and 1. By default the output file containing the normalization dictionary is called &lt;hdf5name&gt;_norm.pckl</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>fname</strong> (<em>str</em>) – name of the hdf5 file</li>
-<li><strong>shape</strong> (<em>tuple</em><em>(</em><em>int</em><em>)</em><em>, </em><em>optional</em>) – shape of the grid in the hdf5 file</li>
+<li><strong>fname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – name of the hdf5 file</li>
+<li><strong>shape</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.6)"><em>tuple</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a><em>)</em><em>, </em><em>optional</em>) – shape of the grid in the hdf5 file</li>
 </ul>
 </td>
 </tr>
@@ -395,10 +395,10 @@ the standard deviation of a given feature is calculated from the std of all the 
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>std</strong> (<em>float</em><em>, </em><em>optional</em>) – standard deviation</li>
-<li><strong>mean</strong> (<em>float</em><em>,</em><em>optional</em>) – mean value</li>
-<li><strong>var</strong> (<em>float</em><em>,</em><em>optional</em>) – variance</li>
-<li><strong>sqmean</strong> (<em>float</em><em>, </em><em>optional</em>) – square roo of the variance</li>
+<li><strong>std</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>, </em><em>optional</em>) – standard deviation</li>
+<li><strong>mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>,</em><em>optional</em>) – mean value</li>
+<li><strong>var</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>,</em><em>optional</em>) – variance</li>
+<li><strong>sqmean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>, </em><em>optional</em>) – square roo of the variance</li>
 </ul>
 </td>
 </tr>
@@ -428,8 +428,8 @@ the standard deviation of a given feature is calculated from the std of all the 
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>minv</strong> (<em>float</em><em>, </em><em>optional</em>) – minimal value</li>
-<li><strong>maxv</strong> (<em>float</em><em>, </em><em>optional</em>) – maximal value</li>
+<li><strong>minv</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>, </em><em>optional</em>) – minimal value</li>
+<li><strong>maxv</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>, </em><em>optional</em>) – maximal value</li>
 </ul>
 </td>
 </tr>
@@ -459,23 +459,23 @@ the standard deviation of a given feature is calculated from the std of all the 
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>molgrp</strong> (<em>str</em>) – name of the group of the molecule in the HDF5 file</li>
-<li><strong>number_of_points</strong> (<em>int</em><em>, </em><em>optional</em>) – number of points we want in each direction of the grid</li>
-<li><strong>resolution</strong> (<em>float</em><em>, </em><em>optional</em>) – distance (in Angs) between two points</li>
-<li><strong>atomic_densities</strong> (<em>dict</em><em>, </em><em>optional</em>) – dictionary of atom types cand their vdw radius exemple {‘CA’:3.5, ‘CB’:3.0}</li>
-<li><strong>atomic_densities_mode</strong> (<em>str</em><em>, </em><em>optional</em>) – Mode for mapping (deprecated must be ‘ind’)</li>
-<li><strong>feature</strong> (<em>None</em><em>, </em><em>optional</em>) – Name of the features to be mapped. By default all the features present in hdf5_file[‘&lt;molgrp&gt;/features/] will be mapped</li>
-<li><strong>feature_mode</strong> (<em>str</em><em>, </em><em>optional</em>) – Mode for mapping (deprecated must be ‘ind’)</li>
-<li><strong>contact_distance</strong> (<em>float</em><em>, </em><em>optional</em>) – the dmaximum distance between two contact atoms default 8.5 A</li>
-<li><strong>hdf5_file</strong> (<em>str</em><em>, </em><em>optional</em>) – the file handler of th HDF5 file where to store the grids</li>
-<li><strong>cuda</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use CUDA or not</li>
-<li><strong>gpu_block</strong> (<em>tuple</em><em>(</em><em>int</em><em>)</em><em>, </em><em>optional</em>) – GPU block size to use</li>
-<li><strong>cuda_func</strong> (<em>None</em><em>, </em><em>optional</em>) – Name of the CUDA function to be used for the mapping of the features. Must be present in kernel_cuda.c</li>
-<li><strong>cuda_atomic</strong> (<em>None</em><em>, </em><em>optional</em>) – Name of the CUDA function to be used for the mapping of the atomic densities. Must be present in kernel_cuda.c</li>
-<li><strong>prog_bar</strong> (<em>bool</em><em>, </em><em>optional</em>) – print progression bar for individual grid (default False)</li>
-<li><strong>time</strong> (<em>bool</em><em>, </em><em>optional</em>) – print timimg statistic for individual grid (default False)</li>
-<li><strong>try_sparse</strong> (<em>bool</em><em>, </em><em>optional</em>) – Try to store the matrix in sparse format (default True)</li>
-<li><strong>logger</strong> (<em>None</em><em>, </em><em>optional</em>) – logger</li>
+<li><strong>molgrp</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – name of the group of the molecule in the HDF5 file</li>
+<li><strong>number_of_points</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a><em>, </em><em>optional</em>) – number of points we want in each direction of the grid</li>
+<li><strong>resolution</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>, </em><em>optional</em>) – distance (in Angs) between two points</li>
+<li><strong>atomic_densities</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a><em>, </em><em>optional</em>) – dictionary of atom types cand their vdw radius exemple {‘CA’:3.5, ‘CB’:3.0}</li>
+<li><strong>atomic_densities_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>, </em><em>optional</em>) – Mode for mapping (deprecated must be ‘ind’)</li>
+<li><strong>feature</strong> (<a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><em>None</em></a><em>, </em><em>optional</em>) – Name of the features to be mapped. By default all the features present in hdf5_file[‘&lt;molgrp&gt;/features/] will be mapped</li>
+<li><strong>feature_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>, </em><em>optional</em>) – Mode for mapping (deprecated must be ‘ind’)</li>
+<li><strong>contact_distance</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>, </em><em>optional</em>) – the dmaximum distance between two contact atoms default 8.5 A</li>
+<li><strong>hdf5_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>, </em><em>optional</em>) – the file handler of th HDF5 file where to store the grids</li>
+<li><strong>cuda</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – Use CUDA or not</li>
+<li><strong>gpu_block</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.6)"><em>tuple</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a><em>)</em><em>, </em><em>optional</em>) – GPU block size to use</li>
+<li><strong>cuda_func</strong> (<a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><em>None</em></a><em>, </em><em>optional</em>) – Name of the CUDA function to be used for the mapping of the features. Must be present in kernel_cuda.c</li>
+<li><strong>cuda_atomic</strong> (<a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><em>None</em></a><em>, </em><em>optional</em>) – Name of the CUDA function to be used for the mapping of the atomic densities. Must be present in kernel_cuda.c</li>
+<li><strong>prog_bar</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – print progression bar for individual grid (default False)</li>
+<li><strong>time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – print timimg statistic for individual grid (default False)</li>
+<li><strong>try_sparse</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – Try to store the matrix in sparse format (default True)</li>
+<li><strong>logger</strong> (<a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><em>None</em></a><em>, </em><em>optional</em>) – logger</li>
 </ul>
 </td>
 </tr>
@@ -531,9 +531,9 @@ the standard deviation of a given feature is calculated from the std of all the 
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>only_contact</strong> (<em>bool</em><em>, </em><em>optional</em>) – Map only the contact atoms</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>only_contact</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – Map only the contact atoms</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">ImportError</span></code> – Description</td>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ImportError" title="(in Python v3.6)"><code class="xref py py-exc docutils literal"><span class="pre">ImportError</span></code></a> – Description</td>
 </tr>
 </tbody>
 </table>
@@ -550,8 +550,8 @@ Protein-Ligand Scoring with Convolutional NN Arxiv:1612.02751v1</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>center</strong> (<em>list</em><em>(</em><em>float</em><em>)</em>) – position of the atoms</li>
-<li><strong>vdw_radius</strong> (<em>float</em>) – vdw radius of the atom</li>
+<li><strong>center</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>)</em>) – position of the atoms</li>
+<li><strong>vdw_radius</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – vdw radius of the atom</li>
 </ul>
 </td>
 </tr>
@@ -578,8 +578,8 @@ chainID    residue_name(3-letter)     residue_number   atome_name  [values]</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>featlist</strong> (<em>list</em><em>(</em><em>str</em><em>)</em>) – list of features to be mapped</li>
-<li><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – transformation of the feature (?)</li>
+<li><strong>featlist</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>)</em>) – list of features to be mapped</li>
+<li><strong>transform</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#callable" title="(in Python v3.6)"><em>callable</em></a><em>, </em><em>optional</em>) – transformation of the feature (?)</li>
 </ul>
 </td>
 </tr>
@@ -590,8 +590,8 @@ chainID    residue_name(3-letter)     residue_number   atome_name  [values]</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><code class="xref py py-exc docutils literal"><span class="pre">ImportError</span></code> – Description</li>
-<li><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code> – Description</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ImportError" title="(in Python v3.6)"><code class="xref py py-exc docutils literal"><span class="pre">ImportError</span></code></a> – Description</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.6)"><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code></a> – Description</li>
 </ul>
 </td>
 </tr>
@@ -608,9 +608,9 @@ chainID    residue_name(3-letter)     residue_number   atome_name  [values]</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>center</strong> (<em>list</em><em>(</em><em>float</em><em>)</em>) – position of the feature center</li>
-<li><strong>value</strong> (<em>float</em>) – value of the feature</li>
-<li><strong>type</strong> (<em>str</em><em>, </em><em>optional</em>) – method to map</li>
+<li><strong>center</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>)</em>) – position of the feature center</li>
+<li><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – value of the feature</li>
+<li><strong>type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>, </em><em>optional</em>) – method to map</li>
 </ul>
 </td>
 </tr>
@@ -620,7 +620,7 @@ chainID    residue_name(3-letter)     residue_number   atome_name  [values]</p>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">np.array</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code> – Description</p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.6)"><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code></a> – Description</p>
 </td>
 </tr>
 </tbody>
@@ -642,8 +642,8 @@ chainID    residue_name(3-letter)     residue_number   atome_name  [values]</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>dict_data</strong> (<em>dict</em>) – feature values stored as a dict</li>
-<li><strong>data_name</strong> (<em>str</em>) – feature name</li>
+<li><strong>dict_data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – feature values stored as a dict</li>
+<li><strong>data_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – feature name</li>
 </ul>
 </td>
 </tr>
@@ -665,24 +665,27 @@ chainID    residue_name(3-letter)     residue_number   atome_name  [values]</p>
 <h3><a href="index.html">Table Of Contents</a></h3>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="intro.html">First Steps with DeepRank</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial : Data Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial_deeplearning.html">Tutorial : Deep learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="advTuto.html">Advanced Tutorial</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Generate Data</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#module-deeprank.generate.DataGenerator">DataGenerator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-deeprank.generate.NormalizeData">NormalizeData</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-deeprank.generate.GridTools">GridTools</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="Documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Generate Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeprank.generate.DataGenerator">DataGenerator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeprank.generate.NormalizeData">NormalizeData</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeprank.generate.GridTools">GridTools</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="deeprank.learn.html">Deep learning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deeprank.features.html">Feature</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deeprank.tools.html">Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.learn.html">Deep learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.features.html">Feature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.tools.html">Tools</a></li>
+</ul>
+</li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="advTuto.html"
-                        title="previous chapter">Advanced Tutorial</a></p>
+  <p class="topless"><a href="Documentation.html"
+                        title="previous chapter">Documentation</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="deeprank.learn.html"
                         title="next chapter">Deep learning</a></p>
@@ -720,9 +723,10 @@ chainID    residue_name(3-letter)     residue_number   atome_name  [values]</p>
           <a href="deeprank.learn.html" title="Deep learning"
              >next</a> |</li>
         <li class="right" >
-          <a href="advTuto.html" title="Advanced Tutorial"
+          <a href="Documentation.html" title="Documentation"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="Documentation.html" >Documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

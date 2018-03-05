@@ -70,7 +70,7 @@ Suppose you've finised creating a huge database and you jusr realize you forgot 
 >>> # map features
 >>> database.map_features()
 
-Voila. Here we simply sepcify the name of an existing hdf5 file containing the database and new features/targets to add to this database. The methods ``add_target`` ``add_feature'' are then simply called to add data to the file. Don't forget to map the new features afterwards.
+Voila ! Here we simply sepcify the name of an existing hdf5 file containing the database and new features/targets to add to this database. The methods ``add_target`` and ``add_feature`` are then simply called to add data to the file. Don't forget to map the new features afterwards.
 
 
 Map the features

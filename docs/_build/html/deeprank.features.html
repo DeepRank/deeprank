@@ -43,7 +43,8 @@
         <li class="right" >
           <a href="deeprank.learn.html" title="Deep learning"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="Documentation.html" accesskey="U">Documentation</a> &#187;</li> 
       </ul>
     </div>  
 
@@ -78,26 +79,26 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>pdbfile</strong> (<em>str</em>) – pdb file of the molecule</li>
-<li><strong>param_charge</strong> (<em>str</em>) – <p>file name of the force field fiel containing the charges e.g. protein-allhdg5.4_new.top. Must be of the format:</p>
+<li><strong>pdbfile</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – pdb file of the molecule</li>
+<li><strong>param_charge</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – <p>file name of the force field fiel containing the charges e.g. protein-allhdg5.4_new.top. Must be of the format:</p>
 <ul>
 <li>CYM  atom O   type=O      charge=-0.500 end</li>
 <li>ALA    atom N   type=NH1     charge=-0.570 end</li>
 </ul>
 </li>
-<li><strong>param_vdw</strong> (<em>str</em>) – <p>file name of the force field file containing the vdw parameters e.g  protein-allhdg5.4_new.param. Must be of the format</p>
+<li><strong>param_vdw</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – <p>file name of the force field file containing the vdw parameters e.g  protein-allhdg5.4_new.param. Must be of the format</p>
 <ul>
 <li>NONBonded  CYAA    0.105   3.750       0.013    3.750</li>
 <li>NONBonded  CCIS    0.105   3.750       0.013    3.750</li>
 </ul>
 </li>
-<li><strong>patch_file</strong> (<em>str</em>) – file name of a valid patch file for the parameters e.g. patch.top
+<li><strong>patch_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – file name of a valid patch file for the parameters e.g. patch.top
 The way we handle the patching is very manual and should be
 made more automatic</li>
-<li><strong>contact_distance</strong> (<em>float</em>) – the maximum distance between 2 contact atoms</li>
-<li><strong>include_entire_residue</strong> (<em>bool</em>) – if atom X of resiue M is a contact atom, include all the atoms
+<li><strong>contact_distance</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – the maximum distance between 2 contact atoms</li>
+<li><strong>include_entire_residue</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – if atom X of resiue M is a contact atom, include all the atoms
 of resiude M in the contact_atom list</li>
-<li><strong>root_export</strong> (<em>str</em>) – root directory where the feature file will be exported (deprecated ?)</li>
+<li><strong>root_export</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – root directory where the feature file will be exported (deprecated ?)</li>
 </ul>
 </td>
 </tr>
@@ -197,7 +198,7 @@ multiple times</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>extend_contact_to_residue</strong> (<em>bool</em><em>, </em><em>optional</em>) – extend to res</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>extend_contact_to_residue</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – extend to res</td>
 </tr>
 </tbody>
 </table>
@@ -212,8 +213,8 @@ multiple times</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>print_itneractions</strong> (<em>bool</em><em>, </em><em>optional</em>) – print data to screen</li>
-<li><strong>save_interactions</strong> (<em>bool</em><em>, </em><em>optional</em>) – save the itneractions to file.</li>
+<li><strong>print_itneractions</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – print data to screen</li>
+<li><strong>save_interactions</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – save the itneractions to file.</li>
 </ul>
 </td>
 </tr>
@@ -230,8 +231,8 @@ multiple times</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>dosum</strong> (<em>bool</em><em>, </em><em>optional</em>) – sum the interaction terms for each atoms</li>
-<li><strong>contact_only</strong> (<em>bool</em><em>, </em><em>optional</em>) – consider only contact atoms</li>
+<li><strong>dosum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – sum the interaction terms for each atoms</li>
+<li><strong>contact_only</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – consider only contact atoms</li>
 </ul>
 </td>
 </tr>
@@ -248,8 +249,8 @@ multiple times</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>dosum</strong> (<em>bool</em><em>, </em><em>optional</em>) – sum the interaction terms for each atoms</li>
-<li><strong>contact_only</strong> (<em>bool</em><em>, </em><em>optional</em>) – consider only contact atoms</li>
+<li><strong>dosum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – sum the interaction terms for each atoms</li>
+<li><strong>contact_only</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – consider only contact atoms</li>
 </ul>
 </td>
 </tr>
@@ -334,11 +335,11 @@ Algorithms for Molecular Biology 2014 9:7</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>mol_name</strong> (<em>str</em>) – name of the molecule</li>
-<li><strong>pdbfile</strong> (<em>str</em>) – name of the dbfile</li>
-<li><strong>pssm_path</strong> (<em>str</em>) – path to the pssm data</li>
-<li><strong>nmask</strong> (<em>int</em><em>, </em><em>optional</em>) – </li>
-<li><strong>nsmooth</strong> (<em>int</em><em>, </em><em>optional</em>) – </li>
+<li><strong>mol_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – name of the molecule</li>
+<li><strong>pdbfile</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – name of the dbfile</li>
+<li><strong>pssm_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – path to the pssm data</li>
+<li><strong>nmask</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a><em>, </em><em>optional</em>) – </li>
+<li><strong>nsmooth</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a><em>, </em><em>optional</em>) – </li>
 </ul>
 </td>
 </tr>
@@ -407,10 +408,10 @@ Algorithms for Molecular Biology 2014 9:7</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>mol_name</strong> (<em>str</em>) – name of the molecule</li>
-<li><strong>pdbfile</strong> (<em>str</em>) – name of the dbfile</li>
-<li><strong>pssmic_path</strong> (<em>str</em>) – path to the pssm data</li>
-<li><strong>debug</strong> (<em>bool</em><em>, </em><em>optional</em>) – print debug info</li>
+<li><strong>mol_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – name of the molecule</li>
+<li><strong>pdbfile</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – name of the dbfile</li>
+<li><strong>pssmic_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – path to the pssm data</li>
+<li><strong>debug</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – print debug info</li>
 </ul>
 </td>
 </tr>
@@ -522,7 +523,7 @@ chainB (str, optional): name of the second chain</dd>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>feature_type</strong> (<em>str</em>) – ‘Atomic’ or ‘Residue’</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>feature_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – ‘Atomic’ or ‘Residue’</td>
 </tr>
 </tbody>
 </table>
@@ -567,23 +568,26 @@ chainB (str, optional): name of the second chain</dd>
 <h3><a href="index.html">Table Of Contents</a></h3>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="intro.html">First Steps with DeepRank</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial : Data Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial_deeplearning.html">Tutorial : Deep learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="advTuto.html">Advanced Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deeprank.generate.html">Generate Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deeprank.learn.html">Deep learning</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Feature</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#module-deeprank.features.AtomicFeature">Atomic Feature</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-deeprank.features.BSA">Burried Surface Area</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-deeprank.features.NaivePSSM">NaivePSSM</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-deeprank.features.PSSM_IC">Information Content</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-deeprank.features.ResidueDensity">Contact Residue Density</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-deeprank.features.FeatureClass">Generic Feature Class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#make-your-own-feature">Make your own Feature</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="Documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="deeprank.generate.html">Generate Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.learn.html">Deep learning</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Feature</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeprank.features.AtomicFeature">Atomic Feature</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeprank.features.BSA">Burried Surface Area</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeprank.features.NaivePSSM">NaivePSSM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeprank.features.PSSM_IC">Information Content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeprank.features.ResidueDensity">Contact Residue Density</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeprank.features.FeatureClass">Generic Feature Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#make-your-own-feature">Make your own Feature</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="deeprank.tools.html">Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeprank.tools.html">Tools</a></li>
+</ul>
+</li>
 </ul>
 
   <h4>Previous topic</h4>
@@ -628,7 +632,8 @@ chainB (str, optional): name of the second chain</dd>
         <li class="right" >
           <a href="deeprank.learn.html" title="Deep learning"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="Documentation.html" >Documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

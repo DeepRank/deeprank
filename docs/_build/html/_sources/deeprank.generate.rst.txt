@@ -16,7 +16,7 @@ At the moment a number of features are already implemented. This inculde:
     - Burried surface area
     - Contact Residue Densities
 
-More features can be easily implemented and integrated in the data generation workflow. You can see example here: :ref:`_ref_own_feature`. The calculation of a number of target values have also been implemented:
+More features can be easily implemented and integrated in the data generation workflow. You can see example here. The calculation of a number of target values have also been implemented:
 
     - i-RMSD
     - l-RMSD

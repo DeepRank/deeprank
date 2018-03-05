@@ -1,6 +1,6 @@
 .. highlight:: rst
 
-First Steps with DeepRank
+Installation
 =========================
 
 This page gives an overview of installation/test procedure of DeepRank. DeepRank aims at ranking protein-protein conformations using a deep learning approach. More precisely, for a given conformation, the code computes a series of molecular features and map these features on a 3D grid centered around the interface. This volumetric data is then used as an input of 3D convolutional neural network that predicts how close the conformation is from the native one.
@@ -11,7 +11,7 @@ At the moment the code allows to:
 
 	- Train convolutional neural networks to predict possible targets (binary class, haddock-score ...) from the mapped feataures
 
-Installation
+GitHub
 -------------
 
 
@@ -50,6 +50,10 @@ The code is written in Python3. Several packages are required to run the code bu
   * PyTorch (http://pytorch.org)
 
   * h5py (http://www.h5py.org/)
+
+  * pickle ()
+
+  * matplotlib
 
 The deep learning was implemented with PyTorch 2. (http://www.pytorch.org)
 To install pytorch with anaconda

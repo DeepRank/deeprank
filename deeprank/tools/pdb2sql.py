@@ -302,15 +302,15 @@ class pdb2sql(object):
 
     def get(self,atnames,**kwargs):
 
-        '''Get data from the sql database
+        '''Get data from the sql database.
 
-        Exectute a simple SQL query that extracts values of attributes for certain conditions
+        Exectute a simple SQL query that extracts values of attributes for certain conditions.
 
         Args:
 
             atnames (str): attribute name. They can be printed can get these names via the get_colnames()
                            serial, name, atLoc,resName,chainID, resSeq,iCode,x,y,z,occ,temp
-                            Several attributes can be specified at once e.g 'x,y,z'
+                           Several attributes can be specified at once e.g 'x,y,z'
 
             kwargs : Several options are possible
                      None : return the entire table

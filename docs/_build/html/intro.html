@@ -5,7 +5,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>First Steps with DeepRank &#8212; DeepRank 0.1 documentation</title>
+    <title>Installation &#8212; DeepRank 0.1 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -52,8 +52,8 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="first-steps-with-deeprank">
-<h1>First Steps with DeepRank<a class="headerlink" href="#first-steps-with-deeprank" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
 <p>This page gives an overview of installation/test procedure of DeepRank. DeepRank aims at ranking protein-protein conformations using a deep learning approach. More precisely, for a given conformation, the code computes a series of molecular features and map these features on a 3D grid centered around the interface. This volumetric data is then used as an input of 3D convolutional neural network that predicts how close the conformation is from the native one.</p>
 <p>At the moment the code allows to:</p>
 <blockquote>
@@ -62,8 +62,8 @@
 <li>Train convolutional neural networks to predict possible targets (binary class, haddock-score …) from the mapped feataures</li>
 </ul>
 </div></blockquote>
-<div class="section" id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="github">
+<h2>GitHub<a class="headerlink" href="#github" title="Permalink to this headline">¶</a></h2>
 <p>The code is hosted on <a class="reference external" href="https://github.com/DeepRank/deeprank">GitHub</a> (<a class="reference external" href="https://github.com/DeepRank/deeprank">https://github.com/DeepRank/deeprank</a>)</p>
 <p>To install the code</p>
 <blockquote>
@@ -97,6 +97,8 @@
 <li>Scipy (<a class="reference external" href="https://www.scipy.org/">https://www.scipy.org/</a>)</li>
 <li>PyTorch (<a class="reference external" href="http://pytorch.org">http://pytorch.org</a>)</li>
 <li>h5py (<a class="reference external" href="http://www.h5py.org/">http://www.h5py.org/</a>)</li>
+<li>pickle ()</li>
+<li>matplotlib</li>
 </ul>
 </div></blockquote>
 <p>The deep learning was implemented with PyTorch 2. (<a class="reference external" href="http://www.pytorch.org">http://www.pytorch.org</a>)
@@ -137,8 +139,8 @@ To install pytorch with anaconda</p>
 <h3><a href="index.html">Table Of Contents</a></h3>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">First Steps with DeepRank</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#github">GitHub</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#test-the-installation">Test the installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#requiried-dependencies">Requiried Dependencies</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#optional-dependencies">Optional dependencies</a></li>
@@ -147,10 +149,7 @@ To install pytorch with anaconda</p>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial : Data Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial_deeplearning.html">Tutorial : Deep learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="advTuto.html">Advanced Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deeprank.generate.html">Generate Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deeprank.learn.html">Deep learning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deeprank.features.html">Feature</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deeprank.tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Documentation.html">Documentation</a></li>
 </ul>
 
   <h4>Previous topic</h4>

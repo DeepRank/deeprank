@@ -71,59 +71,56 @@
 
 <div class="viewcode-block" id="NeuralNet"><a class="viewcode-back" href="../../../deeprank.learn.html#deeprank.learn.NeuralNet.NeuralNet">[docs]</a><span class="k">class</span> <span class="nc">NeuralNet</span><span class="p">():</span>
 
-    <span class="sd">&#39;&#39;&#39;Train a Convolutional Neural Network for DeepRank</span>
-
-<span class="sd">    Example:</span>
-
-<span class="sd">    &gt;&gt;&gt; # create the network</span>
-<span class="sd">    &gt;&gt;&gt; model = NeuralNet(data_set,cnn,model_type=&#39;3d&#39;,task=&#39;reg&#39;,</span>
-<span class="sd">    &gt;&gt;&gt;                   cuda=False,plot=True,outdir=&#39;./out/&#39;)</span>
-<span class="sd">    &gt;&gt;&gt;</span>
-<span class="sd">    &gt;&gt;&gt; # start the training</span>
-<span class="sd">    &gt;&gt;&gt; model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)</span>
-
-<span class="sd">    Attributes:</span>
-
-<span class="sd">        data_set (deeprank.dataset or str):  Data set used for training or testing</span>
-
-<span class="sd">            data_set = DeepRankDataSet( ... ) for training</span>
-
-<span class="sd">            data_set = &#39;xxx.hdf5&#39; when pretrained model is loaded</span>
-
-<span class="sd">        model (nn.Module): Definition of the NN to use. Must subclass nn.Module.</span>
-<span class="sd">            See examples in model2D.py and model3d.py</span>
-
-<span class="sd">        model_type (srt): Type of model we want to use. Must be &#39;2d&#39; or &#39;3d&#39;.</span>
-<span class="sd">            If we specify a 2d model, the data set is automatically converted</span>
-<span class="sd">            to the correct format.</span>
-
-<span class="sd">        task (str &#39;ref&#39; or &#39;class&#39;): Task to perform:</span>
-<span class="sd">            reg&#39; for regression, &#39;class&#39; for classification</span>
-<span class="sd">            The loss function, the datatype of the targets and plot functions</span>
-<span class="sd">            will be autmatically adjusted depending on the task</span>
-
-<span class="sd">        plot (bool): Plot the results</span>
-
-<span class="sd">        outdir (str): output directory where all the files will be written</span>
-
-<span class="sd">        pretrained_model (str): Save model to be used for further training or testing</span>
-
-<span class="sd">        cuda (bool): Use CUDA</span>
-
-<span class="sd">        ngpu (int): number of GPU to be used</span>
-
-<span class="sd">    &#39;&#39;&#39;</span>
-
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">data_set</span><span class="p">,</span><span class="n">model</span><span class="p">,</span>
                  <span class="n">model_type</span><span class="o">=</span><span class="s1">&#39;3d&#39;</span><span class="p">,</span><span class="n">proj2d</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">task</span><span class="o">=</span><span class="s1">&#39;reg&#39;</span><span class="p">,</span>
                  <span class="n">pretrained_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">cuda</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">ngpu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">outdir</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">):</span>
 
-        <span class="sd">&quot;&quot;&quot;Init the class</span>
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: if dataset format is not recognized</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Train a Convolutional Neural Network for DeepRank.</span>
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; # create the network</span>
+<span class="sd">        &gt;&gt;&gt; model = NeuralNet(data_set,cnn,model_type=&#39;3d&#39;,task=&#39;reg&#39;,</span>
+<span class="sd">        &gt;&gt;&gt;                   cuda=False,plot=True,outdir=&#39;./out/&#39;)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # start the training</span>
+<span class="sd">        &gt;&gt;&gt; model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)</span>
+
+<span class="sd">        Attributes:</span>
+
+<span class="sd">            data_set (deeprank.dataset or str):  Data set used for training or testing</span>
+
+<span class="sd">                data_set = DeepRankDataSet( ... ) for training</span>
+
+<span class="sd">                data_set = &#39;xxx.hdf5&#39; when pretrained model is loaded</span>
+
+<span class="sd">            model (nn.Module): Definition of the NN to use. Must subclass nn.Module.</span>
+<span class="sd">                See examples in model2D.py and model3d.py</span>
+
+<span class="sd">            model_type (srt): Type of model we want to use. Must be &#39;2d&#39; or &#39;3d&#39;.</span>
+<span class="sd">                If we specify a 2d model, the data set is automatically converted</span>
+<span class="sd">                to the correct format.</span>
+
+<span class="sd">            task (str &#39;ref&#39; or &#39;class&#39;): Task to perform:</span>
+<span class="sd">                reg&#39; for regression, &#39;class&#39; for classification</span>
+<span class="sd">                The loss function, the datatype of the targets and plot functions</span>
+<span class="sd">                will be autmatically adjusted depending on the task</span>
+
+<span class="sd">            plot (bool): Plot the results</span>
+
+<span class="sd">            outdir (str): output directory where all the files will be written</span>
+
+<span class="sd">            pretrained_model (str): Save model to be used for further training or testing</span>
+
+<span class="sd">            cuda (bool): Use CUDA</span>
+
+<span class="sd">            ngpu (int): number of GPU to be used</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                ValueError: if dataset format is not recognized</span>
+<span class="sd">            &quot;&quot;&quot;</span>
 
         <span class="c1">#------------------------------------------</span>
         <span class="c1"># Dataset</span>
@@ -863,14 +860,11 @@
 <h3><a href="../../../index.html">Table Of Contents</a></h3>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../intro.html">First Steps with DeepRank</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../intro.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial : Data Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorial_deeplearning.html">Tutorial : Deep learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../advTuto.html">Advanced Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.generate.html">Generate Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.learn.html">Deep learning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.features.html">Feature</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../deeprank.tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../Documentation.html">Documentation</a></li>
 </ul>
 
 <div id="searchbox" style="display: none" role="search">

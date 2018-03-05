@@ -5,20 +5,19 @@ import h5py
 import pickle
 
 from torch import FloatTensor
-import torch.utils.data as data_utils
 
 import numpy as np
 
-from deeprank.generate import NormParam,MinMaxParam,NormalizeData
+from deeprank.generate import NormParam, MinMaxParam, NormalizeData
 from deeprank.tools import sparse
+from tqdm import tqdm
 
-try:
-    from tqdm import tqdm
-except ImportError:
-    def tqdm(x):
-        return x
+# import torch.utils.data as data_utils
+# The class used to subclass data_utils.Dataset
+# but that conflict with Sphinx that couldn't build the API
+# It's apparently not necessary though and works without subclassing
 
-class DataSet(data_utils.Dataset):
+class DataSet():
 
     def __init__(self,database, test_database = None,
                  select_feature = 'all', select_target = 'DOCKQ',
@@ -56,63 +55,36 @@ class DataSet(data_utils.Dataset):
         Args:
 
             database (list(str)): names of the hdf5 files used for the training/validation
-
                 Example : ['1AK4.hdf5','1B7W.hdf5',...]
-
             test_database (list(str)): names of the hdf5 files used for the test
-
                 Example : ['7CEI.hdf5']
-
             select_feature (dict or 'all', optional): Method to select the features used in the learning
                     If 'all', all the mapped features contained in the HDF5 file will be loaded
                     otherwise a dict must be provided.
-
                     Example : {AtomicDensities : ['CA','CB'], feature_name : 'all'}
-
                     Default : 'all'
-
             select_target (str,optional): Specify which targets are required
-
                 Default : 'DOCKQ'
-
             normalize_features (Bool, optional): control the normalization of features
-
                 Default : True
-
             normalize_targets (Bool, optional): control the normalization of the targets
-
                 Default : True
-
             dict_filter (None or dict, optional): Specify if we filter the complexes based on target values
-
                 Example : {'IRMSD' : '<4. or >10'} (select complexes with IRMSD lower than 4 or larger than 10)
-
                 Default : None
-
             pair_chain_feature (None or callable, optional): method to pair features of chainA and chainB
-
                 Example : np.sum (sum the chainA and chainB features)
-
             transform_to_2D (bool, optional):  Boolean to use 2d maps instead of full 3d
-
                 Default : False
-
             projection (int): Projection axis from 3D to 2D:
-
                 Mapping : 0 -> yz, 1 -> xz, 2 -> xy
-
                 Default = 0
-
             grid_shape (None or tuple(int), optional): shape of the grid in the hdf5 file. Is not necessary
                 if the grid points are still present in the HDF5 file.
-
             clip_features (bool, optional): remove too large values of the grid.
                 Can be needed for native complexes where the coulomb feature might be too large
-
             clip_factor (float, optional): the features are clipped : at +/-mean + clip_factor * std
-
             tqdm (bool, optional): Print the progress bar
-
             process (bool, optional): Actually process the data set. Must be set to False when reusing a model for testing
         '''
 
@@ -698,10 +670,6 @@ class DataSet(data_utils.Dataset):
 
         return points
 
-
-    ############################################
-    # load the feature/target of a single molecule
-    ############################################
     def load_one_molecule(self,fname,mol=None):
         '''Load the feature/target of a single molecule.
 
@@ -769,7 +737,6 @@ class DataSet(data_utils.Dataset):
         # Note returning torch.FloatTensor makes each epoch twice longer ...
         return np.array(feature).astype(outtype),np.array([target]).astype(outtype)
 
-
     @staticmethod
     def convert2d(feature,proj2d):
         '''Convert the 3D volumetric feature to a 2D planar data set.
@@ -794,7 +761,6 @@ class DataSet(data_utils.Dataset):
             feature = feature.reshape(-1,nx,ny,1).squeeze()
 
         return feature
-
 
     @staticmethod
     def make_feature_pair(feature,pair_indexes,op):
@@ -824,4 +790,3 @@ class DataSet(data_utils.Dataset):
                 new_feat.append(op(feature[ind[0],...],feature[ind[1],...]))
 
         return np.array(new_feat).astype(outtype)
-

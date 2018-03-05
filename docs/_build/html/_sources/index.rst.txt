@@ -14,10 +14,7 @@ Welcome to DeepRank's documentation!
    tutorial
    tutorial_deeplearning
    advTuto
-   deeprank.generate
-   deeprank.learn
-   deeprank.features
-   deeprank.tools
+   Documentation
 
 Indices and tables
 ==================

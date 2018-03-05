@@ -23,59 +23,56 @@ from deeprank.learn import DataSet
 
 class NeuralNet():
 
-    '''Train a Convolutional Neural Network for DeepRank
-
-    Example:
-
-    >>> # create the network
-    >>> model = NeuralNet(data_set,cnn,model_type='3d',task='reg',
-    >>>                   cuda=False,plot=True,outdir='./out/')
-    >>>
-    >>> # start the training
-    >>> model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
-
-    Attributes:
-
-        data_set (deeprank.dataset or str):  Data set used for training or testing
-
-            data_set = DeepRankDataSet( ... ) for training
-
-            data_set = 'xxx.hdf5' when pretrained model is loaded
-
-        model (nn.Module): Definition of the NN to use. Must subclass nn.Module.
-            See examples in model2D.py and model3d.py
-
-        model_type (srt): Type of model we want to use. Must be '2d' or '3d'.
-            If we specify a 2d model, the data set is automatically converted
-            to the correct format.
-
-        task (str 'ref' or 'class'): Task to perform:
-            reg' for regression, 'class' for classification
-            The loss function, the datatype of the targets and plot functions
-            will be autmatically adjusted depending on the task
-
-        plot (bool): Plot the results
-
-        outdir (str): output directory where all the files will be written
-
-        pretrained_model (str): Save model to be used for further training or testing
-
-        cuda (bool): Use CUDA
-
-        ngpu (int): number of GPU to be used
-
-    '''
-
     def __init__(self,data_set,model,
                  model_type='3d',proj2d=0,task='reg',
                  pretrained_model=None,
                  cuda=False,ngpu=0,
                  plot=True,outdir='./'):
 
-        """Init the class
-        Raises:
-            ValueError: if dataset format is not recognized
-        """
+        """Train a Convolutional Neural Network for DeepRank.
+
+        Example:
+
+        >>> # create the network
+        >>> model = NeuralNet(data_set,cnn,model_type='3d',task='reg',
+        >>>                   cuda=False,plot=True,outdir='./out/')
+        >>>
+        >>> # start the training
+        >>> model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
+
+        Attributes:
+
+            data_set (deeprank.dataset or str):  Data set used for training or testing
+
+                data_set = DeepRankDataSet( ... ) for training
+
+                data_set = 'xxx.hdf5' when pretrained model is loaded
+
+            model (nn.Module): Definition of the NN to use. Must subclass nn.Module.
+                See examples in model2D.py and model3d.py
+
+            model_type (srt): Type of model we want to use. Must be '2d' or '3d'.
+                If we specify a 2d model, the data set is automatically converted
+                to the correct format.
+
+            task (str 'ref' or 'class'): Task to perform:
+                reg' for regression, 'class' for classification
+                The loss function, the datatype of the targets and plot functions
+                will be autmatically adjusted depending on the task
+
+            plot (bool): Plot the results
+
+            outdir (str): output directory where all the files will be written
+
+            pretrained_model (str): Save model to be used for further training or testing
+
+            cuda (bool): Use CUDA
+
+            ngpu (int): number of GPU to be used
+
+            Raises:
+                ValueError: if dataset format is not recognized
+            """
 
         #------------------------------------------
         # Dataset
@@ -288,7 +285,7 @@ class NeuralNet():
         print(' --> Training done in ', time.strftime('%H:%M:%S', time.gmtime(time.time()-t0)))
 
         # save the model
-        self.save_model(filename=os.path.join(self.outdir,save_model_name))
+        self.save_model(filename=save_model_name)
 
     def test(self):
         """ Test a predefined model on a new dataset.
