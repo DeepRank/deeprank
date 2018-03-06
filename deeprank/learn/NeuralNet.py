@@ -798,23 +798,44 @@ class NeuralNet():
 
 
     def _export_epoch_hdf5(self,epoch,data):
-        """Export the epoch data to the hdf5 file
+        """Export the epoch data to the hdf5 file.
+
+        Export the data of a given epoch in train/valid/test group.
+        In each group are stored the predcited values (outputs), ground truth (targets) and molecule name (mol)
 
         Args:
             epoch (int): index of the epoch
             data (dict): data of the epoch
         """
+
+        # create a group
         grp_name = 'epoch_%04d' %epoch
         grp = self.f5.create_group(grp_name)
+
+        # create attribute for DeepXplroer
         grp.attrs['type'] = 'epoch'
-        for k,v in data.items():
+
+        # loop over the pass_type : train/valid/test
+        for pass_type,pass_data in data.items():
+
+            # we don't want to breack the process in case of issue
             try:
-                sg = grp.create_group(k)
-                for kk,vv in v.items():
-                    if kk == 'mol':
+
+                # create subgroup for the pass
+                sg = grp.create_group(pass_type)
+
+                # loop over the data : target/output/molname
+                for data_name,data_value in pass_data.items():
+
+                    # mol name is a bit different
+                    # since there are strings
+                    if data_name == 'mol':
                         string_dt = h5py.special_dtype(vlen=str)
-                        sg.create_dataset(kk,data=vv,dtype=string_dt)
+                        sg.create_dataset(data_name,data=data_value,dtype=string_dt)
+
+                    # output/target values
                     else:
-                        sg.create_dataset(kk,data=vv)
+                        sg.create_dataset(data_name,data=data_value)
+
             except TypeError:
                 print('Epoch Error export')
