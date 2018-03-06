@@ -287,19 +287,26 @@ class NeuralNet():
         # save the model
         self.save_model(filename=save_model_name)
 
-    def test(self):
-        """ Test a predefined model on a new dataset.
+    def test(self,hdf5='test_data.hdf5'):
+        """Test a predefined model on a new dataset.
 
-        Example :
+        Example:
+            >>> # adress of the database
+            >>> database = '1ak4.hdf5'
+            >>> # Load the model in a new network instance
+            >>> model = NeuralNet(database,cnn,pretrained_model='./out/model.pth.tar',outdir='./test/')
+            >>> # test the model
+            >>> model.test()
 
-        >>> # adress of the database
-        >>> database = '1ak4.hdf5'
-        >>> # Load the model in a new network instance
-        >>> model = NeuralNet(database,cnn,pretrained_model='./out/model.pth.tar',outdir='./test/')
-        >>> # test the model
-        >>> model.test()
+        Args:
+            hdf5 (str, optional): name of the hdf5 file to store the data
 
         """
+
+        # hdf5 support
+        fname =self.outdir+'/'+hdf5
+        self.f5 = h5py.File(fname,'w')
+
         index = list(range(self.data_set.__len__()))
         sampler = data_utils.sampler.SubsetRandomSampler(index)
         loader = data_utils.DataLoader(self.data_set,sampler=sampler)
@@ -307,6 +314,8 @@ class NeuralNet():
         _,self.data['test'] = self._epoch(loader,train_model=False)
         self._plot_scatter_reg(self.outdir+'/regression.png')
         self.plot_hit_rate(self.outdir+'/hitrate.png')
+        self._export_epoch_hdf5(0,self.data)
+        self.f5.close()
 
     def save_model(self,filename='model.pth.tar'):
 
@@ -603,6 +612,9 @@ class NeuralNet():
             data['outputs']  = np.array(data['outputs']).flatten()
             data['targets']  = np.array(data['targets']).flatten()
 
+        # make np for export
+        data['mol'] = np.array(data['mol'],dtype=object)
+
         # normalize the loss
         running_loss /= n
 
@@ -799,6 +811,10 @@ class NeuralNet():
             try:
                 sg = grp.create_group(k)
                 for kk,vv in v.items():
-                    sg.create_dataset(kk,data=vv)
+                    if kk == 'mol':
+                        string_dt = h5py.special_dtype(vlen=str)
+                        sg.create_dataset(kk,data=vv,dtype=string_dt)
+                    else:
+                        sg.create_dataset(kk,data=vv)
             except TypeError:
-                pass
+                print('Epoch Error export')
