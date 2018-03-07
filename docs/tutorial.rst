@@ -53,26 +53,6 @@ The above statement initalize the calss instance but do not compute anything. To
 Once you punch that in the code will fo through all the complex specified as input and compute all the feature/targets require in the definition of the class.
 
 
-Adding Features/Targets
--------------------------
-
-Suppose you've finised creating a huge database and you jusr realize you forgot to compute a specific feature or target. Do you have to recompute everything ? Well that would be silly. You can add features and targets to an existing database very simply:
-
->>> h5file = '1ak4.hdf5'
->>> database = DataGenerator(compute_targets  = ['deeprank.targets.binary_class'],
->>>                          compute_features  = ['deeprank.features.ResidueDensity']
->>>                          hdf5=h5file)
->>>
->>> # add targets/features
->>> database.add_target()
->>> database.add_feature()
->>>
->>> # map features
->>> database.map_features()
-
-Voila ! Here we simply sepcify the name of an existing hdf5 file containing the database and new features/targets to add to this database. The methods ``add_target`` and ``add_feature`` are then simply called to add data to the file. Don't forget to map the new features afterwards.
-
-
 Map the features
 ------------------
 The next step consists in mapping the features calculated above to a grid of points centered around the molecule interface. Before mapping the feature, we must specify basic information about the grid. This can be done via a dictionnary:
@@ -91,6 +71,29 @@ We are now able to map all the features we have calculated on the grid. This is 
 >>> database.map_features(grid_info,try_sparse=True)
 
 By setting ``try_sparse`` to True the code will try to store the 3D maps as a built-in sparse format. This can seriously reduce the disck space required by the datase. As a result you must have now a file called ``1ak4.hdf5`` that contains all the data of the 10 decoys located in ``1AK4/decoys/``. You can easily explore this file and visualized the data using the DeepXplorer interface (https://github.com/DeepRank/DeepXplorer).
+
+Adding Features/Targets
+-------------------------
+
+Suppose you've finised creating a huge database and you jusr realize you forgot to compute a specific feature or target. Do you have to recompute everything ? Well that would be silly. You can add features and targets to an existing database very simply:
+
+>>> h5file = '1ak4.hdf5'
+>>> database = DataGenerator(compute_targets  = ['deeprank.targets.binary_class'],
+>>>                          compute_features  = ['deeprank.features.ResidueDensity']
+>>>                          hdf5=h5file)
+>>>
+>>> # add targets
+>>> database.add_target()
+>>>
+>>> # adda feature
+>>> database.add_feature()
+>>>
+>>> # map features
+>>> database.map_features()
+
+Voila ! Here we simply sepcify the name of an existing hdf5 file containing the database and new features/targets to add to this database. The methods ``add_target`` and ``add_feature`` are then simply called to add data to the file. Don't forget to map the new features afterwards. Note that you don't have to provide any information for the mapping. The code will detect the grid used for the mapping of the other features and will only map teh features newly added to the database.
+
+
 
 
 

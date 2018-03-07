@@ -44,7 +44,7 @@ class TestGenerateData(unittest.TestCase):
             'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
         }
 
-        t0 =time()
+        t0 = time()
         print('{:25s}'.format('Map features in database') + database.hdf5)
         database.map_features(grid_info,try_sparse=True,time=False,prog_bar=True)
         print(' '*25 + '--> Done in %f s.' %(time()-t0))
@@ -81,7 +81,10 @@ class TestGenerateData(unittest.TestCase):
         database.add_feature(prog_bar=True)
         print(' '*25 + '--> Done in %f s.' %(time()-t0))
 
-
+        t0 = time()
+        print('{:25s}'.format('Map new feature in database') + database.hdf5)
+        database.map_features(try_sparse=True,time=False,prog_bar=True)
+        print(' '*25 + '--> Done in %f s.' %(time()-t0))
 
 if __name__ == "__main__":
     unittest.main()

@@ -451,7 +451,7 @@ class DataGenerator(object):
 #====================================================================================
 
 
-    def map_features(self,grid_info,
+    def map_features(self,grid_info={},
                      cuda=False,gpu_block=None,
                      cuda_kernel='/kernel_map.c',
                      cuda_func_name = 'gaussian',
@@ -514,16 +514,36 @@ class DataGenerator(object):
             if gr not in grid_info:
                 grid_info[gr] = None
 
-        # By default we map all the atomic features
+        # Dtermine which feature to map
         if 'feature' not in grid_info:
+
+            # get the mol group
             mol = list(f5.keys())[0]
-            grid_info['feature'] = list(f5[mol+'/features'].keys())
+
+            # if we havent mapped anything yet or if we reset
+            if 'mapped_features' not in list(f5[mol].keys()) or reset:
+                grid_info['feature'] = list(f5[mol+'/features'].keys())
+
+            # if we have already mapped stuff
+            elif 'mapped_features' in list(f5[mol].keys()):
+
+                # feature name
+                all_feat = list(f5[mol+'/features'].keys())
+
+                # feature already mapped
+                mapped_feat = list(f5[mol+'/mapped_features/Feature_ind'].keys())
+
+                # we select only the feture that were not mapped yet
+                grid_info['feature'] = []
+                for feat_name in all_feat:
+                    if not any(map(lambda x: x.startswith(feat_name+'_'), mapped_feat)):
+                        grid_info['feature'].append(feat_name)
 
         # by default we do not map atomic densities
         if 'atomic_densities' not in grid_info:
             grid_info['atomic_densities'] = None
 
-        # fills in the features mode if somes are missing : default = SUM
+        # fills in the features mode if somes are missing : default = IND
         modes = ['atomic_densities_mode','feature_mode']
         for m in modes:
             if m not in grid_info:

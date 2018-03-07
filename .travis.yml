@@ -49,6 +49,8 @@ script:
   - cd test/
   - pytest --cov=deeprank --cov-report xml:coverage.xml
   - mv coverage.xml ../
+  - mv .coverage ../
+  - cd ../
 
 after_script:
 - python-codacy-coverage -r coverage.xml
