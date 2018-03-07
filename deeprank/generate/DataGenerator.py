@@ -1,3 +1,4 @@
+
 import os
 import sys
 import importlib
@@ -20,14 +21,14 @@ try:
 except ImportError:
     pass
 
-printif = lambda string,cond: print(string) if cond else None
+_printif = lambda string,cond: print(string) if cond else None
 
 class DataGenerator(object):
 
     def __init__(self,pdb_select=None,pdb_source=None,pdb_native=None,
                  compute_targets = None, compute_features = None,
                  data_augmentation=None, hdf5='database.h5',logger=None,debug=True):
-        """Generates the data (features/targets/maps) required for deeprank.
+        """Generate the data (features/targets/maps) required for deeprank.
 
         Args:
             pdb_select (list(str), optional): List of individual conformation for mapping
@@ -286,15 +287,15 @@ class DataGenerator(object):
 
                 self.feature_error += [mol_name] + mol_aug_name_list
                 self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
-                printif('Error during the feature calculation of %s' %cplx,self.debug)
-                printif(type(inst),self.debug)
-                printif(inst.args,self.debug)
+                _printif('Error during the feature calculation of %s' %cplx,self.debug)
+                _printif(type(inst),self.debug)
+                _printif(inst.args,self.debug)
 
         # remove the data where we had issues
         if remove_error:
             for mol in self.feature_error:
                 self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
-                printif('removing %s from %s' %(mol,self.hdf5),self.debug)
+                _printif('removing %s from %s' %(mol,self.hdf5),self.debug)
                 del self.f5[mol]
 
         # close the file
@@ -503,7 +504,7 @@ class DataGenerator(object):
         mol_names = f5.keys()
 
         if len(mol_names) == 0:
-            printif('No molecules found in %s' %self.hdf5,self.debug)
+            _printif('No molecules found in %s' %self.hdf5,self.debug)
             f5.close()
             return
 
@@ -585,7 +586,7 @@ class DataGenerator(object):
 
                 self.map_error.append(mol)
                 self.logger.warning('Error during the mapping of %s' %mol,exc_info=True)
-                printif('Error during the mapping of %s' %mol,self.debug)
+                _printif('Error during the mapping of %s' %mol,self.debug)
 
         # remove the molecule with issues
         if remove_error:
@@ -618,7 +619,7 @@ class DataGenerator(object):
 
         '''
 
-        printif('Remove features',self.debug)
+        _printif('Remove features',self.debug)
 
         # name of the hdf5 file
         f5 = h5py.File(self.hdf5,'a')

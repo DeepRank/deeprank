@@ -732,7 +732,7 @@ class NeuralNet():
         plt.close()
 
 
-    def plot_hit_rate(self,figname,irmsd_thr = 4.0,inverse = False):
+    def plot_hit_rate(self,figname,irmsd_thr = 4.0):
 
         '''Plot the hit rate of the different training/valid/test sets
 
@@ -743,7 +743,6 @@ class NeuralNet():
         Args:
             figname (str): filename for the plot
             irmsd_thr (float, optional): threshold for 'good' models
-            inverse (bool, optional): Must be true if score is inverse to ranking (e.g. for IRMSD)
 
         '''
 
@@ -756,6 +755,9 @@ class NeuralNet():
         labels = ['train','valid','test']
 
         fig,ax = plt.subplots()
+
+        # get the target ordering
+        inverse = self.data_set.target_ordering == 'lower'
 
         for l in labels:
 

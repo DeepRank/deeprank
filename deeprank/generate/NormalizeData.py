@@ -121,14 +121,16 @@ class NormalizeData(object):
 
     def _export_data(self):
         """Pickle the data to file."""
-        
+
         fexport = os.path.splitext(self.fname)[0] + '_norm.pckl'
-        pickle.dump(self.parameters,open(fexport,'wb'))
+        f = open(fexport,'wb')
+        pickle.dump(self.parameters,f)
+        f.close()
 
 
 class NormParam(object):
 
-    def __init__(self,std=0,mean=0,var=0,sqmean=0):
+    def __init__(self, std=0, mean=0, var=0, sqmean=0):
         """Compute gaussian normalization for a given feature.
 
         This class allows to extract the standard deviation, mean value, variance and square root of the

@@ -1,7 +1,10 @@
 sudo: false
 distr : "trusty"
 
-language: generic 
+language: generic
+
+python:
+  - "3.6"
 
 before_install:
 
@@ -17,22 +20,35 @@ before_install:
   - conda info -a
 
   # install pytorch
-  - conda install pytorch torchvision cuda80 -c soumith 
+  - conda install pytorch torchvision cuda80 -c soumith
 
   # install freesasa
   - conda install cython
   #- apt-get install libxml2 libxml2-devel libjson0 libjson0-dev
   - wget http://freesasa.github.io/freesasa-2.0.2.tar.gz
-  - mkdir freesasa 
+  - mkdir freesasa
   - tar -xvf freesasa-2.0.2.tar.gz -C freesasa --strip-components=1
-  - cd freesasa 
+  - cd freesasa
   - ./configure --disable-xml --disable-json --enable-python-bindings --with-python=python3.6 CFLAGS="-fPIC" --prefix=$HOME
-  - make 
+  - make
   - make install
   - cd ../
+
+  # install the pipi stuff
+- "pip install -q --upgrade 'pip'"
+- "pip install -q 'coverage'"
+- "pip install -q 'pytest-cov'"
+- "pip install -q 'codacy-coverage'"
+- "pip install -q coveralls"
 
 install:
   - pip install -qe .[test]
 
 script:
-  - nosetests -w test/ --ignore-files=notravis*  --with-coverage --cover-package=deeprank
+  #- nosetests -w test/ --ignore-files=notravis*  --with-coverage --cover-package=deeprank
+  - cd test/
+  - pytest --cov=deeprank --cov-report xml:coverage.xml
+
+after_script:
+  - python-codacy-coverage -r coverage.xml
+  - coveralls

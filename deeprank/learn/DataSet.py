@@ -22,10 +22,11 @@ class DataSet():
     def __init__(self,database, test_database = None,
                  select_feature = 'all', select_target = 'DOCKQ',
                  normalize_features = True, normalize_targets = True,
+                 target_ordering=None,
                  dict_filter = None, pair_chain_feature = None,
                  transform_to_2D = False, projection = 0,
                  grid_shape = None,
-                 clip_features = True, clip_factor = 10.,
+                 clip_features = True, clip_factor = 1.5,
                  tqdm = False, process = True):
 
         '''Generates the dataset needed for pytorch.
@@ -69,6 +70,9 @@ class DataSet():
                 Default : True
             normalize_targets (Bool, optional): control the normalization of the targets
                 Default : True
+            target_ordering (str): 'lower' (the lower the better) or 'higher' (the higher the better)
+                By default is not specified (None) and the code tries to identify it. If indentification fails
+                'lower' is assumed
             dict_filter (None or dict, optional): Specify if we filter the complexes based on target values
                 Example : {'IRMSD' : '<4. or >10'} (select complexes with IRMSD lower than 4 or larger than 10)
                 Default : None
@@ -126,6 +130,9 @@ class DataSet():
         # filter the dataset
         self.dict_filter = dict_filter
 
+        #
+        self.target_ordering = target_ordering
+
         # print the progress bar or not
         self.tqdm=tqdm
 
@@ -176,6 +183,9 @@ class DataSet():
 
         # get the input shape
         self.get_input_shape()
+
+        # get the target ordering
+        self._get_target_ordering()
 
         # get renormalization factor
         if self.normalize_features or self.normalize_targets:
@@ -576,6 +586,27 @@ class DataSet():
                 if self.param_norm['features'][feat_types][feat].std == 0:
                     print('  Final STD Null for %s/%s. Changed it to 1' %(feat_types,feat))
                     self.param_norm['features'][feat_types][feat].std = 1
+
+    def _get_target_ordering(self):
+        """Determine if ordering of the target.
+
+        This can be lower the better or higher the better
+        If it can't determine the ordering 'lower' is assumed
+        """
+
+        lower_list = ['IRMSD','LRMSD','HADDOCK']
+        higher_list = ['DOCKQ','Fnat']
+        NA_list = ['binary_class']
+
+        if self.select_target in lower_list:
+            self.target_ordering = 'lower'
+        elif self.select_target in higher_list:
+            self.target_ordering = 'higher'
+        elif self.select_target in NA_list:
+            self.target_ordering = None
+        else:
+            print('  Target ordering unidentified. lower assumed')
+            self.target_ordering = 'lower'
 
     def backtransform_target(self,data):
         """Returns the values of the target after de-normalization.

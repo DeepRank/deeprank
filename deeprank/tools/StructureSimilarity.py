@@ -32,7 +32,7 @@ class StructureSimilarity(object):
         >>> Fnat = sim.compute_Fnat_pdb2sql()
         >>> Fnat_fast = sim.compute_Fnat_fast(ref_pairs='1AK4.ref_pairs')
         >>> dockQ = sim.compute_DockQScore(Fnat_fast,lrmsd_fast,irmsd_fast)
-        
+
         """
 
         self.decoy = decoy
@@ -330,10 +330,13 @@ class StructureSimilarity(object):
 
         elif not os.path.isfile(ref_pairs):
             self.compute_residue_pairs_ref(cutoff,save_file=True,filename=ref_pairs)
-            residue_pairs_ref = pickle.load(open(ref_pairs,'rb'))
-
+            f = open(ref_pairs,'rb')
+            residue_pairs_ref = pickle.load(f)
+            f.close()
         else:
-            residue_pairs_ref = pickle.load(open(ref_pairs,'rb'))
+            f = open(ref_pairs,'rb')
+            residue_pairs_ref = pickle.load(f)
+            f.close()
 
         # create a dict of the ecoy data
         if isinstance(self.decoy,str) and os.path.isfile(self.decoy):
@@ -427,6 +430,7 @@ class StructureSimilarity(object):
 
             # save as pickle
             pickle.dump(residue_pairs_ref,f)
+            f.close()
             return
         else:
             return residue_pairs_ref

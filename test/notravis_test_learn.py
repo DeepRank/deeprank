@@ -18,8 +18,8 @@ def test_learn():
                             grid_shape=(30,30,30),
                             select_feature={'AtomicDensities_ind' : 'all',
                                             'Feature_ind' : ['coulomb','vdwaals','charge','pssm'] },
-                            select_target='IRMSD',tqdm=True,
-                            normalize_features = True, normalize_targets=True,clip_features=True)
+                            select_target='DOCKQ',tqdm=True,
+                            normalize_features = True, normalize_targets=True,clip_features=False)
                             #pair_chain_feature=np.add,
                             #dict_filter={'IRMSD':'<4. or >10.'})
 
