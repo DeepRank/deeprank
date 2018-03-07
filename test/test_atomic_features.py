@@ -6,7 +6,8 @@ import unittest
 class TestAtomicFeature(unittest.TestCase):
     """Test StructureSimialrity."""
 
-    def test_atomic(self):
+    @staticmethod
+    def test_atomic():
 
         # in case you change the ref don't forget to:
         # - comment the first line (E0=1)
@@ -58,8 +59,8 @@ class TestAtomicFeature(unittest.TestCase):
         f.close()
 
         # compare files
-        delta_dist,delta_elec,delta_vdw = 0.0,0.0,0.0
         nint = 0
+        delta_dist, delta_elec = 0., 0.
         for ltest,lref in zip(test,ref):
             ltest = ltest.split()
             lref = lref.split()
@@ -88,8 +89,6 @@ class TestAtomicFeature(unittest.TestCase):
 
         Etest= np.array([float(test_tot[0].split()[3]),float(test_tot[1].split()[3])])
         Eref = np.array([float(ref_tot[0].split()[3]),float(ref_tot[1].split()[3])])
-        delta_Evdw = np.abs(Etest[0]-Eref[0])
-        delta_Eelec = np.abs(Etest[1]-Eref[1])
         if not np.allclose(Etest,Eref):
             raise AssertionError()
 

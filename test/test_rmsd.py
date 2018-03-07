@@ -1,15 +1,13 @@
 import unittest
-
 import numpy as np
 from deeprank.tools import StructureSimilarity
-import matplotlib.pyplot as plt
-import time
 import os
 
 class TestStructureSimilarity(unittest.TestCase):
     """Test StructureSimialrity."""
 
-    def test_rmsd(self):
+    @staticmethod
+    def test_rmsd():
         """Compute IRMSD/LRMSD and comapre with ProFIT generated values."""
 
         # specify wich data to us
@@ -17,9 +15,6 @@ class TestStructureSimilarity(unittest.TestCase):
         decoys = MOL + '/decoys/'
         ref    = MOL + '/native/1AK4.pdb'
         data   = MOL + '/haddock_data/'
-
-        # options
-        verbose = True
 
         # get the list of decoy names
         decoy_list = [decoys+'/'+n for n in list(filter(lambda x: '.pdb' in x, os.listdir(decoys)))]
@@ -52,7 +47,6 @@ class TestStructureSimilarity(unittest.TestCase):
 
         # compute the data with deeprank
         deep_data = {}
-        t0 = time.time()
         for i,decoy in enumerate(decoy_list):
 
             sim = StructureSimilarity(decoy,ref)

@@ -312,7 +312,7 @@ class NeuralNet():
         loader = data_utils.DataLoader(self.data_set,sampler=sampler)
         self.data = {}
         _,self.data['test'] = self._epoch(loader,train_model=False)
-        self._plot_scatter_reg(self.outdir+'/regression.png')
+        self._plot_scatter_reg(self.outdir+'/prediction.png')
         self.plot_hit_rate(self.outdir+'/hitrate.png')
         self._export_epoch_hdf5(0,self.data)
         self.f5.close()
@@ -322,7 +322,7 @@ class NeuralNet():
         """save the model to disk
 
         Args:
-            filename (str, optional): name of the fil
+            filename (str, optional): name of the file
         """
         filename = self.outdir + '/' + filename
 

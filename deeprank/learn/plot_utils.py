@@ -72,7 +72,7 @@ def plot_hit_rate(hdf5,epoch=None,figname=None,irmsd_thr = 4.0,inverse = False):
             # plot
             plt.plot(hit,c = color_plot[l],label=l)
 
-    legend = ax.legend(loc='upper left')
+    ax.legend(loc='upper left')
     ax.set_xlabel('Top M')
     ax.set_ylabel('Hit Rate')
     if figname is not None:
