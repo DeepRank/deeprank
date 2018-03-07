@@ -27,7 +27,7 @@ before_install:
   - pip install -q --upgrade pip
   - pip install -q coverage
   - pip install -q codacy-coverage
-  - pip install -q coveralls"
+  - pip install -q coveralls
 
 
   # install freesasa
