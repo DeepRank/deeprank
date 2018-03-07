@@ -19,6 +19,10 @@ before_install:
   # install pytorch
   - conda install pytorch torchvision cuda80 -c soumith
 
+  # pytest
+  - conda install -c anaconda pytest
+  - conda install -c conda-forge pytest-cov
+
   # install freesasa
   - conda install cython
   #- apt-get install libxml2 libxml2-devel libjson0 libjson0-dev
