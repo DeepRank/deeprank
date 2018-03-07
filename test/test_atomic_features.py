@@ -60,7 +60,6 @@ class TestAtomicFeature(unittest.TestCase):
 
         # compare files
         nint = 0
-        delta_dist, delta_elec = 0., 0.
         for ltest,lref in zip(test,ref):
             ltest = ltest.split()
             lref = lref.split()
@@ -73,15 +72,11 @@ class TestAtomicFeature(unittest.TestCase):
 
             dtest = np.array(float(ltest[8]))
             dref  = np.array(float(lref[8]))
-            delta_dist = np.max([delta_dist,np.abs(dtest-dref)])
             if not np.allclose(dtest,dref,rtol = 1E-3,atol=1E-3):
                 raise AssertionError()
 
             val_test = np.array(ltest[9:11]).astype('float64')
             val_ref  = np.array(lref[9:11]).astype('float64')
-
-            delta_elec = np.min([delta_elec,np.abs(val_ref[0]-val_test[0])])
-            delta_vdw = np.min([delta_elec,np.abs(val_ref[1]-val_test[1])])
             if not np.allclose(val_ref,val_test,atol=1E-6):
                 raise AssertionError()
 

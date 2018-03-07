@@ -1,7 +1,7 @@
 import unittest
 import sys
 import os
-import deeprank.generate
+from deeprank.generate import *
 from time import time
 
 try:
@@ -17,12 +17,13 @@ class TestGenerateCUDA(unittest.TestCase):
     gpu_block = [8,8,8]
     h5file = '1ak4_cuda.hdf5'
 
-    def test_generate_cuda(tune,test,gpu_block):
+    # sources to assemble the data base
+    pdb_source     = ['./1AK4/decoys/']
+    pdb_native     = ['./1AK4/native/']
 
-
-        # sources to assemble the data base
-        pdb_source     = ['./1AK4/decoys/']
-        pdb_native     = ['./1AK4/native/']
+    @unittest.skipIf(skip,"torch fails on Travis")
+    @staticmethod
+    def test_generate_cuda():
 
         #init the data assembler
         database = DataGenerator(pdb_source=self.pdb_source,pdb_native=self.pdb_native,

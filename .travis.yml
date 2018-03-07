@@ -3,9 +3,6 @@ distr : "trusty"
 
 language: generic
 
-python:
-  - "3.6"
-
 before_install:
 
   # Install python
@@ -48,6 +45,7 @@ script:
   #- nosetests -w test/ --ignore-files=notravis*  --with-coverage --cover-package=deeprank
   - cd test/
   - pytest --cov=deeprank --cov-report xml:coverage.xml
+  - mv coverage.xml ../
 
 after_script:
   - python-codacy-coverage -r coverage.xml
