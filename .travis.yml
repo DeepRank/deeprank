@@ -23,6 +23,13 @@ before_install:
   - conda install -c anaconda pytest
   - conda install -c conda-forge pytest-cov
 
+  # codacy-coverage
+  - pip install -q --upgrade pip
+  - pip install -q coverage
+  - pip install -q codacy-coverage
+  - pip install -q coveralls"
+
+
   # install freesasa
   - conda install cython
   #- apt-get install libxml2 libxml2-devel libjson0 libjson0-dev
@@ -41,4 +48,8 @@ install:
 script:
   - cd test/
   - pytest --cov=deeprank --cov-report xml:coverage.xml
+  - mv coverage.xml ../
 
+after_script:
+- python-codacy-coverage -r coverage.xml
+- coveralls
