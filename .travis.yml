@@ -31,22 +31,10 @@ before_install:
   - make install
   - cd ../
 
-  # install the pipi stuff
-- "pip install -q --upgrade 'pip'"
-- "pip install -q 'coverage'"
-- "pip install -q 'pytest-cov'"
-- "pip install -q 'codacy-coverage'"
-- "pip install -q coveralls"
-
 install:
   - pip install -qe .[test]
 
 script:
-  #- nosetests -w test/ --ignore-files=notravis*  --with-coverage --cover-package=deeprank
   - cd test/
   - pytest --cov=deeprank --cov-report xml:coverage.xml
-  - mv coverage.xml ../
 
-after_script:
-  - python-codacy-coverage -r coverage.xml
-  - coveralls
