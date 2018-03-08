@@ -36,7 +36,7 @@ class TestLearn(unittest.TestCase):
                 test_database = None,
                 grid_shape=(30,30,30),
                 select_feature={'AtomicDensities_ind' : 'all',
-                                'Feature_ind' : ['coulomb','vdwaals','charge','pssm'] },
+                                'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
                 select_target='DOCKQ',tqdm=True,
                 normalize_features = True, normalize_targets=True,
                 clip_features=False,

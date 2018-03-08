@@ -25,7 +25,8 @@ class TestGenerateData(unittest.TestCase):
                                  compute_features = ['deeprank.features.AtomicFeature',
                                                      'deeprank.features.NaivePSSM',
                                                      'deeprank.features.PSSM_IC',
-                                                     'deeprank.features.BSA'],
+                                                     'deeprank.features.BSA',
+                                                     'deeprank.features.ResidueDensity'],
                                  hdf5=self.h5file)
 
         #create new files
@@ -74,7 +75,7 @@ class TestGenerateData(unittest.TestCase):
 
         #init the data assembler
         database = DataGenerator(pdb_source=None,pdb_native=None,data_augmentation=None,
-                                 compute_features  = ['deeprank.features.ResidueDensity'], hdf5=self.h5file)
+                                 compute_features  = ['deeprank.features.FullPSSM'], hdf5=self.h5file)
 
         t0 =time()
         print('{:25s}'.format('Add new feature in database') + database.hdf5)
@@ -84,6 +85,13 @@ class TestGenerateData(unittest.TestCase):
         t0 = time()
         print('{:25s}'.format('Map new feature in database') + database.hdf5)
         database.map_features(try_sparse=True,time=False,prog_bar=True)
+        print(' '*25 + '--> Done in %f s.' %(time()-t0))
+
+        # get the normalization
+        t0 =time()
+        print('{:25s}'.format('Normalization') + database.hdf5)
+        norm = NormalizeData(self.h5file)
+        norm.get()
         print(' '*25 + '--> Done in %f s.' %(time()-t0))
 
 if __name__ == "__main__":

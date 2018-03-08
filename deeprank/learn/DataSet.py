@@ -395,7 +395,7 @@ class DataSet():
             # we loop over the input dict
             for feat_type,feat_names in self.select_feature.items():
 
-                # if for a give type we need all the feature
+                # if for a given type we need all the feature
                 if feat_names == 'all':
                     if feat_type in mapped_data:
                         self.select_feature[feat_type] = list(mapped_data[feat_type].keys())
@@ -405,14 +405,38 @@ class DataSet():
 
                 # if we have stored the individual
                 # chainA chainB data we need to expand the feature list
-                # however when we reload we already come with _chainA, _chainB features
-                # so then we shouldn't add the tags
+                # however when we reload a pretrained model we already
+                # come with _chainA, _chainB features.
+                # So then we shouldn't add the tags
                 elif '_ind' in feat_type:
                     self.select_feature[feat_type] = []
+
+                    # loop over all the specified feature names
                     for name in feat_names:
+
+                        # check if there is not _chainA or _chainB in the name
                         cond = [tag not in name for tag in chain_tags]
+
+                        # if there is no chain tag in the name
                         if np.all(cond):
-                            self.select_feature[feat_type] += [name+tag for tag in chain_tags]
+
+                            # if we have a wild card e.g. PSSM_*
+                            # we check the matches and add them
+                            if '*' in name:
+                                match = name.split('*')[0]
+                                possible_names = list(mapped_data[feat_type].keys())
+                                match_names = [n for n in possible_names if n.startswith(match)]
+                                self.select_feature[feat_type] += match_names
+
+                            # if we don't have a wild card we append
+                            # <feature_name>_chainA and <feature_name>_chainB
+                            # to the list
+                            else:
+                                self.select_feature[feat_type] += [name+tag for tag in chain_tags]
+
+                        # if there is a chain tag in the name
+                        # (we probably relaod a pretrained model)
+                        # and we simply append the feaature name
                         else:
                             self.select_feature[feat_type].append(name)
 

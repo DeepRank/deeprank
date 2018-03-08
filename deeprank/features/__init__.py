@@ -4,3 +4,4 @@ from .NaivePSSM import NaivePSSM
 from .PSSM_IC import PSSM_IC
 from .BSA import BSA
 from .ResidueDensity import ResidueDensity
+from .FullPSSM import FullPSSM
