@@ -1,6 +1,6 @@
 # DeepRank
 
-**Deep Learnign for ranking protein-protein conformations**
+**Deep Learning for ranking protein-protein conformations**
 
 [![Build Status](https://secure.travis-ci.org/DeepRank/deeprank.svg?branch=master)](https://travis-ci.org/DeepRank/deeprank)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/9252e59633cf46a7ada0c3c614c175ea)](https://www.codacy.com/app/NicoRenaud/deeprank?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=DeepRank/deeprank&amp;utm_campaign=Badge_Grade)
