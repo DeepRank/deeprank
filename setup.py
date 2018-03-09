@@ -14,7 +14,7 @@ setup(
         'scipy',
         'h5py',
         'tqdm',
-        'pandas'
+        'pandas',
         'matplotlib' ],
 
     extras_require= {
