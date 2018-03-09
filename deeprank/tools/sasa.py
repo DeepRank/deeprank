@@ -193,7 +193,7 @@ class SASA(object):
 
             for i,xyz in enumerate(self.xyz[chain]):
                 dist = np.sqrt(np.sum((self.xyz[chain]-xyz)**2,1))
-                resSeq,resname = self.resinfo[chain][i].tolist()
+                resSeq,resName = self.resinfo[chain][i].tolist()
                 key = tuple([chain,int(resSeq),resName])
                 value =  np.sum(self.neighbor_weight(dist,lbound,ubound))
                 NC[key]  = value

@@ -1,4 +1,3 @@
-import numpy as np
 import unittest
 from deeprank.tools import pdb2sql
 from deeprank.tools import SASA
@@ -31,7 +30,7 @@ class TestTools(unittest.TestCase):
         sasa = SASA(pdb)
         sasa.get_center()
         sasa.get_residue_center()
-        #sasa.neighbor_count()
+        sasa.neighbor_count()
 
 if __name__ == '__main__':
     unittest.main()

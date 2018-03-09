@@ -66,6 +66,22 @@ class TestStructureSimilarity(unittest.TestCase):
         if not np.all(delta<[1E-3,1,1E-3]):
             raise AssertionError()
 
+
+    @staticmethod
+    def test_slow():
+        """Compute IRMSD/LRMSD and comapre with ProFIT generated values."""
+
+        # specify wich data to us
+        MOL = './1AK4/'
+        decoy = MOL + '/decoys/1AK4_1w.pdb'
+        ref    = MOL + '/native/1AK4.pdb'
+
+        sim = StructureSimilarity(decoy,ref)
+        lrmsd = sim.compute_lrmsd_pdb2sql(method='svd')
+        irmsd = sim.compute_irmsd_pdb2sql(method='svd')
+        fnat = sim.compute_Fnat_pdb2sql()
+
+
     def setUp(self):
         """Setup the test by removing old files."""
 
