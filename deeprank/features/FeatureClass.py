@@ -27,50 +27,6 @@ class FeatureClass(object):
         self.feature_data_xyz = {}
         self.export_directories = {}
 
-
-    def export_data(self,mol_name):
-        """ export the data in a single file.
-
-         Pretty sure we never use that anymore. I jsut keep it for legacy reasons
-        """
-
-        for name,data in self.feature_data.items():
-
-            dirname = self.export_directories[name]
-
-            if dirname[-1] != '/':
-                dirname += '/'
-
-            if not os.path.isdir(dirname):
-                os.mkdir(dirname)
-
-            filename = dirname + mol_name + '.' + name.upper()
-
-            f = open(filename,'w')
-
-            for key,value in data.items():
-
-                # residue based feature
-                if len(key) == 3:
-
-                    # tags
-                    feat = '{:>4}{:>10}{:>10}'.format(key[0],key[1],key[2])
-
-                # atomic based features
-                elif len(key) == 4:
-
-                    # tags
-                    feat = '{:>4}{:>10}{:>10}{:>10}'.format(key[0],key[1],key[2],key[3])
-
-                # values
-                for v in value:
-                    feat += '\t{: 1.6E}'.format(v)
-
-                feat += '\n'
-                f.write(feat)
-
-            f.close()
-
     def export_data_hdf5(self,featgrp):
         """Export the data in human readable format in an HDF5 file group.
 

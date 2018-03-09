@@ -70,10 +70,10 @@ class ResidueDensity(FeatureClass):
                 self.residue_densities[key2].density[self.residue_types[key[2]]] += 1
                 self.residue_densities[key2].connections[self.residue_types[key[2]]].append(key)
 
-    def _print(self):
-
-        for key,res in self.residue_densities.items():
-            res.print()
+    # uncomment for debug
+    # def _print(self):
+    #     for key,res in self.residue_densities.items():
+    #         res.print()
 
     def extract_features(self):
         """Compute the feature value."""
@@ -116,22 +116,24 @@ class residue_pair(object):
         self.density = {'total':0,'polar':0,'apolar':0,'charged':0}
         self.connections = {'polar':[],'apolar':[],'charged':[]}
 
-    def print(self):
-        """ Print the data."""
-        print('')
-        print(self.res, ' : ', self.type)
-        print('  Residue Density')
-        for k,v in self.density.items():
-            print('   '+ k + '\t: '+str(v))
-        print('  Residue contact')
-        for k,keys in self.connections.items():
-            if len(keys)>0:
-                print('   ' + k + '\t:',end='')
-                for i,v in enumerate(keys):
-                    print(v,end=' ')
-                    if not (i+1) % 5:
-                        print('\n\t\t ',end='')
-                print('')
+
+    # Uncomment for debug
+    # def print(self):
+    #     """ Print the data."""
+    #     print('')
+    #     print(self.res, ' : ', self.type)
+    #     print('  Residue Density')
+    #     for k,v in self.density.items():
+    #         print('   '+ k + '\t: '+str(v))
+    #     print('  Residue contact')
+    #     for k,keys in self.connections.items():
+    #         if len(keys)>0:
+    #             print('   ' + k + '\t:',end='')
+    #             for i,v in enumerate(keys):
+    #                 print(v,end=' ')
+    #                 if not (i+1) % 5:
+    #                     print('\n\t\t ',end='')
+    #             print('')
 
 
 
@@ -156,19 +158,4 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
     # export in the hdf5 file
     resdens.export_dataxyz_hdf5(featgrp)
     resdens.export_data_hdf5(featgrp_raw)
-
-#####################################################################################
-#
-#   IF WE JUST TEST THE CLASS
-#
-#####################################################################################
-
-
-if __name__ == '__main__':
-
-    path = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/decoys_pdbFLs/1EWY/water/'
-    rd = ResidueDensity(path+'1EWY_100w.pdb')
-    rd.get(cutoff=5.5)
-    rd.print()
-    rd.extract_features()
 
