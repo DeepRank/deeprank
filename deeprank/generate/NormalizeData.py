@@ -107,7 +107,6 @@ class NormalizeData(object):
 
                     # we skip the target
                     if name in self.skip_feature:
-                        print('%s already in the normalization file' %name)
                         continue
 
                     # create the param if it doesn't already exists
@@ -135,7 +134,6 @@ class NormalizeData(object):
 
                 # we skip the already computed target
                 if tname in self.skip_target:
-                    print('%s already in the normalization file' %tname)
                     continue
 
                 # create a new item if needed
