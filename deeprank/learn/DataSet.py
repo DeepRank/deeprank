@@ -502,13 +502,13 @@ class DataSet():
         fname = self.database[0]
         feature,_ = self.load_one_molecule(fname)
         self.data_shape = feature.shape
-        print(feature.shape)
+
         if self.pair_chain_feature:
             feature = self.make_feature_pair(feature,self.pair_indexes,self.pair_chain_feature)
-        print(feature.shape)
+
         if self.transform:
             feature = self.convert2d(feature,self.proj2D)
-        print(feature.shape)
+
         self.input_shape = feature.shape
 
 
