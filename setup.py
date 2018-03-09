@@ -14,10 +14,12 @@ setup(
         'scipy',
         'h5py',
         'tqdm',
+        'pandas'
         'matplotlib' ],
 
     extras_require= {
-        'test': ['nose', 'coverage'],
+        'test': ['nose', 'coverage', 'pytest',
+                 'pytest-cov','codacy-coverage','coveralls'],
     }
 )
 

@@ -20,14 +20,14 @@ before_install:
   - conda install pytorch torchvision cuda80 -c soumith
 
   # pytest
-  - conda install -c anaconda pytest
-  - conda install -c conda-forge pytest-cov
+  #- conda install -c anaconda pytest
+  #- conda install -c conda-forge pytest-cov
 
   # codacy-coverage
-  - pip install -q --upgrade pip
-  - pip install -q coverage
-  - pip install -q codacy-coverage
-  - pip install -q coveralls
+  #- pip install -q --upgrade pip
+  #- pip install -q coverage
+  #- pip install -q codacy-coverage
+  #- pip install -q coveralls
 
 
   # install freesasa
