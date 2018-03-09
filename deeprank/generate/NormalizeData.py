@@ -54,8 +54,8 @@ class NormalizeData(object):
             self.parameters = pickle.load(f)
             f.close()
 
-            for feat_type,feat_name in self.parameters['features'].items():
-                for name,value in feat_name.items():
+            for _,feat_name in self.parameters['features'].items():
+                for name,_ in feat_name.items():
                     self.skip_feature.append(name)
 
             for target in self.parameters['targets'].keys():
