@@ -59,31 +59,38 @@ class SASA(object):
         '''
 
         sql = pdb2sql(self.pdbfile)
-        resA = np.array(sql.get('resSeq,resName,x,y,z',chainID=chainA))
-        resB = np.array(sql.get('resSeq,resName,x,y,z',chainID=chainB))
-        sql.close()
+        resA = np.array(sql.get('resSeq,resName',chainID=chainA))
+        resB = np.array(sql.get('resSeq,resName',chainID=chainB))
+
 
         resSeqA = np.unique(resA[:,0].astype(np.int))
         resSeqB = np.unique(resB[:,0].astype(np.int))
 
         self.xyz = {}
-        self.xyz[chainA] = [ np.mean( resA[np.argwhere(resA[:,0].astype(np.int)==r),2:],0 ).astype(np.float).tolist()[0] for r in resSeqA ]
-        self.xyz[chainB] = [ np.mean( resB[np.argwhere(resB[:,0].astype(np.int)==r),2:],0 ).astype(np.float).tolist()[0] for r in resSeqB ]
+        #self.xyz[chainA] = [ np.mean( resA[np.argwhere(resA[:,0].astype(np.int)==r),2:],0 ).astype(np.float).tolist()[0] for r in resSeqA ]
+        #self.xyz[chainB] = [ np.mean( resB[np.argwhere(resB[:,0].astype(np.int)==r),2:],0 ).astype(np.float).tolist()[0] for r in resSeqB ]
+
+        self.xyz[chainA] = []
+        for r in resSeqA:
+            xyz = sql.get('x,y,z',chainID=chainA,resSeq=str(r))
+            self.xyz[chainA].append(np.mean(xyz))
+
+        self.xyz[chainB] = []
+        for r in resSeqB:
+            xyz = sql.get('x,y,z',chainID=chainB,resSeq=str(r))
+            self.xyz[chainA].append(np.mean(xyz))
 
         self.resinfo = {}
         self.resinfo[chainA] = []
-        res_seen = set()
         for r in resA[:,:2]:
-            if r not in res_seen:
-                seen.add(r)
-                self.resinfo[chainA].append(r)
+            if tuple(r) not in self.resinfo[chainA]:
+                self.resinfo[chainA].append(tuple(r))
 
-        res_seen = set()
         self.resinfo[chainB] = []
         for r in resB[:,:2]:
-            if r not in res_seen:
-                seen.add(r)
-                self.resinfo[chainB].append(r)
+            if tuple(r) not in self.resinfo[chainB]:
+                self.resinfo[chainB].append(tuple(r))
+        sql.close()
 
     def get_residue_carbon_beta(self,chainA='A',chainB='B'):
 
