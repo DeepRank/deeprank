@@ -77,7 +77,7 @@ class TestGenerateData(unittest.TestCase):
         database = DataGenerator(pdb_source=None,pdb_native=None,data_augmentation=None,
                                  compute_features  = ['deeprank.features.FullPSSM'], hdf5=self.h5file)
 
-        t0 =time()
+        t0 = time()
         print('{:25s}'.format('Add new feature in database') + database.hdf5)
         database.add_feature(prog_bar=True)
         print(' '*25 + '--> Done in %f s.' %(time()-t0))
@@ -88,7 +88,7 @@ class TestGenerateData(unittest.TestCase):
         print(' '*25 + '--> Done in %f s.' %(time()-t0))
 
         # get the normalization
-        t0 =time()
+        t0 = time()
         print('{:25s}'.format('Normalization') + database.hdf5)
         norm = NormalizeData(self.h5file)
         norm.get()
