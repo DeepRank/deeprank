@@ -22,21 +22,45 @@ class NormalizeData(object):
 
         Example:
 
-        >>> norm = NormalizeData('1ak5.hdf5')
+        >>> norm = NormalizeData('1ak4.hdf5')
         >>> norm.get()
 
         """
         self.fname = fname
         self.parameters = {'features':{},'targets':{}}
         self.shape = shape
+        self.fexport = os.path.splitext(self.fname)[0] + '_norm.pckl'
+        self.skip_feature = []
+        self.skip_target = []
+
+
 
     def get(self):
         """Get the normalization and write them to file."""
 
         self._extract_shape()
+        self._load()
         self._extract_data()
         self._process_data()
         self._export_data()
+
+
+    def _load(self):
+        """Load data from already existing normalization file."""
+
+        if os.path.isfile(self.fexport):
+
+            f = open(self.fexport,'rb')
+            self.parameters = pickle.load(f)
+            f.close()
+
+            for feat_type,feat_name in self.parameters['features'].items():
+                for name,value in feat_name.items():
+                    self.skip_feature.append(name)
+
+            for target in self.parameters['targets'].keys():
+                self.skip_target.append(target)
+
 
     def _extract_shape(self):
         """Get the shape of the data in the hdf5 file."""
@@ -81,7 +105,12 @@ class NormalizeData(object):
                 # loop over all the feature
                 for name in feat_names:
 
-                    # create the param if it doens exists
+                    # we skip the target
+                    if name in self.skip_feature:
+                        print('%s already in the normalization file' %name)
+                        continue
+
+                    # create the param if it doesn't already exists
                     if name not in self.parameters['features'][feat_types]:
                         self.parameters['features'][feat_types][name] = NormParam()
 
@@ -104,6 +133,11 @@ class NormalizeData(object):
             # loop over all the targets
             for tname,tval in target_group.items():
 
+                # we skip the already computed target
+                if tname in self.skip_target:
+                    print('%s already in the normalization file' %tname)
+                    continue
+
                 # create a new item if needed
                 if tname not in self.parameters['targets']:
                     self.parameters['targets'][tname] = MinMaxParam()
@@ -122,8 +156,7 @@ class NormalizeData(object):
     def _export_data(self):
         """Pickle the data to file."""
 
-        fexport = os.path.splitext(self.fname)[0] + '_norm.pckl'
-        f = open(fexport,'wb')
+        f = open(self.fexport,'wb')
         pickle.dump(self.parameters,f)
         f.close()
 
