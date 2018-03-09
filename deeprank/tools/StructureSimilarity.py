@@ -1,6 +1,6 @@
 import numpy as np
 from deeprank.tools import pdb2sql
-import os,time,pickle
+import os,pickle
 _printif = lambda string,cond: print(string) if cond else None
 
 class StructureSimilarity(object):
@@ -1244,7 +1244,7 @@ class StructureSimilarity(object):
 
 
 # if __name__ == '__main__':
-
+#     import time
 #     BM4 = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
 #     decoy = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_1w.pdb'
 #     ref = BM4 + 'BM4_dimers_bound/pdbFLs_ori/1AK4.pdb'

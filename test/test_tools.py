@@ -7,6 +7,7 @@ class TestTools(unittest.TestCase):
 
     @staticmethod
     def test_pdb2sql():
+        """Test the db2sql module."""
 
         # create the sql db
         pdb = './1AK4/decoys/1AK4_1w.pdb'
@@ -24,6 +25,7 @@ class TestTools(unittest.TestCase):
 
     @staticmethod
     def test_sasa():
+        """Test the SASA module."""
 
         # create the sql db
         pdb = './1AK4/decoys/1AK4_1w.pdb'

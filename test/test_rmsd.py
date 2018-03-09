@@ -69,7 +69,7 @@ class TestStructureSimilarity(unittest.TestCase):
 
     @staticmethod
     def test_slow():
-        """Compute IRMSD/LRMSD and comapre with ProFIT generated values."""
+        """Compute IRMSD/LRMSD from pdb2sql methd to make sure it doesn't crash."""
 
         # specify wich data to us
         MOL = './1AK4/'
@@ -77,9 +77,10 @@ class TestStructureSimilarity(unittest.TestCase):
         ref    = MOL + '/native/1AK4.pdb'
 
         sim = StructureSimilarity(decoy,ref)
-        lrmsd = sim.compute_lrmsd_pdb2sql(method='svd')
-        irmsd = sim.compute_irmsd_pdb2sql(method='svd')
-        fnat = sim.compute_Fnat_pdb2sql()
+        trash = sim.compute_lrmsd_pdb2sql(method='svd')
+        trash = sim.compute_irmsd_pdb2sql(method='svd')
+        trash = sim.compute_Fnat_pdb2sql()
+        print(trash)
 
 
     def setUp(self):
