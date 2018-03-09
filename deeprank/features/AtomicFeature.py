@@ -997,37 +997,3 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
     # close
     atfeat.sqldb.close()
-
-#####################################################################################
-#
-#   test the function
-#
-#####################################################################################
-
-if __name__ == "__main__":
-
-    path = os.path.dirname(os.path.realpath(__file__))
-    FF = path + '/forcefield/'
-
-    BM4 = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/'
-    pdb = BM4 + 'decoys_pdbFLs/1AK4/water/1AK4_100w.pdb'
-
-    atfeat = AtomicFeature(pdb,
-                           param_charge = FF + 'protein-allhdg5-4_new.top',
-                           param_vdw    = FF + 'protein-allhdg5-4_new.param',
-                           patch_file   = FF + 'patch.top',
-                           root_export = './',
-                           individual_directory=False)
-
-    atfeat.assign_parameters()
-
-    # only compute the pair interactions here
-    atfeat.evaluate_pair_interaction(print_interactions=True)
-
-    # compute the charges
-    # here we extand the contact atoms to
-    # entire residue containing at least 1 contact atom
-    atfeat.evaluate_charges(extend_contact_to_residue=True)
-
-
-    atfeat.sqldb.close()
