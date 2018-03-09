@@ -33,9 +33,6 @@ class TestAtomicFeature(unittest.TestCase):
         # only compute the pair interactions here
         atfeat.evaluate_pair_interaction(save_interactions=test_name)
 
-        # close the db
-        atfeat.sqldb.close()
-
         # read the files
         f = open(REF)
         ref = f.readlines()
@@ -86,6 +83,18 @@ class TestAtomicFeature(unittest.TestCase):
         Eref = np.array([float(ref_tot[0].split()[3]),float(ref_tot[1].split()[3])])
         if not np.allclose(Etest,Eref):
             raise AssertionError()
+
+
+        # make sure that the other properties are not crashing
+        atfeat.compute_coulomb_interchain_only(contact_only=True)
+        atfeat.compute_coulomb_interchain_only(contact_only=False)
+
+        # make sure that the other properties are not crashing
+        atfeat.compute_vdw_interchain_only(contact_only=True)
+        atfeat.compute_vdw_interchain_only(contact_only=False)
+
+        # close the db
+        atfeat.sqldb.close()
 
 if __name__ == '__main__':
     unittest.main()

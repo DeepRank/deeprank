@@ -789,7 +789,7 @@ class AtomicFeature(FeatureClass):
                 return
 
             xyzA = np.array(self.sqldb.get('x,y,z',rowID=self.contact_atoms_A))
-            xyzB = np.array(self.sqldb.get('x,y,z',index=self.contact_atoms_B))
+            xyzB = np.array(self.sqldb.get('x,y,z',rowID=self.contact_atoms_B))
 
             chargeA = np.array(self.sqldb.get('CHARGE',rowID=self.contact_atoms_A))
             chargeB = np.array(self.sqldb.get('CHARGE',rowID=self.contact_atoms_B))
