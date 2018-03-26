@@ -212,7 +212,7 @@ class NeuralNet():
             sys.exit()
 
     def train(self,nepoch=50, divide_trainset=None, hdf5='data.hdf5',train_batch_size = 10,
-              preshuffle = True,export_intermediate=True,num_workers=1,save_model_name = 'model.pth.tar'):
+              preshuffle = True,export_intermediate=True,num_workers=1):
 
         """Perform a simple training of the model. The data set is divided in training/validation sets.
 
@@ -285,7 +285,7 @@ class NeuralNet():
         print(' --> Training done in ', time.strftime('%H:%M:%S', time.gmtime(time.time()-t0)))
 
         # save the model
-        self.save_model(filename=save_model_name)
+        self.save_model(filename='last_model.pth.tar')
 
     def test(self,hdf5='test_data.hdf5'):
         """Test a predefined model on a new dataset.
@@ -326,16 +326,16 @@ class NeuralNet():
         """
         filename = self.outdir + '/' + filename
 
-        state = {'state_dict'   : self.net.state_dict(),
-                'optimizer'    : self.optimizer.state_dict(),
-                'normalize_targets' : self.data_set.normalize_targets,
-                'normalize_features': self.data_set.normalize_features,
-                'select_feature' : self.data_set.select_feature,
-                'select_target' : self.data_set.select_target,
-                'pair_chain_feature' : self.data_set.pair_chain_feature,
-                'dict_filter' : self.data_set.dict_filter,
-                'transform'   : self.data_set.transform,
-                'proj2D'      : self.data_set.proj2D}
+        state = {'state_dict'         : self.net.state_dict(),
+                 'optimizer'          : self.optimizer.state_dict(),
+                 'normalize_targets'  : self.data_set.normalize_targets,
+                 'normalize_features' : self.data_set.normalize_features,
+                 'select_feature'     : self.data_set.select_feature,
+                 'select_target'      : self.data_set.select_target,
+                 'pair_chain_feature' : self.data_set.pair_chain_feature,
+                 'dict_filter'        : self.data_set.dict_filter,
+                 'transform'          : self.data_set.transform,
+                 'proj2D'             : self.data_set.proj2D}
 
         if self.data_set.normalize_features:
             state['feature_mean'] =  self.data_set.feature_mean
@@ -484,6 +484,11 @@ class NeuralNet():
         if _test_:
             test_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=test_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False,drop_last=False)
 
+        # min error to kee ptrack of the best model.
+        min_error = {'train': float('Inf'),
+                     'valid': float('Inf'),
+                     'test' : float('Inf')}
+
         # training loop
         av_time = 0.0
         self.data = {}
@@ -491,9 +496,6 @@ class NeuralNet():
 
             print('\n: epoch %03d / %03d ' %(epoch,nepoch) + '-'*45)
             t0 = time.time()
-
-            # we valid/test before training so that the data for the three
-            # are calcualted with the same NN
 
             # validate the model
             self.valid_loss,self.data['valid'] = self._epoch(valid_loader,train_model=False)
@@ -503,10 +505,6 @@ class NeuralNet():
             if _test_:
                 test_loss,self.data['test'] = self._epoch(test_loader,train_model=False)
                 self.losses['test'].append(test_loss)
-
-            # process train data without training
-            #self.train_loss,self.data['train'] = self._epoch(train_loader,train_model=False    )
-            #self.losses['train'].append(self.train_loss)
 
             # train the model
             self.train_loss,self.data['train'] = self._epoch(train_loader,train_model=True)
@@ -529,6 +527,14 @@ class NeuralNet():
             nremain = nepoch-(epoch+1)
             remaining_time = av_time/(epoch+1)*nremain
             print('  remaining time   :',  time.strftime('%H:%M:%S', time.gmtime(remaining_time)))
+
+            # save the best model
+            for mode in ['train','valid','test']:
+                if not mode in self.losses:
+                    continue
+                if self.losses[mode][-1] < min_error[mode]:
+                    self.save_model(filename="best_{}_model.pth.tar".format(mode))
+                    min_error[mode] = self.losses[mode][-1]
 
             # plot the scatter plots
             if (export_intermediate and epoch%nprint == nprint-1) or epoch==0 or epoch==nepoch-1:

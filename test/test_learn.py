@@ -106,7 +106,7 @@ class TestLearn(unittest.TestCase):
       os.removedirs(out)
 
     # create the network
-    model_name = './out_3d/model.pth.tar'
+    model_name = './out_3d/last_model.pth.tar'
     model = NeuralNet(database,cnn3d,pretrained_model=model_name,outdir=out)
     model.test()
 
