@@ -561,11 +561,15 @@ class NeuralNet():
             dict:  data of the epoch
         """
 
+        # variables of the epoch
         running_loss = 0
         data = {'outputs':[],'targets':[],'mol':[]}
         n = 0
         debug_time = False
         time_learn = 0
+
+        #set train/eval mode
+        self.net.train(mode=train_model)
 
         for d in data_loader:
 
@@ -623,7 +627,7 @@ class NeuralNet():
 
     def _get_variables(self,inputs,targets):
 
-        ''' Convert the feature/target in torch.Variables.
+        '''Convert the feature/target in torch.Variables.
 
         The format is different for regression where the targets are float
         and classification where they are int.
