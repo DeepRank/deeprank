@@ -88,7 +88,7 @@ class GridTools(object):
 
         # cuda support
         self.cuda = cuda
-        if self.cuda:
+        if self.cuda: # pragma: no cover
             self.gpu_block = gpu_block
             self.gpu_grid = [ int(np.ceil(n/b)) for b,n in zip(self.gpu_block,self.npts)]
 
@@ -326,7 +326,7 @@ class GridTools(object):
         printif('-- Map atomic densities on %dx%dx%d grid (mode=%s)'%(self.npts[0],self.npts[1],self.npts[2],mode),self.time)
 
         # prepare the cuda memory
-        if self.cuda:
+        if self.cuda: # pragma: no cover
 
             # try to import pycuda
             try:
@@ -362,7 +362,7 @@ class GridTools(object):
 
             t0 = time()
             # if we use CUDA
-            if self.cuda:
+            if self.cuda: # pragma: no cover
 
                 # reset the grid
                 grid_gpu *= 0
@@ -476,7 +476,7 @@ class GridTools(object):
         dict_data = {}
 
         # prepare the cuda memory
-        if self.cuda:
+        if self.cuda: # pragma: no cover
 
             # try to import pycuda
             try:
@@ -560,7 +560,7 @@ class GridTools(object):
                         dict_data[feature_name+'_%03d' %iF] = np.zeros(self.npts)
 
             # rest the grid and get the x y z values
-            if self.cuda:
+            if self.cuda: # pragma: no cover
                 grid_gpu *= 0
 
             # timing
@@ -642,7 +642,7 @@ class GridTools(object):
                             dict_data[fname+'_%03d' %iF] += coeff*self.featgrid(pos,feat_values[iF])
 
                 # try to use cuda to speed it up
-                else:
+                else: # pragma: no cover
                     if nFeat == 1:
                         x0,y0,z0 = pos.astype(np.float32)
                         alpha = np.float32(coeff*feat_values)
@@ -652,7 +652,7 @@ class GridTools(object):
 
                 tgrid += time()-t0
 
-            if self.cuda:
+            if self.cuda: # pragma: no cover
                 dict_data[fname] = grid_gpu.get()
                 driver.Context.synchronize()
 

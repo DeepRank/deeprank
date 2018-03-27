@@ -550,13 +550,13 @@ class DataGenerator(object):
                 grid_info[m] = 'ind'
 
         # sanity check for cuda
-        if cuda and gpu_block is None:
+        if cuda and gpu_block is None: # pragma: no cover
             print('Warning GPU block automatically set to 8 x 8 x 8')
             print('You can sepcify the block size with gpu_block=[n,m,k]')
             gpu_block = [8,8,8]
 
         # initialize cuda
-        if cuda:
+        if cuda: # pragma: no cover
 
             # compile cuda module
             npts = grid_info['number_of_points']
@@ -677,7 +677,7 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-    def _tune_cuda_kernel(self,grid_info,cuda_kernel='kernel_map.c',func='gaussian'):
+    def _tune_cuda_kernel(self,grid_info,cuda_kernel='kernel_map.c',func='gaussian'): # pragma: no cover
 
         '''
         Tune the CUDA kernel using the kernel tuner
@@ -751,7 +751,7 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-    def _test_cuda(self,grid_info,gpu_block=8,cuda_kernel='kernel_map.c',func='gaussian'):
+    def _test_cuda(self,grid_info,gpu_block=8,cuda_kernel='kernel_map.c',func='gaussian'): # pragma: no cover
 
         '''
         Test the CUDA kernel
@@ -823,7 +823,7 @@ class DataGenerator(object):
 #====================================================================================
 
     @staticmethod
-    def _compile_cuda_kernel(cuda_kernel,npts,res):
+    def _compile_cuda_kernel(cuda_kernel,npts,res): # pragma: no cover
         """Compile the cuda kernel
 
         Args:
@@ -844,7 +844,7 @@ class DataGenerator(object):
         return mod
 
     @staticmethod
-    def _get_cuda_function(module,func_name):
+    def _get_cuda_function(module,func_name):  # pragma: no cover
         """Get a single function from the compiled kernel
 
         Args:
@@ -859,7 +859,7 @@ class DataGenerator(object):
 
     # tranform the kernel to a tunable one
     @staticmethod
-    def _tunable_kernel(kernel):
+    def _tunable_kernel(kernel): # pragma: no cover
         """Make a tunale kernel
 
         Args:

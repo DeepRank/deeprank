@@ -1,6 +1,6 @@
 [report]
 omit =
 	# omit the test
-	*/test_*.py
+	test/test_*.py
 	# omit the deep learning cause pytoch doesn't load on travis
     deeprank/learn/*
