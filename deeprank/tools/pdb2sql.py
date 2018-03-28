@@ -72,7 +72,6 @@ class pdb2sql(object):
         self.max_sql_values = 950
 
 
-
     ##################################################################################
     #
     #   CREATION AND PRINTING
@@ -324,9 +323,9 @@ class pdb2sql(object):
 
                      resIndex = [1,2,3] select residue from index
 
-                     resName = ['VAL','LEU'] select residue from name
+                     resName = ['VAL', 'LEU'] select residue from name
 
-                     name  = ['CA','N'] select atoms from names
+                     name  = ['CA', 'N'] select atoms from names
 
                      rowID = [1,2,3] select atoms from index
 
@@ -336,8 +335,8 @@ class pdb2sql(object):
         Example :
 
         >>> db = pdb2sql(filename)
-        >>> xyz = db.get('x,y,z',name = ['CA','CB'])
-        >>> xyz = db.get('x,y,z',chainID='A',resName=['VAL',LEU])
+        >>> xyz = db.get('x,y,z',name = ['CA', 'CB'])
+        >>> xyz = db.get('x,y,z',chainID='A',resName=['VAL', 'LEU'])
 
         '''
 
@@ -724,13 +723,34 @@ class pdb2sql(object):
 
 
     def add_column(self,colname,coltype='FLOAT',default=0):
-        '''Add an extra column to the ATOM table.'''
+        '''Add an extra column to the ATOM table.
+
+        Args:
+            colname (str): name of the column
+            coltype (str, optional): type of the column data (default FLOAT)
+            default (int, optional): default value to fill in the column (default 0.0)
+        '''
 
         query = "ALTER TABLE ATOM ADD COLUMN '%s' %s DEFAULT %s" %(colname,coltype,str(default))
         self.c.execute(query)
 
     def update(self,attribute,values,**kwargs):
-        """Update the database."""
+        """Update multiple columns in the data.
+
+        Args:
+            attribute (str): comma separated attribute names: 'x,y,z'
+            values (np.array): new values for the attributes
+            **kwargs: selection of the rows to update.
+
+        Raises:
+            ValueError: if size mismatch between values, conditions and attribute names
+
+        Example:
+        >>> n = 200
+        >>> index = list(range(n))
+        >>> vals = np.random.rand(n,3)
+        >>> db.update('x,y,z',vals,rowID=index)
+        """
 
         # the asked keys
         keys = kwargs.keys()
@@ -741,14 +761,18 @@ class pdb2sql(object):
         except:
             print('Error column %s not found in the database' %attribute)
             self.get_colnames()
-            return
+            raise ValueError('Attribute name not recognized')
 
         # handle the multi model cases
-        if 'model' not in keys and self.nModel > 0:
-            for iModel in range(self.nModel):
-                kwargs['model'] = iModel
-                self.update(attribute,values,**kwargs)
-            return
+        # this is still in devs and not necessary
+        # for deeprank.
+        # We will have to deal with that if we
+        # release pdb2sql as a standalone
+        # if 'model' not in keys and self.nModel > 0:
+        #     for iModel in range(self.nModel):
+        #         kwargs['model'] = iModel
+        #         self.update(attribute,values,**kwargs)
+        #     return
 
         # parse the attribute
         if ',' in attribute:
@@ -797,7 +821,16 @@ class pdb2sql(object):
         self.c.executemany(query,data)
 
     def update_column(self,colname,values,index=None):
-        '''Update a single column.'''
+        '''Update a single column.
+
+        Args:
+            colname (str): name of the column to update
+            values (list): new values of the column
+            index (None, optional): index of the column to update (default all)
+
+        Example:
+        >>> db.update_column('x',np.random.rand(10),index=list(range(10)))
+        '''
 
         if index==None:
             data = [ [v,i+1] for i,v in enumerate(values) ]
@@ -817,6 +850,12 @@ class pdb2sql(object):
         Args:
             xyz (np.array): new xyz position
             index (None, list(int)): index of the atom to move
+
+        Example:
+        >>> n = 200
+        >>> index = list(range(n))
+        >>> vals = np.random.rand(n,3)
+        >>> db.update_xyz(vals,index=index)
         '''
 
         if index==None:
