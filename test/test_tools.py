@@ -1,8 +1,7 @@
 import unittest
-import numpy as np
 from deeprank.tools import pdb2sql
 from deeprank.tools import SASA
-from deeprank.tools import sparse
+
 
 class TestTools(unittest.TestCase):
     """Test StructureSimialrity."""

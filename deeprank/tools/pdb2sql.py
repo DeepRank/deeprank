@@ -804,7 +804,7 @@ class pdb2sql(object):
         # prepare the query
         query = 'UPDATE ATOM SET '
         query = query + ', '.join(map(lambda x: x+'=?',attribute))
-        #if len(kwargs)>0: # why did I do that ... 
+        #if len(kwargs)>0: # why did I do that ...
         query = query + ' WHERE rowID=?'
 
         # prepare the data
