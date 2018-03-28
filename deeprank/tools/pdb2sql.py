@@ -763,6 +763,9 @@ class pdb2sql(object):
             self.get_colnames()
             raise ValueError('Attribute name not recognized')
 
+        #if len(kwargs) == 0:
+        #    raise ValueError('Update without kwargs seem to be buggy. Use rowID=list(range(natom)) instead')
+
         # handle the multi model cases
         # this is still in devs and not necessary
         # for deeprank.
@@ -801,8 +804,8 @@ class pdb2sql(object):
         # prepare the query
         query = 'UPDATE ATOM SET '
         query = query + ', '.join(map(lambda x: x+'=?',attribute))
-        if len(kwargs)>0:
-            query = query + ' WHERE rowID=?'
+        #if len(kwargs)>0:
+        query = query + ' WHERE rowID=?'
 
         # prepare the data
         data = []
@@ -810,10 +813,9 @@ class pdb2sql(object):
 
             tmp_data = [ v for v in val ]
 
-            if len(kwargs)>0:
-
-                # here the conversion of the indexes is a bit annoying
-                tmp_data += [rowID[i]+1]
+            #if len(kwargs)>0:
+            # here the conversion of the indexes is a bit annoying
+            tmp_data += [rowID[i]+1]
 
             data.append(tmp_data)
 
@@ -1082,7 +1084,7 @@ class pdb2sql(object):
 
         # apply the rotation
         xyz = np.dot(rot_mat,(xyz-xyz0).T).T + xyz0
-        self.update_xyz(xyz,**kwargs)
+        self.update('x,y,z',xyz,**kwargs)
 
         return xyz0
 

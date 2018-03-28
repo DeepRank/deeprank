@@ -42,10 +42,14 @@ class TestPDB2SQL(unittest.TestCase):
         n = 200
         index = list(range(n))
         vals = np.random.rand(n, 3)
-        print(vals)
         self.db.update('x,y,z',vals, rowID = index)
         self.db.prettyprint()
         self.db.update_xyz(vals, index = index)
+
+    def test_update_all(self):
+        xyz = self.db.get('x,y,z')
+        self.db.update('x,y,z',xyz)
+        self.db.prettyprint()
 
     def test_manip(self):
         """Manipualte part of the protein."""
