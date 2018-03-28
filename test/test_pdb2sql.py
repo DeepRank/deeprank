@@ -42,7 +42,9 @@ class TestPDB2SQL(unittest.TestCase):
         n = 200
         index = list(range(n))
         vals = np.random.rand(n, 3)
+        print(vals)
         self.db.update('x,y,z',vals, rowID = index)
+        self.db.prettyprint()
         self.db.update_xyz(vals, index = index)
 
     def test_manip(self):

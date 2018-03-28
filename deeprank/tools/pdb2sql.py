@@ -804,7 +804,6 @@ class pdb2sql(object):
         if len(kwargs)>0:
             query = query + ' WHERE rowID=?'
 
-
         # prepare the data
         data = []
         for i,val in enumerate(values):
@@ -1043,6 +1042,7 @@ class pdb2sql(object):
             **kwargs: keyword argument to select the atoms. See pdb2sql.get()
 
         Example:
+
         >>> vect = np.random.rand(3)
         >>> db.translation(vect, chainID = 'A')
         """
@@ -1059,6 +1059,7 @@ class pdb2sql(object):
             **kwargs: keyword argument to select the atoms. See pdb2sql.get()
 
         Example:
+
         >>> axis = np.random.rand(3)
         >>> angle = np.random.rand()
         >>> db.rotation_around_axis(axis, angle, chainID = 'B')
@@ -1081,8 +1082,7 @@ class pdb2sql(object):
 
         # apply the rotation
         xyz = np.dot(rot_mat,(xyz-xyz0).T).T + xyz0
-
-        self.update('x,y,z',xyz,**kwargs)
+        self.update_xyz(xyz,**kwargs)
 
         return xyz0
 
@@ -1096,6 +1096,7 @@ class pdb2sql(object):
             **kwargs: keyword argument to select the atoms. See pdb2sql.get()
 
         Example:
+
         >>> a,b,c = np.random.rand(3)
         >>> db.rotation_euler(a,b,c,resName='VAL')
         """
@@ -1130,6 +1131,7 @@ class pdb2sql(object):
             **kwargs: keyword argument to select the atoms. See pdb2sql.get()
 
         Example:
+
         >>> mat = np.random.rand(3,3)
         >>> db.rotation_matrix(mat,chainID='A')
         """

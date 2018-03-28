@@ -260,11 +260,11 @@ class DataGenerator(object):
 
                     # crete a subgroup for the molecule
                     molgrp = self.f5.require_group(mol_aug_name)
+                    molgrp.attrs['type'] = 'molecule'
 
                     # copy the ref into it
                     if ref is not None:
                         self._add_pdb(molgrp,ref,'native')
-
 
                     # get the rotation axis and angle
                     axis,angle = self._get_aug_rot()
@@ -272,16 +272,18 @@ class DataGenerator(object):
                     # create the new pdb
                     center = self._add_aug_pdb(molgrp,cplx,'complex',axis,angle)
 
-                    # create the subgroups
-                    molgrp.require_group('targets')
-                    molgrp.require_group('features')
-
                     # copy the targets/features
-                    molgrp.copy('targets',self.f5[mol_name+'/targets/'])
-                    molgrp.copy('features',self.f5[mol_name+'/features/'])
+                    self.f5.copy(mol_name+'/targets/', molgrp)
+                    self.f5.copy(mol_name+'/features/', molgrp)
 
                     # rotate the feature
                     self._rotate_feature(molgrp,axis,angle,center)
+
+                    # store the axis/angl/center as attriutes
+                    # in case we need them later
+                    molgrp.attrs['axis'] = axis
+                    molgrp.attrs['angle'] = angle
+                    molgrp.attrs['center'] = center
 
             except Exception as inst:
 
@@ -354,11 +356,29 @@ class DataGenerator(object):
         for cplx_name in fnames_augmented:
 
             # group of the molecule
-            molgrp = f5[cplx_name]
+            aug_molgrp = f5[cplx_name]
 
-            # copy the targets to the augmented
+            # get the source group
             mol_name = molgrp.name.split('_r')[0]
-            molgrp.copy('features',self.f5[mol_name+'/features/'])
+            src_molgrp = f5[mol_name]
+
+            # get the rotation parameters
+            axis = aug_molgrp.attrs['axis']
+            angle = aug_molgrp.attrs['angle']
+            center = aug_molgrp.attrs['center']
+
+            # copy the features to the augmented
+            for k in molgrp['features']:
+                if k not in aug_molgrp['features']:
+
+                    #copy
+                    data = src_molgrp['features/'+k].value
+                    aug_molgrp.require_group('features')
+                    aug_molgrp.create_dataset("features/"+k,data=data)
+
+                    #rotate
+                    self._rotate_feature(aug_molgrp,axis,angle,center,feat_name=[k])
+
 
         # close the file
         f5.close()
@@ -434,11 +454,20 @@ class DataGenerator(object):
         for cplx_name in fnames_augmented:
 
             # group of the molecule
-            molgrp = f5[cplx_name]
+            aug_molgrp = f5[cplx_name]
+
+            # get the source group
+            mol_name = molgrp.name.split('_r')[0]
+            src_molgrp = f5[mol_name]
 
             # copy the targets to the augmented
-            mol_name = molgrp.name.split('_r')[0]
-            molgrp.copy('targets',self.f5[mol_name+'/targets/'])
+            for k in molgrp['targets']:
+                if k not in aug_molgrp['targets']:
+                    data = src_molgrp['targets/'+k].value
+                    aug_molgrp.require_group('targets')
+                    aug_molgrp.create_dataset("targets/"+k,data=data)
+
+
 
         # close the file
         f5.close()
@@ -1023,7 +1052,7 @@ class DataGenerator(object):
 
     # rotate th xyz-formatted feature in the database
     @staticmethod
-    def _rotate_feature(molgrp,axis,angle,center):
+    def _rotate_feature(molgrp,axis,angle,center,feat_name='all'):
         """Rotate the raw feature values
 
         Args:
@@ -1031,11 +1060,18 @@ class DataGenerator(object):
             axis (list(float)): axis of rotation
             angle (float): angle of rotation
             center (list(float)): center of rotation
+            feat_name (str) : name of the feature to rotate or 'all'
         """
-        feat = list(molgrp['features'].keys())
+        if feat_name == 'all':
+            feat = list(molgrp['features'].keys())
+        else:
+            feat = feat_name
+            if not isinstance(feat,list):
+                feat = list(feat)
+
         for fn in feat:
 
-            # extrct the data
+            # extract the data
             data = molgrp['features/'+fn].value
 
             # xyz
