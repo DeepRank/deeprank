@@ -688,7 +688,7 @@ class StructureSimilarity(object):
 
     @staticmethod
     def get_izone_rowID(sql,izone,return_only_backbone_atoms=True):
-        """Compute the idnex of the izone atoms
+        """Compute the index of the izone atoms
 
         Args:
             sql (pdb2sql): database of the conformation
