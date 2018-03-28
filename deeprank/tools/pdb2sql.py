@@ -753,7 +753,7 @@ class pdb2sql(object):
         """
 
         # the asked keys
-        keys = kwargs.keys()
+        #keys = kwargs.keys()
 
         # check if the column exists
         try:
@@ -963,7 +963,6 @@ class pdb2sql(object):
         self.conn.commit()
 
     # export to pdb file
-
     def exportpdb(self,fname,**kwargs):
         """Export a PDB file with kwargs selection
 
@@ -1042,6 +1041,10 @@ class pdb2sql(object):
         Args:
             vect (np.array): translation vector
             **kwargs: keyword argument to select the atoms. See pdb2sql.get()
+
+        Example:
+        >>> vect = np.random.rand(3)
+        >>> db.translation(vect, chainID = 'A')
         """
         xyz = self.get('x,y,z',**kwargs)
         xyz += vect
@@ -1054,6 +1057,11 @@ class pdb2sql(object):
             axis (np.array): axis of rotation
             angle (float): angle of rotation in radian
             **kwargs: keyword argument to select the atoms. See pdb2sql.get()
+
+        Example:
+        >>> axis = np.random.rand(3)
+        >>> angle = np.random.rand()
+        >>> db.rotation_around_axis(axis, angle, chainID = 'B')
         """
         xyz = self.get('x,y,z',**kwargs)
 
@@ -1086,6 +1094,10 @@ class pdb2sql(object):
             beta (float): angle of rotation around the y axis
             gamma (float): angle of rotation around the z axis
             **kwargs: keyword argument to select the atoms. See pdb2sql.get()
+
+        Example:
+        >>> a,b,c = np.random.rand(3)
+        >>> db.rotation_euler(a,b,c,resName='VAL')
         """
         xyz = self.get('x,y,z',**kwargs)
 
@@ -1101,7 +1113,7 @@ class pdb2sql(object):
         # rotation matrices
         rx = np.array([[1,0,0],[0,ca,-sa],[0,sa,ca]])
         ry = np.array([[cb,0,sb],[0,1,0],[-sb,0,cb]])
-        rz = np.array([[cg,-sg,0],[sg,cs,0],[0,0,1]])
+        rz = np.array([[cg,-sg,0],[sg,cg,0],[0,0,1]])
         rot_mat = np.dot(rx,np.dot(ry,rz))
 
         # apply the rotation
@@ -1116,6 +1128,10 @@ class pdb2sql(object):
             rot_mat (np.array): 3x3 rotation matrix
             center (bool, optional): center the molecule before applying the rotation
             **kwargs: keyword argument to select the atoms. See pdb2sql.get()
+
+        Example:
+        >>> mat = np.random.rand(3,3)
+        >>> db.rotation_matrix(mat,chainID='A')
         """
         xyz = self.get('x,y,z',**kwargs)
 
