@@ -341,15 +341,18 @@ class GridTools(object):
             z_gpu = gpuarray.to_gpu(self.z.astype(np.float32))
             grid_gpu = gpuarray.zeros(self.npts,np.float32)
 
+        # get the contact atoms 
+        if only_contact:
+            index = self.sqldb.get_contact_atoms()
+
         # loop over all the data we want
         for atomtype,vdw_rad in self.local_tqdm(self.atomic_densities.items()):
-
 
             t0 = time()
 
             # get the contact atom that of the correct type on both chains
             if only_contact:
-                index = self.sqldb.get_contact_atoms()
+                #index = self.sqldb.get_contact_atoms()
                 xyzA = np.array(self.sqldb.get('x,y,z',rowID=index[0],name=atomtype))
                 xyzB = np.array(self.sqldb.get('x,y,z',rowID=index[1],name=atomtype))
 
@@ -664,9 +667,7 @@ class GridTools(object):
 
     # compute the a given feature on the grid
     def featgrid(self,center,value,type_='fast_gaussian'):
-
         '''Map an individual feature (atomic or residue) on the grid
-
 
         Args:
             center (list(float)): position of the feature center

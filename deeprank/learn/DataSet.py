@@ -9,7 +9,7 @@ from torch import FloatTensor
 import numpy as np
 
 from deeprank.generate import NormParam, MinMaxParam, NormalizeData
-from deeprank.tools import sparse
+from deeprank.tools import sparse, pdb2sql
 from tqdm import tqdm
 
 # import torch.utils.data as data_utils
@@ -165,7 +165,7 @@ class DataSet():
 
 
         # check if the files are ok
-        self.check_hdf5_files()
+        #self.check_hdf5_files()
 
         # create the indexing system
         # alows to associate each mol to an index
@@ -173,7 +173,7 @@ class DataSet():
         self.create_index_molecules()
 
         # get the actual feature name
-        self.get_feature_name()
+        #self.get_feature_name()
 
         # get the pairing
         self.get_pairing_feature()
@@ -224,7 +224,8 @@ class DataSet():
         debug_time = False
         t0 = time.time()
         fname,mol = self.index_complexes[index]
-        feature, target = self.load_one_molecule(fname,mol)
+        t0 = time.time()
+        feature, target = self.map_one_molecule(fname,mol)
 
         if self.clip_features:
             feature = self._clip_feature(feature)
@@ -236,7 +237,7 @@ class DataSet():
             target = self._normalize_target(target)
 
         if self.pair_chain_feature:
-            feature = self.make_feature_pair(feature,self.pair_indexes,self.pair_chain_feature)
+            feature = self.make_feature_pair(feature,self.pair_chain_feature)
 
         if self.transform:
             feature = self.convert2d(feature,self.proj2D)
@@ -500,11 +501,11 @@ class DataSet():
         """
 
         fname = self.database[0]
-        feature,_ = self.load_one_molecule(fname)
+        feature,_ = self.map_one_molecule(fname)
         self.data_shape = feature.shape
 
         if self.pair_chain_feature:
-            feature = self.make_feature_pair(feature,self.pair_indexes,self.pair_chain_feature)
+            feature = self.make_feature_pair(feature,self.pair_chain_feature)
 
         if self.transform:
             feature = self.convert2d(feature,self.proj2D)
@@ -792,6 +793,52 @@ class DataSet():
         # Note returning torch.FloatTensor makes each epoch twice longer ...
         return np.array(feature).astype(outtype),np.array([target]).astype(outtype)
 
+
+    def map_one_molecule(self,fname,mol=None):
+        '''Map the feature and load feature/target of a single molecule.
+
+        Args:
+            fname (str): hdf5 file name
+            mol (None or str, optional): name of the complex in the hdf5
+
+        Returns:
+            np.array,float: features, targets
+        '''
+
+        outtype = 'float32'
+        fh5 = h5py.File(fname,'r')
+
+        if mol is None:
+            mol = list(fh5.keys())[0]
+
+        # get the mol
+        mol_data = fh5.get(mol)
+        grid,npts = self.get_grid(mol_data)
+
+        # get the features
+        feature = []
+        for feat_type,feat_names in self.select_feature.items():
+
+            if feat_type == 'AtomicDensities':
+                densities = self.map_atomic_densities(feat_names, mol_data, grid, npts)
+                feature += densities
+
+            elif feat_type == 'Features':
+                data = self.map_feature(feat_names, mol_data, grid, npts)
+                feature += data
+
+        # get the target value
+        target = mol_data.get('targets/'+self.select_target).value
+
+        # close
+        fh5.close()
+
+        # make sure all the feature have exact same type
+        # if they don't  collate_fn in the creation of the minibatch will fail.
+        # Note returning torch.FloatTensor makes each epoch twice longer ...
+        return np.array(feature).astype(outtype),np.array([target]).astype(outtype)
+
+
     @staticmethod
     def convert2d(feature,proj2d):
         '''Convert the 3D volumetric feature to a 2D planar data set.
@@ -818,12 +865,11 @@ class DataSet():
         return feature
 
     @staticmethod
-    def make_feature_pair(feature,pair_indexes,op):
+    def make_feature_pair(feature,op):
         """Pair the features of both chains.
 
         Args:
             feature (np.array): raw features
-            pair_indexes (list(int)): Index pairs
             op (callable): function to combine the features
 
         Returns:
@@ -836,15 +882,121 @@ class DataSet():
         if not callable(op):
             raise ValueError('Operation not callable',op)
 
+        nFeat = len(feature)
+        pair_indexes = list(np.arange(nFeat).reshape(int(nFeat/2),2))
+
         outtype = feature.dtype
         new_feat = []
         for ind in pair_indexes:
-            if len(ind) == 1:
-                new_feat.append(feature[ind,...])
-            else:
-                new_feat.append(op(feature[ind[0],...],feature[ind[1],...]))
+            new_feat.append(op(feature[ind[0],...],feature[ind[1],...]))
 
         return np.array(new_feat).astype(outtype)
 
 
-fvdzbvdmjbvczcnvczn
+    @staticmethod
+    def get_grid(mol_data):
+        x = mol_data['grid_points/x'].value
+        y = mol_data['grid_points/y'].value
+        z = mol_data['grid_points/z'].value
+        npts = (len(x),len(y),len(z))
+        grid = np.meshgrid(x,y,z)
+        return grid, npts
+
+
+    def map_atomic_densities(self,feat_names, mol_data, grid, npts):
+
+        sql = pdb2sql(mol_data['complex'].value)
+        index = sql.get_contact_atoms()
+
+        densities = []
+        for atomtype,vdw_rad in feat_names.items():
+
+            # get posof the contact atoms of correct type
+            xyzA = np.array(sql.get('x,y,z',rowID=index[0],name=atomtype))
+            xyzB = np.array(sql.get('x,y,z',rowID=index[1],name=atomtype))
+
+            # init the grid
+            atdensA = np.zeros(npts)
+            atdensB = np.zeros(npts)
+
+            # run on the atoms
+            for pos in xyzA:
+                atdensA += self._densgrid(pos,vdw_rad,grid,npts)
+
+            # run on the atoms
+            for pos in xyzB:
+                atdensB += self._densgrid(pos,vdw_rad,grid,npts)
+
+            densities += [atdensA,atdensB]
+
+        sql.close()
+
+        return densities
+
+    @staticmethod
+    def _densgrid(center,vdw_radius,grid,npts):
+
+        ''' Function to map individual atomic density on the grid.
+
+
+        The formula is equation (1) of the Koes paper
+        Protein-Ligand Scoring with Convolutional NN Arxiv:1612.02751v1
+
+        Args:
+            center (list(float)): position of the atoms
+            vdw_radius (float): vdw radius of the atom
+
+        Returns:
+            TYPE: np.array (mapped density)
+        '''
+
+        x0,y0,z0 = center
+        dd = np.sqrt( (grid[0]-x0)**2 + (grid[1]-y0)**2 + (grid[2]-z0)**2 )
+        dgrid = np.zeros(npts)
+        dgrid[dd<vdw_radius] = np.exp(-2*dd[dd<vdw_radius]**2/vdw_radius**2)
+        dgrid[ (dd >=vdw_radius) & (dd<1.5*vdw_radius)] = 4./np.e**2/vdw_radius**2*dd[ (dd >=vdw_radius) & (dd<1.5*vdw_radius)]**2 - 12./np.e**2/vdw_radius*dd[ (dd >=vdw_radius) & (dd<1.5*vdw_radius)] + 9./np.e**2
+        return dgrid
+
+    def map_feature(self,feat_names, mol_data, grid, npts):
+
+        feat = []
+
+        for name in feat_names:
+            tmp_feat = [np.zeros(npts),np.zeros(npts)]
+            data = mol_data['features/'+name].value
+            for line in data:
+                chain = int(line[0])
+                pos = line[1:4]
+                feat_values = np.array(line[4])
+                tmp_feat[chain] += self._featgrid(pos,feat_values,grid,npts)
+            feat += tmp_feat
+        return feat
+
+    @staticmethod
+    def _featgrid(center,value,grid,npts):
+        '''Map an individual feature (atomic or residue) on the grid
+
+        Args:
+            center (list(float)): position of the feature center
+            value (float): value of the feature
+            type_ (str, optional): method to map
+
+        Returns:
+            np.array: Mapped feature
+
+        Raises:
+            ValueError: Description
+        '''
+
+        # shortcut for th center
+        x0,y0,z0 = center
+
+        beta = 1.0
+        cutoff = 5.*beta
+
+        dd = np.sqrt( (grid[0]-x0)**2 + (grid[1]-y0)**2 + (grid[2]-z0)**2 )
+        dgrid = np.zeros(npts)
+
+        dgrid[dd<cutoff] = value*np.exp(-beta*dd[dd<cutoff])
+
+        return dgrid

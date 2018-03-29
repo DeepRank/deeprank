@@ -35,10 +35,10 @@ class TestLearn(unittest.TestCase):
     data_set = DataSet(database,
                 test_database = None,
                 grid_shape=(30,30,30),
-                select_feature={'AtomicDensities_ind' : 'all',
-                                'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
+                select_feature={'AtomicDensities' : {'CA':3.5,'C':3.5},
+                                'Features' : ['coulomb','vdwaals','charge'] },
                 select_target='DOCKQ',tqdm=True,
-                normalize_features = True, normalize_targets=True,
+                normalize_features = False, normalize_targets=False,
                 clip_features=False,
                 pair_chain_feature=np.add,
                 dict_filter={'IRMSD':'<4. or >10.'})
