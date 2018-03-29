@@ -34,6 +34,7 @@ class TestLearn(unittest.TestCase):
     # declare the dataset instance
     data_set = DataSet(database,
                 test_database = None,
+                data_augmentation=5,
                 grid_shape=(30,30,30),
                 select_feature={'AtomicDensities' : {'CA':3.5,'C':3.5},
                                 'Features' : ['coulomb','vdwaals','charge'] },

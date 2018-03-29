@@ -20,9 +20,10 @@ from tqdm import tqdm
 class DataSet():
 
     def __init__(self,database, test_database = None,
+                 data_augmentation = 0,
                  select_feature = 'all', select_target = 'DOCKQ',
                  normalize_features = True, normalize_targets = True,
-                 target_ordering=None,
+                 target_ordering = None,
                  dict_filter = None, pair_chain_feature = None,
                  transform_to_2D = False, projection = 0,
                  grid_shape = None,
@@ -59,6 +60,7 @@ class DataSet():
                 Example : ['1AK4.hdf5','1B7W.hdf5',...]
             test_database (list(str)): names of the hdf5 files used for the test
                 Example : ['7CEI.hdf5']
+            data_augmentation (int): Number of rotated conformations
             select_feature (dict or 'all', optional): Method to select the features used in the learning
                     If 'all', all the mapped features contained in the HDF5 file will be loaded
                     otherwise a dict must be provided.
@@ -106,6 +108,9 @@ class DataSet():
         # features/targets selection
         self.select_feature = select_feature
         self.select_target  = select_target
+
+        # data agumentation
+        self.data_augmentation = data_augmentation
 
         # normalization conditions
         self.normalize_features = normalize_features
@@ -223,9 +228,10 @@ class DataSet():
 
         debug_time = False
         t0 = time.time()
-        fname,mol = self.index_complexes[index]
+        fname,mol,angle,axis = self.index_complexes[index]
+
         t0 = time.time()
-        feature, target = self.map_one_molecule(fname,mol)
+        feature, target = self.map_one_molecule(fname,mol,angle,axis)
 
         if self.clip_features:
             feature = self._clip_feature(feature)
@@ -291,7 +297,10 @@ class DataSet():
                 mol_names = list(fh5.keys())
                 for k in mol_names:
                     if self.filter(fh5[k]):
-                        self.index_complexes += [(fdata,k)]
+                        self.index_complexes += [(fdata,k,None,None)]
+                        for irot in range(self.data_augmentation):
+                            axis, angle = self._get_aug_rot()
+                            self.index_complexes += [(fdata,k,angle,axis)]
                 fh5.close()
             except Exception as inst:
                 print('\t\t-->Ignore File : ' + fdata)
@@ -316,7 +325,7 @@ class DataSet():
                 try:
                     fh5 = h5py.File(fdata,'r')
                     mol_names = list(fh5.keys())
-                    self.index_complexes += [(fdata,k) for k in mol_names]
+                    self.index_complexes += [(fdata,k,None,None) for k in mol_names]
                     fh5.close()
                 except:
                     print('\t\t-->Ignore File : '+fdata)
@@ -794,7 +803,7 @@ class DataSet():
         return np.array(feature).astype(outtype),np.array([target]).astype(outtype)
 
 
-    def map_one_molecule(self,fname,mol=None):
+    def map_one_molecule(self,fname,mol=None,angle=None,axis=None):
         '''Map the feature and load feature/target of a single molecule.
 
         Args:
@@ -820,11 +829,11 @@ class DataSet():
         for feat_type,feat_names in self.select_feature.items():
 
             if feat_type == 'AtomicDensities':
-                densities = self.map_atomic_densities(feat_names, mol_data, grid, npts)
+                densities = self.map_atomic_densities(feat_names, mol_data, grid, npts, angle, axis)
                 feature += densities
 
             elif feat_type == 'Features':
-                data = self.map_feature(feat_names, mol_data, grid, npts)
+                data = self.map_feature(feat_names, mol_data, grid, npts, angle, axis)
                 feature += data
 
         # get the target value
@@ -903,10 +912,13 @@ class DataSet():
         return grid, npts
 
 
-    def map_atomic_densities(self,feat_names, mol_data, grid, npts):
+    def map_atomic_densities(self,feat_names, mol_data, grid, npts, angle, axis):
 
         sql = pdb2sql(mol_data['complex'].value)
         index = sql.get_contact_atoms()
+
+        if angle is not None:
+            center = [np.mean(g) for g in grid]
 
         densities = []
         for atomtype,vdw_rad in feat_names.items():
@@ -914,6 +926,11 @@ class DataSet():
             # get posof the contact atoms of correct type
             xyzA = np.array(sql.get('x,y,z',rowID=index[0],name=atomtype))
             xyzB = np.array(sql.get('x,y,z',rowID=index[1],name=atomtype))
+
+            # rotate if necessary
+            if angle is not None:
+                xyzA = self._rotate_coord(xyzA,center,angle,axis)
+                xyzB = self._rotate_coord(xyzB,center,angle,axis)
 
             # init the grid
             atdensA = np.zeros(npts)
@@ -957,16 +974,20 @@ class DataSet():
         dgrid[ (dd >=vdw_radius) & (dd<1.5*vdw_radius)] = 4./np.e**2/vdw_radius**2*dd[ (dd >=vdw_radius) & (dd<1.5*vdw_radius)]**2 - 12./np.e**2/vdw_radius*dd[ (dd >=vdw_radius) & (dd<1.5*vdw_radius)] + 9./np.e**2
         return dgrid
 
-    def map_feature(self,feat_names, mol_data, grid, npts):
+    def map_feature(self,feat_names, mol_data, grid, npts, angle, axis):
+
+        if angle is not None:
+            center = [np.mean(g) for g in grid]
 
         feat = []
-
         for name in feat_names:
             tmp_feat = [np.zeros(npts),np.zeros(npts)]
             data = mol_data['features/'+name].value
             for line in data:
                 chain = int(line[0])
                 pos = line[1:4]
+                if angle  is not None:
+                    pos = self._rotate_coord(pos,center,angle,axis)
                 feat_values = np.array(line[4])
                 tmp_feat[chain] += self._featgrid(pos,feat_values,grid,npts)
             feat += tmp_feat
@@ -1000,3 +1021,50 @@ class DataSet():
         dgrid[dd<cutoff] = value*np.exp(-beta*dd[dd<cutoff])
 
         return dgrid
+
+    # get rotation axis and angle
+    @staticmethod
+    def _get_aug_rot():
+        """Get the rotation angle/axis
+
+        Returns:
+            list(float): axis of rotation
+            float: angle of rotation
+        """
+        # define the axis
+        # uniform distribution on a sphere
+        # http://mathworld.wolfram.com/SpherePointPicking.html
+        u1,u2 = np.random.rand(),np.random.rand()
+        teta,phi = np.arccos(2*u1-1),2*np.pi*u2
+        axis = [np.sin(teta)*np.cos(phi),np.sin(teta)*np.sin(phi),np.cos(teta)]
+
+        # and the rotation angle
+        angle = -np.pi + np.pi*np.random.rand()
+
+        return axis,angle
+
+    @staticmethod
+    def _rotate_coord(xyz,xyz0,angle,axis):
+        """Rotate a part or all of the molecule around a specified axis
+
+        Args:
+            xyz (np.array): position of the atoms
+            xyz0 (np.array): rotation center
+            axis (np.array): axis of rotation
+            angle (float): angle of rotation in radian
+
+        """
+
+        # get the data
+        ct,st = np.cos(angle),np.sin(angle)
+        ux,uy,uz = axis
+
+        # definition of the rotation matrix
+        # see https://en.wikipedia.org/wiki/Rotation_matrix
+        rot_mat = np.array([
+        [ct + ux**2*(1-ct),         ux*uy*(1-ct) - uz*st,       ux*uz*(1-ct) + uy*st],
+        [uy*ux*(1-ct) + uz*st,      ct + uy**2*(1-ct),          uy*uz*(1-ct) - ux*st],
+        [uz*ux*(1-ct) - uy*st,      uz*uy*(1-ct) + ux*st,       ct + uz**2*(1-ct)   ]])
+
+
+        return np.dot(rot_mat,(xyz-xyz0).T).T + xyz0
