@@ -6,6 +6,9 @@ def __compute_target__(decoy,targrp):
     molgrp = targrp.parent
     molname = molgrp.name
 
+    if 'BIN_CLASS' in targrp.keys():
+        del targrp['BIN_CLASS']
+
     # if we have a ref
     if '_' not in molname:
         targrp.create_dataset('BIN_CLASS',data=np.array(1.0))

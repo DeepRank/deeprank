@@ -14,6 +14,10 @@ def __compute_target__(decoy,targrp):
     if not os.path.isdir(ZONE):
         os.mkdir(ZONE)
 
+    for target_name in ['LRMSD','IRMSD','FNAT','DOCKQ']:
+        if target_name in targrp.keys():
+            del targrp[target_name]
+
     # if we have a ref
     if '_' not in molname:
 

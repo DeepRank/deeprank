@@ -71,13 +71,25 @@ class TestGenerateData(unittest.TestCase):
         database.add_target(prog_bar=True)
         print(' '*25 + '--> Done in %f s.' %(time()-t0))
 
-    def test_3_add_unique_target(self):
+    def test_3_add_target(self):
+        """Add the same target to the database."""
+
+        #init the data assembler
+        database = DataGenerator(compute_targets  = ['deeprank.targets.binary_class'],
+                                 hdf5=self.h5file)
+
+        t0 = time()
+        print('{:25s}'.format('Add new target in database') + database.hdf5)
+        database.add_target(prog_bar=True)
+        print(' '*25 + '--> Done in %f s.' %(time()-t0))
+
+    def test_4_add_unique_target(self):
         """"Add a unique target to all the confs."""
 
         database = DataGenerator(hdf5=self.h5file)
         database.add_unique_target({'XX':1.0})
 
-    def test_4_add_feature(self):
+    def test_5_add_feature(self):
         """Add a feature to the database."""
 
         #init the data assembler

@@ -329,6 +329,10 @@ class DataGenerator(object):
         >>> database.add_feature(prog_bar=True)
         '''
 
+        # check if file exists
+        if not os.path.isfile(self.hdf5):
+            raise FileNotFoundError('File %s does not exists' %self.hdf5)
+
         # get the folder names
         f5 = h5py.File(self.hdf5,'a')
         fnames = f5.keys()
@@ -402,6 +406,11 @@ class DataGenerator(object):
         >>> database = DataGenerator(hdf5='1ak4.hdf5')
         >>> database.add_unique_target({'DOCKQ':1.0})
         '''
+
+        # check if file exists
+        if not os.path.isfile(self.hdf5):
+            raise FileNotFoundError('File %s does not exists' %self.hdf5)
+
         f5 = h5py.File(self.hdf5,'a')
         for mol in list(f5.keys()):
             targrp = f5[mol].require_group('targets')
@@ -427,6 +436,10 @@ class DataGenerator(object):
         >>>
         >>> database.add_target(prog_bar=True)
         '''
+
+        # check if file exists
+        if not os.path.isfile(self.hdf5):
+            raise FileNotFoundError('File %s does not exists' %self.hdf5)
 
         # name of the hdf5 file
         f5 = h5py.File(self.hdf5,'a')
