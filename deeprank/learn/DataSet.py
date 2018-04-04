@@ -20,7 +20,7 @@ from tqdm import tqdm
 class DataSet():
 
     def __init__(self,database, test_database = None,
-                 data_augmentation = 0,
+                 mapfly = False, data_augmentation = 0,
                  select_feature = 'all', select_target = 'DOCKQ',
                  normalize_features = True, normalize_targets = True,
                  target_ordering = None,
@@ -60,6 +60,7 @@ class DataSet():
                 Example : ['1AK4.hdf5','1B7W.hdf5',...]
             test_database (list(str)): names of the hdf5 files used for the test
                 Example : ['7CEI.hdf5']
+            mapfly (bool): do we compute the map in the batch preparation or read them
             data_augmentation (int): Number of rotated conformations
             select_feature (dict or 'all', optional): Method to select the features used in the learning
                     If 'all', all the mapped features contained in the HDF5 file will be loaded
@@ -109,8 +110,14 @@ class DataSet():
         self.select_feature = select_feature
         self.select_target  = select_target
 
+        # map generation
+        self.mapfly = mapfly
+
         # data agumentation
-        self.data_augmentation = data_augmentation
+        if self.mapfly:
+            self.data_augmentation = data_augmentation
+        else:
+            self.data_augmentation = 0
 
         # normalization conditions
         self.normalize_features = normalize_features
@@ -170,7 +177,8 @@ class DataSet():
 
 
         # check if the files are ok
-        #self.check_hdf5_files()
+        if not self.mapfly:
+            self.check_hdf5_files()
 
         # create the indexing system
         # alows to associate each mol to an index
@@ -178,7 +186,8 @@ class DataSet():
         self.create_index_molecules()
 
         # get the actual feature name
-        #self.get_feature_name()
+        if not self.mapfly:
+            self.get_mapped_feature_name()
 
         # get the pairing
         self.get_pairing_feature()
@@ -194,7 +203,10 @@ class DataSet():
 
         # get renormalization factor
         if self.normalize_features or self.normalize_targets:
-            self.get_norm()
+            if self.mapfly:
+                self.compute_norm()
+            else:
+                self.get_norm()
 
 
         print('\n')
@@ -231,7 +243,10 @@ class DataSet():
         fname,mol,angle,axis = self.index_complexes[index]
 
         t0 = time.time()
-        feature, target = self.map_one_molecule(fname,mol,angle,axis)
+        if self.mapfly:
+            feature, target = self.map_one_molecule(fname,mol,angle,axis)
+        else:
+            feature, target = self.load_one_molecule(fname,mol)
 
         if self.clip_features:
             feature = self._clip_feature(feature)
@@ -373,7 +388,7 @@ class DataSet():
 
         return True
 
-    def get_feature_name(self):
+    def get_mapped_feature_name(self):
 
         '''
         Create  the dictionary with actual feature_type : [feature names]
@@ -510,7 +525,10 @@ class DataSet():
         """
 
         fname = self.database[0]
-        feature,_ = self.map_one_molecule(fname)
+        if self.mapfly:
+            feature,_ = self.map_one_molecule(fname)
+        else:
+            feature,_ = self.load_one_molecule(fname)
         self.data_shape = feature.shape
 
         if self.pair_chain_feature:
@@ -551,6 +569,55 @@ class DataSet():
 
         fh5.close()
 
+
+    def compute_norm(self):
+        """ compute the normalization factors."""
+
+        print("   Normalization factor :")
+
+        # loop over all the complexes in the database
+        first = True
+        for comp in tqdm(self.index_complexes):
+            fname, molname = comp[0], comp[1]
+
+            # get the feature/target
+            if self.mapfly:
+                feature,target = self.map_one_molecule(fname,mol=molname)
+            else:
+                feature,target = self.load_one_molecule(fname,mol=molname)
+
+            # create the norm isntances at the first passage
+            if first:
+                self.param_norm = {'features':[],'targets':None}
+                for ifeat in range(feature.shape[0]):
+                    self.param_norm['features'].append(NormParam())
+                self.param_norm['targets'] = MinMaxParam()
+                first = False
+
+            # update the norm instances
+            for ifeat, mat in enumerate(feature):
+                self.param_norm['features'][ifeat].add(np.mean(mat),np.var(mat))
+            self.param_norm['targets'].update(target)
+
+        # process the std of the features and make array for fast access
+        nfeat, ncomplex = len(self.param_norm['features']), len(self.index_complexes)
+        self.feature_mean, self.feature_std = [], []
+        for ifeat in range(nfeat):
+
+            # process the std and check
+            self.param_norm['features'][ifeat].process(ncomplex)
+            if self.param_norm['features'][ifeat].std == 0:
+                print('  Final STD Null. Changed it to 1')
+                self.param_norm['features'][ifeat].std = 1
+
+            # store as array for fast access
+            self.feature_mean.append(self.param_norm['features'][ifeat].mean)
+            self.feature_std.append(self.param_norm['features'][ifeat].std)
+
+        self.target_min = self.param_norm['targets'].min
+        self.target_max = self.param_norm['targets'].max
+
+        print(self.target_min,self.target_max)
     def get_norm(self):
         """Get the normalization values for the features.
         """

@@ -34,12 +34,13 @@ class TestLearn(unittest.TestCase):
     # declare the dataset instance
     data_set = DataSet(database,
                 test_database = None,
-                data_augmentation=5,
+                mapfly = True,
+                data_augmentation=2,
                 grid_shape=(30,30,30),
                 select_feature={'AtomicDensities' : {'CA':3.5,'C':3.5},
                                 'Features' : ['coulomb','vdwaals','charge'] },
                 select_target='DOCKQ',tqdm=True,
-                normalize_features = False, normalize_targets=False,
+                normalize_features = True, normalize_targets=True,
                 clip_features=False,
                 pair_chain_feature=np.add,
                 dict_filter={'IRMSD':'<4. or >10.'})
@@ -115,4 +116,4 @@ class TestLearn(unittest.TestCase):
 if __name__ == "__main__":
   TestLearn.test_learn_3d_reg()
   #TestLearn.test_learn_2d_reg()
-  TestLearn.test_transfer()
+  #TestLearn.test_transfer()
