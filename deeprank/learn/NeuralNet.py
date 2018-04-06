@@ -10,6 +10,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils.data as data_utils
 
@@ -142,6 +143,7 @@ class NeuralNet():
         elif self.task=='class':
             self.criterion = nn.CrossEntropyLoss()
             self._plot_scatter = self._plot_boxplot_class
+            self.data_set.normalize_targets = False
 
         else:
             raise ValueError("Task " + self.task +"not recognized.\nOptions are \n\t 'reg': regression \n\t 'class': classifiation\n\n")
@@ -590,8 +592,14 @@ class NeuralNet():
             # zero gradient
             tlearn0 = time.time()
 
-            # forward + loss
+            # forward
             outputs = self.net(inputs)
+
+            # class complains about the shape ...
+            if self.task=='class':
+                targets = targets.view(-1)
+
+            # evaluate loss
             loss = self.criterion(outputs,targets)
             running_loss += loss.data[0]
             n += len(inputs)
@@ -616,11 +624,11 @@ class NeuralNet():
 
         # transform the output back
         if self.data_set.normalize_targets:
-            data['outputs']  = self.data_set.backtransform_target(np.array(data['outputs']).flatten())
-            data['targets']  = self.data_set.backtransform_target(np.array(data['targets']).flatten())
+            data['outputs']  = self.data_set.backtransform_target(np.array(data['outputs']))#.flatten())
+            data['targets']  = self.data_set.backtransform_target(np.array(data['targets']))#.flatten())
         else:
-            data['outputs']  = np.array(data['outputs']).flatten()
-            data['targets']  = np.array(data['targets']).flatten()
+            data['outputs']  = np.array(data['outputs'])#.flatten()
+            data['targets']  = np.array(data['targets'])#.flatten()
 
         # make np for export
         data['mol'] = np.array(data['mol'],dtype=object)
@@ -722,8 +730,8 @@ class NeuralNet():
 
             if l in self.data:
 
-                targ = self.data[l]['targets']
-                out = self.data[l]['outputs']
+                targ = self.data[l]['targets'].flatten()
+                out = self.data[l]['outputs'].flatten()
 
                 xvalues = np.append(xvalues,targ)
                 yvalues = np.append(yvalues,out)
@@ -739,6 +747,57 @@ class NeuralNet():
         ax.plot([values.min()-border,values.max()+border],[values.min()-border,values.max()+border])
 
         fig.savefig(figname)
+        plt.close()
+
+    def _plot_boxplot_class(self,figname):
+
+        '''
+        Plot a boxplot of predictions VS targets useful '
+        to visualize the performance of the training algorithm
+        This is only usefull in classification tasks
+
+        Args:
+            figname (str): filename
+
+        '''
+
+        # abort if we don't want to plot
+        if self.plot == False:
+            return
+
+        print('\n --> Box Plot : ', figname, '\n')
+
+        color_plot = {'train':'red','valid':'blue','test':'green'}
+        labels = ['train','valid','test']
+
+        nwin = len(self.data)
+
+        fig, ax = plt.subplots(1, nwin, sharey=True)
+
+        iwin = 0
+        for l in labels:
+
+            if l in self.data:
+
+                tar = self.data[l]['targets']
+                out = self.data[l]['outputs']
+
+                data = [[], []]
+                confusion=[[0, 0], [0, 0]]
+                for pts,t in zip(out,tar):
+
+                    r = F.softmax(torch.FloatTensor(pts)).data.numpy()
+                    data[t].append(r[1])
+                    confusion[t][r[1]>0.5] += 1
+
+                #print("  {:5s}: {:s}".format(l,str(confusion)))
+
+                ax[iwin].boxplot(data)
+                ax[iwin].set_xlabel(l)
+                ax[iwin].set_xticklabels(['0', '1'])
+                iwin += 1
+
+        fig.savefig(figname, bbox_inches='tight')
         plt.close()
 
 

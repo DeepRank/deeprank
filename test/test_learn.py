@@ -5,6 +5,7 @@ import numpy as np
 try:
   from deeprank.learn import *
   from deeprank.learn.model3d import cnn as cnn3d
+  from deeprank.learn.model3d import cnn_class as cnn3d_class
   from deeprank.learn.model2d import cnn as cnn2d
   skip=False
 except:
@@ -41,7 +42,8 @@ class TestLearn(unittest.TestCase):
                 normalize_features = True, normalize_targets=True,
                 clip_features=False,
                 pair_chain_feature=np.add,
-                dict_filter={'IRMSD':'<4. or >10.'})
+                dict_filter={'DOCKQ':'<1.'})
+                #dict_filter={'IRMSD':'<4. or >10.'})
 
 
     # create the networkt
@@ -111,7 +113,43 @@ class TestLearn(unittest.TestCase):
     model.test()
 
 
+  @unittest.skipIf(skip,"Torch fails on Travis")
+  @staticmethod
+  def test_learn_3d_class():
+    """Use a 3D CNN for regularization."""
+
+    #adress of the database
+    database = ['1ak4.hdf5','native.hdf5']
+
+    # clean the output dir
+    out = './out_3d_class'
+    if os.path.isdir(out):
+      for f in glob.glob(out+'/*'):
+        os.remove(f)
+      os.removedirs(out)
+
+    # declare the dataset instance
+    data_set = DataSet(database,
+                test_database = None,
+                grid_shape=(30,30,30),
+                select_feature={'AtomicDensities_ind' : 'all',
+                                'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
+                select_target='BIN_CLASS',tqdm=True,
+                normalize_features = True, normalize_targets=False,
+                clip_features=False,
+                pair_chain_feature=np.add)
+
+
+    # create the networkt
+    model = NeuralNet(data_set,cnn3d_class,model_type='3d',task='class',
+                      cuda=False,plot=True,outdir=out)
+
+    # start the training
+    model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
+
+
 if __name__ == "__main__":
-  TestLearn.test_learn_3d_reg()
+  #TestLearn.test_learn_3d_reg()
+  TestLearn.test_learn_3d_class()
   #TestLearn.test_learn_2d_reg()
-  TestLearn.test_transfer()
+  #TestLearn.test_transfer()

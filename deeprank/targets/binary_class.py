@@ -9,10 +9,16 @@ def __compute_target__(decoy,targrp):
     if 'BIN_CLASS' in targrp.keys():
         del targrp['BIN_CLASS']
 
-    # if we have a ref
-    if '_' not in molname:
-        targrp.create_dataset('BIN_CLASS',data=np.array(1.0))
-
-    # or it's a decoy
+    if 'DOCKQ' in targrp.keys():
+        if targrp['DOCKQ'].value == 1.0:
+            targrp.create_dataset('BIN_CLASS',data=np.array(1.0))
+        else:
+            targrp.create_dataset('BIN_CLASS',data=np.array(0.0))
     else:
-        targrp.create_dataset('BIN_CLASS',data=np.array(0.0))
+        # if we have a ref
+        if '_' not in molname:
+            targrp.create_dataset('BIN_CLASS',data=np.array(1.0))
+
+        # or it's a decoy
+        else:
+            targrp.create_dataset('BIN_CLASS',data=np.array(0.0))
