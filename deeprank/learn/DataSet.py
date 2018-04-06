@@ -614,8 +614,8 @@ class DataSet():
             self.feature_mean.append(self.param_norm['features'][ifeat].mean)
             self.feature_std.append(self.param_norm['features'][ifeat].std)
 
-        self.target_min = self.param_norm['targets'].min
-        self.target_max = self.param_norm['targets'].max
+        self.target_min = self.param_norm['targets'].min[0]
+        self.target_max = self.param_norm['targets'].max[0]
 
         print(self.target_min,self.target_max)
     def get_norm(self):
@@ -718,11 +718,12 @@ class DataSet():
         Returns:
             list(float): un-normalized data
         """
-
-        data = FloatTensor(data)
+        #print(data)
+        #print(self.target_max)
+        #data = FloatTensor(data)
         data *= self.target_max
         data += self.target_min
-        return data.numpy()
+        return data #.numpy()
 
     def _normalize_target(self,target):
         """Normalize the values of the targets.
@@ -827,11 +828,12 @@ class DataSet():
         for feat_type,feat_names in self.select_feature.items():
 
             # see if the feature exists
-            try:
+            if 'mapped_features/'+feat_type in mol_data.keys():
                 feat_dict = mol_data.get('mapped_features/'+feat_type)
-            except KeyError:
+            else:
                 print('Feature type %s not found in file %s for molecule %s' %(feat_type,fname,mol))
                 print('Possible feature types are : ' + '\n\t'.join(list(mol_data['mapped_features'].keys())))
+                raise ValueError(feat_type,' not supported')
 
             # loop through all the desired feat names
             for name in feat_names:
