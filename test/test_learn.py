@@ -35,10 +35,10 @@ class TestLearn(unittest.TestCase):
     data_set = DataSet(database,
                 test_database = None,
                 mapfly = True,
-                data_augmentation=2,
+                data_augmentation=None,
                 grid_shape=(30,30,30),
-                select_feature={'AtomicDensities' : {'CA':3.5,'C':3.5},
-                                'Features' : ['coulomb','vdwaals','charge'] },
+                select_feature={'AtomicDensities' : {'CA':3.5, 'C':3.5, 'N':3.5, 'O':3.5},
+                                'Features' : ['coulomb','vdwaals','charge','PSSM_*'] },
                 select_target='DOCKQ',tqdm=True,
                 normalize_features = True, normalize_targets=True,
                 clip_features=False,
@@ -77,7 +77,7 @@ class TestLearn(unittest.TestCase):
                 data_augmentation=2,
                 grid_shape=(30,30,30),
                 select_feature={'AtomicDensities_ind' : 'all',
-                                'Feature_ind' : ['coulomb','vdwaals','charge'] },
+                                'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
                 select_target='DOCKQ',tqdm=True,
                 normalize_features = True, normalize_targets=True,
                 clip_features=False,
@@ -154,7 +154,7 @@ class TestLearn(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  #TestLearn.test_learn_3d_reg_mapfly()
-  TestLearn.test_learn_3d_reg()
+  TestLearn.test_learn_3d_reg_mapfly()
+  #TestLearn.test_learn_3d_reg()
   #TestLearn.test_learn_2d_reg()
   #TestLearn.test_transfer()

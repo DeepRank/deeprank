@@ -4,6 +4,8 @@ import time
 import h5py
 import pickle
 
+from functools import partial
+
 from torch import FloatTensor
 
 import numpy as np
@@ -116,6 +118,8 @@ class DataSet():
         # data agumentation
         if self.mapfly:
             self.data_augmentation = data_augmentation
+            if self.data_augmentation is None:
+                self.data_augmentation = 0
         else:
             self.data_augmentation = 0
 
@@ -186,7 +190,9 @@ class DataSet():
         self.create_index_molecules()
 
         # get the actual feature name
-        if not self.mapfly:
+        if self.mapfly:
+            self.get_raw_feature_name()
+        else:
             self.get_mapped_feature_name()
 
         # get the pairing
@@ -470,6 +476,67 @@ class DataSet():
                     raise ValueError('Feature selection not recognized')
         f5.close()
 
+    def get_raw_feature_name(self):
+
+        '''
+        Create  the dictionary with actual feature_type : [feature names]
+
+        Add _chainA, _chainB to each feature names if we have individual storage
+        create the dict if selec_features == 'all'
+        create the dict if selec_features['XXX']  == 'all'
+        '''
+
+        # open a h5 file in case we need it
+        f5 = h5py.File(self.database[0],'r')
+        mol_name = list(f5.keys())[0]
+        mol_data = f5.get(mol_name)
+        raw_data = f5.get(mol_name + '/features/')
+
+        # if we select all the features
+        if self.select_feature == "all":
+
+            # redefine dict
+            self.select_feature = {}
+            print("Select atomic densities for CA, C, N, O")
+            self.select_feature['AtomicDensities'] = {'CA':3.5, 'C':3.5, 'N':3.5, 'O':3.5}
+            self.select_feature['Features'] = [name for name in raw_data.keys()]
+
+        # if a selection was made
+        else:
+
+            # we loop over the input dict
+            for feat_type,feat_names in self.select_feature.items():
+
+                # if for a given type we need all the feature
+                if feat_names == 'all':
+                    if feat_type == 'AtomicDensities':
+                        self.select_feature['AtomicDensities'] = {'CA':3.5, 'C':3.5, 'N':3.5, 'O':3.5}
+                    elif feat_type in mol_data:
+                        self.select_feature[feat_type] = list(mapped_data[feat_type].keys())
+                    else:
+                        raise KeyError('Feature type %s not found')
+
+                # if we have stored the individual
+                # chainA chainB data we need to expand the feature list
+                # however when we reload a pretrained model we already
+                # come with _chainA, _chainB features.
+                # So then we shouldn't add the tags
+                else:
+                    if feat_type == 'AtomicDensities':
+                        assert isinstance(self.select_feature['AtomicDensities'],dict)
+                    else:
+                        self.select_feature[feat_type] = []
+                        for name in feat_names:
+                            if '*' in name:
+                                match = name.split('*')[0]
+                                possible_names = list(raw_data.keys())
+                                match_names = [n for n in possible_names if n.startswith(match)]
+                                self.select_feature[feat_type] += match_names
+                            else:
+                                self.select_feature[feat_type] += [name]
+
+        f5.close()
+
     def print_possible_features(self):
         """Print the possible features in the group."""
 
@@ -618,6 +685,7 @@ class DataSet():
         self.target_max = self.param_norm['targets'].max[0]
 
         print(self.target_min,self.target_max)
+
     def get_norm(self):
         """Get the normalization values for the features.
         """
@@ -813,6 +881,7 @@ class DataSet():
         Returns:
             np.array,float: features, targets
         '''
+        t0 = time.time()
 
         outtype = 'float32'
         fh5 = h5py.File(fname,'r')
@@ -865,6 +934,8 @@ class DataSet():
 
         # close
         fh5.close()
+        print(' --> Map one molecule %f sec.' %(time.time()-t0))
+        sys.exit()
 
         # make sure all the feature have exact same type
         # if they don't  collate_fn in the creation of the minibatch will fail.
@@ -882,6 +953,7 @@ class DataSet():
         Returns:
             np.array,float: features, targets
         '''
+        t0 = time.time()
 
         outtype = 'float32'
         fh5 = h5py.File(fname,'r')
@@ -910,7 +982,8 @@ class DataSet():
 
         # close
         fh5.close()
-
+        print(' --> Map one molecule %f sec.' %(time.time()-t0))
+        sys.exit()
         # make sure all the feature have exact same type
         # if they don't  collate_fn in the creation of the minibatch will fail.
         # Note returning torch.FloatTensor makes each epoch twice longer ...
@@ -983,6 +1056,7 @@ class DataSet():
 
     def map_atomic_densities(self,feat_names, mol_data, grid, npts, angle, axis):
 
+        t0 = time.time()
         sql = pdb2sql(mol_data['complex'].value)
         index = sql.get_contact_atoms()
 
@@ -992,6 +1066,7 @@ class DataSet():
         densities = []
         for atomtype,vdw_rad in feat_names.items():
 
+            start = time.time()
             # get posof the contact atoms of correct type
             xyzA = np.array(sql.get('x,y,z',rowID=index[0],name=atomtype))
             xyzB = np.array(sql.get('x,y,z',rowID=index[1],name=atomtype))
@@ -1014,9 +1089,9 @@ class DataSet():
                 atdensB += self._densgrid(pos,vdw_rad,grid,npts)
 
             densities += [atdensA,atdensB]
-
+            print('   __ Map single atomic density %f' %(time.time()-start))
         sql.close()
-
+        print(' __ Total Atomic Densities : %f' %(time.time()-t0))
         return densities
 
     @staticmethod
@@ -1045,21 +1120,53 @@ class DataSet():
 
     def map_feature(self,feat_names, mol_data, grid, npts, angle, axis):
 
+        __vectorize__ = True
+
+        t0 = time.time()
+
         if angle is not None:
             center = [np.mean(g) for g in grid]
 
+        if __vectorize__:
+            tprep = time.time()
+            pfunc = partial(self._featgrid,grid=grid,npts=npts)
+            vmap = np.vectorize(pfunc,signature='(n),()->(p,p,p)')
+            print(' __ Prepare function %f' %(time.time()-t0))
+
         feat = []
         for name in feat_names:
-            tmp_feat = [np.zeros(npts),np.zeros(npts)]
-            data = mol_data['features/'+name].value
-            for line in data:
-                chain = int(line[0])
-                pos = line[1:4]
-                if angle  is not None:
-                    pos = self._rotate_coord(pos,center,angle,axis)
-                feat_values = np.array(line[4])
-                tmp_feat[chain] += self._featgrid(pos,feat_values,grid,npts)
-            feat += tmp_feat
+
+
+            tmp_feat_ser = [np.zeros(npts),np.zeros(npts)]
+            tmp_feat_vect = [np.zeros(npts),np.zeros(npts)]
+            data = np.array(mol_data['features/'+name].value)
+
+            chain = data[:,0]
+            pos = data[:,1:4]
+            feat_value = data[:,4]
+
+            if angle is not None:
+                pos = self._rotate_coord(pos,center,angle,axis)
+
+            start = time.time()
+            if __vectorize__ == True or __vectorize__ == 'both':
+
+                for chainID in [0,1]:
+                    tmp_feat_vect[chainID] = np.sum(vmap(pos[chain==chainID,:],feat_value[chain==chainID]),0)
+
+            if __vectorize__ == False or __vectorize__ == 'both':
+
+                for chainID,xyz,vval in zip(chain,pos,feat_values):
+
+                    tmp_feat_ser[chainID] += self._featgrid(xyz,val,grid,npts)
+
+            if __vectorize__ == 'both':
+                assert np.allclose(tmp_feat_ser,tmp_feat_vect)
+
+            feat += tmp_feat_vect
+
+            print('   __ map single feature %f (%d lines)' %(time.time()-start, len(data)  ))
+        print(' __ Total Features : %f' %(time.time()-t0))
         return feat
 
     @staticmethod
