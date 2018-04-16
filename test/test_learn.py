@@ -51,7 +51,7 @@ class TestLearn(unittest.TestCase):
                       cuda=False,plot=True,outdir=out)
 
     # start the training
-    model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
+    model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0, save_model='all')
 
   @unittest.skipIf(skip,"torch fails on Travis")
   @staticmethod
@@ -149,7 +149,7 @@ class TestLearn(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  #TestLearn.test_learn_3d_reg()
-  TestLearn.test_learn_3d_class()
+  TestLearn.test_learn_3d_reg()
+  #TestLearn.test_learn_3d_class()
   #TestLearn.test_learn_2d_reg()
   #TestLearn.test_transfer()

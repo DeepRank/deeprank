@@ -214,7 +214,7 @@ class NeuralNet():
             sys.exit()
 
     def train(self,nepoch=50, divide_trainset=None, hdf5='data.hdf5',train_batch_size = 10,
-              preshuffle = True,export_intermediate=True,num_workers=1):
+              preshuffle = True,export_intermediate=True,num_workers=1,save_model='best'):
 
         """Perform a simple training of the model. The data set is divided in training/validation sets.
 
@@ -233,6 +233,8 @@ class NeuralNet():
             export_intermediate (bool, optional): export data at interediate epoch
 
             num_workers (int, optional): number of workers to be used to prep the batch data
+
+            save_model (str, optional): 'best' or 'all' save only the best model or all the model
 
         Example :
 
@@ -282,7 +284,8 @@ class NeuralNet():
                     nepoch=nepoch,
                     train_batch_size=train_batch_size,
                     export_intermediate=export_intermediate,
-                    num_workers=num_workers)
+                    num_workers=num_workers,
+                    save_model=save_model)
         self.f5.close()
         print(' --> Training done in ', time.strftime('%H:%M:%S', time.gmtime(time.time()-t0)))
 
@@ -437,7 +440,7 @@ class NeuralNet():
 
     def _train(self,index_train,index_valid,index_test,
                nepoch = 50,train_batch_size = 5,
-               export_intermediate=False,num_workers=1):
+               export_intermediate=False,num_workers=1,save_model='best'):
 
         """Train the model.
 
@@ -449,6 +452,7 @@ class NeuralNet():
             train_batch_size (int, optional): size of the batch
             export_intermediate (bool, optional):export itnermediate data
             num_workers (int, optional): number of workers pytorch uses to create the batch size
+            save_model (str, optional): 'all' or 'best' save all the models or only the best
 
         Returns:
             torch.tensor: Parameters of the network after training
@@ -538,13 +542,17 @@ class NeuralNet():
                     self.save_model(filename="best_{}_model.pth.tar".format(mode))
                     min_error[mode] = self.losses[mode][-1]
 
+            #save all the model if required
+            if save_model == 'all':
+                self.save_model(filename="model_epoch_%04d.pth.tar" %epoch)
+
             # plot the scatter plots
             if (export_intermediate and epoch%nprint == nprint-1) or epoch==0 or epoch==nepoch-1:
                 if self.plot:
-                    figname = self.outdir+"/prediction_%03d.png" %epoch
+                    figname = self.outdir+"/prediction_%04d.png" %epoch
                     self._plot_scatter(figname)
 
-                    figname = self.outdir+"/hitrate_%03d.png" %epoch
+                    figname = self.outdir+"/hitrate_%04d.png" %epoch
                     self.plot_hit_rate(figname)
 
                 self._export_epoch_hdf5(epoch,self.data)
