@@ -149,7 +149,7 @@ class TestLearn(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  TestLearn.test_learn_3d_reg()
-  #TestLearn.test_learn_3d_class()
+  #TestLearn.test_learn_3d_reg()
+  TestLearn.test_learn_3d_class()
   #TestLearn.test_learn_2d_reg()
   #TestLearn.test_transfer()

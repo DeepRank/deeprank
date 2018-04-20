@@ -835,6 +835,8 @@ class NeuralNet():
 
         # get the target ordering
         inverse = self.data_set.target_ordering == 'lower'
+        if self.task == 'class':
+            inverse = False
 
         for l in labels:
 
@@ -852,7 +854,10 @@ class NeuralNet():
                     f5.close()
 
                 # sort the data
+                if self.task == 'class':
+                    out = F.softmax(torch.FloatTensor(out)).data.numpy()[:,1]
                 ind_sort = np.argsort(out)
+
                 if not inverse:
                     ind_sort = ind_sort[::-1]
                 irmsd = np.array(irmsd)[ind_sort]
