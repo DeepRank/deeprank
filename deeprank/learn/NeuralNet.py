@@ -213,8 +213,8 @@ class NeuralNet():
             print(' --> Aborting the experiment \n\n')
             sys.exit()
 
-    def train(self,nepoch=50, divide_trainset=None, hdf5='data.hdf5',train_batch_size = 10,
-              preshuffle = True,export_intermediate=True,num_workers=1,save_model='best'):
+    def train(self,nepoch=50, divide_trainset=None, hdf5='epoch_data.hdf5',train_batch_size = 10,
+              preshuffle = True,export_intermediate=True,num_workers=1,save_model='best',save_epoch='intermediate'):
 
         """Perform a simple training of the model. The data set is divided in training/validation sets.
 
@@ -235,6 +235,8 @@ class NeuralNet():
             num_workers (int, optional): number of workers to be used to prep the batch data
 
             save_model (str, optional): 'best' or 'all' save only the best model or all the model
+
+            save_epoch (str, optional): 'intermediate' or 'all' save the epochs data to HDF5
 
         Example :
 
@@ -285,6 +287,7 @@ class NeuralNet():
                     train_batch_size=train_batch_size,
                     export_intermediate=export_intermediate,
                     num_workers=num_workers,
+                    save_epoch=save_epoch,
                     save_model=save_model)
         self.f5.close()
         print(' --> Training done in ', time.strftime('%H:%M:%S', time.gmtime(time.time()-t0)))
@@ -440,7 +443,8 @@ class NeuralNet():
 
     def _train(self,index_train,index_valid,index_test,
                nepoch = 50,train_batch_size = 5,
-               export_intermediate=False,num_workers=1,save_model='best'):
+               export_intermediate=False,num_workers=1,
+               save_epoch='intermediate',save_model='best'):
 
         """Train the model.
 
@@ -452,6 +456,7 @@ class NeuralNet():
             train_batch_size (int, optional): size of the batch
             export_intermediate (bool, optional):export itnermediate data
             num_workers (int, optional): number of workers pytorch uses to create the batch size
+            save_epoch (str,optional): 'intermediate' or 'all' save the epoch data to hdf5
             save_model (str, optional): 'all' or 'best' save all the models or only the best
 
         Returns:
@@ -546,15 +551,21 @@ class NeuralNet():
             if save_model == 'all':
                 self.save_model(filename="model_epoch_%04d.pth.tar" %epoch)
 
-            # plot the scatter plots
+            # plot and save epoch
             if (export_intermediate and epoch%nprint == nprint-1) or epoch==0 or epoch==nepoch-1:
+
                 if self.plot:
+
                     figname = self.outdir+"/prediction_%04d.png" %epoch
                     self._plot_scatter(figname)
 
                     figname = self.outdir+"/hitrate_%04d.png" %epoch
                     self.plot_hit_rate(figname)
 
+                self._export_epoch_hdf5(epoch,self.data)
+
+            elif save_epoch == 'all':
+                self._compute_hitrate()
                 self._export_epoch_hdf5(epoch,self.data)
 
             sys.stdout.flush()
@@ -831,7 +842,26 @@ class NeuralNet():
         color_plot = {'train':'red','valid':'blue','test':'green'}
         labels = ['train','valid','test']
 
+        # compute the hitrate
+        self._compute_hitrate(irmsd_thr=irmsd_thr)
+
+        # plot
         fig,ax = plt.subplots()
+        for l in labels:
+            if l in self.data:
+                if 'hitrate' in self.data[l]:
+                    plt.plot(self.data[l]['hitrate'],c = color_plot[l],label=l)
+        legend = ax.legend(loc='upper left')
+        ax.set_xlabel('Top M')
+        ax.set_ylabel('Hit Rate')
+        fig.savefig(figname)
+        plt.close()
+
+    def _compute_hitrate(self,irmsd_thr = 4.0):
+
+
+        labels = ['train','valid','test']
+        self.hitrate = {}
 
         # get the target ordering
         inverse = self.data_set.target_ordering == 'lower'
@@ -867,18 +897,7 @@ class NeuralNet():
                 if npos == 0:
                     npos = len(irmsd)
                     print('Warning : Non positive decoys found in %s for hitrate plot' % l)
-                hit = np.cumsum(irmsd<irmsd_thr)/ npos
-
-                # plot
-                plt.plot(hit,c = color_plot[l],label=l)
-
-        legend = ax.legend(loc='upper left')
-        ax.set_xlabel('Top M')
-        ax.set_ylabel('Hit Rate')
-
-        fig.savefig(figname)
-        plt.close()
-
+                self.data[l]['hitrate'] = np.cumsum(irmsd<irmsd_thr)/ npos
 
 
     def _export_epoch_hdf5(self,epoch,data):
@@ -898,6 +917,7 @@ class NeuralNet():
 
         # create attribute for DeepXplroer
         grp.attrs['type'] = 'epoch'
+        grp.attrs['task'] = self.task
 
         # loop over the pass_type : train/valid/test
         for pass_type,pass_data in data.items():
