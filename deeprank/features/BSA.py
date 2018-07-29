@@ -85,13 +85,13 @@ class BSA(FeatureClass):
                 self.chains[label].addAtom(atomName,residueName,residueNumber,chainLabel,x,y,z)
             self.result_chains[label] = freesasa.calc(self.chains[label])
 
-    def get_contact_residue_sasa(self):
+    def get_contact_residue_sasa(self,cutoff=8.5):
         """Compute the feature value."""
 
-        bsa_data = {}
-        bsa_data_xyz = {}
+        self.bsa_data = {}
+        self.bsa_data_xyz = {}
 
-        res = self.sql.get_contact_residue()
+        res = self.sql.get_contact_residue(cutoff=cutoff)
         res = res[0]+res[1]
 
         for r in res:
@@ -113,12 +113,12 @@ class BSA(FeatureClass):
             xyzkey = tuple([chain]+xyz.tolist())
 
             # put the data in dict
-            bsa_data[r]           =  [bsa]
-            bsa_data_xyz[xyzkey]  =  [bsa]
+            self.bsa_data[r]           =  [bsa]
+            self.bsa_data_xyz[xyzkey]  =  [bsa]
 
         # pyt the data in dict
-        self.feature_data['bsa'] = bsa_data
-        self.feature_data_xyz['bsa'] = bsa_data_xyz
+        self.feature_data['bsa'] = self.bsa_data
+        self.feature_data_xyz['bsa'] = self.bsa_data_xyz
 
 #####################################################################################
 #

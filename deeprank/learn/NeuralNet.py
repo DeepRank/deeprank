@@ -4,6 +4,7 @@ import os
 import time
 import h5py
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 import numpy as np
 
 #import torch
@@ -20,7 +21,8 @@ import torch.cuda
 # dataset
 from deeprank.learn import DataSet
 
-
+# ranking emtrics
+from deeprank.learn import rankingMetrics
 
 class NeuralNet():
 
@@ -565,7 +567,7 @@ class NeuralNet():
                 self._export_epoch_hdf5(epoch,self.data)
 
             elif save_epoch == 'all':
-                self._compute_hitrate()
+                #self._compute_hitrate()
                 self._export_epoch_hdf5(epoch,self.data)
 
             sys.stdout.flush()
@@ -590,7 +592,7 @@ class NeuralNet():
 
         # variables of the epoch
         running_loss = 0
-        data = {'outputs':[],'targets':[],'mol':[]}
+        data = {'outputs':[],'targets':[],'mol':[], 'hit':None}
         n = 0
         debug_time = False
         time_learn = 0
@@ -651,6 +653,9 @@ class NeuralNet():
 
         # make np for export
         data['mol'] = np.array(data['mol'],dtype=object)
+
+        # get the relevance of the ranking
+        data['hit'] = self._get_relevance(data)
 
         # normalize the loss
         running_loss /= n
@@ -820,7 +825,7 @@ class NeuralNet():
         plt.close()
 
 
-    def plot_hit_rate(self,figname,irmsd_thr = 4.0):
+    def plot_hit_rate(self,figname):
 
         '''Plot the hit rate of the different training/valid/test sets
 
@@ -843,17 +848,25 @@ class NeuralNet():
         labels = ['train','valid','test']
 
         # compute the hitrate
-        self._compute_hitrate(irmsd_thr=irmsd_thr)
+        #self._compute_hitrate(irmsd_thr=irmsd_thr)
 
         # plot
         fig,ax = plt.subplots()
         for l in labels:
             if l in self.data:
-                if 'hitrate' in self.data[l]:
-                    plt.plot(self.data[l]['hitrate'],c = color_plot[l],label=l)
+                if 'hit' in self.data[l]:
+                    hitrate = rankingMetrics.hitrate(self.data[l]['hit'])
+                    m = len(hitrate)
+                    x = np.linspace(0,100,m)
+                    plt.plot(x,hitrate,c = color_plot[l],label=l+' M=%d' %m)
         legend = ax.legend(loc='upper left')
-        ax.set_xlabel('Top M')
+        ax.set_xlabel('Top M (%)')
         ax.set_ylabel('Hit Rate')
+
+        fmt = '%.0f%%'
+        xticks = mtick.FormatStrFormatter(fmt)
+        ax.xaxis.set_major_formatter(xticks)
+
         fig.savefig(figname)
         plt.close()
 
@@ -890,14 +903,56 @@ class NeuralNet():
 
                 if not inverse:
                     ind_sort = ind_sort[::-1]
+
+                # get the irmsd of the recommendation
                 irmsd = np.array(irmsd)[ind_sort]
 
-                # compute the hit rate
-                npos = len(irmsd[irmsd<irmsd_thr])
+                # make a binary list out of that
+                binary_recomendation = (irmsd<irmsd_thr).astype('int')
+
+                # number of recommended hit
+                npos = np.sum(binary_recomendation)
                 if npos == 0:
                     npos = len(irmsd)
                     print('Warning : Non positive decoys found in %s for hitrate plot' % l)
-                self.data[l]['hitrate'] = np.cumsum(irmsd<irmsd_thr)/ npos
+
+                # get the hitrate
+                self.data[l]['hitrate'] = rankingMetrics.hitrate(binary_recomendation,npos)
+                self.data[l]['relevance'] = binary_recomendation
+
+
+    def _get_relevance(self,data,irmsd_thr = 4.0):
+
+        # get the target ordering
+        inverse = self.data_set.target_ordering == 'lower'
+        if self.task == 'class':
+            inverse = False
+
+        # get the target values
+        out = data['outputs']
+
+        # get the irmsd
+        irmsd = []
+        for fname,mol in data['mol']:
+
+            f5 = h5py.File(fname,'r')
+            irmsd.append(f5[mol+'/targets/IRMSD'].value)
+            f5.close()
+
+        # sort the data
+        if self.task == 'class':
+            out = F.softmax(torch.FloatTensor(out)).data.numpy()[:,1]
+        ind_sort = np.argsort(out)
+
+        if not inverse:
+            ind_sort = ind_sort[::-1]
+
+        # get the irmsd of the recommendation
+        irmsd = np.array(irmsd)[ind_sort]
+
+        # make a binary list out of that
+        return (irmsd<irmsd_thr).astype('int')
+
 
 
     def _export_epoch_hdf5(self,epoch,data):
