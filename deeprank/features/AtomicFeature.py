@@ -238,6 +238,7 @@ class AtomicFeature(FeatureClass):
         xyz2 = np.array(self.sqldb.get('x,y,z',chainID='B'))
 
         # rowID of the second chain
+        index_a = self.sqldb.get('rowID',chainID='A')
         index_b = self.sqldb.get('rowID',chainID='B')
 
         # resName of the chains
@@ -262,11 +263,11 @@ class AtomicFeature(FeatureClass):
 
                 # add i to the list
                 # add the index of b if its resname is not a ligand
-                self.contact_atoms_A += [i]
+                self.contact_atoms_A += [index_a[i]]
                 self.contact_atoms_B += [index_b[k] for k in contacts if resName2[k] in self.valid_resnames]
 
                 # add the contact pairs to the list
-                self.contact_pairs[i] = [index_b[k] for k in contacts if resName2[k] in self.valid_resnames]
+                self.contact_pairs[index_a[i]] = [index_b[k] for k in contacts if resName2[k] in self.valid_resnames]
 
         # create a set of unique indexes
         self.contact_atoms_A = sorted(set(self.contact_atoms_A))
@@ -589,7 +590,7 @@ class AtomicFeature(FeatureClass):
 
         if len(self.contact_atoms_A) == 0:
             self.feature_data['coulomb'] = {}
-            self.feature_data_xyz['culomb'] = {}
+            self.feature_data_xyz['coulomb'] = {}
             self.export_directories['coulomb'] = self.root_export+'/ELEC/'
             return
 
@@ -637,6 +638,7 @@ class AtomicFeature(FeatureClass):
 
             # coulomb terms
             r = np.sqrt(np.sum((xyz[indsB,:]-xyz[iA,:])**2,1))
+            r[r==0] = 3.0
             q1q2 = charge[iA]*charge[indsB]
             ec = q1q2 * self.c / (self.eps0*r) * (1 - (r/self.contact_distance)**2 ) **2
 
@@ -817,6 +819,7 @@ class AtomicFeature(FeatureClass):
 
             # coulomb terms
             r = np.sqrt(np.sum((xyzB-xyzA[iat,:])**2,1))
+            r[r==0]  = 3.0
             q1q2 = chargeA[iat]*chargeB
             value = q1q2/r
 
@@ -909,8 +912,9 @@ class AtomicFeature(FeatureClass):
 
         for iat in range(natA):
 
-            # coulomb terms
+            # vdW terms
             r = np.sqrt(np.sum((xyzB-xyzA[iat,:])**2,1))
+            r[r==0]  = 3.0
             sigma = 0.5*(sigA[iat] + sigB)
             eps = np.sqrt(epsA[iat]*epsB)
 
