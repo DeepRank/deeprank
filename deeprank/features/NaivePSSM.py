@@ -183,8 +183,11 @@ class NaivePSSM(FeatureClass):
 
 def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
-    path = os.path.dirname(os.path.realpath(__file__))
-    PSSM = path + '/PSSM/'
+    if '__PATH_PSSM_SOURCE__' not in globals():
+        path = os.path.dirname(os.path.realpath(__file__))
+        PSSM = path + '/PSSM/'
+    else:
+        PSSM = __PATH_PSSM_SOURCE__
 
     mol_name = os.path.split(featgrp.name)[0]
     mol_name = mol_name.lstrip('/')
