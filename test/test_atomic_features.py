@@ -106,7 +106,7 @@ class TestAtomicFeature(unittest.TestCase):
         # - uncomment the last two lines (Total = ...)
         # - use the corresponding PDB file to test
         #REF = './1AK4/atomic_features/ref_1AK4_100w.dat'
-        pdb = './2OUL/decoys/complex.1.pdb'
+        pdb = './2OUL/decoys/2OUL_1.pdb'
         test_name = './2OUL/atomic_features/test_2OUL_1.dat'
 
         # get the force field included in deeprank
