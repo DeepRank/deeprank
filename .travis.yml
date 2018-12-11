@@ -30,19 +30,27 @@ before_install:
   #- pip install -q coveralls
 
   # install freesasa python bindings
-  - pip install freesasa
+  #- pip install freesasa==2.0.3.post4 # <- doesn't work anymore
 
   # install freesasa
-  #- conda install cython
-  #- apt-get install libxml2 libxml2-devel libjson0 libjson0-dev
-  #- wget http://freesasa.github.io/freesasa-2.0.3.tar.gz
-  #- mkdir freesasa
-  #- tar -xvf freesasa-2.0.3.tar.gz -C freesasa --strip-components=1
-  #- cd freesasa
-  #- ./configure --disable-xml --disable-json --enable-python-bindings --with-python=python3.6 CFLAGS="-fPIC" --prefix=$HOME
-  #- make
-  #- make install
-  #- cd ../
+  # - conda install cython
+  # - git clone https://github.com/freesasa/freesasa-python
+  # - cd freesasa-python
+  # - git submodule update --init
+  # - USE_CYTHON=1 python setup.py build
+  # - export PYTHONPATH=$PYTHONPATH: ???
+
+  # install freesasa
+  - conda install cython
+  - apt-get install libxml2 libxml2-devel libjson0 libjson0-dev
+  - wget http://freesasa.github.io/freesasa-2.0.3.tar.gz
+  - mkdir freesasa
+  - tar -xvf freesasa-2.0.3.tar.gz -C freesasa --strip-components=1
+  - cd freesasa
+  - ./configure --disable-xml --disable-json --enable-python-bindings --with-python=python3.6 CFLAGS="-fPIC" --prefix=$HOME
+  - make
+  - make install
+  - cd ../
 
 install:
   - pip install -qe .[test]
