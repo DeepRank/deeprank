@@ -78,9 +78,9 @@ class NaivePSSM(FeatureClass):
         fname = [n for n in names if n.find(self.molname)==0]
 
         if len(fname)>1:
-            raise ValueError('Multiple PSSM files found for %s in %s',self.pdbname,self.pssm_path)
+            raise ValueError('Multiple PSSM files found for %s in %s',self.mol_name,self.pssm_path)
         if len(fname)==0:
-            raise FileNotFoundError('No PSSM file found for %s in %s',self.pdbname,self.pssm_path)
+            raise FileNotFoundError('No PSSM file found for %s in %s',self.mol_name,self.pssm_path)
         else:
             fname = fname[0]
 
