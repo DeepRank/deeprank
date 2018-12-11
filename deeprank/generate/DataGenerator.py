@@ -1054,8 +1054,12 @@ class DataGenerator(object):
             line += '{: 8.3f}'.format(d[7]) #x
             line += '{: 8.3f}'.format(d[8]) #y
             line += '{: 8.3f}'.format(d[9]) #z
-            line += '{: 6.2f}'.format(d[10])    # occ
-            line += '{: 6.2f}'.format(d[11])    # temp
+            try:
+                line += '{: 6.2f}'.format(d[10])    # occ
+                line += '{: 6.2f}'.format(d[11])    # temp
+            except:
+                line += '{: 6.2f}'.format(0)    # occ
+                line += '{: 6.2f}'.format(0)    # temp
             data.append(line)
 
         data = np.array(data).astype('|S73')
