@@ -9,7 +9,7 @@ from time import time
 class pdb2sql(object):
 
 
-    def __init__(self,pdbfile,sqlfile=None,fix_chainID=False,verbose=False):
+    def __init__(self,pdbfile,sqlfile=None,fix_chainID=True,verbose=False,no_extra=True):
 
         '''Create a SQL data base for a PDB file.
 
@@ -55,14 +55,10 @@ class pdb2sql(object):
         self.sqlfile = sqlfile
         self.is_valid = True
         self.verbose = verbose
+        self.no_extra = True
 
         # create the database
         self._create_sql()
-
-
-        # fix the chain ID
-        if fix_chainID:
-            self._fix_chainID()
 
         # backbone type
         self.backbone_type = ['C','CA','N','O']
@@ -71,6 +67,9 @@ class pdb2sql(object):
         self.SQLITE_LIMIT_VARIABLE_NUMBER = 999
         self.max_sql_values = 950
 
+        # fix the chain ID
+        if fix_chainID:
+            self._fix_chainID()
 
     ##################################################################################
     #
@@ -120,6 +119,10 @@ class pdb2sql(object):
                     'occ'     :[54,60],
                     'temp'    :[60,66]}
 
+        if self.no_extra:
+            del self.col['occ']
+            del self.col['temp']
+
         # size of the things
         ncol = len(self.col)
         ndel = len(self.delimiter)
@@ -132,6 +135,7 @@ class pdb2sql(object):
         # https://stackoverflow.com/questions/764710/sqlite-performance-benchmark-why-is-memory-so-slow-only-1-5x-as-fast-as-d
         if self.sqlfile is None:
             self.conn = sqlite3.connect(':memory:')
+            
         # or we create a new db file
         else:
             if os.path.isfile(sqlfile):
@@ -236,9 +240,17 @@ class pdb2sql(object):
         from string import ascii_uppercase
 
         # get the current names
-        chainID = self.get('chainID')
-        natom = len(chainID)
-        chainID = sorted(set(chainID))
+        data = self.get('chainID')
+        natom = len(data)
+
+        #get uniques
+        chainID = []
+        for c in data:
+            if c not in chainID:
+                chainID.append(c)
+
+        if chainID == ['A','B']:
+            return
 
         if len(chainID)>26:
             print("Warning more than 26 chains have been detected. This is so far not supported")
@@ -255,7 +267,6 @@ class pdb2sql(object):
 
         # update the new name
         self.update_column('chainID',newID)
-
 
     # get the names of the columns
     def get_colnames(self):
