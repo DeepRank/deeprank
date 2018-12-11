@@ -1010,8 +1010,11 @@ class pdb2sql(object):
             line += '{: 8.3f}'.format(d[7]) #x
             line += '{: 8.3f}'.format(d[8]) #y
             line += '{: 8.3f}'.format(d[9]) #z
-            line += '{: 6.2f}'.format(d[10])    # occ
-            line += '{: 6.2f}'.format(d[11])    # temp
+
+            if not self.no_extra:
+                line += '{: 6.2f}'.format(d[10])    # occ
+                line += '{: 6.2f}'.format(d[11])    # temp
+
             line += '\n'
 
             f.write(line)
