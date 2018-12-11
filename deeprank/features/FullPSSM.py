@@ -6,6 +6,7 @@ from time import time
 from deeprank.tools import pdb2sql
 from deeprank.tools import SASA
 from deeprank.features import FeatureClass
+from deeprank.generate import settings
 
 printif = lambda string,cond: print(string) if cond else None
 
@@ -18,7 +19,8 @@ printif = lambda string,cond: print(string) if cond else None
 
 class FullPSSM(FeatureClass):
 
-    def __init__(self,mol_name=None,pdbfile=None,pssm_path=None,debug=False):
+    def __init__(self,mol_name=None,pdbfile=None,pssm_path=None,
+                     debug=False,pssm_format='new'):
 
         '''Compute all the PSSM data.
 
@@ -47,6 +49,7 @@ class FullPSSM(FeatureClass):
         self.pssm_path = pssm_path
         self.molname = self.get_mol_name(mol_name)
         self.debug = debug
+        self.pssm_format = pssm_format
 
         if isinstance(pdbfile,str) and mol_name is None:
             self.mol_name = os.path.splitext(pdbfile)[0]
@@ -70,21 +73,65 @@ class FullPSSM(FeatureClass):
         names = os.listdir(self.pssm_path)
         fname = [n for n in names if n.find(self.molname)==0]
 
-        if len(fname)>1:
-            raise ValueError('Multiple PSSM files found for %s in %s',self.pdbname,self.pssm_path)
-        if len(fname)==0:
-            raise FileNotFoundError('No PSSM file found for %s in %s',self.pdbname,self.pssm_path)
-        else:
-            fname = fname[0]
+        # old format with one file for all data
+        # and only pssm data
+        if self.pssm_format == 'old':
 
-        f = open(self.pssm_path + '/' + fname,'rb')
-        data = f.readlines()
-        f.close()
-        raw_data = list( map(lambda x: x.decode('utf-8').split(),data))
+            if len(fname)>1:
+                raise ValueError('Multiple PSSM files found for %s in %s',self.mol_name,self.pssm_path)
+            if len(fname)==0:
+                raise FileNotFoundError('No PSSM file found for %s in %s',self.mol_name,self.pssm_path)
+            else:
+                fname = fname[0]
 
-        self.res_data  = np.array(raw_data)[:,:3]
-        self.res_data = [  (r[0],int(r[1]),r[2]) for r in self.res_data ]
-        self.pssm_data = np.array(raw_data)[:,3:].astype(np.float)
+            f = open(self.pssm_path + '/' + fname,'rb')
+            data = f.readlines()
+            f.close()
+            raw_data = list( map(lambda x: x.decode('utf-8').split(),data))
+
+            self.res_data  = np.array(raw_data)[:,:3]
+            self.res_data = [  (r[0],int(r[1]),r[2]) for r in self.res_data ]
+            self.pssm_data = np.array(raw_data)[:,3:].astype(np.float)
+
+        # new format with 2 files (each chain has one file)
+        # and aligned mapping and IC (i.e. the iScore format)
+        elif self.pssm_format == 'new':
+
+            if len(fname)<2:
+                raise FileNotFoundError('Only one PSSM file found for %s in %s',self.mol_name,self.pssm_path)
+
+            # get chain name
+            fname.sort()
+            chain_names = [n.split('.')[1] for n in fname]
+
+            resmap = {
+            'A' : 'ALA', 'R' : 'ARG', 'N' : 'ASN', 'D' : 'ASP', 'C' : 'CYS', 'E' : 'GLU', 'Q' : 'GLN',
+            'G' : 'GLY', 'H' : 'HIS', 'I' : 'ILE', 'L' : 'LEU', 'K' : 'LYS', 'M' : 'MET', 'F' : 'PHE',
+            'P' : 'PRO', 'S' : 'SER', 'T' : 'THR', 'W' : 'TRP', 'Y' : 'TYR', 'V' : 'VAL',
+            'B' : 'ASX', 'U' : 'SEC', 'Z' : 'GLX'
+            }
+
+            iiter = 0
+            for chainID, fn in zip(chain_names,fname):
+
+                f = open(self.pssm_path + '/' + fn,'rb')
+                data = f.readlines()
+                f.close()
+                raw_data = list( map(lambda x: x.decode('utf-8').split(),data))
+
+                rd  = np.array(raw_data)[1:,:2]
+                rd  = [  (chainID,int(r[0]),resmap[r[1]]) for r in rd ]
+                pd = np.array(raw_data)[1:,4:-1].astype(np.float)
+
+                if iiter == 0:
+                    self.res_data = rd
+                    self.pssm_data = pd
+                    iiter = 1
+
+                else:
+                    self.res_data += rd
+                    self.pssm_data = np.vstack((self.pssm_data,pd))
+
 
     def get_feature_value(self,contact_only=True):
         """get the feature value."""
@@ -133,11 +180,11 @@ class FullPSSM(FeatureClass):
 
 def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
-    if '__PATH_PSSM_SOURCE__' not in globals():
+    if settings.__PATH_PSSM_SOURCE__ is None:
         path = os.path.dirname(os.path.realpath(__file__))
-        PSSM = path + '/PSSM/'
+        PSSM = path + '/PSSM_NEW/'
     else:
-        PSSM = __PATH_PSSM_SOURCE__
+        PSSM = settings.__PATH_PSSM_SOURCE__
 
     mol_name = os.path.split(featgrp.name)[0]
     mol_name = mol_name.lstrip('/')

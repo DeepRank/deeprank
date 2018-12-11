@@ -24,6 +24,7 @@ class TestGenerateData(unittest.TestCase):
 
             database = DataGenerator(pdb_source=src,
                                      pdb_native=self.pdb_native,
+                                     pssm_source='./1AK4/pssm_new/',
                                      data_augmentation = 1,
                                      compute_targets  = ['deeprank.targets.dockQ','deeprank.targets.binary_class'],
                                      compute_features = ['deeprank.features.AtomicFeature',
@@ -90,7 +91,7 @@ class TestGenerateData(unittest.TestCase):
 
             #init the data assembler
             database = DataGenerator(pdb_source=None,pdb_native=None,data_augmentation=None,
-                                     pssm_source='./1AK4/pssm/',
+                                     pssm_source='./1AK4/pssm_new/',
                                      compute_features  = ['deeprank.features.FullPSSM'], hdf5=h5)
 
             t0 = time()

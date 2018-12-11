@@ -8,6 +8,7 @@ from collections import OrderedDict
 import logging
 from deeprank.tools import pdb2sql
 from deeprank.generate import GridTools as gt
+from deeprank.generate import settings
 
 try:
     from tqdm import tqdm
@@ -62,13 +63,15 @@ class DataGenerator(object):
         >>>                          hdf5=h5file)
 
         """
+
+        settings.init()
+
         self.pdb_select   = pdb_select
         self.pdb_source   = pdb_source  or []
         self.pdb_native   = pdb_native  or []
 
-        if pssm_source is not None:
-            global __PATH_PSSM_SOURCE__
-            __PATH_PSSM_SOURCE__ = pssm_source
+        settings.__PATH_PSSM_SOURCE__ = pssm_source
+
 
         self.data_augmentation = data_augmentation
 
@@ -234,7 +237,7 @@ class DataGenerator(object):
                 molgrp.require_group('features_raw')
 
                 if self.compute_features is not None:
-                    self._compute_features(self.compute_features, 
+                    self._compute_features(self.compute_features,
                                            molgrp['complex'].value,
                                            molgrp['features'],
                                            molgrp['features_raw'] )
@@ -246,7 +249,7 @@ class DataGenerator(object):
                 # add the features
                 molgrp.require_group('targets')
                 if self.compute_targets is not None:
-                    self._compute_targets(self.compute_targets, 
+                    self._compute_targets(self.compute_targets,
                                           molgrp['complex'].value,
                                           molgrp['targets'])
 
