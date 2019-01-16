@@ -3,12 +3,20 @@ from deeprank.generate import *
 import os
 from time import time
 
+
+"""
+Some requirement of the naming of the files:
+    1. case ID canNOT have underscore '_', e.g., '1ACB_CD'
+    2. decoy file name should have this format: 2w83-AB_20.pdb (caseID_xxx.pdb)
+    3. pssm file name should have this format: 2w83-AB.A.pssm (caseID.chainID.pssm or caseID.chainID.pdb.pssm)
+"""
+
 class TestGenerateData(unittest.TestCase):
     """Test the data generation process."""
 
     h5file = ['./1ak4.hdf5','native.hdf5']
     pdb_source     = ['./1AK4/decoys/','./1AK4/native/']
-    pdb_native     = ['./1AK4/native/']
+    pdb_native     = ['./1AK4/native/'] # pdb_native is only used to calculate i-RMSD, dockQ and so on. The native pdb files will not be saved in the hdf5 file
 
     def test_1_generate(self):
         """Generate the database."""
@@ -32,6 +40,7 @@ class TestGenerateData(unittest.TestCase):
                                                          'deeprank.features.PSSM_IC',
                                                          'deeprank.features.BSA',
                                                          'deeprank.features.ResidueDensity'],
+                                     # check *.py in "features" folder for the features
                                      hdf5=h5)
 
             #create new files
@@ -64,7 +73,7 @@ class TestGenerateData(unittest.TestCase):
 
 
     def test_2_add_target(self):
-        """Add a target to the database."""
+        """Add a target (e.g., class labels) to the database."""
 
         for h5 in self.h5file:
 
