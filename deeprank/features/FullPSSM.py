@@ -73,6 +73,8 @@ class FullPSSM(FeatureClass):
         names = os.listdir(self.pssm_path)
         fname = [n for n in names if n.find(self.molname)==0]
 
+
+
         # old format with one file for all data
         # and only pssm data
         if self.pssm_format == 'old':
@@ -115,6 +117,7 @@ class FullPSSM(FeatureClass):
             for chainID, fn in zip(chain_names,fname):
 
                 f = open(self.pssm_path + '/' + fn,'rb')
+
                 data = f.readlines()
                 f.close()
                 raw_data = list( map(lambda x: x.decode('utf-8').split(),data))
