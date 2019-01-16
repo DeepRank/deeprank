@@ -64,7 +64,11 @@ class FeatureClass(object):
             ds = np.array(ds).astype('|S'+str(len(ds[0])))
 
             # create the dataset
-            featgrp.create_dataset(name+'_raw',data=ds)
+            if name+'_raw' in featgrp:
+                old_data = featgrp[name+'_raw']
+                old_data[...] = ds
+            else:
+                featgrp.create_dataset(name+'_raw',data=ds)
 
 
 
@@ -94,4 +98,8 @@ class FeatureClass(object):
             ds = np.array([list(key)+value for key,value in data.items()])
 
             # create the dataset
-            featgrp.create_dataset(name,data=ds)
+            if name in featgrp:
+                old = featgrp[name]
+                old[...] = ds
+            else:
+                featgrp.create_dataset(name,data=ds)
