@@ -118,7 +118,7 @@ class DataGenerator(object):
         # filter the cplx if required
         self.pdb_path = self.all_pdb
         if self.pdb_select is not None:
-            self.pdb_path = list(filter(lambda x: self.pdb_select in x, self.all_pdb))
+            self.pdb_path = list(filter(lambda x: any(map(lambda i: i in x, self.pdb_select)), self.all_pdb))
 
 #====================================================================================
 #
