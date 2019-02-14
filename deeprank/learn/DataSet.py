@@ -601,7 +601,7 @@ class DataSet():
 
         lower_list = ['IRMSD','LRMSD','HADDOCK']
         higher_list = ['DOCKQ','Fnat']
-        NA_list = ['binary_class','BIN_CLASS']
+        NA_list = ['binary_class','BIN_CLASS', 'class']
 
         if self.select_target in lower_list:
             self.target_ordering = 'lower'
