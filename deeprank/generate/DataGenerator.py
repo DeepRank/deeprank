@@ -66,7 +66,7 @@ class DataGenerator(object):
 
         settings.init()
 
-        self.pdb_select   = pdb_select
+        self.pdb_select   = pdb_select  or []
         self.pdb_source   = pdb_source  or []
         self.pdb_native   = pdb_native  or []
 
@@ -89,6 +89,10 @@ class DataGenerator(object):
 
         self.logger = logger or logging.getLogger(__name__)
         self.debug = debug
+
+        # handle the pdb_select
+        if not isinstance(self.pdb_select,list):
+            self.pdb_select = [self.pdb_select]
 
         # check that a source was given
         if self.pdb_source is None:
@@ -116,9 +120,11 @@ class DataGenerator(object):
                 self.all_native.append(src)
 
         # filter the cplx if required
-        self.pdb_path = self.all_pdb
-        if self.pdb_select is not None:
-            self.pdb_path = list(filter(lambda x: any(map(lambda i: i in x, self.pdb_select)), self.all_pdb))
+        if self.pdb_select:
+            for i in self.pdb_select:
+                self.pdb_path += list(filter(lambda x: i in x, self.all_pdb))
+        else:
+            self.pdb_path = self.all_pdb
 
 #====================================================================================
 #
