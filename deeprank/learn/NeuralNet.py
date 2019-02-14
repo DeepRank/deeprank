@@ -30,7 +30,7 @@ class NeuralNet():
                  model_type='3d',proj2d=0,task='reg',
                  pretrained_model=None,
                  cuda=False,ngpu=0,
-                 plot=True,outdir='./'):
+                 plot=True,save_hitrate=True,outdir='./'):
 
         """Train a Convolutional Neural Network for DeepRank.
 
@@ -38,7 +38,7 @@ class NeuralNet():
 
         >>> # create the network
         >>> model = NeuralNet(data_set,cnn,model_type='3d',task='reg',
-        >>>                   cuda=False,plot=True,outdir='./out/')
+        >>>                   cuda=False,plot=True,save_hitrate=True,outdir='./out/')
         >>>
         >>> # start the training
         >>> model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
@@ -63,7 +63,9 @@ class NeuralNet():
                 The loss function, the datatype of the targets and plot functions
                 will be autmatically adjusted depending on the task
 
-            plot (bool): Plot the results
+            plot (bool): Plot the prediction results
+
+            save_hitrate (bool): Save and plot hit rate
 
             outdir (str): output directory where all the files will be written
 
@@ -156,6 +158,9 @@ class NeuralNet():
 
         # plot or not plot
         self.plot = plot
+
+        # plot and save hitrate or not
+        self.save_hitrate = save_hitrate
 
         # output directory
         self.outdir = outdir
@@ -561,6 +566,7 @@ class NeuralNet():
                     figname = self.outdir+"/prediction_%04d.png" %epoch
                     self._plot_scatter(figname)
 
+                if self.save_hitrate:
                     figname = self.outdir+"/hitrate_%04d.png" %epoch
                     self.plot_hit_rate(figname)
 
@@ -655,7 +661,8 @@ class NeuralNet():
         data['mol'] = np.array(data['mol'],dtype=object)
 
         # get the relevance of the ranking
-        data['hit'] = self._get_relevance(data)
+        if self.save_hitrate:
+            data['hit'] = self._get_relevance(data)
 
         # normalize the loss
         running_loss /= n
