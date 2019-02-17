@@ -542,7 +542,7 @@ class NeuralNet():
             self.losses['valid'].append(self.valid_loss)
             if self.save_classmetrics:
                 for i in self.metricnames:
-                    self.classmetrics[i]['valid'].append(self.data[i])
+                    self.classmetrics[i]['valid'].append(self.data['valid'][i])
 
             # test the model
             if _test_:
@@ -550,14 +550,14 @@ class NeuralNet():
                 self.losses['test'].append(test_loss)
                 if self.save_classmetrics:
                     for i in self.metricnames:
-                        self.classmetrics[i]['test'].append(self.data[i])
+                        self.classmetrics[i]['test'].append(self.data['test'][i])
 
             # train the model
             self.train_loss,self.data['train'] = self._epoch(train_loader,train_model=True)
             self.losses['train'].append(self.train_loss)
             if self.save_classmetrics:
                 for i in self.metricnames:
-                    self.classmetrics[i]['train'].append(self.data[i])
+                    self.classmetrics[i]['train'].append(self.data['train'][i])
 
             # talk a bit about losse
             print('  train loss       : %1.3e\n  valid loss       : %1.3e' %(self.train_loss, self.valid_loss))
