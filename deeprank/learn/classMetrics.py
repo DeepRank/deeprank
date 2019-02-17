@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 
 # info
 # https://en.wikipedia.org/wiki/Precision_and_recall
@@ -6,64 +7,76 @@ import numpy as np
 
 def sensitivity(yp, yt):
     """sensitivity, recall or true positive rate (TPR)
-    
+
     Args:
         yp (array): predictions
         yt (array): targets
-    
+
     Returns:
         float: sensitivity value
     """
     tp = true_positive(yp, yt)
     p = positive(yt)
-    tpr = tp/p
+    if p==0:
+        tpr=float('inf')
+        warnings.warn('Number of positive cases is 0, TPR or sensitivity is assigned as inf')
+    else:
+        tpr = tp/p
     return tpr
-    
+
 
 def specificity(yp, yt):
     """specificity, selectivity or true negative rate (TNR)
-    
+
     Args:
         yp (array): predictions
         yt (array): targets
-    
+
     Returns:
         float: specificity value
     """
     tn = true_negative(yp, yt)
     n = negative(yt)
-    tnr = tn/n
+    if n == 0:
+        warnings.warn('Number of negative cases is 0, TNR or sepcificity is assigned as inf')
+        tnr = float('inf')
+    else:
+        tnr = tn/n
     return tnr
 
 
 def precision(yp, yt):
     """precision or positive predictive value (PPV)
-    
+
     Args:
         yp (array): predictions
         yt (array): targets
-    
+
     Returns:
         float: precision value
     """
     tp = true_positive(yp, yt)
     fp = false_positive(yp, yt)
-    ppv = tp/(tp+fp)
+    if tp+fp == 0:
+        warnings.warn('Total number of true positive and false positive cases is 0, PPV or precision is assigned as inf')
+        ppv = float('inf')
+    else:
+        ppv = tp/(tp+fp)
     return ppv
 
 
 def accuracy(yp, yt):
     """Accuracy
-    
+
     Args:
         yp (array): predictions
         yt (array): targets
-    
+
     Returns:
         float: accuracy value
     """
     tp = true_positive(yp, yt)
-    tn = true_negative(yp, yt)    
+    tn = true_negative(yp, yt)
     p = positive(yt)
     n = negative(yt)
     acc = (tp+tn)/(p+n)
@@ -72,11 +85,11 @@ def accuracy(yp, yt):
 
 def F1(yp, yt):
     """F1 score
-    
+
     Args:
         yp (array): predictions
         yt (array): targets
-    
+
     Returns:
         float: F1 score
     """
@@ -89,7 +102,7 @@ def F1(yp, yt):
 
 def true_positive(yp, yt):
     """number of true positive cases
-    
+
     Args:
         yp (array): predictions
         yt (array): targets
@@ -101,7 +114,7 @@ def true_positive(yp, yt):
 
 def true_negative(yp, yt):
     """number of true negative cases
-    
+
     Args:
         yp (array): predictions
         yt (array): targets
@@ -113,7 +126,7 @@ def true_negative(yp, yt):
 
 def false_positive(yp, yt):
     """number of false positive cases
-    
+
     Args:
         yp (array): predictions
         yt (array): targets
@@ -125,7 +138,7 @@ def false_positive(yp, yt):
 
 def false_negative(yp, yt):
     """number of false false cases
-    
+
     Args:
         yp (array): predictions
         yt (array): targets
@@ -137,17 +150,17 @@ def false_negative(yp, yt):
 
 def positive(yt):
     """The number of real positive cases
-    
+
     Args:
         yt (array): targets
     """
     yt = _to_bool(yt)
     return np.sum(yt)
-   
- 
+
+
 def negative(yt):
     """The nunber of real negative cases
-    
+
     Args:
         yt (array): targets
     """
@@ -157,10 +170,10 @@ def negative(yt):
 
 def _to_bool(x):
     """convert array values to boolean values
-    
+
     Args:
         x (array): values should be  0 or 1
-    
+
     Returns:
         array: boolean array
     """
