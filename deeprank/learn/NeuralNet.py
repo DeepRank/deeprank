@@ -513,9 +513,9 @@ class NeuralNet():
             self.classmetrics = {}
             for i in self.metricnames:
                 if _test_:
-                    self.classmetrics[i] = {'train':[], 'vaild':[], 'test':[]}
+                    self.classmetrics[i] = {'train':[], 'valid':[], 'test':[]}
                 else:
-                    self.classmetrics[i] = {'train':[], 'vaild':[]}
+                    self.classmetrics[i] = {'train':[], 'valid':[]}
 
         #  create the loaders
         train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False,drop_last=False)
