@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
 
-import torch
+
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
@@ -1056,7 +1056,8 @@ class NeuralNet():
             return None
 
 
-    def _get_binclass_prediction(self, data):
+    @staticmethod
+    def _get_binclass_prediction(data):
 
         out = data['outputs']
         probility = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()
