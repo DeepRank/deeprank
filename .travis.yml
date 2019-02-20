@@ -46,7 +46,7 @@ before_install:
 
 
   # install pytorch
-  - conda install pytorch torchvision cuda80 -c soumith
+  - conda install pytorch=0.4.0 torchvision cuda80 -c soumith
 
   # codacy-coverage
   - pip install -q --upgrade pip
