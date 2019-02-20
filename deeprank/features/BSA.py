@@ -58,8 +58,7 @@ class BSA(FeatureClass):
         self.feature_data = {}
         self.feature_data_xyz = {}
 
-
-        freesasa.setVerbosity(freesasa.nowarnings)
+        #freesasa.setVerbosity(freesasa.nowarnings)
 
     def get_structure(self):
         """Get the pdb structure of the molecule."""
