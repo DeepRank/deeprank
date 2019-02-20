@@ -733,8 +733,8 @@ class NeuralNet():
 
         # if cuda is available
         if self.cuda:
-            inputs = inputs.cuda(async=True)
-            targets = targets.cuda(async=True)
+            inputs = inputs.cuda(non_blocking=True)
+            targets = targets.cuda(non_blocking=True)
 
 
         # get the varialbe as float by default
