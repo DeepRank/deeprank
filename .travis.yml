@@ -30,7 +30,7 @@ before_install:
 
   # install freesasa
   - conda install cython
-  - apt-get install libxml2 libxml2-dev libjson0 libjson0-dev
+  - sudo apt-get install -y libxml2 libxml2-dev libjson0 libjson0-dev
   - wget http://freesasa.github.io/freesasa-2.0.3.tar.gz
   - mkdir freesasa
   - tar -xvf freesasa-2.0.3.tar.gz -C freesasa --strip-components=1
