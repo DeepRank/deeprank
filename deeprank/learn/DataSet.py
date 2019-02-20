@@ -241,7 +241,7 @@ class DataSet():
         remove_file = []
         for fname in self.database:
             try:
-                f = h5py.File(fname)
+                f = h5py.File(fname,'r')
                 mol_names = list(f.keys())
                 if len(mol_names) == 0:
                     print('    -> %s is empty ' %fname)
