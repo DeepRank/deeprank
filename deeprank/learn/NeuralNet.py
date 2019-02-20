@@ -668,7 +668,7 @@ class NeuralNet():
 
             # evaluate loss
             loss = self.criterion(outputs,targets)
-            running_loss += loss.data[0]
+            running_loss += loss.data.item() # pytorch1 compatible
             n += len(inputs)
 
             # zero + backward + step
