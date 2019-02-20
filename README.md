@@ -10,7 +10,7 @@
 The documentation of the module can be found on readthedocs :
 http://deeprank.readthedocs.io/en/latest/
 
-![alt-text](./pics/deeprank_pic.png)
+![alt-text](./pics/deeprank.png)
 
 ## 1 . Installation
 
