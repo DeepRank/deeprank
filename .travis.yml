@@ -19,7 +19,7 @@ before_install:
  # pytest
   - conda install -c anaconda pytest
   - conda install -c conda-forge pytest-cov
-  - conda install python=python3.6
+  - conda install python=3.6
 
   # install freesasa python bindings
   # - pip install freesasa==2.0.3.post4 # <- doesn't work anymore
