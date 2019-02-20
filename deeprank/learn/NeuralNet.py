@@ -889,7 +889,7 @@ class NeuralNet():
                 confusion=[[0, 0], [0, 0]]
                 for pts,t in zip(out,tar):
 
-                    r = F.softmax(torch.FloatTensor(pts)).data.numpy()
+                    r = F.softmax(torch.FloatTensor(pts),dim=0).data.numpy()
                     data[t].append(r[1])
                     confusion[t][r[1]>0.5] += 1
 
@@ -977,7 +977,7 @@ class NeuralNet():
 
                 # sort the data
                 if self.task == 'class':
-                    out = F.softmax(torch.FloatTensor(out)).data.numpy()[:,1]
+                    out = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()[:,1]
                 ind_sort = np.argsort(out)
 
                 if not inverse:
@@ -1020,7 +1020,7 @@ class NeuralNet():
 
         # sort the data
         if self.task == 'class':
-            out = F.softmax(torch.FloatTensor(out)).data.numpy()[:,1]
+            out = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()[:,1]
         ind_sort = np.argsort(out)
 
         if not inverse:
