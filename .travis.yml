@@ -16,6 +16,10 @@ before_install:
   # Useful for debugging any issues with conda
   - conda info -a
 
+ # pytest
+  - conda install -c anaconda pytest
+  - conda install -c conda-forge pytest-cov
+  - conda install python=python3.6
 
   # install freesasa python bindings
   # - pip install freesasa==2.0.3.post4 # <- doesn't work anymore
@@ -31,7 +35,6 @@ before_install:
   # install freesasa
   - conda install cython
   - sudo apt-get install -y libxml2 libxml2-dev libjson0 libjson0-dev
-  #- wget http://freesasa.github.io/freesasa-2.0.2.tar.gz
   - wget http://github.com/mittinatten/freesasa/releases/download/2.0.2/freesasa-2.0.2.tar.gz
   - mkdir freesasa
   - tar -xvf freesasa-2.0.2.tar.gz -C freesasa --strip-components=1
@@ -44,10 +47,6 @@ before_install:
 
   # install pytorch
   - conda install pytorch torchvision cuda80 -c soumith
-
-  # pytest
-  - conda install -c anaconda pytest
-  - conda install -c conda-forge pytest-cov
 
   # codacy-coverage
   - pip install -q --upgrade pip
