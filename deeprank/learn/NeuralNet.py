@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
 
-#import torch
+import torch
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
@@ -21,8 +21,11 @@ import torch.cuda
 # dataset
 from deeprank.learn import DataSet
 
-# ranking emtrics
+# ranking metrics
 from deeprank.learn import rankingMetrics
+
+# classification metrics
+from deeprank.learn import classMetrics
 
 class NeuralNet():
 
@@ -30,7 +33,10 @@ class NeuralNet():
                  model_type='3d',proj2d=0,task='reg',
                  pretrained_model=None,
                  cuda=False,ngpu=0,
-                 plot=True,save_hitrate=True,outdir='./'):
+                 plot=True,
+                 save_hitrate=True,
+                 save_classmetrics=False,
+                 outdir='./'):
 
         """Train a Convolutional Neural Network for DeepRank.
 
@@ -66,6 +72,9 @@ class NeuralNet():
             plot (bool): Plot the prediction results
 
             save_hitrate (bool): Save and plot hit rate
+
+            save_classmetrics (bool): Save and plot classification metrics:
+                accuracy(ACC), sensitivity(TPR) and specificity(TNR)
 
             outdir (str): output directory where all the files will be written
 
@@ -161,6 +170,11 @@ class NeuralNet():
 
         # plot and save hitrate or not
         self.save_hitrate = save_hitrate
+
+        # plot and save classification metrics or not
+        self.save_classmetrics = save_classmetrics
+        if self.save_classmetrics:
+            self.metricnames = ['acc', 'tpr', 'tnr']
 
         # output directory
         self.outdir = outdir
@@ -494,6 +508,14 @@ class NeuralNet():
         if _test_:
             self.losses['test'] = []
 
+        # containers for the class metrics
+        if self.save_classmetrics:
+            self.classmetrics = {}
+            for i in self.metricnames:
+                if _test_:
+                    self.classmetrics[i] = {'train':[], 'valid':[], 'test':[]}
+                else:
+                    self.classmetrics[i] = {'train':[], 'valid':[]}
 
         #  create the loaders
         train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False,drop_last=False)
@@ -518,15 +540,24 @@ class NeuralNet():
             # validate the model
             self.valid_loss,self.data['valid'] = self._epoch(valid_loader,train_model=False)
             self.losses['valid'].append(self.valid_loss)
+            if self.save_classmetrics:
+                for i in self.metricnames:
+                    self.classmetrics[i]['valid'].append(self.data['valid'][i])
 
             # test the model
             if _test_:
                 test_loss,self.data['test'] = self._epoch(test_loader,train_model=False)
                 self.losses['test'].append(test_loss)
+                if self.save_classmetrics:
+                    for i in self.metricnames:
+                        self.classmetrics[i]['test'].append(self.data['test'][i])
 
             # train the model
             self.train_loss,self.data['train'] = self._epoch(train_loader,train_model=True)
             self.losses['train'].append(self.train_loss)
+            if self.save_classmetrics:
+                for i in self.metricnames:
+                    self.classmetrics[i]['train'].append(self.data['train'][i])
 
             # talk a bit about losse
             print('  train loss       : %1.3e\n  valid loss       : %1.3e' %(self.train_loss, self.valid_loss))
@@ -581,6 +612,11 @@ class NeuralNet():
         # plot the losses
         self._export_losses(self.outdir+'/'+'losses.png')
 
+        # plot classification metrics
+        if self.save_classmetrics:
+            for i in self.metricnames:
+                self._export_metrics(i)
+
         return torch.cat([param.data.view(-1) for param in self.net.parameters()],0)
 
     def _epoch(self,data_loader,train_model):
@@ -599,6 +635,10 @@ class NeuralNet():
         # variables of the epoch
         running_loss = 0
         data = {'outputs':[],'targets':[],'mol':[], 'hit':None}
+        if self.save_classmetrics:
+            for i in self.metricnames:
+                data[i] = None
+
         n = 0
         debug_time = False
         time_learn = 0
@@ -663,6 +703,11 @@ class NeuralNet():
         # get the relevance of the ranking
         if self.save_hitrate:
             data['hit'] = self._get_relevance(data)
+
+        # get classification metrics
+        if self.save_classmetrics:
+            for i in self.metricnames:
+                data[i] = self._get_classmetrics(data, i)
 
         # normalize the loss
         running_loss /= n
@@ -730,6 +775,33 @@ class NeuralNet():
         grp.attrs['type'] = 'losses'
         for k,v in self.losses.items():
             grp.create_dataset(k,data=v)
+
+
+    def _export_metrics(self, metricname):
+
+        print('\n --> %s Plot' %(metricname.upper()))
+
+        color_plot = ['red','blue','green']
+        labels = ['Train','Valid','Test']
+
+        data = self.classmetrics[metricname]
+        fig,ax = plt.subplots()
+        for ik,name in enumerate(data):
+            plt.plot(np.array(data[name]),c=color_plot[ik],label=labels[ik])
+
+        legend = ax.legend(loc='upper left')
+        ax.set_xlabel('Epoch')
+        ax.set_ylabel(metricname.upper())
+
+        figname = os.path.join(self.outdir, metricname + '.png')
+        fig.savefig(figname)
+        plt.close()
+
+        grp = self.f5.create_group(metricname)
+        grp.attrs['type'] = metricname
+        for k,v in data.items():
+            grp.create_dataset(k,data=v)
+
 
     def _plot_scatter_reg(self,figname):
 
@@ -960,6 +1032,36 @@ class NeuralNet():
         # make a binary list out of that
         return (irmsd<irmsd_thr).astype('int')
 
+
+    def _get_classmetrics(self, data, metricname):
+
+        # get predctions
+        pred = self._get_binclass_prediction(data)
+
+        # get real targets
+        targets = data['targets']
+
+        # get metric values
+        if metricname == 'acc':
+            return classMetrics.accuracy(pred, targets)
+        elif metricname == 'tpr':
+            return classMetrics.sensitivity(pred, targets)
+        elif metricname == 'tnr':
+            return classMetrics.specificity(pred, targets)
+        elif metricname == 'ppv':
+            return classMetrics.precision(pred, targets)
+        elif metricname == 'f1':
+            return classMetrics.F1(pred, targets)
+        else:
+            return None
+
+
+    def _get_binclass_prediction(self, data):
+
+        out = data['outputs']
+        probility = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()
+        pred = probility[:,0] <= probility[:,1]
+        return pred.astype(int)
 
 
     def _export_epoch_hdf5(self,epoch,data):
