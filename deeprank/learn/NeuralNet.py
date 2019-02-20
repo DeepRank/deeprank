@@ -972,7 +972,7 @@ class NeuralNet():
                 for fname,mol in self.data[l]['mol']:
 
                     f5 = h5py.File(fname,'r')
-                    irmsd.append(f5[mol+'/targets/IRMSD'].value)
+                    irmsd.append(f5[mol+'/targets/IRMSD'][:])
                     f5.close()
 
                 # sort the data
@@ -1015,7 +1015,7 @@ class NeuralNet():
         for fname,mol in data['mol']:
 
             f5 = h5py.File(fname,'r')
-            irmsd.append(f5[mol+'/targets/IRMSD'].value)
+            irmsd.append(f5[mol+'/targets/IRMSD'][:])
             f5.close()
 
         # sort the data

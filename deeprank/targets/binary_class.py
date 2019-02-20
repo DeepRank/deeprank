@@ -10,7 +10,7 @@ def __compute_target__(decoy,targrp):
         del targrp['BIN_CLASS']
 
     if 'DOCKQ' in targrp.keys():
-        if targrp['DOCKQ'].value == 1.0:
+        if targrp['DOCKQ'][:] == 1.0:
             targrp.create_dataset('BIN_CLASS',data=np.array(1.0))
         else:
             targrp.create_dataset('BIN_CLASS',data=np.array(0.0))
