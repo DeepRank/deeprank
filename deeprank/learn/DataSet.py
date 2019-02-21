@@ -286,7 +286,7 @@ class DataSet():
             try:
                 fh5 = h5py.File(fdata,'r')
                 mol_names = list(fh5.keys())
-                if not self.select_pdb:
+                if self.select_pdb:
                     mol_names = set(self.select_pdb).intersection(mol_names)
                 for k in mol_names:
                     if self.filter(fh5[k]):
@@ -315,7 +315,7 @@ class DataSet():
                 try:
                     fh5 = h5py.File(fdata,'r')
                     mol_names = list(fh5.keys())
-                    if not self.select_pdb:
+                    if self.select_pdb:
                         mol_names = set(self.select_pdb).intersection(mol_names)
                     self.index_complexes += [(fdata,k) for k in mol_names]
                     fh5.close()
