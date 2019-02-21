@@ -751,7 +751,7 @@ class DataSet():
                 feature.append(mat)
 
         # get the target value
-        target = mol_data.get('targets/'+self.select_target)[:]
+        target = mol_data.get('targets/'+self.select_target)[()]
 
         # close
         fh5.close()
