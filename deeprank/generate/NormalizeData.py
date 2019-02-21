@@ -141,7 +141,7 @@ class NormalizeData(object):
                     self.parameters['targets'][tname] = MinMaxParam()
 
                 # update the value
-                self.parameters['targets'][tname].update(tval[:])
+                self.parameters['targets'][tname].update(tval[()])
 
         f5.close()
 
