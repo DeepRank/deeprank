@@ -20,6 +20,7 @@ from tqdm import tqdm
 class DataSet():
 
     def __init__(self,database, test_database = None,
+                 select_pdb = None,
                  select_feature = 'all', select_target = 'DOCKQ',
                  normalize_features = True, normalize_targets = True,
                  target_ordering=None,
@@ -53,6 +54,9 @@ class DataSet():
                 Example : ['1AK4.hdf5','1B7W.hdf5',...]
             test_database (list(str)): names of the hdf5 files used for the test
                 Example : ['7CEI.hdf5']
+            select_pdb (list(str)): names of complexes used for training/validation/test
+                Example : ['1AK4', '1AK4_r001', '1AK4_1w', '1AK4_1w_r001']
+                Default: None
             select_feature (dict or 'all', optional): Method to select the features used in the learning
                     If 'all', all the mapped features contained in the HDF5 file will be loaded
                     otherwise a dict must be provided.
@@ -96,6 +100,11 @@ class DataSet():
         if test_database is not None:
             if not isinstance(test_database,list):
                 self.test_database = [test_database]
+
+        # pdb selection
+        self.select_pdb = select_pdb or []
+        if not isinstance(self.select_pdb, list):
+            self.select_pdb = [self.select_pdb]
 
         # features/targets selection
         self.select_feature = select_feature
@@ -277,6 +286,8 @@ class DataSet():
             try:
                 fh5 = h5py.File(fdata,'r')
                 mol_names = list(fh5.keys())
+                if not self.select_pdb:
+                    mol_names = set(self.select_pdb).intersection(mol_names)
                 for k in mol_names:
                     if self.filter(fh5[k]):
                         self.index_complexes += [(fdata,k)]
@@ -304,6 +315,8 @@ class DataSet():
                 try:
                     fh5 = h5py.File(fdata,'r')
                     mol_names = list(fh5.keys())
+                    if not self.select_pdb:
+                        mol_names = set(self.select_pdb).intersection(mol_names)
                     self.index_complexes += [(fdata,k) for k in mol_names]
                     fh5.close()
                 except:
