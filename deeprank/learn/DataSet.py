@@ -54,7 +54,7 @@ class DataSet():
                 Example : ['1AK4.hdf5','1B7W.hdf5',...]
             test_database (list(str)): names of the hdf5 files used for the test
                 Example : ['7CEI.hdf5']
-            use_rotation (int): number of rotations to use. 
+            use_rotation (int): number of rotations to use.
                 Example: 0 (use only original data)
                 Default: None  (use all data of the database)
             select_feature (dict or 'all', optional): Method to select the features used in the learning
@@ -285,7 +285,7 @@ class DataSet():
             try:
                 fh5 = h5py.File(fdata,'r')
                 mol_names = list(fh5.keys())
-                mol_names = _select_pdb(mol_names)
+                mol_names = self._select_pdb(mol_names)
                 for k in mol_names:
                     if self.filter(fh5[k]):
                         self.index_complexes += [(fdata,k)]
@@ -313,7 +313,7 @@ class DataSet():
                 try:
                     fh5 = h5py.File(fdata,'r')
                     mol_names = list(fh5.keys())
-                    mol_names = _select_pdb(mol_names)
+                    mol_names = selef._select_pdb(mol_names)
                     self.index_complexes += [(fdata,k) for k in mol_names]
                     fh5.close()
                 except:
@@ -324,11 +324,11 @@ class DataSet():
 
 
     def _select_pdb(self, mol_names):
-        """Select complexes 
-        
+        """Select complexes
+
         Args:
             mol_names (list): list of complex names
-        
+
         Returns:
             list: list of selected complexes
         """
@@ -338,7 +338,7 @@ class DataSet():
             fnames_augmented = []
             if self.use_rotation > 0:
                 for i in range(self.use_rotation):
-                    fnames_augmented.append(*list(filter(lambda x: '_r%03d' %(i+1) in x, mol_names)))
+                    fnames_augmented += list(filter(lambda x: '_r%03d' %(i+1) in x, mol_names))
                 mol_names = fnames_original + fnames_augmented
             else:
                 mol_names = fnames_original
