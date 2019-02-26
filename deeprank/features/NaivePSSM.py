@@ -78,9 +78,9 @@ class NaivePSSM(FeatureClass):
         fname = [n for n in names if n.find(self.molname)==0]
 
         if len(fname)>1:
-            raise ValueError('Multiple PSSM files found for %s in %s',self.pdbname,self.pssm_path)
+            raise ValueError('Multiple PSSM files found for %s in %s',self.mol_name,self.pssm_path)
         if len(fname)==0:
-            raise FileNotFoundError('No PSSM file found for %s in %s',self.pdbname,self.pssm_path)
+            raise FileNotFoundError('No PSSM file found for %s in %s',self.mol_name,self.pssm_path)
         else:
             fname = fname[0]
 
@@ -183,8 +183,11 @@ class NaivePSSM(FeatureClass):
 
 def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
-    path = os.path.dirname(os.path.realpath(__file__))
-    PSSM = path + '/PSSM/'
+    if '__PATH_PSSM_SOURCE__' not in globals():
+        path = os.path.dirname(os.path.realpath(__file__))
+        PSSM = path + '/PSSM/'
+    else:
+        PSSM = __PATH_PSSM_SOURCE__
 
     mol_name = os.path.split(featgrp.name)[0]
     mol_name = mol_name.lstrip('/')

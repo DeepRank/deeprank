@@ -14,6 +14,10 @@ def __compute_target__(decoy,targrp):
     if not os.path.isdir(ZONE):
         os.mkdir(ZONE)
 
+    for target_name in ['LRMSD','IRMSD','FNAT','DOCKQ']:
+        if target_name in targrp.keys():
+            del targrp[target_name]
+
     # if we have a ref
     if '_' not in molname:
 
@@ -33,8 +37,8 @@ def __compute_target__(decoy,targrp):
         ref_pairs = ZONE + molname + '.ref_pairs'
 
         # init the class
-        decoy = molgrp['complex'].value
-        ref = molgrp['native'].value
+        decoy = molgrp['complex'][:]
+        ref = molgrp['native'][:]
         sim = StructureSimilarity(decoy,ref)
 
         lrmsd = sim.compute_lrmsd_fast(method='svd',lzone=lzone)

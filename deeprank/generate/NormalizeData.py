@@ -117,11 +117,11 @@ class NormalizeData(object):
                     feat_data = data_group[feat_types+'/'+name]
                     if feat_data.attrs['sparse']:
                         mat = sparse.FLANgrid(sparse=True,
-                                              index=feat_data['index'].value,
-                                              value=feat_data['value'].value,
+                                              index=feat_data['index'][:],
+                                              value=feat_data['value'][:],
                                               shape=self.shape).to_dense()
                     else:
-                        mat = feat_data['value'].value
+                        mat = feat_data['value'][:]
 
                     # add the parameter (mean and var)
                     self.parameters['features'][feat_types][name].add(np.mean(mat),np.var(mat))
@@ -141,7 +141,7 @@ class NormalizeData(object):
                     self.parameters['targets'][tname] = MinMaxParam()
 
                 # update the value
-                self.parameters['targets'][tname].update(tval.value)
+                self.parameters['targets'][tname].update(tval[()])
 
         f5.close()
 

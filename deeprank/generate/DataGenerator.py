@@ -8,6 +8,7 @@ from collections import OrderedDict
 import logging
 from deeprank.tools import pdb2sql
 from deeprank.generate import GridTools as gt
+from deeprank.generate import settings
 
 try:
     from tqdm import tqdm
@@ -25,7 +26,7 @@ _printif = lambda string,cond: print(string) if cond else None
 
 class DataGenerator(object):
 
-    def __init__(self,pdb_select=None,pdb_source=None,pdb_native=None,
+    def __init__(self,pdb_select=None,pdb_source=None,pdb_native=None,pssm_source=None,
                  compute_targets = None, compute_features = None,
                  data_augmentation=None, hdf5='database.h5',logger=None,debug=True):
         """Generate the data (features/targets/maps) required for deeprank.
@@ -62,9 +63,15 @@ class DataGenerator(object):
         >>>                          hdf5=h5file)
 
         """
-        self.pdb_select  = pdb_select
-        self.pdb_source  = pdb_source or []
-        self.pdb_native  = pdb_native or []
+
+        settings.init()
+
+        self.pdb_select   = pdb_select  or []
+        self.pdb_source   = pdb_source  or []
+        self.pdb_native   = pdb_native  or []
+
+        settings.__PATH_PSSM_SOURCE__ = pssm_source
+
 
         self.data_augmentation = data_augmentation
 
@@ -82,6 +89,10 @@ class DataGenerator(object):
 
         self.logger = logger or logging.getLogger(__name__)
         self.debug = debug
+
+        # handle the pdb_select
+        if not isinstance(self.pdb_select,list):
+            self.pdb_select = [self.pdb_select]
 
         # check that a source was given
         if self.pdb_source is None:
@@ -109,9 +120,11 @@ class DataGenerator(object):
                 self.all_native.append(src)
 
         # filter the cplx if required
-        self.pdb_path = self.all_pdb
-        if self.pdb_select is not None:
-            self.pdb_path = list(filter(lambda x: self.pdb_select in x, self.all_pdb))
+        if self.pdb_select:
+            for i in self.pdb_select:
+                self.pdb_path += list(filter(lambda x: i in x, self.all_pdb))
+        else:
+            self.pdb_path = self.all_pdb
 
 #====================================================================================
 #
@@ -230,7 +243,10 @@ class DataGenerator(object):
                 molgrp.require_group('features_raw')
 
                 if self.compute_features is not None:
-                    self._compute_features(self.compute_features, molgrp['complex'].value,molgrp['features'],molgrp['features_raw'] )
+                    self._compute_features(self.compute_features,
+                                           molgrp['complex'][:],
+                                           molgrp['features'],
+                                           molgrp['features_raw'] )
 
                 ################################################
                 #   add the targets
@@ -239,7 +255,9 @@ class DataGenerator(object):
                 # add the features
                 molgrp.require_group('targets')
                 if self.compute_targets is not None:
-                    self._compute_targets(self.compute_targets, molgrp['complex'].value,molgrp['targets'])
+                    self._compute_targets(self.compute_targets,
+                                          molgrp['complex'][:],
+                                          molgrp['targets'])
 
                 ################################################
                 #   DATA AUGMENTATION
@@ -329,6 +347,10 @@ class DataGenerator(object):
         >>> database.add_feature(prog_bar=True)
         '''
 
+        # check if file exists
+        if not os.path.isfile(self.hdf5):
+            raise FileNotFoundError('File %s does not exists' %self.hdf5)
+
         # get the folder names
         f5 = h5py.File(self.hdf5,'a')
         fnames = f5.keys()
@@ -349,7 +371,7 @@ class DataGenerator(object):
             molgrp.require_group('features_raw')
 
             if self.compute_features is not None:
-                self._compute_features(self.compute_features, molgrp['complex'].value,molgrp['features'],molgrp['features_raw'] )
+                self._compute_features(self.compute_features, molgrp['complex'][:],molgrp['features'],molgrp['features_raw'] )
 
 
         # copy the data from the original to the augmented
@@ -372,7 +394,7 @@ class DataGenerator(object):
                 if k not in aug_molgrp['features']:
 
                     #copy
-                    data = src_molgrp['features/'+k].value
+                    data = src_molgrp['features/'+k][:]
                     aug_molgrp.require_group('features')
                     aug_molgrp.create_dataset("features/"+k,data=data)
 
@@ -402,6 +424,11 @@ class DataGenerator(object):
         >>> database = DataGenerator(hdf5='1ak4.hdf5')
         >>> database.add_unique_target({'DOCKQ':1.0})
         '''
+
+        # check if file exists
+        if not os.path.isfile(self.hdf5):
+            raise FileNotFoundError('File %s does not exists' %self.hdf5)
+
         f5 = h5py.File(self.hdf5,'a')
         for mol in list(f5.keys()):
             targrp = f5[mol].require_group('targets')
@@ -428,6 +455,10 @@ class DataGenerator(object):
         >>> database.add_target(prog_bar=True)
         '''
 
+        # check if file exists
+        if not os.path.isfile(self.hdf5):
+            raise FileNotFoundError('File %s does not exists' %self.hdf5)
+
         # name of the hdf5 file
         f5 = h5py.File(self.hdf5,'a')
 
@@ -448,7 +479,7 @@ class DataGenerator(object):
 
             # add the targets
             if self.compute_targets is not None:
-                self._compute_targets(self.compute_targets, molgrp['complex'].value,molgrp['targets'])
+                self._compute_targets(self.compute_targets, molgrp['complex'][:],molgrp['targets'])
 
         # copy the targets of the original to the rotated
         for cplx_name in fnames_augmented:
@@ -463,7 +494,8 @@ class DataGenerator(object):
             # copy the targets to the augmented
             for k in molgrp['targets']:
                 if k not in aug_molgrp['targets']:
-                    data = src_molgrp['targets/'+k].value
+                    #data = src_molgrp['targets/'+k][:]
+                    data = src_molgrp['targets/'+k][()]
                     aug_molgrp.require_group('targets')
                     aug_molgrp.create_dataset("targets/"+k,data=data)
 
@@ -1041,8 +1073,12 @@ class DataGenerator(object):
             line += '{: 8.3f}'.format(d[7]) #x
             line += '{: 8.3f}'.format(d[8]) #y
             line += '{: 8.3f}'.format(d[9]) #z
-            line += '{: 6.2f}'.format(d[10])    # occ
-            line += '{: 6.2f}'.format(d[11])    # temp
+            try:
+                line += '{: 6.2f}'.format(d[10])    # occ
+                line += '{: 6.2f}'.format(d[11])    # temp
+            except:
+                line += '{: 6.2f}'.format(0)    # occ
+                line += '{: 6.2f}'.format(0)    # temp
             data.append(line)
 
         data = np.array(data).astype('|S73')
@@ -1072,7 +1108,7 @@ class DataGenerator(object):
         for fn in feat:
 
             # extract the data
-            data = molgrp['features/'+fn].value
+            data = molgrp['features/'+fn][:]
 
             # xyz
             xyz = data[:,1:4]

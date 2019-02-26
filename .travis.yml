@@ -16,33 +16,44 @@ before_install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-  # install pytorch
-  - conda install pytorch torchvision cuda80 -c soumith
-
-  # pytest
-  #- conda install -c anaconda pytest
-  #- conda install -c conda-forge pytest-cov
-
-  # codacy-coverage
-  #- pip install -q --upgrade pip
-  #- pip install -q coverage
-  #- pip install -q codacy-coverage
-  #- pip install -q coveralls
+ # pytest
+  - conda install -c anaconda pytest
+  - conda install -c conda-forge pytest-cov
+  - conda install python=3.6
 
   # install freesasa python bindings
-  - pip install freesasa
+  # - pip install freesasa==2.0.3.post4 # <- doesn't work anymore
 
   # install freesasa
-  #- conda install cython
-  #- apt-get install libxml2 libxml2-devel libjson0 libjson0-dev
-  #- wget http://freesasa.github.io/freesasa-2.0.3.tar.gz
-  #- mkdir freesasa
-  #- tar -xvf freesasa-2.0.3.tar.gz -C freesasa --strip-components=1
-  #- cd freesasa
-  #- ./configure --disable-xml --disable-json --enable-python-bindings --with-python=python3.6 CFLAGS="-fPIC" --prefix=$HOME
-  #- make
-  #- make install
-  #- cd ../
+  # - conda install cython
+  # - git clone https://github.com/freesasa/freesasa-python
+  # - cd freesasa-python
+  # - git submodule update --init
+  # - USE_CYTHON=1 python setup.py build
+  # - export PYTHONPATH=$PYTHONPATH: ???
+
+  # install freesasa
+  - conda install cython
+  - sudo apt-get install -y libxml2 libxml2-dev libjson0 libjson0-dev
+  - wget http://github.com/mittinatten/freesasa/releases/download/2.0.2/freesasa-2.0.2.tar.gz
+  - mkdir freesasa
+  - tar -xvf freesasa-2.0.2.tar.gz -C freesasa --strip-components=1
+  - cd freesasa
+  - ./configure --disable-xml --disable-json --enable-python-bindings --with-python=python3.6 CFLAGS="-fPIC" --prefix=$HOME
+  - make
+  - make install
+  - cd ../
+
+
+  # install pytorch
+  - conda install pytorch=1.0 torchvision cuda80 -c soumith
+
+  # codacy-coverage
+  - pip install -q --upgrade pip
+  - pip install -q coverage
+  - pip install -q codacy-coverage
+  - pip install -q coveralls
+
 
 install:
   - pip install -qe .[test]
