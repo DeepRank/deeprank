@@ -122,7 +122,7 @@ class DataSet():
 
         # data agumentation
         if self.mapfly:
-            self.data_augmentation = data_augmentation
+            self.data_augmentation = use_rotation
             if self.data_augmentation is None:
                 self.data_augmentation = 0
         else:
@@ -349,11 +349,12 @@ class DataSet():
                     fh5 = h5py.File(fdata,'r')
                     mol_names = list(fh5.keys())
 
-                    # thats what i had in issue25
-                    #self.index_complexes += [(fdata,k,None,None) for k in mol_names]
+                    mol_names = self._select_pdb(mol_names)
 
-                    mol_names = selef._select_pdb(mol_names)
-                    self.index_complexes += [(fdata,k) for k in mol_names]
+                    # that's the master
+                    #self.index_complexes += [(fdata,k) for k in mol_names]
+                    # thats what i had in issue25
+                    self.index_complexes += [(fdata,k,None,None) for k in mol_names]
 
                     fh5.close()
                 except:
@@ -1094,9 +1095,9 @@ class DataSet():
                 atdensB += self._densgrid(pos,vdw_rad,grid,npts)
 
             densities += [atdensA,atdensB]
-            print('   __ Map single atomic density %f' %(time.time()-start))
+            #print('   __ Map single atomic density %f' %(time.time()-start))
         sql.close()
-        print(' __ Total Atomic Densities : %f' %(time.time()-t0))
+        #print(' __ Total Atomic Densities : %f' %(time.time()-t0))
         return densities
 
     @staticmethod
@@ -1136,7 +1137,7 @@ class DataSet():
             tprep = time.time()
             pfunc = partial(self._featgrid,grid=grid,npts=npts)
             vmap = np.vectorize(pfunc,signature='(n),()->(p,p,p)')
-            print(' __ Prepare function %f' %(time.time()-t0))
+            #print(' __ Prepare function %f' %(time.time()-t0))
 
         feat = []
         for name in feat_names:
@@ -1170,8 +1171,8 @@ class DataSet():
 
             feat += tmp_feat_vect
 
-            print('   __ map single feature %f (%d lines)' %(time.time()-start, len(data)  ))
-        print(' __ Total Features : %f' %(time.time()-t0))
+            #print('   __ map single feature %f (%d lines)' %(time.time()-start, len(data)  ))
+        #print(' __ Total Features : %f' %(time.time()-t0))
         return feat
 
     @staticmethod

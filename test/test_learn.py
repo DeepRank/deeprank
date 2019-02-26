@@ -11,6 +11,9 @@ try:
 except:
   skip=True
 
+
+
+
 # all the import torch fails on TRAVIS
 # so we can only exectute this test locally
 class TestLearn(unittest.TestCase):
@@ -36,12 +39,14 @@ class TestLearn(unittest.TestCase):
     data_set = DataSet(database,
                 test_database = None,
                 mapfly = True,
-                data_augmentation=None,
+                use_rotation=None,
                 grid_shape=(30,30,30),
                 select_feature={'AtomicDensities' : {'CA':3.5, 'C':3.5, 'N':3.5, 'O':3.5},
                                 'Features' : ['coulomb','vdwaals','charge','PSSM_*'] },
-                select_target='DOCKQ',tqdm=True,
-                normalize_features = True, normalize_targets=True,
+                select_target='DOCKQ',
+                tqdm=True,
+                normalize_features = False,
+                normalize_targets=False,
                 clip_features=False,
                 pair_chain_feature=np.add,
                 dict_filter={'IRMSD':'<4. or >10.'})
@@ -53,6 +58,9 @@ class TestLearn(unittest.TestCase):
 
     # start the training
     model.train(nepoch = 5,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
+
+
+
 
   @unittest.skipIf(skip,"torch fails on Travis")
   @staticmethod
@@ -75,12 +83,14 @@ class TestLearn(unittest.TestCase):
     data_set = DataSet(database,
                 test_database = None,
                 mapfly = False,
-                data_augmentation=2,
+                use_rotation=2,
                 grid_shape=(30,30,30),
                 select_feature={'AtomicDensities_ind' : 'all',
                                 'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
-                select_target='DOCKQ',tqdm=True,
-                normalize_features = True, normalize_targets=True,
+                select_target='DOCKQ',
+                tqdm=True,
+                normalize_features = True,
+                normalize_targets=True,
                 clip_features=False,
                 pair_chain_feature=np.add,
                 dict_filter={'DOCKQ':'<1.'})
@@ -93,6 +103,10 @@ class TestLearn(unittest.TestCase):
 
     # start the training
     model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0, save_model='all')
+
+
+
+
 
 
   @unittest.skipIf(skip,"torch fails on Travis")
@@ -132,6 +146,12 @@ class TestLearn(unittest.TestCase):
     # start the training
     model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
 
+
+
+
+
+
+
   @unittest.skipIf(skip,"torch fails on Travis")
   @staticmethod
   def test_transfer():
@@ -153,6 +173,13 @@ class TestLearn(unittest.TestCase):
     model_name = './out_3d/last_model.pth.tar'
     model = NeuralNet(database,cnn3d,pretrained_model=model_name,outdir=out)
     model.test()
+
+
+
+
+
+
+
 
 
   @unittest.skipIf(skip,"Torch fails on Travis")
@@ -177,7 +204,7 @@ class TestLearn(unittest.TestCase):
                 select_feature={'AtomicDensities_ind' : 'all',
                                 'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
                 select_target='BIN_CLASS',tqdm=True,
-                normalize_features = True, 
+                normalize_features = True,
                 normalize_targets=False,
                 clip_features=False,
                 pair_chain_feature=np.add)
@@ -193,9 +220,8 @@ class TestLearn(unittest.TestCase):
 
 if __name__ == "__main__":
 
-
+  TestLearn.test_learn_3d_reg_mapfly()
   TestLearn.test_learn_3d_reg()
   #TestLearn.test_learn_3d_class()
-
   #TestLearn.test_learn_2d_reg()
   #TestLearn.test_transfer()
