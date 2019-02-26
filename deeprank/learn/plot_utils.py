@@ -53,7 +53,6 @@ def plot_hit_rate(hdf5,epoch=None,figname=None,irmsd_thr = 4.0,inverse = False):
                     raise FileNotFoundError('File %s  not found' %fname)
 
                 f5 = h5py.File(fname,'r')
-                #irmsd.append(f5[mol+'/targets/IRMSD'][:])
                 irmsd.append(f5[mol+'/targets/IRMSD'][()])
                 f5.close()
 

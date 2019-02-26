@@ -975,7 +975,6 @@ class NeuralNet():
                 for fname,mol in self.data[l]['mol']:
 
                     f5 = h5py.File(fname,'r')
-                    #irmsd.append(f5[mol+'/targets/IRMSD'][:])
                     irmsd.append(f5[mol+'/targets/IRMSD'][()])
                     f5.close()
 
