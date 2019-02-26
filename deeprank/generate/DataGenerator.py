@@ -494,7 +494,8 @@ class DataGenerator(object):
             # copy the targets to the augmented
             for k in molgrp['targets']:
                 if k not in aug_molgrp['targets']:
-                    data = src_molgrp['targets/'+k][:]
+                    #data = src_molgrp['targets/'+k][:]
+                    data = src_molgrp['targets/'+k][()]
                     aug_molgrp.require_group('targets')
                     aug_molgrp.create_dataset("targets/"+k,data=data)
 

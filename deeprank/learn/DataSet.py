@@ -330,7 +330,7 @@ class DataSet():
         for cond_name,cond_vals in self.dict_filter.items():
 
             try:
-                val = molgrp['targets/'+cond_name][:]
+                val = molgrp['targets/'+cond_name][()]
             except KeyError:
                 print('   :Filter %s not found for mol %s' %(cond_name,mol))
 

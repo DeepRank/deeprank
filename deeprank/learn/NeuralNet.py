@@ -710,7 +710,10 @@ class NeuralNet():
                 data[i] = self._get_classmetrics(data, i)
 
         # normalize the loss
-        running_loss /= n
+        if n != 0:
+            running_loss /= n
+        else:
+            print('Warning : empty input')
 
         return running_loss, data
 
@@ -972,7 +975,8 @@ class NeuralNet():
                 for fname,mol in self.data[l]['mol']:
 
                     f5 = h5py.File(fname,'r')
-                    irmsd.append(f5[mol+'/targets/IRMSD'][:])
+                    #irmsd.append(f5[mol+'/targets/IRMSD'][:])
+                    irmsd.append(f5[mol+'/targets/IRMSD'][()])
                     f5.close()
 
                 # sort the data
