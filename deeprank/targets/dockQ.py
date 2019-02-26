@@ -37,8 +37,8 @@ def __compute_target__(decoy,targrp):
         ref_pairs = ZONE + molname + '.ref_pairs'
 
         # init the class
-        decoy = molgrp['complex'].value
-        ref = molgrp['native'].value
+        decoy = molgrp['complex'][:]
+        ref = molgrp['native'][:]
         sim = StructureSimilarity(decoy,ref)
 
         lrmsd = sim.compute_lrmsd_fast(method='svd',lzone=lzone)

@@ -363,7 +363,7 @@ class DataSet():
         for cond_name,cond_vals in self.dict_filter.items():
 
             try:
-                val = molgrp['targets/'+cond_name].value
+                val = molgrp['targets/'+cond_name][()]
             except KeyError:
                 print('   :Filter %s not found for mol %s' %(cond_name,mol))
 
@@ -774,17 +774,17 @@ class DataSet():
                 # if flase direct import
                 if data.attrs['sparse']:
                     mat = sparse.FLANgrid(sparse=True,
-                                          index=data['index'].value,
-                                          value=data['value'].value,
+                                          index=data['index'][:],
+                                          value=data['value'][:],
                                           shape=self.grid_shape).to_dense()
                 else:
-                    mat = data['value'].value
+                    mat = data['value'][:]
 
                 # append to the list of features
                 feature.append(mat)
 
         # get the target value
-        target = mol_data.get('targets/'+self.select_target).value
+        target = mol_data.get('targets/'+self.select_target)[()]
 
         # close
         fh5.close()

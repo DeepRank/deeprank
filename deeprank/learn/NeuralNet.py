@@ -668,7 +668,7 @@ class NeuralNet():
 
             # evaluate loss
             loss = self.criterion(outputs,targets)
-            running_loss += loss.data[0]
+            running_loss += loss.data.item() # pytorch1 compatible
             n += len(inputs)
 
             # zero + backward + step
@@ -710,7 +710,10 @@ class NeuralNet():
                 data[i] = self._get_classmetrics(data, i)
 
         # normalize the loss
-        running_loss /= n
+        if n != 0:
+            running_loss /= n
+        else:
+            print('Warning : empty input')
 
         return running_loss, data
 
@@ -733,8 +736,8 @@ class NeuralNet():
 
         # if cuda is available
         if self.cuda:
-            inputs = inputs.cuda(async=True)
-            targets = targets.cuda(async=True)
+            inputs = inputs.cuda(non_blocking=True)
+            targets = targets.cuda(non_blocking=True)
 
 
         # get the varialbe as float by default
@@ -889,7 +892,7 @@ class NeuralNet():
                 confusion=[[0, 0], [0, 0]]
                 for pts,t in zip(out,tar):
 
-                    r = F.softmax(torch.FloatTensor(pts)).data.numpy()
+                    r = F.softmax(torch.FloatTensor(pts),dim=0).data.numpy()
                     data[t].append(r[1])
                     confusion[t][r[1]>0.5] += 1
 
@@ -972,12 +975,12 @@ class NeuralNet():
                 for fname,mol in self.data[l]['mol']:
 
                     f5 = h5py.File(fname,'r')
-                    irmsd.append(f5[mol+'/targets/IRMSD'].value)
+                    irmsd.append(f5[mol+'/targets/IRMSD'][()])
                     f5.close()
 
                 # sort the data
                 if self.task == 'class':
-                    out = F.softmax(torch.FloatTensor(out)).data.numpy()[:,1]
+                    out = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()[:,1]
                 ind_sort = np.argsort(out)
 
                 if not inverse:
@@ -1015,12 +1018,12 @@ class NeuralNet():
         for fname,mol in data['mol']:
 
             f5 = h5py.File(fname,'r')
-            irmsd.append(f5[mol+'/targets/IRMSD'].value)
+            irmsd.append(f5[mol+'/targets/IRMSD'][()])
             f5.close()
 
         # sort the data
         if self.task == 'class':
-            out = F.softmax(torch.FloatTensor(out)).data.numpy()[:,1]
+            out = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()[:,1]
         ind_sort = np.argsort(out)
 
         if not inverse:

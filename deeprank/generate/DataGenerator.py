@@ -244,7 +244,7 @@ class DataGenerator(object):
 
                 if self.compute_features is not None:
                     self._compute_features(self.compute_features,
-                                           molgrp['complex'].value,
+                                           molgrp['complex'][:],
                                            molgrp['features'],
                                            molgrp['features_raw'] )
 
@@ -256,7 +256,7 @@ class DataGenerator(object):
                 molgrp.require_group('targets')
                 if self.compute_targets is not None:
                     self._compute_targets(self.compute_targets,
-                                          molgrp['complex'].value,
+                                          molgrp['complex'][:],
                                           molgrp['targets'])
 
                 ################################################
@@ -371,7 +371,7 @@ class DataGenerator(object):
             molgrp.require_group('features_raw')
 
             if self.compute_features is not None:
-                self._compute_features(self.compute_features, molgrp['complex'].value,molgrp['features'],molgrp['features_raw'] )
+                self._compute_features(self.compute_features, molgrp['complex'][:],molgrp['features'],molgrp['features_raw'] )
 
 
         # copy the data from the original to the augmented
@@ -394,7 +394,7 @@ class DataGenerator(object):
                 if k not in aug_molgrp['features']:
 
                     #copy
-                    data = src_molgrp['features/'+k].value
+                    data = src_molgrp['features/'+k][:]
                     aug_molgrp.require_group('features')
                     aug_molgrp.create_dataset("features/"+k,data=data)
 
@@ -479,7 +479,7 @@ class DataGenerator(object):
 
             # add the targets
             if self.compute_targets is not None:
-                self._compute_targets(self.compute_targets, molgrp['complex'].value,molgrp['targets'])
+                self._compute_targets(self.compute_targets, molgrp['complex'][:],molgrp['targets'])
 
         # copy the targets of the original to the rotated
         for cplx_name in fnames_augmented:
@@ -494,7 +494,8 @@ class DataGenerator(object):
             # copy the targets to the augmented
             for k in molgrp['targets']:
                 if k not in aug_molgrp['targets']:
-                    data = src_molgrp['targets/'+k].value
+                    #data = src_molgrp['targets/'+k][:]
+                    data = src_molgrp['targets/'+k][()]
                     aug_molgrp.require_group('targets')
                     aug_molgrp.create_dataset("targets/"+k,data=data)
 
@@ -1107,7 +1108,7 @@ class DataGenerator(object):
         for fn in feat:
 
             # extract the data
-            data = molgrp['features/'+fn].value
+            data = molgrp['features/'+fn][:]
 
             # xyz
             xyz = data[:,1:4]

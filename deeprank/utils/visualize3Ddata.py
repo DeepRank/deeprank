@@ -56,15 +56,15 @@ def visualize3Ddata(hdf5=None,mol_name=None,out=None):
         raise LookupError('Molecule %s not found in %s' %(mol_name,hdf5))
 
     # create the pdb file
-    sqldb = pdb2sql(molgrp['complex'].value)
+    sqldb = pdb2sql(molgrp['complex'][:])
     sqldb.exportpdb(outdir + '/complex.pdb')
     sqldb.close()
 
     # get the grid
     grid = {}
-    grid['x'] = molgrp['grid_points/x'].value
-    grid['y'] = molgrp['grid_points/y'].value
-    grid['z'] = molgrp['grid_points/z'].value
+    grid['x'] = molgrp['grid_points/x'][:]
+    grid['y'] = molgrp['grid_points/y'][:]
+    grid['z'] = molgrp['grid_points/z'][:]
     shape = (len(grid['x']),len(grid['y']),len(grid['z']))
 
     # deals with the features
@@ -79,9 +79,9 @@ def visualize3Ddata(hdf5=None,mol_name=None,out=None):
         for ff in featgrp.keys():
             subgrp = featgrp[ff]
             if not subgrp.attrs['sparse']:
-                data_dict[ff] =  subgrp['value'].value
+                data_dict[ff] =  subgrp['value'][:]
             else:
-                spg = sparse.FLANgrid(sparse=True,index=subgrp['index'].value,value=subgrp['value'].value,shape=shape)
+                spg = sparse.FLANgrid(sparse=True,index=subgrp['index'][:],value=subgrp['value'][:],shape=shape)
                 data_dict[ff] =  spg.to_dense()
 
         # export the cube file

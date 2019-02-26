@@ -208,7 +208,7 @@ class GridTools(object):
     def read_pdb(self):
         """ Create a sql databse for the pdb."""
 
-        self.sqldb = pdb2sql(self.molgrp['complex'].value)
+        self.sqldb = pdb2sql(self.molgrp['complex'][:])
 
 
     # get the contact atoms
@@ -500,7 +500,7 @@ class GridTools(object):
             # read the data
             featgrp = self.molgrp['features']
             if feature_name in featgrp.keys():
-                data = featgrp[feature_name].value
+                data = featgrp[feature_name][:]
             else:
                 print('Error Feature not found \n\tPossible features : ' + ' | '.join(featgrp.keys()) )
                 raise ValueError('feature %s  not found in the file' %(feature_name))
