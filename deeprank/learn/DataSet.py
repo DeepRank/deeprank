@@ -20,6 +20,7 @@ from tqdm import tqdm
 class DataSet():
 
     def __init__(self,database, test_database = None,
+                 use_rotation = None,
                  select_feature = 'all', select_target = 'DOCKQ',
                  normalize_features = True, normalize_targets = True,
                  target_ordering=None,
@@ -53,6 +54,9 @@ class DataSet():
                 Example : ['1AK4.hdf5','1B7W.hdf5',...]
             test_database (list(str)): names of the hdf5 files used for the test
                 Example : ['7CEI.hdf5']
+            use_rotation (int): number of rotations to use.
+                Example: 0 (use only original data)
+                Default: None  (use all data of the database)
             select_feature (dict or 'all', optional): Method to select the features used in the learning
                     If 'all', all the mapped features contained in the HDF5 file will be loaded
                     otherwise a dict must be provided.
@@ -96,6 +100,9 @@ class DataSet():
         if test_database is not None:
             if not isinstance(test_database,list):
                 self.test_database = [test_database]
+
+        # pdb selection
+        self.use_rotation = use_rotation
 
         # features/targets selection
         self.select_feature = select_feature
@@ -254,6 +261,7 @@ class DataSet():
         for name in remove_file:
             self.database.remove(name)
 
+
     def create_index_molecules(self):
         '''Create the indexing of each molecule in the dataset.
         Create the indexing: [ ('1ak4.hdf5,1AK4_100w),...,('1fqj.hdf5,1FGJ_400w)]
@@ -277,6 +285,7 @@ class DataSet():
             try:
                 fh5 = h5py.File(fdata,'r')
                 mol_names = list(fh5.keys())
+                mol_names = self._select_pdb(mol_names)
                 for k in mol_names:
                     if self.filter(fh5[k]):
                         self.index_complexes += [(fdata,k)]
@@ -304,6 +313,7 @@ class DataSet():
                 try:
                     fh5 = h5py.File(fdata,'r')
                     mol_names = list(fh5.keys())
+                    mol_names = selef._select_pdb(mol_names)
                     self.index_complexes += [(fdata,k) for k in mol_names]
                     fh5.close()
                 except:
@@ -311,6 +321,29 @@ class DataSet():
 
         self.ntot = len(self.index_complexes)
         self.index_test = list(range(self.ntrain,self.ntot))
+
+
+    def _select_pdb(self, mol_names):
+        """Select complexes
+
+        Args:
+            mol_names (list): list of complex names
+
+        Returns:
+            list: list of selected complexes
+        """
+
+        if self.use_rotation is not None:
+            fnames_original = list(filter(lambda x: '_r' not in x, mol_names))
+            fnames_augmented = []
+            if self.use_rotation > 0:
+                for i in range(self.use_rotation):
+                    fnames_augmented += list(filter(lambda x: '_r%03d' %(i+1) in x, mol_names))
+                mol_names = fnames_original + fnames_augmented
+            else:
+                mol_names = fnames_original
+
+        return mol_names
 
 
     def filter(self,molgrp):
