@@ -36,7 +36,6 @@ class TestGenerateData(unittest.TestCase):
                                      data_augmentation = 1,
                                      compute_targets  = ['deeprank.targets.dockQ','deeprank.targets.binary_class'],
                                      compute_features = ['deeprank.features.AtomicFeature',
-                                                         'deeprank.features.NaivePSSM',
                                                          'deeprank.features.FullPSSM',
                                                          'deeprank.features.PSSM_IC',
                                                          'deeprank.features.BSA',
