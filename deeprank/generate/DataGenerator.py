@@ -105,7 +105,7 @@ class DataGenerator(object):
         # get all the conformation path
         for src in self.pdb_source:
             if os.path.isdir(src):
-                self.all_pdb += [os.path.join(src,fname) for fname in os.listdir(src)]
+                self.all_pdb += [os.path.join(src,fname) for fname in os.listdir(src) if fname.endswith('.pdb')]
             elif os.path.isfile(src):
                 self.all_pdb.append(src)
 
