@@ -946,7 +946,7 @@ class DataSet():
 
         # close
         fh5.close()
-        print(' --> Map one molecule %f sec.' %(time.time()-t0))
+        print(' --> Load one molecule %f sec.' %(time.time()-t0))
         sys.exit()
 
         # make sure all the feature have exact same type
@@ -1095,7 +1095,7 @@ class DataSet():
                 atdensB += self._densgrid(pos,vdw_rad,grid,npts)
 
             densities += [atdensA,atdensB]
-            #print('   __ Map single atomic density %f' %(time.time()-start))
+            #print('   __ Map single atomic density %s %f' %(atomtype, time.time()-start))
         sql.close()
         #print(' __ Total Atomic Densities : %f' %(time.time()-t0))
         return densities
@@ -1126,7 +1126,7 @@ class DataSet():
 
     def map_feature(self,feat_names, mol_data, grid, npts, angle, axis):
 
-        __vectorize__ = True
+        __vectorize__ = False
 
         t0 = time.time()
 
@@ -1162,16 +1162,18 @@ class DataSet():
 
             if __vectorize__ == False or __vectorize__ == 'both':
 
-                for chainID,xyz,vval in zip(chain,pos,feat_values):
-
-                    tmp_feat_ser[chainID] += self._featgrid(xyz,val,grid,npts)
+                for chainID,xyz,val in zip(chain,pos,feat_value):
+                    tmp_feat_ser[int(chainID)] += self._featgrid(xyz,val,grid,npts)
 
             if __vectorize__ == 'both':
                 assert np.allclose(tmp_feat_ser,tmp_feat_vect)
 
-            feat += tmp_feat_vect
+            if __vectorize__:
+                feat += tmp_feat_vect
+            else:
+                feat += tmp_feat_ser
 
-            #print('   __ map single feature %f (%d lines)' %(time.time()-start, len(data)  ))
+            #print('   __ map single feature %s %f (%d lines)' %(name, time.time()-start, len(data)  ))
         #print(' __ Total Features : %f' %(time.time()-t0))
         return feat
 
@@ -1198,11 +1200,15 @@ class DataSet():
         cutoff = 5.*beta
 
         dd = np.sqrt( (grid[0]-x0)**2 + (grid[1]-y0)**2 + (grid[2]-z0)**2 )
-        dgrid = np.zeros(npts)
 
-        dgrid[dd<cutoff] = value*np.exp(-beta*dd[dd<cutoff])
+        dd[dd<cutoff] = value*np.exp(-beta*dd[dd<cutoff])
+        dd[dd>cutoff] = 0
 
-        return dgrid
+        #dgrid = np.zeros(npts)
+        #dgrid[dd<cutoff] = value*np.exp(-beta*dd[dd<cutoff])
+        #print(np.allclose(dgrid,dd))
+
+        return dd
 
     # get rotation axis and angle
     @staticmethod
