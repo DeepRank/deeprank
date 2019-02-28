@@ -131,7 +131,7 @@ class DataSet():
         # filter the dataset
         self.dict_filter = dict_filter
 
-        #
+        # target ordered lower the better or higher the better
         self.target_ordering = target_ordering
 
         # print the progress bar or not

@@ -135,7 +135,7 @@ class TestLearn(unittest.TestCase):
                 select_feature={'AtomicDensities_ind' : 'all',
                                 'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
                 select_target='BIN_CLASS',tqdm=True,
-                normalize_features = True, 
+                normalize_features = True,
                 normalize_targets=False,
                 clip_features=False,
                 pair_chain_feature=np.add)

@@ -40,7 +40,6 @@ class TestGenerateData(unittest.TestCase):
                                                          'deeprank.features.PSSM_IC',
                                                          'deeprank.features.BSA',
                                                          'deeprank.features.ResidueDensity'],
-                                     # check *.py in "features" folder for the features
                                      hdf5=h5)
 
             #create new files

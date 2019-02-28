@@ -78,7 +78,7 @@ class NeuralNet():
 
             outdir (str): output directory where all the files will be written
 
-            pretrained_model (str): Save model to be used for further training or testing
+            pretrained_model (str): Saved model to be used for further training or testing
 
             cuda (bool): Use CUDA
 
