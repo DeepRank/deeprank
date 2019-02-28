@@ -75,7 +75,7 @@ class TestLearn(unittest.TestCase):
     data_set = DataSet(database,
               test_database = database,
               select_feature={'AtomicDensities_ind' : 'all',
-                              'Feature_ind' : ['coulomb','vdwaals','charge','pssm'] },
+                              'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
                               select_target='DOCKQ',tqdm=True,
                               normalize_features = True, normalize_targets=True,
                               clip_features=False,
@@ -150,7 +150,7 @@ class TestLearn(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  TestLearn.test_learn_3d_reg()
+  #TestLearn.test_learn_3d_reg()
   #TestLearn.test_learn_3d_class()
-  #TestLearn.test_learn_2d_reg()
+  TestLearn.test_learn_2d_reg()
   #TestLearn.test_transfer()
