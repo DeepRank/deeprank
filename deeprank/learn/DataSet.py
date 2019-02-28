@@ -23,7 +23,7 @@ class DataSet():
                  use_rotation = None,
                  select_feature = 'all', select_target = 'DOCKQ',
                  normalize_features = True, normalize_targets = True,
-                 target_ordering=None,
+                 target_ordering = None,
                  dict_filter = None, pair_chain_feature = None,
                  transform_to_2D = False, projection = 0,
                  grid_shape = None,
@@ -133,6 +133,8 @@ class DataSet():
 
         # target ordered lower the better or higher the better
         self.target_ordering = target_ordering
+        if self.target_ordering is None:
+            self._get_target_ordering()
 
         # print the progress bar or not
         self.tqdm=tqdm
@@ -185,7 +187,7 @@ class DataSet():
         self.get_input_shape()
 
         # get the target ordering
-        self._get_target_ordering()
+        #self._get_target_ordering()
 
         # get renormalization factor
         if self.normalize_features or self.normalize_targets:
