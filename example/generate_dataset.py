@@ -54,6 +54,6 @@ database.map_features(grid_info,try_sparse=True, time=False, prog_bar=True)
 
 # get the normalization of the features
 print('{:25s}'.format('Normalization') + database.hdf5)
-norm = NormalizeData(h5)
+norm = NormalizeData(database.hdf5)
 norm.get()
 
