@@ -110,11 +110,8 @@ class DataSet():
 
 
         # allow for multiple database
-        self.test_database = test_database
-        if test_database is not None:
-            if not isinstance(test_database,list):
-                self.test_database = [test_database]
-
+        self.test_database = self._get_database_name(test_database)
+        
         # pdb selection
         self.use_rotation = use_rotation
 
