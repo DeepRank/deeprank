@@ -529,7 +529,6 @@ class DataGenerator(object):
             # copy the targets to the augmented
             for k in molgrp['targets']:
                 if k not in aug_molgrp['targets']:
-                    #data = src_molgrp['targets/'+k][:]
                     data = src_molgrp['targets/'+k][()]
                     aug_molgrp.require_group('targets')
                     aug_molgrp.create_dataset("targets/"+k,data=data)
@@ -592,6 +591,13 @@ class DataGenerator(object):
         # default CUDA
         cuda_func = None
         cuda_atomic = None
+
+        # disable CUDA when using MPI
+        if self.mpi_comm is not None:
+            if self.mpi_comm.Get_size() > 1:
+                if cuda == True:
+                    print('Warning : CUDA mapping disabled when using MPI')
+                    cuda = False
 
         # name of the hdf5 file
         f5 = h5py.File(self.hdf5,'a')

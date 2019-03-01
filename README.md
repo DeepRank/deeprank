@@ -29,12 +29,15 @@ We give here the tutorial like introduction to the DeepRank machinery. More info
  * the generation of the data
  * running deep leaning experiments.
 
-### A . Generate the data set
+### A . Generate the data set (using MPI)
 
-The generation of the data require only require PDBs files of decoys and their native. All the features/targets and mapped features onto grid points will be auomatically calculated and store in a HDF5 file. You can take a look at the file `test/test_generate.py` for an example.
+The generation of the data require only require PDBs files of decoys and their native and the PSSM if needed. All the features/targets and mapped features onto grid points will be auomatically calculated and store in a HDF5 file. 
 
 ```python
 from deeprank.generate import *
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
 
 # adress of the BM4 folder
 BM4 = '/path/to/BM4/data/'
@@ -42,21 +45,26 @@ BM4 = '/path/to/BM4/data/'
 # sources to assemble the data base
 pdb_source     = ['./1AK4/decoys/']
 pdb_native     = ['./1AK4/native/']
+pssm_source    = ['./1AK4/pssm_new/']
 
 # output file
 h5file = './1ak4.hdf5'
 
 #init the data assembler
-database = DataGenerator(pdb_source=self.pdb_source,pdb_native=self.pdb_native,
-                         compute_targets  = ['deeprank.targets.dockQ'],
+database = DataGenerator(pdb_source=pdb_source,
+                         pdb_native=pdb_native,
+                         pssm_source=pssm_source,
+                         data_augmentation = 1,
+                         compute_targets  = ['deeprank.targets.dockQ','deeprank.targets.binary_class'],
                          compute_features = ['deeprank.features.AtomicFeature',
-                                             'deeprank.features.NaivePSSM',
+                                             'deeprank.features.FullPSSM',
                                              'deeprank.features.PSSM_IC',
-                                             'deeprank.features.BSA'],
-                         hdf5=self.h5file)
+                                             'deeprank.features.BSA',
+                                             'deeprank.features.ResidueDensity'],
+                         hdf5=h5file,mpi_comm=comm)
 
 #create new files
-database.create_database()
+database.create_database(prog_bar=True)
 
 # map the features
 grid_info = {
@@ -66,6 +74,13 @@ grid_info = {
 }
 
  database.map_features(grid_info,try_sparse=True,time=False,prog_bar=True)
+```
+
+This script can be exectuted using for example 4 MPI processes with the command:
+
+```
+NP=4
+mpiexec -n $NP python generate.py
 ```
 
 
