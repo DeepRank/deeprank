@@ -78,7 +78,7 @@ class NeuralNet():
 
             outdir (str): output directory where all the files will be written
 
-            pretrained_model (str): Save model to be used for further training or testing
+            pretrained_model (str): Saved model to be used for further training or testing
 
             cuda (bool): Use CUDA
 
@@ -235,7 +235,7 @@ class NeuralNet():
             sys.exit()
 
     def train(self,nepoch=50, divide_trainset=None, hdf5='epoch_data.hdf5',train_batch_size = 10,
-              preshuffle = True,export_intermediate=True,num_workers=1,save_model='best',save_epoch='intermediate'):
+              preshuffle=True, preshuffle_seed=None, export_intermediate=True,num_workers=1,save_model='best',save_epoch='intermediate'):
 
         """Perform a simple training of the model. The data set is divided in training/validation sets.
 
@@ -250,6 +250,8 @@ class NeuralNet():
             train_batch_size (int, optional): size of the batch
 
             preshuffle (bool, optional): preshuffle the dataset before dividing it
+
+            preshuffle_seed (int, optional): set random seed for preshuffle
 
             export_intermediate (bool, optional): export data at interediate epoch
 
@@ -295,7 +297,7 @@ class NeuralNet():
 
         # divide the set in train+ valid and test
         divide_trainset = divide_trainset or [0.8,0.2]
-        index_train,index_valid,index_test = self._divide_dataset(divide_trainset,preshuffle)
+        index_train,index_valid,index_test = self._divide_dataset(divide_trainset,preshuffle, preshuffle_seed)
 
         print(': %d confs. for training' %len(index_train))
         print(': %d confs. for validation' %len(index_valid))
@@ -416,13 +418,14 @@ class NeuralNet():
         self.data_set.transform = state['transform']
         self.data_set.proj2D = state['proj2D']
 
-    def _divide_dataset(self,divide_set, preshuffle):
+    def _divide_dataset(self,divide_set, preshuffle, preshuffle_seed):
 
         '''Divide the data set in a training validation and test according to the percentage in divide_set.
 
         Args:
             divide_set (list(float)): percentage used for training/validation/test
             preshuffle (bool): shuffle the dataset before dividing it
+            preshuffle_seed (int, optional): set random seed for preshuffle
 
         Returns:
             list(int),list(int),list(int): Indices of the training/validation/test set
@@ -442,6 +445,9 @@ class NeuralNet():
 
         # preshuffle
         if preshuffle:
+            if preshuffle_seed is not None and not isinstance(preshuffle_seed, int):
+                preshuffle_seed = int(preshuffle_seed)
+            np.random.seed(preshuffle_seed)
             np.random.shuffle(self.data_set.index_train)
 
         # size of the subset for training

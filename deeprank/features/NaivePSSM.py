@@ -49,6 +49,7 @@ class NaivePSSM(FeatureClass):
         '''
 
         super().__init__("Residue")
+        print("== Warning : Please don't use NaivePSSM as a feature it's very experimental")
 
         self.mol_name = mol_name
         self.pdbfile = pdbfile

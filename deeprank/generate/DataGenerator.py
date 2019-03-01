@@ -28,7 +28,7 @@ class DataGenerator(object):
 
     def __init__(self,pdb_select=None,pdb_source=None,pdb_native=None,pssm_source=None,
                  compute_targets = None, compute_features = None,
-                 data_augmentation=None, hdf5='database.h5',logger=None,debug=True):
+                 data_augmentation=None, hdf5='database.h5',logger=None,debug=True,mpi_comm=None):
         """Generate the data (features/targets/maps) required for deeprank.
 
         Args:
@@ -41,6 +41,7 @@ class DataGenerator(object):
             hdf5 (str, optional): name of the hdf5 file where the data is saved
             logger (None, optional): logger file
             debug (bool, optional): print debuf info
+            mpi_comm (MPI_COMM) : MPI COMMUNICATOR
 
         Raises:
             NotADirectoryError: if the source are not found
@@ -105,7 +106,7 @@ class DataGenerator(object):
         # get all the conformation path
         for src in self.pdb_source:
             if os.path.isdir(src):
-                self.all_pdb += [os.path.join(src,fname) for fname in os.listdir(src)]
+                self.all_pdb += [os.path.join(src,fname) for fname in os.listdir(src) if fname.endswith('.pdb')]
             elif os.path.isfile(src):
                 self.all_pdb.append(src)
 
@@ -125,6 +126,9 @@ class DataGenerator(object):
                 self.pdb_path += list(filter(lambda x: i in x, self.all_pdb))
         else:
             self.pdb_path = self.all_pdb
+
+        # MPI COMM
+        self.mpi_comm = mpi_comm
 
 #====================================================================================
 #
@@ -164,13 +168,41 @@ class DataGenerator(object):
         >>> database.create_database(prog_bar=True)
         >>> '''
 
+        # deals with the parallelization
+        self.local_pdbs = self.pdb_path
+
+        if self.mpi_comm is not None:
+            rank = self.mpi_comm.Get_rank()
+            size = self.mpi_comm.Get_size()
+        else:
+            size = 1
+
+        if size > 1:
+
+            if rank == 0:
+
+                pdbs = [self.pdb_path[i::size] for i in range(size)]
+
+                self.local_pdbs = pdbs[0]
+
+                # send to other procs
+                for iP in range(1,size):
+                    self.mpi_comm.send(pdbs[iP],dest=iP,tag=11)
+
+            else:
+                # receive procs
+                self.local_pdbs = self.mpi_comm.recv(source=0,tag=11)
+
+            # change hdf5 name
+            self.hdf5 = '%03d_' %rank + self.hdf5
+
         # open the file
         self.f5 = h5py.File(self.hdf5,'w')
         self.logger.info('Start Feature calculation')
 
         # get the local progress bar
         desc = '{:25s}'.format('Create database')
-        cplx_tqdm = tqdm(self.pdb_path,desc=desc,disable = not prog_bar)
+        cplx_tqdm = tqdm(self.local_pdbs,desc=desc,disable = not prog_bar)
 
         if not prog_bar:
             print(desc, ':', self.hdf5)
@@ -322,6 +354,8 @@ class DataGenerator(object):
         self.f5.close()
 
 
+
+
 #====================================================================================
 #
 #       ADD FEATURES TO AN EXISTING DATASET
@@ -413,6 +447,7 @@ class DataGenerator(object):
 
 
     def add_unique_target(self,targdict):
+
         '''Add identical targets for all the complexes in the datafile.
 
         This is usefull if you want to add the binary class of all the complexes
@@ -494,7 +529,6 @@ class DataGenerator(object):
             # copy the targets to the augmented
             for k in molgrp['targets']:
                 if k not in aug_molgrp['targets']:
-                    #data = src_molgrp['targets/'+k][:]
                     data = src_molgrp['targets/'+k][()]
                     aug_molgrp.require_group('targets')
                     aug_molgrp.create_dataset("targets/"+k,data=data)
@@ -557,6 +591,13 @@ class DataGenerator(object):
         # default CUDA
         cuda_func = None
         cuda_atomic = None
+
+        # disable CUDA when using MPI
+        if self.mpi_comm is not None:
+            if self.mpi_comm.Get_size() > 1:
+                if cuda == True:
+                    print('Warning : CUDA mapping disabled when using MPI')
+                    cuda = False
 
         # name of the hdf5 file
         f5 = h5py.File(self.hdf5,'a')

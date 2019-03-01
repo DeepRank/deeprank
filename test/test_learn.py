@@ -131,7 +131,7 @@ class TestLearn(unittest.TestCase):
     data_set = DataSet(database,
               test_database = database,
               select_feature={'AtomicDensities_ind' : 'all',
-                              'Feature_ind' : ['coulomb','vdwaals','charge','pssm'] },
+                              'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
                               select_target='DOCKQ',tqdm=True,
                               normalize_features = True, normalize_targets=True,
                               clip_features=False,
@@ -175,12 +175,7 @@ class TestLearn(unittest.TestCase):
     model.test()
 
 
-
-
-
-
-
-
+s
 
   @unittest.skipIf(skip,"Torch fails on Travis")
   @staticmethod

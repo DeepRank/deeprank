@@ -151,8 +151,8 @@ class DataSet():
         # filter the dataset
         self.dict_filter = dict_filter
 
-        #
-        self.target_ordering = target_ordering
+        # target ordered lower the better or higher the better
+        self._get_target_ordering(target_ordering)
 
         # print the progress bar or not
         self.tqdm=tqdm
@@ -209,7 +209,7 @@ class DataSet():
         self.get_input_shape()
 
         # get the target ordering
-        self._get_target_ordering()
+        #self._get_target_ordering()
 
         # get renormalization factor
         if self.normalize_features or self.normalize_targets:
@@ -781,7 +781,7 @@ class DataSet():
                     print('  Final STD Null for %s/%s. Changed it to 1' %(feat_types,feat))
                     self.param_norm['features'][feat_types][feat].std = 1
 
-    def _get_target_ordering(self):
+    def _get_target_ordering(self, order):
         """Determine if ordering of the target.
         This can be lower the better or higher the better
         If it can't determine the ordering 'lower' is assumed
@@ -791,15 +791,18 @@ class DataSet():
         higher_list = ['DOCKQ','Fnat']
         NA_list = ['binary_class','BIN_CLASS', 'class']
 
-        if self.select_target in lower_list:
-            self.target_ordering = 'lower'
-        elif self.select_target in higher_list:
-            self.target_ordering = 'higher'
-        elif self.select_target in NA_list:
-            self.target_ordering = None
+        if order is not None:
+            self.target_ordering = order
         else:
-            print('  Target ordering unidentified. lower assumed')
-            self.target_ordering = 'lower'
+            if self.select_target in lower_list:
+                self.target_ordering = 'lower'
+            elif self.select_target in higher_list:
+                self.target_ordering = 'higher'
+            elif self.select_target in NA_list:
+                self.target_ordering = None
+            else:
+                print('  Target ordering unidentified. lower assumed')
+                self.target_ordering = 'lower'
 
     def backtransform_target(self,data):
         """Returns the values of the target after de-normalization.
