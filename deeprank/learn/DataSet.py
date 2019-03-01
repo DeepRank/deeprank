@@ -1,4 +1,5 @@
 import os
+import glob
 import sys
 import time
 import h5py
@@ -22,8 +23,7 @@ from tqdm import tqdm
 class DataSet():
 
     def __init__(self,database, test_database = None,
-                 mapfly = False,
-                 #data_augmentation = 0,
+                 mapfly = False, grid_info = None,
                  use_rotation = None,
                  select_feature = 'all', select_target = 'DOCKQ',
                  normalize_features = True, normalize_targets = True,
@@ -54,13 +54,19 @@ class DataSet():
         >>>                    dict_filter={'IRMSD':'<4. or >10.'},
         >>>                    process = True)
         Args:
+
             database (list(str)): names of the hdf5 files used for the training/validation
                 Example : ['1AK4.hdf5','1B7W.hdf5',...]
+
             test_database (list(str)): names of the hdf5 files used for the test
                 Example : ['7CEI.hdf5']
 
             mapfly (bool): do we compute the map in the batch preparation or read them
-            # obsolete data_augmentation (int): Number of rotated conformations
+
+            grid_info(dict) : grid information to map the feature on the fly. if None the original grid points are used.
+                dictionary entries : {
+                    'number_of_points' : [X,Y,Z]
+                    'resolution' : [X,Y,Z] }
 
             use_rotation (int): number of rotations to use.
                 Example: 0 (use only original data)
@@ -100,9 +106,8 @@ class DataSet():
         '''
 
         # allow for multiple database
-        self.database = database
-        if not isinstance(database,list):
-            self.database = [database]
+        self.database = self._get_database_name(database)
+
 
         # allow for multiple database
         self.test_database = test_database
@@ -119,6 +124,7 @@ class DataSet():
 
         # map generation
         self.mapfly = mapfly
+        self.grid_info = grid_info
 
         # data agumentation
         if self.mapfly:
@@ -160,6 +166,24 @@ class DataSet():
         # process the data
         if process:
             self.process_dataset()
+
+    @staticmethod
+    def _get_database_name(database):
+
+        if database is not None:
+            if not isinstance(database,list):
+                database = [database]
+
+            filenames = []
+            for db in database:
+                filenames += glob.glob(db)
+
+        else :
+
+            filenames = None
+
+        return filenames
+
 
     def process_dataset(self):
         """Process the data set.
@@ -978,7 +1002,7 @@ class DataSet():
 
         # get the mol
         mol_data = fh5.get(mol)
-        grid,npts = self.get_grid(mol_data)
+        grid, npts = self.get_grid(mol_data)
 
         # get the features
         feature = []
@@ -1053,11 +1077,35 @@ class DataSet():
         return np.array(new_feat).astype(outtype)
 
 
-    @staticmethod
-    def get_grid(mol_data):
-        x = mol_data['grid_points/x'].value
-        y = mol_data['grid_points/y'].value
-        z = mol_data['grid_points/z'].value
+    def get_grid(self, mol_data):
+
+        if self.grid_info is None:
+
+            try:
+
+                x = mol_data['grid_points/x'].value
+                y = mol_data['grid_points/y'].value
+                z = mol_data['grid_points/z'].value
+
+            except:
+
+                raise ValueError("Grid points not found in the data file")
+
+        else:
+
+            center = mol_data['grid_points/center'].value
+            npts = np.array(self.grid_info['number_of_points'])
+            res = np.array(self.grid_info['resolution'])
+
+            halfdim = 0.5*(npts*res)
+
+            low_lim = center-halfdim
+            hgh_lim = low_lim + res*(npts-1)
+
+            x = np.linspace(low_lim[0],hgh_lim[0],npts[0])
+            y = np.linspace(low_lim[1],hgh_lim[1],npts[1])
+            z = np.linspace(low_lim[2],hgh_lim[2],npts[2])
+
         npts = (len(x),len(y),len(z))
         grid = np.meshgrid(x,y,z)
         return grid, npts
@@ -1076,7 +1124,8 @@ class DataSet():
         for atomtype,vdw_rad in feat_names.items():
 
             start = time.time()
-            # get posof the contact atoms of correct type
+
+            # get pos of the contact atoms of correct type
             xyzA = np.array(sql.get('x,y,z',rowID=index[0],name=atomtype))
             xyzB = np.array(sql.get('x,y,z',rowID=index[1],name=atomtype))
 
