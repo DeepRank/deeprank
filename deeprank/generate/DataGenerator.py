@@ -541,10 +541,49 @@ class DataGenerator(object):
 
 #====================================================================================
 #
-#       MAP THE FEATURES TO THE GRID
+#       PRECOMPUTE TEH GRID POINTS
 #
 #====================================================================================
 
+    def precompute_grid(self,grid_info, contact_distance = 8.5, prog_bar = False,time=False,try_sparse=True):
+
+        # name of the hdf5 file
+        f5 = h5py.File(self.hdf5,'a')
+
+        # check all the input PDB files
+        mol_names = f5.keys()
+
+        # get the local progress bar
+        desc = '{:25s}'.format('Precompute grid points')
+        mol_tqdm = tqdm(mol_names,desc=desc, disable = not prog_bar)
+
+        if not prog_bar:
+            print(desc, ':', self.hdf5)
+            sys.stdout.flush()
+
+        # loop over the data files
+        for mol in mol_tqdm:
+
+            mol_tqdm.set_postfix(mol=mol)
+
+            # compute the data we want on the grid
+            grid = gt.GridTools(molgrp=f5[mol],
+                             number_of_points = grid_info['number_of_points'],
+                             resolution = grid_info['resolution'],
+                             hdf5_file = f5,
+                             contact_distance = contact_distance,
+                             time = time,
+                             prog_bar = prog_bar,
+                             try_sparse = try_sparse)
+
+        f5.close()
+
+
+#====================================================================================
+#
+#       MAP THE FEATURES TO THE GRID
+#
+#====================================================================================
 
     def map_features(self,grid_info={},
                      cuda=False,gpu_block=None,

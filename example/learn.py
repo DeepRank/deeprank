@@ -5,13 +5,13 @@ import numpy as np
 from deeprank.learn import *
 from deeprank.learn.model3d import cnn as cnn3d
 
-database = '1ak4.hdf5'
+database = ['000_1ak4.hdf5','001_1ak4.hdf5']
 out = './out'
 
 # make sure the databse is there
-database = '1ak4.hdf5'
-if not os.path.isfile(database):
-  raise FileNotFoundError('Database %s not found. Make sure to run test_generate before')
+for db in database:
+	if not os.path.isfile(db):
+	  raise FileNotFoundError('Database %s not found. Make sure to run test_generate before' %db)
 
 # clean the output dir
 if os.path.isdir(out):
@@ -23,13 +23,17 @@ if os.path.isdir(out):
 # declare the dataset instance
 data_set = DataSet(database,
             test_database = None,
-            grid_shape=(30,30,30),
-            select_feature={'AtomicDensities_ind' : 'all',
-                            'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
+            mapfly=True,
+            grid_info = {'number_of_points':[30,30,30], 'resolution' : [1,1,1]},
+            #grid_shape=(30,30,30),
+            # select_feature={'AtomicDensities_ind' : 'all',
+            #                 'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
+            select_feature={'AtomicDensities' : {'CA':3.5, 'C':3.5, 'N':3.5, 'O':3.5},
+                			'Features'        : ['coulomb','vdwaals','charge','PSSM_*'] },
             select_target='DOCKQ',
             tqdm=True,
-            normalize_features = True,
-            normalize_targets=True,
+            normalize_features = False,
+            normalize_targets=False,
             clip_features=False,
             pair_chain_feature=np.add,
             dict_filter={'DOCKQ':'<1.'})

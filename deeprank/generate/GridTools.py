@@ -766,6 +766,7 @@ class GridTools(object):
         grd.create_dataset('x',data=self.x)
         grd.create_dataset('y',data=self.y)
         grd.create_dataset('z',data=self.z)
+        grd.create_dataset('center',data=self.center_contact)
 
 
     # save the data in the hdf5 file

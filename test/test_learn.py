@@ -175,7 +175,6 @@ class TestLearn(unittest.TestCase):
     model.test()
 
 
-s
 
   @unittest.skipIf(skip,"Torch fails on Travis")
   @staticmethod
