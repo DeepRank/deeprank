@@ -971,7 +971,7 @@ class DataSet():
         # close
         fh5.close()
         print(' --> Load one molecule %f sec.' %(time.time()-t0))
-        sys.exit()
+        #sys.exit()
 
         # make sure all the feature have exact same type
         # if they don't  collate_fn in the creation of the minibatch will fail.
@@ -1019,7 +1019,8 @@ class DataSet():
         # close
         fh5.close()
         print(' --> Map one molecule %f sec.' %(time.time()-t0))
-        sys.exit()
+        #sys.exit()
+        
         # make sure all the feature have exact same type
         # if they don't  collate_fn in the creation of the minibatch will fail.
         # Note returning torch.FloatTensor makes each epoch twice longer ...
