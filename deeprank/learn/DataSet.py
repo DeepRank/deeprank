@@ -19,7 +19,7 @@ from tqdm import tqdm
 
 class DataSet():
 
-    def __init__(self,database, test_database = None,
+    def __init__(self,train_database, valid_database = None, test_database = None,
                  use_rotation = None,
                  select_feature = 'all', select_target = 'DOCKQ',
                  normalize_features = True, normalize_targets = True,
@@ -35,8 +35,8 @@ class DataSet():
         part of DeepRank. To create an instance you must provide quite a few arguments.
         Example:
         >>> from deeprank.learn import *
-        >>> database = '1ak4.hdf5'
-        >>> data_set = DataSet(database,
+        >>> train_database = '1ak4.hdf5'
+        >>> data_set = DataSet(train_database, valid_database = None,
         >>>                    test_database = None,
         >>>                    grid_shape=(30,30,30),
         >>>                    select_feature = {
@@ -50,8 +50,10 @@ class DataSet():
         >>>                    dict_filter={'IRMSD':'<4. or >10.'},
         >>>                    process = True)
         Args:
-            database (list(str)): names of the hdf5 files used for the training/validation
+            train_database (list(str)): names of the hdf5 files used for the training/validation
                 Example : ['1AK4.hdf5','1B7W.hdf5',...]
+            valid_database (list(str)): names of the hdf5 files used for the validation
+                Example : ['1ACB.hdf5','4JHF.hdf5',...]
             test_database (list(str)): names of the hdf5 files used for the test
                 Example : ['7CEI.hdf5']
             use_rotation (int): number of rotations to use.
@@ -91,9 +93,13 @@ class DataSet():
         '''
 
         # allow for multiple database
-        self.database = database
-        if not isinstance(database,list):
-            self.database = [database]
+        self.train_database = train_database
+        if not isinstance(train_database,list):
+            self.train_database = [train_database]
+
+        self.valid_database = valid_database
+        if not isinstance(valid_database,list):
+            self.valid_database = [valid_database]
 
         # allow for multiple database
         self.test_database = test_database
@@ -152,7 +158,7 @@ class DataSet():
         print('=\t DeepRank Data Set')
         print('=')
         print('=\t Training data' )
-        for f in self.database:
+        for f in self.train_database:
             print('=\t ->',f)
         print('=')
         if self.test_database is not None:
@@ -165,7 +171,9 @@ class DataSet():
 
 
         # check if the files are ok
-        self.check_hdf5_files()
+        self.train_database = self.check_hdf5_files(self.train_database)
+        self.valid_database = self.check_hdf5_files(self.valid_database)
+        self.test_database = self.check_hdf5_files(self.test_database)
 
         # create the indexing system
         # alows to associate each mol to an index
@@ -195,7 +203,8 @@ class DataSet():
         print('\n')
         print("   Data Set Info")
         print('   Training set        : %d conformations' %self.ntrain)
-        print('   Test set            : %d conformations' %(self.ntot-self.ntrain))
+        print('   Validation set        : %d conformations' %self.nvalid)
+        print('   Test set            : %d conformations' %(self.ntest))
         print('   Number of channels  : %d' %self.input_shape[0])
         print('   Grid Size           : %d x %d x %d' %(self.data_shape[1],self.data_shape[2],self.data_shape[3]))
         sys.stdout.flush()
@@ -241,12 +250,12 @@ class DataSet():
         return {'mol':[fname,mol],'feature':feature,'target':target}
 
 
-    def check_hdf5_files(self):
+    def check_hdf5_files(self, database):
         """Check if the data contained in the hdf5 file is ok."""
 
         print("   Checking dataset Integrity")
         remove_file = []
-        for fname in self.database:
+        for fname in database:
             try:
                 f = h5py.File(fname,'r')
                 mol_names = list(f.keys())
@@ -259,7 +268,8 @@ class DataSet():
                 remove_file.append(fname)
 
         for name in remove_file:
-            self.database.remove(name)
+            database.remove(name)
+        return database
 
 
     def create_index_molecules(self):
@@ -273,10 +283,10 @@ class DataSet():
 
         desc = '{:25s}'.format('   Train dataset')
         if self.tqdm:
-            data_tqdm = tqdm(self.database,desc=desc,file=sys.stdout)
+            data_tqdm = tqdm(self.train_database,desc=desc,file=sys.stdout)
         else:
             print('   Train dataset')
-            data_tqdm = self.database
+            data_tqdm = self.train_database
         sys.stdout.flush()
 
         for fdata in data_tqdm:
@@ -287,8 +297,7 @@ class DataSet():
                 mol_names = list(fh5.keys())
                 mol_names = self._select_pdb(mol_names)
                 for k in mol_names:
-                    if self.filter(fh5[k]):
-                        self.index_complexes += [(fdata,k)]
+                    self.index_complexes += [(fdata,k)]
                 fh5.close()
             except Exception as inst:
                 print('\t\t-->Ignore File : ' + fdata)
@@ -296,6 +305,33 @@ class DataSet():
 
         self.ntrain = len(self.index_complexes)
         self.index_train = list(range(self.ntrain))
+
+        if self.valid_database is not None:
+
+            desc = '{:25s}'.format('   Validation dataset')
+            if self.tqdm:
+                data_tqdm = tqdm(self.valid_database,desc=desc,file=sys.stdout)
+            else:
+                data_tqdm = self.valid_database
+                print('   Validation dataset')
+            sys.stdout.flush()
+
+            for fdata in data_tqdm:
+                if self.tqdm:
+                    data_tqdm.set_postfix(mol=os.path.basename(fdata))
+                try:
+                    fh5 = h5py.File(fdata,'r')
+                    mol_names = list(fh5.keys())
+                    mol_names = self._select_pdb(mol_names)
+                    self.index_complexes += [(fdata,k) for k in mol_names]
+                    fh5.close()
+                except:
+                    print('\t\t-->Ignore File : '+fdata)
+
+        self.ntot = len(self.index_complexes)
+        self.index_valid = list(range(self.ntrain,self.ntot))
+        self.nvalid = self.ntot - self.ntrain
+
 
         if self.test_database is not None:
 
@@ -313,14 +349,15 @@ class DataSet():
                 try:
                     fh5 = h5py.File(fdata,'r')
                     mol_names = list(fh5.keys())
-                    mol_names = selef._select_pdb(mol_names)
+                    mol_names = self._select_pdb(mol_names)
                     self.index_complexes += [(fdata,k) for k in mol_names]
                     fh5.close()
                 except:
                     print('\t\t-->Ignore File : '+fdata)
 
         self.ntot = len(self.index_complexes)
-        self.index_test = list(range(self.ntrain,self.ntot))
+        self.index_test = list(range(self.ntrain + self.nvalid ,self.ntot))
+        self.ntest = self.ntot - self.ntrain - self.nvalid
 
 
     def _select_pdb(self, mol_names):
@@ -391,7 +428,7 @@ class DataSet():
         '''
 
         # open a h5 file in case we need it
-        f5 = h5py.File(self.database[0],'r')
+        f5 = h5py.File(self.train_database[0],'r')
         mol_name = list(f5.keys())[0]
         mapped_data = f5.get(mol_name + '/mapped_features/')
         chain_tags = ['_chainA','_chainB']
@@ -465,7 +502,7 @@ class DataSet():
     def print_possible_features(self):
         """Print the possible features in the group."""
 
-        f5 = h5py.File(self.database[0],'r')
+        f5 = h5py.File(self.train_database[0],'r')
         mol_name = list(f5.keys())[0]
         mapgrp = f5.get(mol_name + '/mapped_features/')
 
@@ -515,7 +552,7 @@ class DataSet():
         self.input_shape : input size of the CNN (potentially after 2d transformation)
         """
 
-        fname = self.database[0]
+        fname = self.train_database[0]
         feature,_ = self.load_one_molecule(fname)
         self.data_shape = feature.shape
 
@@ -535,7 +572,7 @@ class DataSet():
             ValueError: If no grid shape is provided or is present in the HDF5 file
         '''
 
-        fname = self.database[0]
+        fname = self.train_database[0]
         fh5 = h5py.File(fname,'r')
         mol = list(fh5.keys())[0]
 
@@ -588,7 +625,7 @@ class DataSet():
         """Read or create the normalization file for the complex.
         """
         # loop through all the filename
-        for f5 in self.database:
+        for f5 in self.train_database:
 
             # get the precalculated data
             fdata = os.path.splitext(f5)[0]+'_norm.pckl'
@@ -618,7 +655,7 @@ class DataSet():
             self.param_norm['targets'][self.select_target].update(maxv)
 
         # process the std
-        nfile = len(self.database)
+        nfile = len(self.train_database)
         for feat_types,feat_dict in self.param_norm['features'].items():
             for feat in feat_dict:
                 self.param_norm['features'][feat_types][feat].process(nfile)
