@@ -5,15 +5,20 @@ import numpy as np
 from deeprank.learn import *
 from deeprank.learn.model3d import cnn as cnn3d
 
-database = '1ak4.hdf5'
-out = './out'
+#adress of the database
+train_database = './data/1AVX.hdf5'
+valid_database = './data/1BVN.hdf5'
+test_database = './data/1DFJ.hdf5'
+
 
 # make sure the databse is there
-database = '1ak4.hdf5'
-if not os.path.isfile(database):
-  raise FileNotFoundError('Database %s not found. Make sure to run test_generate before')
+
+for database in [train_database, valid_database, test_database]:
+    if not os.path.isfile(database):
+        raise FileNotFoundError('Database %s not found. Make sure to run test_generate before')
 
 # clean the output dir
+out = './out_3d'
 if os.path.isdir(out):
   for f in glob.glob(out+'/*'):
     os.remove(f)
@@ -21,8 +26,9 @@ if os.path.isdir(out):
 
 
 # declare the dataset instance
-data_set = DataSet(database,
-            test_database = None,
+data_set = DataSet(train_database = train_database,
+            valid_database=valid_database,
+            test_database = test_database,
             grid_shape=(30,30,30),
             select_feature={'AtomicDensities_ind' : 'all',
                             'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
@@ -39,4 +45,4 @@ model = NeuralNet(data_set,cnn3d,model_type='3d',task='reg',
                   cuda=False,plot=True,outdir=out)
 
 # start the training
-model.train(nepoch = 5,divide_trainset=0.8, train_batch_size = 5, num_workers=0, save_model='all')
+model.train(nepoch = 5, divide_trainset = None, train_batch_size = 5, num_workers=0, save_model='all')

@@ -21,8 +21,8 @@ class TestLearn(unittest.TestCase):
     """Use a 3D CNN for regularization."""
 
     #adress of the database
-    database = '1ak4.hdf5'
-    if not os.path.isfile(database):
+    train_database = '1ak4.hdf5'
+    if not os.path.isfile(train_database):
       raise FileNotFoundError('Database %s not found. Make sure to run test_generate before')
 
     # clean the output dir
@@ -33,7 +33,8 @@ class TestLearn(unittest.TestCase):
       os.removedirs(out)
 
     # declare the dataset instance
-    data_set = DataSet(database,
+    data_set = DataSet(train_database,
+                valid_database = None,
                 test_database = None,
                 grid_shape=(30,30,30),
                 select_feature={'AtomicDensities_ind' : 'all',
@@ -72,7 +73,8 @@ class TestLearn(unittest.TestCase):
       raise FileNotFoundError('Database %s not found. Make sure to run test_generate before')
 
     # declare the dataset instance
-    data_set = DataSet(database,
+    data_set = DataSet(train_database = database,
+                valid_database = database,
               test_database = database,
               select_feature={'AtomicDensities_ind' : 'all',
                               'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
@@ -129,7 +131,8 @@ class TestLearn(unittest.TestCase):
       os.removedirs(out)
 
     # declare the dataset instance
-    data_set = DataSet(database,
+    data_set = DataSet(train_database = database,
+                valid_database = None,
                 test_database = None,
                 grid_shape=(30,30,30),
                 select_feature={'AtomicDensities_ind' : 'all',

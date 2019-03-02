@@ -3,6 +3,8 @@ import sys
 import os
 import time
 import h5py
+import  matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
@@ -234,7 +236,7 @@ class NeuralNet():
             print(' --> Aborting the experiment \n\n')
             sys.exit()
 
-    def train(self,nepoch=50, divide_trainset=None, hdf5='epoch_data.hdf5',train_batch_size = 10,
+    def train(self,nepoch=50, divide_trainset= None, hdf5='epoch_data.hdf5',train_batch_size = 10,
               preshuffle=True, preshuffle_seed=None, export_intermediate=True,num_workers=1,save_model='best',save_epoch='intermediate'):
 
         """Perform a simple training of the model. The data set is divided in training/validation sets.
@@ -296,8 +298,14 @@ class NeuralNet():
         self.f5 = h5py.File(fname,'w')
 
         # divide the set in train+ valid and test
-        divide_trainset = divide_trainset or [0.8,0.2]
-        index_train,index_valid,index_test = self._divide_dataset(divide_trainset,preshuffle, preshuffle_seed)
+        if divide_trainset is not None:
+            # if divide_trainset is not None
+            index_train,index_valid,index_test = self._divide_dataset(divide_trainset,preshuffle, preshuffle_seed)
+        else:
+            index_train = self.data_set.index_train
+            index_valid = self.data_set.index_valid
+            index_test = self.data_set.index_test
+
 
         print(': %d confs. for training' %len(index_train))
         print(': %d confs. for validation' %len(index_valid))
