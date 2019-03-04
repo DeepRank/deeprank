@@ -313,7 +313,7 @@ class DataSet():
                 try:
                     fh5 = h5py.File(fdata,'r')
                     mol_names = list(fh5.keys())
-                    mol_names = selef._select_pdb(mol_names)
+                    mol_names = self._select_pdb(mol_names)
                     self.index_complexes += [(fdata,k) for k in mol_names]
                     fh5.close()
                 except:
