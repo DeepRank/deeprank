@@ -72,6 +72,11 @@ class DataSet():
                 Example: 0 (use only original data)
                 Default: None  (use all data of the database)
 
+
+            generate_rotation (int): number of rotations to generate on the fly.
+                Example: 0 (use only original data)
+                Default: None  (use all data of the database)
+
             select_feature (dict or 'all', optional): Method to select the features used in the learning
                     If 'all', all the mapped features contained in the HDF5 file will be loaded
                     otherwise a dict must be provided.
@@ -111,7 +116,7 @@ class DataSet():
 
         # allow for multiple database
         self.test_database = self._get_database_name(test_database)
-        
+
         # pdb selection
         self.use_rotation = use_rotation
 
@@ -130,6 +135,12 @@ class DataSet():
                 self.data_augmentation = 0
         else:
             self.data_augmentation = 0
+
+        # generate rotation on the fly
+        # self.generate_rotation = generate_rotation
+        # if self.mapfly is None and  generate_rotation is not None:
+        #     self.generate_rotation = None
+        #     print('Warning : Generating rotation is only possible when mapping the feature on the fly')
 
         # normalization conditions
         self.normalize_features = normalize_features
@@ -243,6 +254,8 @@ class DataSet():
         print('\n')
         print("   Data Set Info")
         print('   Training set        : %d conformations' %self.ntrain)
+        if self.data_augmentation is not None:
+            print('   Augmentation        : %d rotations' %self.data_augmentation)
         print('   Test set            : %d conformations' %(self.ntot-self.ntrain))
         print('   Number of channels  : %d' %self.input_shape[0])
         print('   Grid Size           : %d x %d x %d' %(self.data_shape[1],self.data_shape[2],self.data_shape[3]))
@@ -1020,7 +1033,7 @@ class DataSet():
         fh5.close()
         print(' --> Map one molecule %f sec.' %(time.time()-t0))
         #sys.exit()
-        
+
         # make sure all the feature have exact same type
         # if they don't  collate_fn in the creation of the minibatch will fail.
         # Note returning torch.FloatTensor makes each epoch twice longer ...

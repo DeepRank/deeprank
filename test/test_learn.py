@@ -39,8 +39,8 @@ class TestLearn(unittest.TestCase):
     data_set = DataSet(database,
                 test_database = None,
                 mapfly = True,
-                use_rotation=None,
-                grid_shape=(30,30,30),
+                use_rotation=10,
+                grid_info={'number_of_points':(10,10,10), 'resolution':(3,3,3)},
                 select_feature={'AtomicDensities' : {'CA':3.5, 'C':3.5, 'N':3.5, 'O':3.5},
                                 'Features' : ['coulomb','vdwaals','charge','PSSM_*'] },
                 select_target='DOCKQ',
@@ -49,7 +49,8 @@ class TestLearn(unittest.TestCase):
                 normalize_targets=False,
                 clip_features=False,
                 pair_chain_feature=np.add,
-                dict_filter={'IRMSD':'<4. or >10.'})
+                dict_filter={'DOCKQ': '<1'})
+                #dict_filter={'IRMSD':'<4. or >10.'})
 
 
     # create the networkt
