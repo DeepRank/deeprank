@@ -105,6 +105,11 @@ class NeuralNet():
         # load the model
         if self.pretrained_model is not None:
 
+            if not cuda:
+                self.state = torch.load(self.pretrained_model, map_location='cpu')
+            else:
+                self.state = torch.load(self.pretrained_model)
+
             # create the dataset if required
             # but don't process it yet
             if isinstance(self.data_set,str) or isinstance(self.data_set,list):
@@ -112,7 +117,7 @@ class NeuralNet():
 
             # load the model and
             # change dataset parameters
-            self.load_data_params(self.pretrained_model)
+            self.load_data_params()
 
             # process it
             self.data_set.process_dataset()
@@ -203,7 +208,7 @@ class NeuralNet():
 
         # laod the parameters of the model if provided
         if self.pretrained_model:
-            self.load_model_params(self.pretrained_model)
+            self.load_model_params()
 
         #------------------------------------------
         # print
@@ -339,7 +344,7 @@ class NeuralNet():
         self.f5 = h5py.File(fname,'w')
 
         # load pretrained model to get task and criterion
-        self.load_nn_params(self.pretrained_model)
+        self.load_nn_params()
 
         # load data
         index = list(range(self.data_set.__len__()))
@@ -395,61 +400,48 @@ class NeuralNet():
 
         torch.save(state,filename)
 
-    def load_model_params(self,filename):
+    def load_model_params(self):
         """Load a saved model.
-
-        Args:
-            filename (str): filename
         """
-
-        state = torch.load(filename)
-        self.net.load_state_dict(state['state_dict'])
-        self.optimizer.load_state_dict(state['optimizer'])
+        self.net.load_state_dict(self.state['state_dict'])
+        self.optimizer.load_state_dict(self.state['optimizer'])
 
 
-    def load_nn_params(self, filename):
+    def load_nn_params(self):
         """Load a saved model to get task and criterion for test().
-
-        Args:
-            filename (str): filename
         """
-        state = torch.load(filename)
-        self.task = state['task']
-        self.criterion = state['criterion']
+        self.task = self.state['task']
+        self.criterion = self.state['criterion']
 
 
-    def load_data_params(self,filename):
+    def load_data_params(self):
 
         '''Load the parameters of the dataset.
-
-        Args:
-            filename (str): filename
         '''
-        state = torch.load(filename)
 
-        self.data_set.select_feature = state['select_feature']
-        self.data_set.select_target  = state['select_target']
+        self.data_set.select_feature = self.state['select_feature']
+        self.data_set.select_target  = self.state['select_target']
 
-        self.data_set.pair_chain_feature = state['pair_chain_feature']
-        self.data_set.dict_filter = state['dict_filter']
+        self.data_set.pair_chain_feature = self.state['pair_chain_feature']
+        self.data_set.dict_filter = self.state['dict_filter']
 
-        self.data_set.normalize_targets = state['normalize_targets']
+        self.data_set.normalize_targets = self.state['normalize_targets']
         if self.data_set.normalize_targets:
-            self.data_set.target_min = state['target_min']
-            self.data_set.target_max = state['target_max']
+            self.data_set.target_min = self.state['target_min']
+            self.data_set.target_max = self.state['target_max']
 
-        self.data_set.normalize_features = state['normalize_features']
+        self.data_set.normalize_features = self.state['normalize_features']
         if self.data_set.normalize_features:
-            self.data_set.feature_mean = state['feature_mean']
-            self.data_set.feature_std = state['feature_std']
+            self.data_set.feature_mean = self.state['feature_mean']
+            self.data_set.feature_std = self.state['feature_std']
 
-        self.data_set.transform = state['transform']
-        self.data_set.proj2D = state['proj2D']
+        self.data_set.transform = self.state['transform']
+        self.data_set.proj2D = self.state['proj2D']
 
-        self.data_set.target_ordering = state['target_ordering']
-        self.data_set.clip_features = state['clip_features']
-        self.data_set.clip_factor = state['clip_factor']
-        self.data_set.grid_shape = state['grid_shape']
+        self.data_set.target_ordering = self.state['target_ordering']
+        self.data_set.clip_features = self.state['clip_features']
+        self.data_set.clip_factor = self.state['clip_factor']
+        self.data_set.grid_shape = self.state['grid_shape']
 
     def _divide_dataset(self,divide_set, preshuffle, preshuffle_seed):
 
