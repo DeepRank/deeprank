@@ -23,7 +23,7 @@ class TestLearn(unittest.TestCase):
     #adress of the database
     train_database = '1ak4.hdf5'
     if not os.path.isfile(train_database):
-      raise FileNotFoundError('Database %s not found. Make sure to run test_generate before')
+      raise FileNotFoundError('Database %s not found. Make sure to run test_generate before', train_database)
 
     # clean the output dir
     out = './out_3d'
@@ -33,7 +33,7 @@ class TestLearn(unittest.TestCase):
       os.removedirs(out)
 
     # declare the dataset instance
-    data_set = DataSet(train_database,
+    data_set = DataSet(train_database = train_database,
                 valid_database = None,
                 test_database = None,
                 grid_shape=(30,30,30),

@@ -172,8 +172,12 @@ class DataSet():
 
         # check if the files are ok
         self.train_database = self.check_hdf5_files(self.train_database)
-        self.valid_database = self.check_hdf5_files(self.valid_database)
-        self.test_database = self.check_hdf5_files(self.test_database)
+
+        if self.valid_database is not None:
+            self.valid_database = self.check_hdf5_files(self.valid_database)
+
+        if self.test_database is not None:
+            self.test_database = self.check_hdf5_files(self.test_database)
 
         # create the indexing system
         # alows to associate each mol to an index
@@ -250,7 +254,8 @@ class DataSet():
         return {'mol':[fname,mol],'feature':feature,'target':target}
 
 
-    def check_hdf5_files(self, database):
+    @staticmethod
+    def check_hdf5_files(database):
         """Check if the data contained in the hdf5 file is ok."""
 
         print("   Checking dataset Integrity")
