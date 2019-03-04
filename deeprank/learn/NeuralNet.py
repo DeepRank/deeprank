@@ -150,11 +150,11 @@ class NeuralNet():
 
         # Set the loss functiom
         if self.task=='reg':
-            self.criterion = nn.MSELoss(size_average=False)
+            self.criterion = nn.MSELoss(reduction='sum')
             self._plot_scatter = self._plot_scatter_reg
 
         elif self.task=='class':
-            self.criterion = nn.CrossEntropyLoss()
+            self.criterion = nn.CrossEntropyLoss(reduction='sum')
             self._plot_scatter = self._plot_boxplot_class
             self.data_set.normalize_targets = False
 
