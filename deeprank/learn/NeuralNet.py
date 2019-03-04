@@ -334,7 +334,7 @@ class NeuralNet():
 
         """
 
-        # output 
+        # output
         fname = self.outdir+'/'+hdf5
         self.f5 = h5py.File(fname,'w')
 
@@ -352,10 +352,7 @@ class NeuralNet():
         if self.task == 'reg':
             self._plot_scatter_reg(self.outdir+'/prediction.png')
             self.plot_hit_rate(self.outdir+'/hitrate.png')
-        elif self.task == 'class':
-            self._plot_boxplot_class(self.outdir+'/prediction.png')
-        else:
-            raise ValueError("Task " + self.task +"not recognized.\nOptions are \n\t 'reg': regression \n\t 'class': classifiation\n\n")
+
 
         self._export_epoch_hdf5(0, self.data)
         self.f5.close()
@@ -412,7 +409,7 @@ class NeuralNet():
 
     def load_nn_params(self, filename):
         """Load a saved model to get task and criterion for test().
-        
+
         Args:
             filename (str): filename
         """
@@ -676,7 +673,10 @@ class NeuralNet():
 
         # variables of the epoch
         running_loss = 0
-        data = {'outputs':[],'targets':[],'mol':[], 'hit':None}
+        data = {'outputs':[],'targets':[],'mol':[]}
+        if self.save_hitrate:
+            data['hit'] = None
+
         if self.save_classmetrics:
             for i in self.metricnames:
                 data[i] = None
