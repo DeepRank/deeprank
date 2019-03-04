@@ -318,7 +318,7 @@ class NeuralNet():
         # save the model
         self.save_model(filename='last_model.pth.tar')
 
-    def test(self,hdf5='test_data.hdf5'):
+    def test(self, hdf5='test_data.hdf5'):
         """Test a predefined model on a new dataset.
 
         Example:
@@ -330,23 +330,36 @@ class NeuralNet():
             >>> model.test()
 
         Args:
-            hdf5 (str, optional): name of the hdf5 file to store the data
+            hdf5 (str, optional): hdf5 file to store the test results
 
         """
 
-        # hdf5 support
-        fname =self.outdir+'/'+hdf5
+        # output 
+        fname = self.outdir+'/'+hdf5
         self.f5 = h5py.File(fname,'w')
 
+        # load pretrained model to get task and criterion
+        self.load_nn_params(self.pretrained_model)
+
+        # load data
         index = list(range(self.data_set.__len__()))
         sampler = data_utils.sampler.SubsetRandomSampler(index)
         loader = data_utils.DataLoader(self.data_set,sampler=sampler)
+
+        # do test
         self.data = {}
-        _,self.data['test'] = self._epoch(loader,train_model=False)
-        self._plot_scatter_reg(self.outdir+'/prediction.png')
-        self.plot_hit_rate(self.outdir+'/hitrate.png')
-        self._export_epoch_hdf5(0,self.data)
+        _, self.data['test'] = self._epoch(loader,train_model=False)
+        if self.task == 'reg':
+            self._plot_scatter_reg(self.outdir+'/prediction.png')
+            self.plot_hit_rate(self.outdir+'/hitrate.png')
+        elif self.task == 'class':
+            self._plot_boxplot_class(self.outdir+'/prediction.png')
+        else:
+            raise ValueError("Task " + self.task +"not recognized.\nOptions are \n\t 'reg': regression \n\t 'class': classifiation\n\n")
+
+        self._export_epoch_hdf5(0, self.data)
         self.f5.close()
+
 
     def save_model(self,filename='model.pth.tar'):
 
@@ -363,10 +376,17 @@ class NeuralNet():
                  'normalize_features' : self.data_set.normalize_features,
                  'select_feature'     : self.data_set.select_feature,
                  'select_target'      : self.data_set.select_target,
+                 'target_ordering'    : self.data_set.target_ordering,
                  'pair_chain_feature' : self.data_set.pair_chain_feature,
                  'dict_filter'        : self.data_set.dict_filter,
                  'transform'          : self.data_set.transform,
-                 'proj2D'             : self.data_set.proj2D}
+                 'proj2D'             : self.data_set.proj2D,
+                 'clip_features'      : self.data_set.clip_features,
+                 'clip_factor'        : self.data_set.clip_factor,
+                 'grid_shape'         : self.data_set.grid_shape,
+                 'task'               : self.task,
+                 'criterion'          : self.criterion
+                 }
 
         if self.data_set.normalize_features:
             state['feature_mean'] =  self.data_set.feature_mean
@@ -388,6 +408,17 @@ class NeuralNet():
         state = torch.load(filename)
         self.net.load_state_dict(state['state_dict'])
         self.optimizer.load_state_dict(state['optimizer'])
+
+
+    def load_nn_params(self, filename):
+        """Load a saved model to get task and criterion for test().
+        
+        Args:
+            filename (str): filename
+        """
+        state = torch.load(filename)
+        self.task = state['task']
+        self.criterion = state['criterion']
 
 
     def load_data_params(self,filename):
@@ -417,6 +448,11 @@ class NeuralNet():
 
         self.data_set.transform = state['transform']
         self.data_set.proj2D = state['proj2D']
+
+        self.data_set.target_ordering = state['target_ordering']
+        self.data_set.clip_features = state['clip_features']
+        self.data_set.clip_factor = state['clip_factor']
+        self.data_set.grid_shape = state['grid_shape']
 
     def _divide_dataset(self,divide_set, preshuffle, preshuffle_seed):
 
