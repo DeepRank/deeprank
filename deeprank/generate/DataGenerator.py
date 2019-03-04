@@ -194,7 +194,8 @@ class DataGenerator(object):
                 self.local_pdbs = self.mpi_comm.recv(source=0,tag=11)
 
             # change hdf5 name
-            self.hdf5 = '%03d_' %rank + self.hdf5
+            h5path, h5name = os.path.split(self.hdf5)
+            self.hdf5 = os.path.join(h5path, '%03d_' %rank + h5name)
 
         # open the file
         self.f5 = h5py.File(self.hdf5,'w')
