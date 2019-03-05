@@ -194,21 +194,30 @@ class NeuralNet():
         # load the model
         self.net = model(self.data_set.input_shape)
 
+        # load parameters of pretrained model if provided
+        if self.pretrained_model:
+            ## parameter names were added a prefix 'module.' if cuda was used
+            ## https://pytorch.org/docs/stable/nn.html#torch.nn.Module.cuda
+            if self.state['cuda']:
+                for paramname in list(self.state['state_dict'].keys()):
+                    paramname_new = paramname.lstrip('module.')
+                    self.state['state_dict'][paramname_new] = self.state['state_dict'][paramname]
+                    del self.state['state_dict'][paramname]
+            self.load_model_params()
+
         #multi-gpu
         if self.ngpu>1:
             ids = [i for i in range(self.ngpu)]
             self.net = nn.DataParallel(self.net,device_ids=ids).cuda()
-
         # cuda compatible
         elif self.cuda:
             self.net = self.net.cuda()
 
         # set the optimizer
         self.optimizer = optim.SGD(self.net.parameters(),lr=0.005,momentum=0.9,weight_decay=0.001)
-
-        # laod the parameters of the model if provided
         if self.pretrained_model:
-            self.load_model_params()
+            self.load_optimizer_params()
+
 
         #------------------------------------------
         # print
@@ -387,7 +396,8 @@ class NeuralNet():
                  'clip_factor'        : self.data_set.clip_factor,
                  'grid_shape'         : self.data_set.grid_shape,
                  'task'               : self.task,
-                 'criterion'          : self.criterion
+                 'criterion'          : self.criterion,
+                 'cuda'               : self.cuda
                  }
 
         if self.data_set.normalize_features:
@@ -400,25 +410,29 @@ class NeuralNet():
 
         torch.save(state,filename)
 
+
     def load_model_params(self):
-        """Load a saved model.
+        """Get model parameters from a saved model.
         """
         self.net.load_state_dict(self.state['state_dict'])
+
+
+    def load_optimizer_params(self):
+        """Get optimizer parameters from a saved model.
+        """
         self.optimizer.load_state_dict(self.state['optimizer'])
 
 
     def load_nn_params(self):
-        """Load a saved model to get task and criterion for test().
+        """Get NeuralNet parameters from a saved model.
         """
         self.task = self.state['task']
         self.criterion = self.state['criterion']
 
 
     def load_data_params(self):
-
-        '''Load the parameters of the dataset.
+        '''Get dataset parameters from a saved model.
         '''
-
         self.data_set.select_feature = self.state['select_feature']
         self.data_set.select_target  = self.state['select_target']
 
@@ -437,11 +451,11 @@ class NeuralNet():
 
         self.data_set.transform = self.state['transform']
         self.data_set.proj2D = self.state['proj2D']
-
         self.data_set.target_ordering = self.state['target_ordering']
         self.data_set.clip_features = self.state['clip_features']
         self.data_set.clip_factor = self.state['clip_factor']
         self.data_set.grid_shape = self.state['grid_shape']
+
 
     def _divide_dataset(self,divide_set, preshuffle, preshuffle_seed):
 
