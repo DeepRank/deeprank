@@ -24,7 +24,7 @@ class DataSet():
 
 
     def __init__(self,train_database, valid_database=None, test_database = None,
-                 mapfly = False, grid_info = None,
+                 mapfly = True, grid_info = None,
                  use_rotation = None,
                  select_feature = 'all', select_target = 'DOCKQ',
                  normalize_features = True, normalize_targets = True,
