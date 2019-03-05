@@ -196,8 +196,8 @@ class NeuralNet():
 
         # load parameters of pretrained model if provided
         if self.pretrained_model:
-            ## parameter names were added a prefix 'module.' if cuda was used
-            ## https://pytorch.org/docs/stable/nn.html#torch.nn.Module.cuda
+            ## a prefix 'module.' is added to parameter names if torch.nn.DataParallel was used
+            ## https://pytorch.org/docs/stable/nn.html#torch.nn.DataParallel
             if self.state['cuda']:
                 for paramname in list(self.state['state_dict'].keys()):
                     paramname_new = paramname.lstrip('module.')
@@ -347,7 +347,6 @@ class NeuralNet():
             hdf5 (str, optional): hdf5 file to store the test results
 
         """
-
         # output
         fname = self.outdir+'/'+hdf5
         self.f5 = h5py.File(fname,'w')
@@ -366,7 +365,6 @@ class NeuralNet():
         if self.task == 'reg':
             self._plot_scatter_reg(self.outdir+'/prediction.png')
             self.plot_hit_rate(self.outdir+'/hitrate.png')
-
 
         self._export_epoch_hdf5(0, self.data)
         self.f5.close()
