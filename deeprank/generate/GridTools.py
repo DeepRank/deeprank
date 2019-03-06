@@ -129,7 +129,7 @@ class GridTools(object):
         # if we already have an output containing the grid
         # we update the existing features
         _update_ = False
-        if self.mol_basename+'/grid_points' in self.hdf5:
+        if self.mol_basename+'/grid_points/x' in self.hdf5:
             _update_ = True
 
         if _update_:
@@ -341,7 +341,7 @@ class GridTools(object):
             z_gpu = gpuarray.to_gpu(self.z.astype(np.float32))
             grid_gpu = gpuarray.zeros(self.npts,np.float32)
 
-        # get the contact atoms 
+        # get the contact atoms
         if only_contact:
             index = self.sqldb.get_contact_atoms()
 
@@ -766,7 +766,12 @@ class GridTools(object):
         grd.create_dataset('x',data=self.x)
         grd.create_dataset('y',data=self.y)
         grd.create_dataset('z',data=self.z)
-        grd.create_dataset('center',data=self.center_contact)
+
+        if 'center' not in grd:
+            grd.create_dataset('center',data=self.center_contact)
+        else:
+            tmp = grd['center']
+            tmp[...] = self.center_contact
 
 
     # save the data in the hdf5 file

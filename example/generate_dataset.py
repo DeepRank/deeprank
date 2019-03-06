@@ -41,15 +41,15 @@ database.create_database(prog_bar=True)
 
 
 # define the 3D grid
-grid_info = {
-   'number_of_points' : [30,30,30],
-   'resolution' : [1.,1.,1.],
-   'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
-}
+#grid_info = {
+#   'number_of_points' : [30,30,30],
+#   'resolution' : [1.,1.,1.],
+#   'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
+#}
 
 # generate the grid
-print('{:25s}'.format('Generate the grid') + database.hdf5)
-database.precompute_grid(grid_info,try_sparse=True, time=False, prog_bar=True)
+#print('{:25s}'.format('Generate the grid') + database.hdf5)
+#database.precompute_grid(grid_info,try_sparse=True, time=False, prog_bar=True)
 
 
 # print('{:25s}'.format('Map features in database') + database.hdf5)

@@ -136,7 +136,7 @@ class DataGenerator(object):
 #
 #====================================================================================
 
-    def create_database(self,verbose=False,remove_error=True,prog_bar=False):
+    def create_database(self,verbose=False,remove_error=True,prog_bar=False,contact_distance=8.5):
 
         '''Create the hdf5 file architecture and compute the features/targets.
 
@@ -293,6 +293,14 @@ class DataGenerator(object):
                                           molgrp['targets'])
 
                 ################################################
+                #   add the box center
+                ################################################
+                molgrp.require_group('grid_points')
+                center = self._get_grid_center(molgrp['complex'][:],contact_distance)
+                molgrp['grid_points'].create_dataset('center',data=center)
+
+
+                ################################################
                 #   DATA AUGMENTATION
                 ################################################
 
@@ -329,6 +337,12 @@ class DataGenerator(object):
 
                     # rotate the feature
                     self._rotate_feature(molgrp,axis,angle,center)
+
+                    # grid center
+                    molgrp.require_group('grid_points')
+                    center = self._get_grid_center(molgrp['complex'][:],contact_distance)
+                    print(center)
+                    molgrp['grid_points'].create_dataset('center',data=center)
 
                     # store the axis/angl/center as attriutes
                     # in case we need them later
@@ -540,11 +554,38 @@ class DataGenerator(object):
         f5.close()
 
 
+
 #====================================================================================
 #
 #       PRECOMPUTE TEH GRID POINTS
 #
 #====================================================================================
+
+    @staticmethod
+    def _get_grid_center(pdb,contact_distance):
+        sqldb = pdb2sql(pdb)
+
+        xyz1 = np.array(sqldb.get('x,y,z',chainID='A'))
+        xyz2 = np.array(sqldb.get('x,y,z',chainID='B'))
+
+        index_b = sqldb.get('rowID',chainID='B')
+
+        contact_atoms = []
+        for i,x0 in enumerate(xyz1):
+            contacts = np.where(np.sqrt(np.sum((xyz2-x0)**2,1)) < contact_distance)[0]
+
+            if len(contacts) > 0:
+                contact_atoms += [i]
+                contact_atoms += [index_b[k] for k in contacts]
+
+        # create a set of unique indexes
+        contact_atoms = list(set(contact_atoms))
+
+
+        center_contact = np.mean(np.array(sqldb.get('x,y,z',rowID=contact_atoms)),0)
+        sqldb.close()
+
+        return center_contact
 
     def precompute_grid(self,grid_info, contact_distance = 8.5, prog_bar = False,time=False,try_sparse=True):
 
