@@ -401,7 +401,7 @@ class DataSet():
                     fh5 = h5py.File(fdata,'r')
                     mol_names = list(fh5.keys())
                     mol_names = self._select_pdb(mol_names)
-                    self.index_complexes += [(fdata,k) for k in mol_names]
+                    self.index_complexes += [(fdata,k,None,None) for k in mol_names]
                     fh5.close()
                 except:
                     print('\t\t-->Ignore File : '+fdata)
@@ -427,15 +427,11 @@ class DataSet():
                 try:
                     fh5 = h5py.File(fdata,'r')
                     mol_names = list(fh5.keys())
-
                     mol_names = self._select_pdb(mol_names)
-
                     # that's the master
                     #self.index_complexes += [(fdata,k) for k in mol_names]
                     # thats what i had in issue25
                     self.index_complexes += [(fdata,k,None,None) for k in mol_names]
-
-
                     fh5.close()
                 except:
                     print('\t\t-->Ignore File : '+fdata)
