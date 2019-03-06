@@ -39,7 +39,7 @@ class TestLearn(unittest.TestCase):
     data_set = DataSet(database,
                 test_database = None,
                 mapfly = True,
-                use_rotation=10,
+                use_rotation=1,
                 grid_info={'number_of_points':(10,10,10), 'resolution':(3,3,3)},
                 select_feature={'AtomicDensities' : {'CA':3.5, 'C':3.5, 'N':3.5, 'O':3.5},
                                 'Features' : ['coulomb','vdwaals','charge','PSSM_*'] },
