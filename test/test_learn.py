@@ -29,7 +29,7 @@ class TestLearn(unittest.TestCase):
       raise FileNotFoundError('Database %s not found. Make sure to run test_generate before')
 
     # clean the output dir
-    out = './out_3d'
+    out = './out_3d_fly'
     if os.path.isdir(out):
       for f in glob.glob(out+'/*'):
         os.remove(f)
@@ -74,7 +74,7 @@ class TestLearn(unittest.TestCase):
       raise FileNotFoundError('Database %s not found. Make sure to run test_generate before', train_database)
 
     # clean the output dir
-    out = './out_3d'
+    out = './out_3d_reg'
     if os.path.isdir(out):
       for f in glob.glob(out+'/*'):
         os.remove(f)
@@ -171,7 +171,7 @@ class TestLearn(unittest.TestCase):
 
     # declare the dataset instance
     data_set = DataSet(train_database = database,
-                valid_database = None,
+              valid_database = None,
               test_database = None,
               mapfly = False,
               select_feature={'AtomicDensities_ind' : 'all',
@@ -214,7 +214,7 @@ class TestLearn(unittest.TestCase):
       os.removedirs(out)
 
     # create the network
-    model_name = './out_3d/last_model.pth.tar'
+    model_name = './out_3d_fly/last_model.pth.tar'
     model = NeuralNet(database,cnn3d,pretrained_model=model_name,outdir=out)
     model.test()
 
@@ -222,10 +222,9 @@ class TestLearn(unittest.TestCase):
 
 if __name__ == "__main__":
 
-  #TestLearn.test_learn_3d_reg_mapfly()
+  TestLearn.test_learn_3d_reg_mapfly()
   #TestLearn.test_learn_3d_reg()
   #TestLearn.test_learn_3d_class()
-  TestLearn.test_learn_2d_reg()
-  #TestLearn.test_transfer()  
-  
+  #TestLearn.test_learn_2d_reg()
+  TestLearn.test_transfer()
 

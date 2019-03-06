@@ -750,7 +750,7 @@ class DataSet():
             self.grid_shape = self.grid_info['number_of_points']
 
         else:
-            raise ValueError('Impossible to determine sparse grid shape.\n Specify grid_shape or grid_info')
+            raise Warning('Impossible to determine sparse grid shape.\nIf you are not loading a pretrained model, specify grid_shape or grid_info')
 
 
 

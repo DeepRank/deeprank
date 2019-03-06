@@ -401,6 +401,8 @@ class NeuralNet():
                  'clip_features'      : self.data_set.clip_features,
                  'clip_factor'        : self.data_set.clip_factor,
                  'grid_shape'         : self.data_set.grid_shape,
+                 'grid_info'          : self.data_set.grid_info,
+                 'mapfly'             : self.data_set.mapfly,
                  'task'               : self.task,
                  'criterion'          : self.criterion,
                  'cuda'               : self.cuda
@@ -461,6 +463,8 @@ class NeuralNet():
         self.data_set.clip_features = self.state['clip_features']
         self.data_set.clip_factor = self.state['clip_factor']
         self.data_set.grid_shape = self.state['grid_shape']
+        self.data_set.mapfly = self.state['mapfly']
+        self.data_set.grid_info = self.state['grid_info']
 
 
     def _divide_dataset(self,divide_set, preshuffle, preshuffle_seed):
