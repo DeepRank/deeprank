@@ -5,17 +5,8 @@ import numpy as np
 from deeprank.learn import *
 from deeprank.learn.model3d import cnn as cnn3d
 
-database = '*1ak4.hdf5'
+database = './hdf5/*1ak4.hdf5'
 out = './out'
-
-# make sure the databse is there
-# for db in database:
-# 	if not os.path.isfile(db):
-# 	  raise FileNotFoundError('Database %s not found. Make sure to run test_generate before' %db)
-
-
-
-
 
 # clean the output dir
 out = './out_3d'
@@ -31,7 +22,8 @@ data_set = DataSet(database,
 			valid_database = None,
             test_database = None,
             mapfly=True,
-            grid_info = {'number_of_points':[30,30,30], 'resolution' : [1,1,1]},
+            use_rotation=5,
+            grid_info = {'number_of_points':[10,10,10], 'resolution' : [3,3,3]},
 
             select_feature={'AtomicDensities' : {'CA':3.5, 'C':3.5, 'N':3.5, 'O':3.5},
                 			'Features'        : ['coulomb','vdwaals','charge','PSSM_*'] },

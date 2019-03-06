@@ -723,26 +723,37 @@ class DataSet():
             ValueError: If no grid shape is provided or is present in the HDF5 file
         '''
 
-        fname = self.train_database[0]
-        fh5 = h5py.File(fname,'r')
-        mol = list(fh5.keys())[0]
+        if self.mapfly is False:
 
-        # get the mol
-        mol_data = fh5.get(mol)
+            fname = self.train_database[0]
+            fh5 = h5py.File(fname,'r')
+            mol = list(fh5.keys())[0]
 
-        # get the grid size
-        if self.grid_shape is None:
+            # get the mol
+            mol_data = fh5.get(mol)
 
-            if 'grid_points' in mol_data:
-                nx = mol_data['grid_points']['x'].shape[0]
-                ny = mol_data['grid_points']['y'].shape[0]
-                nz = mol_data['grid_points']['z'].shape[0]
-                self.grid_shape = (nx,ny,nz)
+            # get the grid size
+            if self.grid_shape is None:
 
-            else:
-                raise ValueError('Impossible to determine sparse grid shape.\n Specify argument grid_shape=(x,y,z)')
+                if 'grid_points' in mol_data:
+                    nx = mol_data['grid_points']['x'].shape[0]
+                    ny = mol_data['grid_points']['y'].shape[0]
+                    nz = mol_data['grid_points']['z'].shape[0]
+                    self.grid_shape = (nx,ny,nz)
 
-        fh5.close()
+                else:
+                    raise ValueError('Impossible to determine sparse grid shape.\n Specify argument grid_shape=(x,y,z)')
+
+                fh5.close()
+
+        elif self.grid_info is not None:
+            self.grid_shape = self.grid_info['number_of_points']
+
+        else:
+            raise ValueError('Impossible to determine sparse grid shape.\n Specify grid_shape or grid_info')
+
+
+
 
 
     def compute_norm(self):
@@ -1166,8 +1177,13 @@ class DataSet():
             y = np.linspace(low_lim[1],hgh_lim[1],npts[1])
             z = np.linspace(low_lim[2],hgh_lim[2],npts[2])
 
+
+        # there is stil something strange
+        # with the ordering of the grid
+        # also noted in GridTools define_grid_points()
+        y,x,z = np.meshgrid(y,x,z)
+        grid = (x,y,z)
         npts = (len(x),len(y),len(z))
-        grid = np.meshgrid(x,y,z)
         return grid, npts
 
 
