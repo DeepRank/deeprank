@@ -107,6 +107,11 @@ class NeuralNet():
         # load the model
         if self.pretrained_model is not None:
 
+            if not cuda:
+                self.state = torch.load(self.pretrained_model, map_location='cpu')
+            else:
+                self.state = torch.load(self.pretrained_model)
+
             # create the dataset if required
             # but don't process it yet
             if isinstance(self.data_set,str) or isinstance(self.data_set,list):
@@ -114,7 +119,7 @@ class NeuralNet():
 
             # load the model and
             # change dataset parameters
-            self.load_data_params(self.pretrained_model)
+            self.load_data_params()
 
             # process it
             self.data_set.process_dataset()
@@ -152,11 +157,11 @@ class NeuralNet():
 
         # Set the loss functiom
         if self.task=='reg':
-            self.criterion = nn.MSELoss(size_average=False)
+            self.criterion = nn.MSELoss(reduction='sum')
             self._plot_scatter = self._plot_scatter_reg
 
         elif self.task=='class':
-            self.criterion = nn.CrossEntropyLoss()
+            self.criterion = nn.CrossEntropyLoss(reduction='sum')
             self._plot_scatter = self._plot_boxplot_class
             self.data_set.normalize_targets = False
 
@@ -191,21 +196,30 @@ class NeuralNet():
         # load the model
         self.net = model(self.data_set.input_shape)
 
+        # load parameters of pretrained model if provided
+        if self.pretrained_model:
+            ## a prefix 'module.' is added to parameter names if torch.nn.DataParallel was used
+            ## https://pytorch.org/docs/stable/nn.html#torch.nn.DataParallel
+            if self.state['cuda']:
+                for paramname in list(self.state['state_dict'].keys()):
+                    paramname_new = paramname.lstrip('module.')
+                    self.state['state_dict'][paramname_new] = self.state['state_dict'][paramname]
+                    del self.state['state_dict'][paramname]
+            self.load_model_params()
+
         #multi-gpu
         if self.ngpu>1:
             ids = [i for i in range(self.ngpu)]
             self.net = nn.DataParallel(self.net,device_ids=ids).cuda()
-
         # cuda compatible
         elif self.cuda:
             self.net = self.net.cuda()
 
         # set the optimizer
         self.optimizer = optim.SGD(self.net.parameters(),lr=0.005,momentum=0.9,weight_decay=0.001)
-
-        # laod the parameters of the model if provided
         if self.pretrained_model:
-            self.load_model_params(self.pretrained_model)
+            self.load_optimizer_params()
+
 
         #------------------------------------------
         # print
@@ -326,7 +340,7 @@ class NeuralNet():
         # save the model
         self.save_model(filename='last_model.pth.tar')
 
-    def test(self,hdf5='test_data.hdf5'):
+    def test(self, hdf5='test_data.hdf5'):
         """Test a predefined model on a new dataset.
 
         Example:
@@ -338,23 +352,31 @@ class NeuralNet():
             >>> model.test()
 
         Args:
-            hdf5 (str, optional): name of the hdf5 file to store the data
+            hdf5 (str, optional): hdf5 file to store the test results
 
         """
-
-        # hdf5 support
-        fname =self.outdir+'/'+hdf5
+        # output
+        fname = self.outdir+'/'+hdf5
         self.f5 = h5py.File(fname,'w')
 
+        # load pretrained model to get task and criterion
+        self.load_nn_params()
+
+        # load data
         index = list(range(self.data_set.__len__()))
         sampler = data_utils.sampler.SubsetRandomSampler(index)
         loader = data_utils.DataLoader(self.data_set,sampler=sampler)
+
+        # do test
         self.data = {}
-        _,self.data['test'] = self._epoch(loader,train_model=False)
-        self._plot_scatter_reg(self.outdir+'/prediction.png')
-        self.plot_hit_rate(self.outdir+'/hitrate.png')
-        self._export_epoch_hdf5(0,self.data)
+        _, self.data['test'] = self._epoch(loader,train_model=False)
+        if self.task == 'reg':
+            self._plot_scatter_reg(self.outdir+'/prediction.png')
+            self.plot_hit_rate(self.outdir+'/hitrate.png')
+
+        self._export_epoch_hdf5(0, self.data)
         self.f5.close()
+
 
     def save_model(self,filename='model.pth.tar'):
 
@@ -371,10 +393,18 @@ class NeuralNet():
                  'normalize_features' : self.data_set.normalize_features,
                  'select_feature'     : self.data_set.select_feature,
                  'select_target'      : self.data_set.select_target,
+                 'target_ordering'    : self.data_set.target_ordering,
                  'pair_chain_feature' : self.data_set.pair_chain_feature,
                  'dict_filter'        : self.data_set.dict_filter,
                  'transform'          : self.data_set.transform,
-                 'proj2D'             : self.data_set.proj2D}
+                 'proj2D'             : self.data_set.proj2D,
+                 'clip_features'      : self.data_set.clip_features,
+                 'clip_factor'        : self.data_set.clip_factor,
+                 'grid_shape'         : self.data_set.grid_shape,
+                 'task'               : self.task,
+                 'criterion'          : self.criterion,
+                 'cuda'               : self.cuda
+                 }
 
         if self.data_set.normalize_features:
             state['feature_mean'] =  self.data_set.feature_mean
@@ -386,45 +416,52 @@ class NeuralNet():
 
         torch.save(state,filename)
 
-    def load_model_params(self,filename):
-        """Load a saved model.
 
-        Args:
-            filename (str): filename
+    def load_model_params(self):
+        """Get model parameters from a saved model.
         """
-
-        state = torch.load(filename)
-        self.net.load_state_dict(state['state_dict'])
-        self.optimizer.load_state_dict(state['optimizer'])
+        self.net.load_state_dict(self.state['state_dict'])
 
 
-    def load_data_params(self,filename):
+    def load_optimizer_params(self):
+        """Get optimizer parameters from a saved model.
+        """
+        self.optimizer.load_state_dict(self.state['optimizer'])
 
-        '''Load the parameters of the dataset.
 
-        Args:
-            filename (str): filename
+    def load_nn_params(self):
+        """Get NeuralNet parameters from a saved model.
+        """
+        self.task = self.state['task']
+        self.criterion = self.state['criterion']
+
+
+    def load_data_params(self):
+        '''Get dataset parameters from a saved model.
         '''
-        state = torch.load(filename)
+        self.data_set.select_feature = self.state['select_feature']
+        self.data_set.select_target  = self.state['select_target']
 
-        self.data_set.select_feature = state['select_feature']
-        self.data_set.select_target  = state['select_target']
+        self.data_set.pair_chain_feature = self.state['pair_chain_feature']
+        self.data_set.dict_filter = self.state['dict_filter']
 
-        self.data_set.pair_chain_feature = state['pair_chain_feature']
-        self.data_set.dict_filter = state['dict_filter']
-
-        self.data_set.normalize_targets = state['normalize_targets']
+        self.data_set.normalize_targets = self.state['normalize_targets']
         if self.data_set.normalize_targets:
-            self.data_set.target_min = state['target_min']
-            self.data_set.target_max = state['target_max']
+            self.data_set.target_min = self.state['target_min']
+            self.data_set.target_max = self.state['target_max']
 
-        self.data_set.normalize_features = state['normalize_features']
+        self.data_set.normalize_features = self.state['normalize_features']
         if self.data_set.normalize_features:
-            self.data_set.feature_mean = state['feature_mean']
-            self.data_set.feature_std = state['feature_std']
+            self.data_set.feature_mean = self.state['feature_mean']
+            self.data_set.feature_std = self.state['feature_std']
 
-        self.data_set.transform = state['transform']
-        self.data_set.proj2D = state['proj2D']
+        self.data_set.transform = self.state['transform']
+        self.data_set.proj2D = self.state['proj2D']
+        self.data_set.target_ordering = self.state['target_ordering']
+        self.data_set.clip_features = self.state['clip_features']
+        self.data_set.clip_factor = self.state['clip_factor']
+        self.data_set.grid_shape = self.state['grid_shape']
+
 
     def _divide_dataset(self,divide_set, preshuffle, preshuffle_seed):
 
@@ -648,7 +685,10 @@ class NeuralNet():
 
         # variables of the epoch
         running_loss = 0
-        data = {'outputs':[],'targets':[],'mol':[], 'hit':None}
+        data = {'outputs':[],'targets':[],'mol':[]}
+        if self.save_hitrate:
+            data['hit'] = None
+
         if self.save_classmetrics:
             for i in self.metricnames:
                 data[i] = None
