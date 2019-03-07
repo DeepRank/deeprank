@@ -9,6 +9,7 @@ import logging
 from deeprank.tools import pdb2sql
 from deeprank.generate import GridTools as gt
 from deeprank.generate import settings
+import re
 
 try:
     from tqdm import tqdm
@@ -275,11 +276,13 @@ class DataGenerator(object):
                 molgrp.require_group('features')
                 molgrp.require_group('features_raw')
 
+                error_flag = False #error_flag => when False: success; when True: failed
                 if self.compute_features is not None:
-                    self._compute_features(self.compute_features,
+                    error_flag = self._compute_features(self.compute_features,
                                            molgrp['complex'][:],
                                            molgrp['features'],
                                            molgrp['features_raw'] )
+
 
                 ################################################
                 #   add the targets
@@ -350,6 +353,12 @@ class DataGenerator(object):
                     molgrp.attrs['angle'] = angle
                     molgrp.attrs['center'] = center
 
+                if error_flag:
+                    #error_flag => when False: success; when True: failed
+                    self.feature_error += [mol_name] + mol_aug_name_list
+                    self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
+                    sys.stdout.flush()
+
             except Exception as inst:
 
                 self.feature_error += [mol_name] + mol_aug_name_list
@@ -361,9 +370,10 @@ class DataGenerator(object):
         # remove the data where we had issues
         if remove_error:
             for mol in self.feature_error:
-                self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
+                #self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
                 _printif('removing %s from %s' %(mol,self.hdf5),self.debug)
                 del self.f5[mol]
+                sys.stdout.flush()
 
         # close the file
         self.f5.close()
@@ -1093,14 +1103,18 @@ class DataGenerator(object):
         """Compute the features
 
         Args:
-            feat_list (list(str)): list of function name
-            pdb_data (bytes): PDB translated in btes
+            feat_list (list(str)): list of function name, e.g., ['deeprank.features.ResidueDensity', 'deeprank.features.PSSM_IC']
+            pdb_data (bytes): PDB translated in bytes
             featgrp (str): name of the group where to store the xyz feature
             featgrp_raw (str): name of the group where to store the raw feature
         """
+        error_flag = False # when False: success; when True: failed
         for feat in feat_list:
             feat_module = importlib.import_module(feat,package=None)
-            feat_module.__compute_feature__(pdb_data,featgrp,featgrp_raw)
+            error_flag = feat_module.__compute_feature__(pdb_data,featgrp,featgrp_raw)
+
+            if re.search('ResidueDensity', feat) and error_flag == True:
+                return error_flag
 
 
 #====================================================================================

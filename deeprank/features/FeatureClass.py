@@ -26,6 +26,7 @@ class FeatureClass(object):
         self.feature_data = {}
         self.feature_data_xyz = {}
         self.export_directories = {}
+        self.error = False
 
     def export_data_hdf5(self,featgrp):
         """Export the data in human readable format in an HDF5 file group.
@@ -61,6 +62,10 @@ class FeatureClass(object):
                 ds.append(feat)
 
             # put in the hdf5 file
+            if len(ds) ==0 :
+                self.error = True
+                return
+
             ds = np.array(ds).astype('|S'+str(len(ds[0])))
 
             # create the dataset

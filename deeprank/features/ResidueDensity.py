@@ -2,6 +2,7 @@ import numpy as np
 import itertools
 from deeprank.tools import pdb2sql
 from deeprank.features import FeatureClass
+import sys
 
 
 
@@ -19,7 +20,10 @@ class ResidueDensity(FeatureClass):
 
         >>> rd = ResidueDensity('1EWY_100w.pdb')
         >>> rd.get(cutoff=5.5)
-        >>> rd.extract_features()
+        >>> if not rd.error:
+        >>>     rd.extract_features()
+        >>> else:
+        >>>     print("failed to calculate residue density for 1EWY_100w.pdb")
         """
 
         self.pdb_data = pdb_data
@@ -32,6 +36,7 @@ class ResidueDensity(FeatureClass):
         self.residue_types = {'CYS':'polar','HIS':'polar','ASN':'polar','GLN':'polar','SER':'polar','THR':'polar','TYR':'polar','TRP':'polar',
                               'ALA':'apolar','PHE':'apolar','GLY':'apolar','ILE':'apolar','VAL':'apolar','MET':'apolar','PRO':'apolar','LEU':'apolar',
                               'GLU':'charged','ASP':'charged','LYS':'charged','ARG':'charged'}
+        self.error = False # When True, feature calculation failed
 
 
 
@@ -41,6 +46,12 @@ class ResidueDensity(FeatureClass):
                                            chain2=self.chains_label[1],
                                            cutoff = cutoff,
                                            return_contact_pairs=True)
+
+        if len(res) < 5:
+            # the interface is too small
+            self.error = True
+            return
+
 
         self.residue_densities = {}
 
@@ -146,16 +157,24 @@ class residue_pair(object):
 
 def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
+    error_flag = False
+
     # create the BSA instance
     resdens = ResidueDensity(pdb_data)
 
     # get the densities
-    resdens.get(cutoff=5.5)
+    resdens.get(cutoff=5.5) # may set resdens.error to True
 
-    # extract the features
-    resdens.extract_features()
+    if not resdens.error:
+        # extract the features
+        resdens.extract_features()
 
-    # export in the hdf5 file
-    resdens.export_dataxyz_hdf5(featgrp)
-    resdens.export_data_hdf5(featgrp_raw)
+        # export in the hdf5 file
+        resdens.export_dataxyz_hdf5(featgrp)
+        resdens.export_data_hdf5(featgrp_raw) # may set resdens.error to True
+
+    if resdens.error == True:
+        error_flag = True
+        print("WARNING: Interface too small (< 5 residue pairs). Failed to calculate ResidueDensity.")
+    return error_flag
 
