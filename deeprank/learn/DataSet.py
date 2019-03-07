@@ -1083,7 +1083,7 @@ class DataSet():
                 feature += data
 
         # get the target value
-        target = mol_data.get('targets/'+self.select_target).value
+        target = mol_data.get('targets/'+self.select_target)[()]
 
         # close
         fh5.close()
@@ -1150,9 +1150,9 @@ class DataSet():
 
             try:
 
-                x = mol_data['grid_points/x'].value
-                y = mol_data['grid_points/y'].value
-                z = mol_data['grid_points/z'].value
+                x = mol_data['grid_points/x'][()]
+                y = mol_data['grid_points/y'][()]
+                z = mol_data['grid_points/z'][()]
 
             except:
 
@@ -1160,7 +1160,7 @@ class DataSet():
 
         else:
 
-            center = mol_data['grid_points/center'].value
+            center = mol_data['grid_points/center'][()]
             npts = np.array(self.grid_info['number_of_points'])
             res = np.array(self.grid_info['resolution'])
 
@@ -1186,7 +1186,7 @@ class DataSet():
     def map_atomic_densities(self,feat_names, mol_data, grid, npts, angle, axis):
 
         t0 = time.time()
-        sql = pdb2sql(mol_data['complex'].value)
+        sql = pdb2sql(mol_data['complex'][()])
         index = sql.get_contact_atoms()
 
         if angle is not None:
@@ -1269,7 +1269,7 @@ class DataSet():
 
             tmp_feat_ser = [np.zeros(npts),np.zeros(npts)]
             tmp_feat_vect = [np.zeros(npts),np.zeros(npts)]
-            data = np.array(mol_data['features/'+name].value)
+            data = np.array(mol_data['features/'+name][()])
 
             chain = data[:,0]
             pos = data[:,1:4]
