@@ -552,10 +552,13 @@ class NeuralNet():
         test_sampler = data_utils.sampler.SubsetRandomSampler(index_test)
 
         # get if we test as well
+        _valid_ = len(valid_sampler.indices)>0
         _test_ = len(test_sampler.indices)>0
 
         # containers for the losses
-        self.losses={'train': [],'valid': []}
+        self.losses={'train': []}
+        if _valid_:
+            self.losses['valid'] = []
         if _test_:
             self.losses['test'] = []
 
@@ -563,15 +566,16 @@ class NeuralNet():
         if self.save_classmetrics:
             self.classmetrics = {}
             for i in self.metricnames:
+                self.classmetrics[i] = {'train':[]}
+                if _valid_:
+                    self.classmetrics[i]['valid'] = []
                 if _test_:
-                    self.classmetrics[i] = {'train':[], 'valid':[], 'test':[]}
-                else:
-                    self.classmetrics[i] = {'train':[], 'valid':[]}
+                    self.classmetrics[i]['test'] = []
 
         #  create the loaders
         train_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=train_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False,drop_last=False)
-        valid_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=valid_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False,drop_last=False)
-
+        if _valid_:
+            valid_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=valid_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False,drop_last=False)
         if _test_:
             test_loader = data_utils.DataLoader(self.data_set,batch_size=train_batch_size,sampler=test_sampler,pin_memory=pin,num_workers=num_workers,shuffle=False,drop_last=False)
 
@@ -589,11 +593,12 @@ class NeuralNet():
             t0 = time.time()
 
             # validate the model
-            self.valid_loss,self.data['valid'] = self._epoch(valid_loader,train_model=False)
-            self.losses['valid'].append(self.valid_loss)
-            if self.save_classmetrics:
-                for i in self.metricnames:
-                    self.classmetrics[i]['valid'].append(self.data['valid'][i])
+            if _valid_:
+                self.valid_loss,self.data['valid'] = self._epoch(valid_loader,train_model=False)
+                self.losses['valid'].append(self.valid_loss)
+                if self.save_classmetrics:
+                    for i in self.metricnames:
+                        self.classmetrics[i]['valid'].append(self.data['valid'][i])
 
             # test the model
             if _test_:
@@ -611,7 +616,9 @@ class NeuralNet():
                     self.classmetrics[i]['train'].append(self.data['train'][i])
 
             # talk a bit about losse
-            print('  train loss       : %1.3e\n  valid loss       : %1.3e' %(self.train_loss, self.valid_loss))
+            print('  train loss       : %1.3e' %(self.train_loss))
+            if _valid_:
+                print('  valid loss       : %1.3e' %(self.valid_loss))
             if _test_:
                 print('  test loss        : %1.3e' %(test_loss))
 
@@ -932,7 +939,7 @@ class NeuralNet():
 
         nwin = len(self.data)
 
-        fig, ax = plt.subplots(1, nwin, sharey=True)
+        fig, ax = plt.subplots(1, nwin, sharey=True, squeeze=False)
 
         iwin = 0
         for l in labels:
@@ -945,16 +952,15 @@ class NeuralNet():
                 data = [[], []]
                 confusion=[[0, 0], [0, 0]]
                 for pts,t in zip(out,tar):
-
-                    r = F.softmax(torch.FloatTensor(pts),dim=0).data.numpy()
-                    data[t].append(r[1])
+                    r = F.softmax(torch.FloatTensor(pts), dim=0).data.numpy()
+                    data[t].append(r[t])
                     confusion[t][r[1]>0.5] += 1
 
                 #print("  {:5s}: {:s}".format(l,str(confusion)))
 
-                ax[iwin].boxplot(data)
-                ax[iwin].set_xlabel(l)
-                ax[iwin].set_xticklabels(['0', '1'])
+                ax[0, iwin].boxplot(data)
+                ax[0, iwin].set_xlabel(l)
+                ax[0, iwin].set_xticklabels(['0', '1'])
                 iwin += 1
 
         fig.savefig(figname, bbox_inches='tight')
