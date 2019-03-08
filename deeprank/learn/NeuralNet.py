@@ -299,10 +299,6 @@ class NeuralNet():
 
         """
 
-        # multi-gpu
-        if self.ngpu > 1:
-            train_batch_size *= self.ngpu
-
         print('\n: Batch Size : %d' %train_batch_size)
         if self.cuda:
             print(': NGPU       : %d' %self.ngpu)
