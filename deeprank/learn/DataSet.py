@@ -212,6 +212,11 @@ class DataSet():
         for f in self.train_database:
             print('=\t ->',f)
         print('=')
+        if self.valid_database is not None:
+            print('=\t Validation data' )
+            for f in self.valid_database:
+                print('=\t ->',f)
+        print('=')
         if self.test_database is not None:
             print('=\t Test data' )
             for f in self.test_database:
