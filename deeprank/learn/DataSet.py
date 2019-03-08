@@ -273,7 +273,7 @@ class DataSet():
         if self.data_augmentation is not None:
             print('   Augmentation        : %d rotations' %self.data_augmentation)
 
-        print('   Validation set        : %d conformations' %self.nvalid)
+        print('   Validation set      : %d conformations' %self.nvalid)
         print('   Test set            : %d conformations' %(self.ntest))
         print('   Number of channels  : %d' %self.input_shape[0])
         print('   Grid Size           : %d x %d x %d' %(self.data_shape[1],self.data_shape[2],self.data_shape[3]))
