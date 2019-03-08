@@ -222,8 +222,7 @@ class DataSet():
 
 
         # check if the files are ok
-        if not self.mapfly:
-            self.check_hdf5_files(self.train_database)
+        self.check_hdf5_files(self.train_database)
 
         if self.valid_database is not None:
             self.valid_database = self.check_hdf5_files(self.valid_database)
