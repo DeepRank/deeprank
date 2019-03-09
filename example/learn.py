@@ -3,7 +3,13 @@ import glob
 import numpy as np
 
 from deeprank.learn import *
-from deeprank.learn.model3d import cnn as cnn3d
+
+#-- for regression
+#from deeprank.learn.model3d import cnn_reg as cnn3d
+
+#-- for classification
+from deeprank.learn.model3d import cnn_class as cnn3d
+
 
 database = './hdf5/*1ak4.hdf5'
 out = './out'
@@ -28,7 +34,8 @@ data_set = DataSet(database,
             select_feature={'AtomicDensities' : {'CA':3.5, 'C':3.5, 'N':3.5, 'O':3.5},
                 			'Features'        : ['coulomb','vdwaals','charge','PSSM_*'] },
 
-            select_target='DOCKQ',
+            #select_target='DOCKQ',  # regression
+            select_target='BIN_CLASS', # classification
             tqdm=True,
             normalize_features = False,
             normalize_targets=False,
@@ -37,8 +44,8 @@ data_set = DataSet(database,
             dict_filter={'DOCKQ':'<1.'})
 
 # create the network
-model = NeuralNet(data_set,cnn3d,model_type='3d',task='reg',
+model = NeuralNet(data_set,cnn3d,model_type='3d',task='class',
                   cuda=False,plot=True,outdir=out)
 
 # start the training
-model.train(nepoch = 5, divide_trainset = None, train_batch_size = 5, num_workers=0, save_model='all')
+model.train(nepoch = 3, divide_trainset = None, train_batch_size = 5, num_workers=0, save_model='all')

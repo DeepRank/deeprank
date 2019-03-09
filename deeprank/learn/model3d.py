@@ -21,10 +21,10 @@ import torch.nn.functional as F
 #fc   layer   1: fc   | input  84  output  1  post None
 #----------------------------------------------------------------------
 
-class cnn(nn.Module):
+class cnn_reg(nn.Module):
 
     def __init__(self,input_shape):
-        super(cnn,self).__init__()
+        super(cnn_reg,self).__init__()
 
         self.convlayer_000 = nn.Conv3d(input_shape[0],4,kernel_size=2)
         self.convlayer_001 = nn.MaxPool3d((2,2,2))
