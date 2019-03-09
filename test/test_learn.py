@@ -4,7 +4,7 @@ import glob
 import numpy as np
 try:
   from deeprank.learn import *
-  from deeprank.learn.model3d import cnn as cnn3d
+  from deeprank.learn.model3d import cnn_reg as cnn3d
   from deeprank.learn.model3d import cnn_class as cnn3d_class
   from deeprank.learn.model2d import cnn as cnn2d
   skip=False
@@ -224,7 +224,7 @@ if __name__ == "__main__":
 
   TestLearn.test_learn_3d_reg_mapfly()
   #TestLearn.test_learn_3d_reg()
-  #TestLearn.test_learn_3d_class()
+  TestLearn.test_learn_3d_class()
   #TestLearn.test_learn_2d_reg()
-  TestLearn.test_transfer()
+  #TestLearn.test_transfer()
 
