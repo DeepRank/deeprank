@@ -375,6 +375,7 @@ class DataSet():
                 for k in mol_names:
 
                     if self.filter(fh5[k]):
+                        #print (f"\tmol {k} passed {self.dict_filter}")
                         self.index_complexes += [(fdata,k,None,None)]
                         for irot in range(self.data_augmentation):
                             axis, angle = self._get_aug_rot()
@@ -469,7 +470,7 @@ class DataSet():
 
 
     def filter(self,molgrp):
-        '''Filter the molecule according to a dictionary.
+        '''Filter the molecule according to a dictionary, e.g., dict_filter={'DOCKQ':'>0.1', 'IRMSD':'<=4 or >10'}).
         The filter is based on the attribute self.dict_filter
         that must be either of the form: { 'name' : cond } or None
         Args:
