@@ -43,11 +43,10 @@ def divide_data(hdf5_DIR, caseID_FL, portion=[0.8,0.1,0.1], write_to_file = True
 
 def get_hdf5FLs(caseIDs, hdf5_DIR):
 
-    hdf5_FLs = [ glob.glob(f'{hdf5_DIR}/*{caseID}.hdf5') for caseID in caseIDs   ]
+    hdf5_FLs = []
+    for caseID in caseIDs:
+        hdf5_FLs.extend(glob.glob(f"{hdf5_DIR}/*{caseID}.hdf5"))
 
-    if hdf5_FLs != []:
-        # hdf5_FLs = [['/hdf5/000_1AVX.hdf5', '/hdf5/001_1AVX.hdf5']]
-        hdf5_FLs = hdf5_FLs[0]
     return hdf5_FLs
 
 def read_listFL(listFL):
@@ -100,10 +99,10 @@ def write_train_valid_testFLs (train_database, valid_database, test_database, ou
 def main():
 
     out = './out'
-    hdf5_DIR = '/projects/0/deeprank/BM5/scripts/test/hdf5'
+    hdf5_DIR = './hdf5'
     caseID_FL = 'caseIDs.txt'
     train_database, valid_database, test_database = \
-        divide_data(hdf5_DIR = hdf5_DIR,caseID_FL = caseID_FL, portion = [0.8,0.1,0.1])
+        divide_data(hdf5_DIR = hdf5_DIR,caseID_FL = caseID_FL, portion = [0.2,0.1,0.1])
 
     # clean the output dir
     out = './out_3d'
