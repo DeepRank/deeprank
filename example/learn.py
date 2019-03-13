@@ -31,7 +31,7 @@ data_set = DataSet(database,
             use_rotation=5,
             grid_info = {'number_of_points':[10,10,10], 'resolution' : [3,3,3]},
 
-            select_feature={'AtomicDensities' : {'CA':3.5, 'C':3.5, 'N':3.5, 'O':3.5},
+            select_feature={'AtomicDensities' : {'CA':1.7, 'C':1.7, 'N':1.55, 'O':1.52},
                 			'Features'        : ['coulomb','vdwaals','charge','PSSM_*'] },
 
             #select_target='DOCKQ',  # regression
