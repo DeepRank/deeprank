@@ -140,7 +140,7 @@ class FullPSSM(FeatureClass):
         """get the feature value."""
 
         sql = pdb2sql(self.pdbfile)
-        
+
         xyz_info = sql.get('chainID,resSeq,resName',name='CB')
         xyz_info += sql.get('chainID,resSeq,resName',name='CA',resName='GLY')
 

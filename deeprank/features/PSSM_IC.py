@@ -117,7 +117,10 @@ class PSSM_IC(FeatureClass):
 
         sql = pdb2sql(self.pdbfile)
         xyz_info = sql.get('chainID,resSeq,resName',name='CB')
+        xyz_info += sql.get('chainID,resSeq,resName',name='CA',resName='GLY')
+
         xyz = sql.get('x,y,z',name='CB')
+        xyz += sql.get('x,y,z',name='CA',resName='GLY')
 
         xyz_dict = {}
         for pos,info in zip(xyz,xyz_info):
