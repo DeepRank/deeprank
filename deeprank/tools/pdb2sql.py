@@ -381,6 +381,10 @@ class pdb2sql(object):
 
             # check that all the keys exists
             for k in keys:
+
+                if k.startswith('no_'):
+                    k = k[3:]
+
                 try:
                     self.c.execute("SELECT EXISTS(SELECT {an} FROM ATOM)".format(an=k))
                 except:
@@ -395,6 +399,14 @@ class pdb2sql(object):
 
             # iterate through the kwargs
             for ik,(k,v) in enumerate(kwargs.items()):
+
+
+                # deals with negative conditions
+                if k.startswith('no_'):
+                    k = k[3:]
+                    neg = ' NOT'
+                else:
+                    neg = ''
 
                 # get if we have an array or a scalar
                 # and build the value tuple for the sql query
@@ -438,7 +450,7 @@ class pdb2sql(object):
                         vals = vals + (v,)
 
                 # create the condition for that key
-                conditions.append(k + ' in (' + ','.join('?'*nv) + ')')
+                conditions.append(k + neg + ' in (' + ','.join('?'*nv) + ')')
 
             # stitch the conditions and append to the query
             query += ' AND '.join(conditions)

@@ -98,7 +98,7 @@ class TestGenerateData(unittest.TestCase):
         for h5 in self.h5file:
 
             #init the data assembler
-            database = DataGenerator(pdb_source=None,pdb_native=None,data_augmentation=None,
+            database = DataGenerator(pdb_source=None, pdb_native=None, data_augmentation=None,
                                      pssm_source='./1AK4/pssm_new/',
                                      compute_features  = ['deeprank.features.FullPSSM'], hdf5=h5)
 

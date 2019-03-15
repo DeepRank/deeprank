@@ -108,8 +108,13 @@ class BSA(FeatureClass):
 
             # define the xyz key : (chain,x,y,z)
             chain = {'A':0,'B':1}[r[0]]
-            xyz = np.mean(self.sql.get('x,y,z',resSeq=r[1],chainID=r[0]),0)
-            xyzkey = tuple([chain]+xyz.tolist())
+
+            atcenter = 'CB'
+            if r[2] == 'GLY':
+                atcenter = 'CA'
+            xyz = self.sql.get('x,y,z',resSeq=r[1],chainID=r[0],name=atcenter)[0]
+            #xyz = np.mean(self.sql.get('x,y,z',resSeq=r[1],chainID=r[0]),0)
+            xyzkey = tuple([chain]+xyz)
 
             # put the data in dict
             self.bsa_data[r]           =  [bsa]
