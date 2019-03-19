@@ -47,10 +47,10 @@ class ResidueDensity(FeatureClass):
                                            cutoff = cutoff,
                                            return_contact_pairs=True)
 
-        if len(res) < 5:
+        #if len(res) < 5:
             # the interface is too small
-            self.error = True
-            return
+        #    self.error = True
+        #    return
 
 
         self.residue_densities = {}
@@ -175,6 +175,6 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
     if resdens.error == True:
         error_flag = True
-        print("WARNING: Interface too small (< 5 residue pairs). Failed to calculate ResidueDensity.")
+        print("WARNING: Failed to calculate ResidueDensity. This might be caused by a very small interface.")
     return error_flag
 
