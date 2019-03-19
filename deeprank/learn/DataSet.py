@@ -1325,7 +1325,8 @@ class DataSet():
         # shortcut for th center
         x0,y0,z0 = center
 
-        beta = 1.0
+        sigma = np.sqrt(1./2)
+        beta = 0.5/(sigma**2)
         cutoff = 5.*beta
 
         dd = np.sqrt( (grid[0]-x0)**2 + (grid[1]-y0)**2 + (grid[2]-z0)**2 )
