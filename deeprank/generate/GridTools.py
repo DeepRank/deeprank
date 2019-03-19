@@ -683,10 +683,11 @@ class GridTools(object):
 
         # shortcut for th center
         x0,y0,z0 = center
+        sigma = np.sqrt(1./2)
+        beta = 0.5/(sigma**2)
 
         # simple Gaussian
         if type_ == 'gaussian':
-            beta = 1.0/np.max(self.res)
             dd = np.sqrt( (self.xgrid-x0)**2 + (self.ygrid-y0)**2 + (self.zgrid-z0)**2 )
             dd = value*np.exp(-beta*dd)
             return dd
@@ -694,7 +695,6 @@ class GridTools(object):
         # fast gaussian
         elif type_ == 'fast_gaussian':
 
-            beta = 1.0/np.max(self.res)
             cutoff = 5.*beta
 
             dd = np.sqrt( (self.xgrid-x0)**2 + (self.ygrid-y0)**2 + (self.zgrid-z0)**2 )
