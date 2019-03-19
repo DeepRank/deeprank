@@ -84,7 +84,7 @@ class BSA(FeatureClass):
                 self.chains[label].addAtom(atomName,residueName,residueNumber,chainLabel,x,y,z)
             self.result_chains[label] = freesasa.calc(self.chains[label])
 
-    def get_contact_residue_sasa(self,cutoff=8.5):
+    def get_contact_residue_sasa(self,cutoff=5.5):
         """Compute the feature value."""
 
         self.bsa_data = {}

@@ -126,7 +126,7 @@ class PSSM_IC(FeatureClass):
         for pos,info in zip(xyz,xyz_info):
             xyz_dict[tuple(info)] = pos
 
-        contact_residue = sql.get_contact_residue()
+        contact_residue = sql.get_contact_residue(cutoff=5.5)
         contact_residue = contact_residue[0] + contact_residue[1]
         sql.close()
 
