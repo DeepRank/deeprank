@@ -619,7 +619,7 @@ class DataSet():
                 # if for a given type we need all the feature
                 if feat_names == 'all':
                     if feat_type == 'AtomicDensities':
-                        self.select_feature['AtomicDensities'] = {'CA':3.5, 'C':3.5, 'N':3.5, 'O':3.5}
+                        self.select_feature['AtomicDensities'] = {'CA':1.7, 'C':1.7, 'N':1.55, 'O':1.52}
                     elif feat_type in mol_data:
                         self.select_feature[feat_type] = list(mapped_data[feat_type].keys())
                     else:
