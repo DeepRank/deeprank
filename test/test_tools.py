@@ -12,6 +12,7 @@ class TestTools(unittest.TestCase):
 
         # create the sql db
         pdb = './1AK4/decoys/1AK4_cm-it0_745.pdb'
+        db = pdb2sql(pdb)
         db._fix_chainID()
 
         # get column name
