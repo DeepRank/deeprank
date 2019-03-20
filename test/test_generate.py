@@ -33,7 +33,7 @@ class TestGenerateData(unittest.TestCase):
             database = DataGenerator(pdb_source=src,
                                      pdb_native=self.pdb_native,
                                      pssm_source='./1AK4/pssm_new/',
-                                     data_augmentation = 0,
+                                     data_augmentation = 1,
                                      compute_targets  = ['deeprank.targets.dockQ','deeprank.targets.binary_class'],
                                      compute_features = ['deeprank.features.AtomicFeature',
                                                          'deeprank.features.FullPSSM',

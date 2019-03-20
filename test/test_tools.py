@@ -11,10 +11,8 @@ class TestTools(unittest.TestCase):
         """Test the db2sql module."""
 
         # create the sql db
-        pdb = './1AK4/decoys/1AK4_1w.pdb'
+        pdb = './1AK4/decoys/1AK4_cm-it0_745.pdb'
         db = pdb2sql(pdb)
-
-        # fix chain name
         db._fix_chainID()
 
         # get column name
@@ -29,7 +27,7 @@ class TestTools(unittest.TestCase):
         """Test the SASA module."""
 
         # create the sql db
-        pdb = './1AK4/decoys/1AK4_1w.pdb'
+        pdb = './1AK4/decoys/1AK4_cm-it0_745.pdb'
         sasa = SASA(pdb)
         sasa.get_center()
         sasa.get_residue_center()

@@ -415,8 +415,8 @@ class DataGenerator(object):
         fnames = f5.keys()
 
         # get the non rotated ones
-        fnames_original = list( filter(lambda x: '_r' not in x, fnames) )
-        fnames_augmented = list( filter(lambda x: '_r' in x, fnames) )
+        fnames_original = list( filter(lambda x: not re.search('_r\d+$',x), fnames) )
+        fnames_augmented = list( filter(lambda x:  re.search('_r\d+$',x), fnames) )
 
         # computes the features of the original
         desc = '{:25s}'.format('Add features')
@@ -440,7 +440,7 @@ class DataGenerator(object):
             aug_molgrp = f5[cplx_name]
 
             # get the source group
-            mol_name = molgrp.name.split('_r')[0]
+            mol_name = re.split('_r\d+', molgrp.name)[0]
             src_molgrp = f5[mol_name]
 
             # get the rotation parameters
@@ -526,8 +526,8 @@ class DataGenerator(object):
         fnames = f5.keys()
 
         # get the non rotated ones
-        fnames_original = list( filter(lambda x: '_r' not in x, fnames) )
-        fnames_augmented = list( filter(lambda x: '_r' in x, fnames) )
+        fnames_original = list( filter(lambda x: not re.search('_r\d+$',x), fnames) )
+        fnames_augmented = list( filter(lambda x:  re.search('_r\d+$',x), fnames) )
 
         # compute the targets  of the original
         desc = '{:25s}'.format('Add targets')
@@ -548,7 +548,7 @@ class DataGenerator(object):
             aug_molgrp = f5[cplx_name]
 
             # get the source group
-            mol_name = molgrp.name.split('_r')[0]
+            mol_name = re.split('_r\d+', molgrp.name)[0]
             src_molgrp = f5[mol_name]
 
             # copy the targets to the augmented
