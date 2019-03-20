@@ -4,6 +4,7 @@ import sys
 import time
 import h5py
 import pickle
+import re
 
 from functools import partial
 
