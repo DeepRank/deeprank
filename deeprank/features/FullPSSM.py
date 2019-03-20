@@ -7,6 +7,7 @@ from deeprank.tools import pdb2sql
 from deeprank.tools import SASA
 from deeprank.features import FeatureClass
 from deeprank.generate import settings
+import sys
 
 printif = lambda string,cond: print(string) if cond else None
 
@@ -20,7 +21,7 @@ printif = lambda string,cond: print(string) if cond else None
 class FullPSSM(FeatureClass):
 
     def __init__(self,mol_name=None,pdbfile=None,pssm_path=None,
-                     debug=False,pssm_format='new'):
+                     debug=True,pssm_format='new'):
 
         '''Compute all the PSSM data.
 
@@ -68,7 +69,7 @@ class FullPSSM(FeatureClass):
         return mol_name.split('_')[0]
 
     def read_PSSM_data(self):
-        """Read the PSSM data."""
+        """Read the PSSM data into a dictionary."""
 
         names = os.listdir(self.pssm_path)
         fname = [n for n in names if n.find(self.molname)==0]
@@ -91,8 +92,8 @@ class FullPSSM(FeatureClass):
             f.close()
             raw_data = list( map(lambda x: x.decode('utf-8').split(),data))
 
-            self.res_data  = np.array(raw_data)[:,:3]
-            self.res_data = [  (r[0],int(r[1]),r[2]) for r in self.res_data ]
+            self.pssm_res_data  = np.array(raw_data)[:,:3]
+            self.pssm_res_data = [  (r[0],int(r[1]),r[2]) for r in self.pssm_res_data ]
             self.pssm_data = np.array(raw_data)[:,3:].astype(np.float)
 
         # new format with 2 files (each chain has one file)
@@ -126,17 +127,30 @@ class FullPSSM(FeatureClass):
                 rd  = [  (chainID,int(r[0]),resmap[r[1]]) for r in rd ]
                 pd = np.array(raw_data)[1:,4:-1].astype(np.float)
 
+                '''
+                rd: residue data
+                rd = [[('A', 1, 'MET'), ('A', 2, 'GLU')], [('B', 447, 'ARG'), ('B', 448, 'ASN')]]
+
+                pd: pssm data
+                pd = [[-6. -7. -7. ... -7. -6. -4.]
+                 [-2. -1.  3. ... -6. -4. -2.]]
+                '''
+
+
+
                 if iiter == 0:
-                    self.res_data = rd
+                    self.pssm_res_data = rd
                     self.pssm_data = pd
                     iiter = 1
 
                 else:
-                    self.res_data += rd
+                    self.pssm_res_data += rd
                     self.pssm_data = np.vstack((self.pssm_data,pd))
 
+            self.pssm = dict(zip(self.pssm_res_data, self.pssm_data))
 
-    def get_feature_value(self,contact_only=True):
+
+    def get_feature_value(self):
         """get the feature value."""
 
         sql = pdb2sql(self.pdbfile)
@@ -152,32 +166,43 @@ class FullPSSM(FeatureClass):
             xyz_dict[tuple(info)] = pos
 
         contact_residue = sql.get_contact_residue(cutoff=5.5)
-        contact_residue = contact_residue[0] + contact_residue[1]
         sql.close()
 
+        contact_residue = contact_residue[0] + contact_residue[1]
         pssm_data_xyz = {}
         pssm_data = {}
 
-        for res,data in zip(self.res_data,self.pssm_data):
-
-            if contact_only and res not in contact_residue:
-                continue
-
-            if tuple(res) in xyz_dict:
-                chain = {'A':0,'B':1}[res[0]]
-                key = tuple([chain] + xyz_dict[tuple(res)])
-
-                for name,value in zip(self.pssm_val_name,data):
-                    self.feature_data[name][res] = [value]
-                    self.feature_data_xyz[name][key] = [value]
-
-            else:
-                printif([tuple(res), ' not found in the pdbfile'],self.debug)
-
-        # if we have no contact atoms
-        if len(pssm_data_xyz) == 0:
+        if len(contact_residue) ==0:
+            # if we have no contact atoms
+            print("WARNING: contact residues NOT found.")
             pssm_data_xyz[tuple([0,0.,0.,0.])] = [0.0]
             pssm_data_xyz[tuple([1,0.,0.,0.])] = [0.0]
+
+        else:
+
+            for res in contact_residue:
+                # res: ('B', 573, 'HIS')
+
+                if res not in self.pssm_res_data:
+                    sys.stdout.flush()
+                    raise ValueError(f"Residue {res} does not have pssm value")
+
+                if tuple(res) in xyz_dict:
+                    #res: ('A', 13, 'ASP')
+                    chain = {'A':0,'B':1}[res[0]]
+                    key = tuple([chain] + xyz_dict[tuple(res)])
+                    #key: (0, -19.346, 6.156, -3.44)
+
+                    for name,value in zip(self.pssm_val_name,self.pssm[res]):
+                        # res: ('B', 573, 'HIS')
+                        # name: PSSM_ALA
+                        # value:-3.0
+                        # key: (0, -19.346, 6.156, -3.44)
+                        self.feature_data[name][res] = [value]
+                        self.feature_data_xyz[name][key] = [value]
+
+                else:
+                    printif([tuple(res), ' not found in the pdbfile'],self.debug)
 
 #####################################################################################
 #
