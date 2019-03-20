@@ -68,7 +68,7 @@ class TestPDB2SQL(unittest.TestCase):
         self.db.rotation_matrix(mat,chainID='A')
 
     def setUp(self):
-        mol = './1AK4/decoys/1AK4_1w.pdb'
+        mol = './1AK4/decoys/1AK4_cm-it0_745.pdb'
         self.db = pdb2sql(mol)
 
     def tearDown(self):
