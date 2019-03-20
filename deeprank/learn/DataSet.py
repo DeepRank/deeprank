@@ -4,6 +4,7 @@ import sys
 import time
 import h5py
 import pickle
+import re
 
 from functools import partial
 
@@ -457,11 +458,12 @@ class DataSet():
         """
 
         if self.use_rotation is not None:
-            fnames_original = list(filter(lambda x: '_r' not in x, mol_names))
+            fnames_original = list(filter(lambda x: not re.search('_r\d+$',x), mol_names))
             fnames_augmented = []
             if self.use_rotation > 0:
                 for i in range(self.use_rotation):
-                    fnames_augmented += list(filter(lambda x: '_r%03d' %(i+1) in x, mol_names))
+#                    fnames_augmented += list(filter(lambda x: '_r%03d' %(i+1) in x, mol_names))
+                    fnames_augmented += list(filter(lambda x: re.search('_r%03d$' %(i+1),  x), mol_names))
                 mol_names = fnames_original + fnames_augmented
             else:
                 mol_names = fnames_original
@@ -1325,7 +1327,8 @@ class DataSet():
         # shortcut for th center
         x0,y0,z0 = center
 
-        beta = 1.0
+        sigma = np.sqrt(1./2)
+        beta = 0.5/(sigma**2)
         cutoff = 5.*beta
 
         dd = np.sqrt( (grid[0]-x0)**2 + (grid[1]-y0)**2 + (grid[2]-z0)**2 )
