@@ -73,7 +73,7 @@ class TestStructureSimilarity(unittest.TestCase):
 
         # specify wich data to us
         MOL = './1AK4/'
-        decoy = MOL + '/decoys/1AK4_1w.pdb'
+        decoy = MOL + '/decoys/1AK4_cm-it0_745.pdb'
         ref    = MOL + '/native/1AK4.pdb'
 
         sim = StructureSimilarity(decoy,ref)
