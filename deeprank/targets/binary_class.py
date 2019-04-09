@@ -13,6 +13,8 @@ def __compute_target__(decoy, targrp):
         ['DOCKQ', 'FNAT', 'IRMSD', 'LRMSD']
     """
 
+    irmsd_thr = 4
+
     # fet the mol group
     molgrp = targrp.parent
     molname = molgrp.name
@@ -21,8 +23,8 @@ def __compute_target__(decoy, targrp):
         if target_name in targrp.keys():
             del targrp[target_name]
 
-    if targrp['IRMSD'].value <=4:
-        print (f"This is a hit (irmsd <=4A). {molname} -> irmsd: {targrp['IRMSD'].value}")
+    if targrp['IRMSD'].value <= irmsd_thr:
+        print (f"This is a hit (irmsd <= {irmsd_thr} A). {molname} -> irmsd: {targrp['IRMSD'].value}")
         classID = 1
     else:
         classID = 0

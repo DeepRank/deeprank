@@ -1050,7 +1050,7 @@ class NeuralNet():
                 irmsd = np.array(irmsd)[ind_sort]
 
                 # make a binary list out of that
-                binary_recomendation = (irmsd<irmsd_thr).astype('int')
+                binary_recomendation = (irmsd<=irmsd_thr).astype('int')
 
                 # number of recommended hit
                 npos = np.sum(binary_recomendation)
@@ -1093,7 +1093,7 @@ class NeuralNet():
         irmsd = np.array(irmsd)[ind_sort]
 
         # make a binary list out of that
-        return (irmsd<irmsd_thr).astype('int')
+        return (irmsd<=irmsd_thr).astype('int')
 
 
     def _get_classmetrics(self, data, metricname):
