@@ -149,4 +149,4 @@ if __name__ == '__main__':
     epoch = int(sys.argv[2]) # 9
     figname = sys.argv[3]
     plot_hit_rate(hdf5,epoch=epoch,figname=figname + '.hitrate.png',inverse = False)
-#    plot_boxplot(hdf5,epoch=None,figname=figname + '.boxplot.png',inverse = False)
+    plot_boxplot(hdf5,epoch=None,figname=figname + '.boxplot.png',inverse = False)
