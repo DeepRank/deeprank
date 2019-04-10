@@ -143,7 +143,7 @@ def plot_hit_rate(hdf5,epoch=None,figname=None,inverse = False):
 if __name__ == '__main__':
 
     if len(sys.argv) !=4:
-        print(f"Usage: plot_utils.py epoch_data.hdf5 epoch fig_name")
+        print(f"Usage: {sys.argv[0]} epoch_data.hdf5 epoch fig_name")
         sys.exit()
     hdf5 = sys.argv[1] #'epoch_data.hdf5'
     epoch = int(sys.argv[2]) # 9
