@@ -953,7 +953,7 @@ class NeuralNet():
                 confusion=[[0, 0], [0, 0]]
                 for pts,t in zip(out,tar):
                     r = F.softmax(torch.FloatTensor(pts), dim=0).data.numpy()
-                    data[t].append(r[t])
+                    data[t].append(r[1])
                     confusion[t][r[1]>0.5] += 1
 
                 #print("  {:5s}: {:s}".format(l,str(confusion)))
