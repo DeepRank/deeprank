@@ -13,7 +13,9 @@ An example to do cross-validation 3d_cnn at the case level
 (i.e., all docked models of one case will belong either to training, valiation or test only)
 """
 
-def divide_data(hdf5_DIR, caseID_FL, portion=[0.8,0.1,0.1], write_to_file = True):
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+def divide_data(hdf5_DIR, caseID_FL, portion=[0.8,0.1,0.1], random = True, write_to_file = True):
     # INPUT: the dir that stores all hdf5 data (training, validation, and test)
     # OUPUT: randomly divide them into train, validation, and test at the caseID-level. Return the filenames.
     # write_to_file: True then write the files of trainSet.txt, valiatonSet.txt and testSet.txt
@@ -26,7 +28,7 @@ def divide_data(hdf5_DIR, caseID_FL, portion=[0.8,0.1,0.1], write_to_file = True
 
 
     caseIDs = np.array(read_listFL(caseID_FL))
-    train_caseIDs, valid_caseIDs, test_caseIDs = random_split(caseIDs, portion)
+    train_caseIDs, valid_caseIDs, test_caseIDs = random_split(caseIDs, portion, random = random)
 
     print (f"\nnum of training cases: {len(train_caseIDs)}")
     print (f"num of validation cases: {len(valid_caseIDs)}")
@@ -37,7 +39,7 @@ def divide_data(hdf5_DIR, caseID_FL, portion=[0.8,0.1,0.1], write_to_file = True
     test_database = get_hdf5FLs(test_caseIDs, hdf5_DIR)
 
     if write_to_file is True:
-        outDIR = hdf5_DIR
+        outDIR = os.getcwd()
         write_train_valid_testFLs (train_database, valid_database, test_database, outDIR)
     return train_database, valid_database, test_database
 
@@ -60,10 +62,11 @@ def read_listFL(listFL):
     return caseIDs
 
 
-def random_split(array, portion):
+def random_split(array, portion, random = True):
     # array: np.array. Can be a list of caseIDs or a list of hdf5 file names
 
-    np.random.shuffle(array)
+    if random is True:
+        np.random.shuffle(array)
     n_cases = len(array)
     n_train = min(ceil(n_cases * portion[0]), n_cases)
     n_valid = floor(n_cases * portion[1])
@@ -71,7 +74,6 @@ def random_split(array, portion):
     if sum(portion) == 1:
         n_test = n_cases - n_train - n_valid
     else:
-        print (portion[2])
         n_test = floor(n_cases * portion[2])
 
     train = array[:n_train]
@@ -102,7 +104,7 @@ def main():
     hdf5_DIR = './hdf5'
     caseID_FL = 'caseIDs.txt'
     train_database, valid_database, test_database = \
-        divide_data(hdf5_DIR = hdf5_DIR,caseID_FL = caseID_FL, portion = [0.2,0.1,0.1])
+        divide_data(hdf5_DIR = hdf5_DIR,caseID_FL = caseID_FL, portion = [0.2,0.1,0.1], random = False)
 
     # clean the output dir
     out = './out_3d'
@@ -132,7 +134,7 @@ def main():
                 normalize_targets=False,
                 clip_features=False,
                 pair_chain_feature=np.add,
-                dict_filter={'DOCKQ':'>0.1', 'IRMSD':'<=4 or >10'})
+                dict_filter={'DOCKQ':'>0.01', 'IRMSD':'<=4 or >10'})
 
     # create the network
     model = NeuralNet(data_set,cnn3d,model_type='3d',task='class',
