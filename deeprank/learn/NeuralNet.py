@@ -331,10 +331,24 @@ class NeuralNet():
                     save_epoch=save_epoch,
                     save_model=save_model)
         self.f5.close()
-        print(' --> Training done in ', time.strftime('%H:%M:%S', time.gmtime(time.time()-t0)))
+        print(' --> Training done in ', self.convertSeconds2Days(time.time()-t0))
 
         # save the model
         self.save_model(filename='last_model.pth.tar')
+
+    def convertSeconds2Days(self,time):
+        # input time in seconds
+
+        time = int(time)
+        day = time // (24 * 3600)
+        time = time % (24 * 3600)
+        hour = time // 3600
+        time %= 3600
+        minutes = time // 60
+        time %= 60
+        seconds = time
+        return '%02d:%02d:%02d:%02d'%(day,hour,minutes,seconds)
+
 
     def test(self, hdf5='test_data.hdf5'):
         """Test a predefined model on a new dataset.
@@ -624,10 +638,7 @@ class NeuralNet():
 
             # timer
             elapsed = time.time()-t0
-            if elapsed>10:
-                print('  epoch done in    :', time.strftime('%H:%M:%S', time.gmtime(elapsed)))
-            else:
-                print('  epoch done in    : %1.3f' %elapsed)
+            print('  epoch done in    :', self.convertSeconds2Days(elapsed))
 
             # remaining time
             av_time += elapsed
