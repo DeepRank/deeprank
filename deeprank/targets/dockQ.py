@@ -22,6 +22,7 @@ def __compute_target__(decoy,targrp):
     if '_' not in molname:
 
         # lrmsd = irmsd = 0 | fnat = dockq = 1
+        print(f"WARNING: {molname} has no '_' indicating it is a bound complex. Assign 0, 0, 1 and 1 for lrmsd, irmsd, fnat, DockQ, respectively")
         targrp.create_dataset('LRMSD',data=np.array(0.0))
         targrp.create_dataset('IRMSD',data=np.array(0.0))
         targrp.create_dataset('FNAT', data=np.array(1.0))
