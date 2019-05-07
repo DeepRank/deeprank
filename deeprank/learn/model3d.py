@@ -38,9 +38,10 @@ class cnn_reg(nn.Module):
 
 
     def _get_conv_output(self,shape):
-        inp = Variable(torch.rand(1,*shape))
+        num_data_points = 2
+        inp = Variable(torch.rand(num_data_points,*shape))
         out = self._forward_features(inp)
-        return out.data.view(1,-1).size(1)
+        return out.data.view(num_data_points,-1).size(1)
 
     def _forward_features(self,x):
         x = F.relu(self.convlayer_000(x))

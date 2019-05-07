@@ -153,9 +153,9 @@ import torch.nn.functional as F
     def _write_conv_output(fhandle):
         func = '''
 \tdef _get_conv_output(self,shape):
-\t\tinp = Variable(torch.rand(1,*shape))
+\t\tinp = Variable(torch.rand(2,*shape))
 \t\tout = self._forward_features(inp)
-\t\treturn out.data.view(1,-1).size(1)
+\t\treturn out.data.view(2,-1).size(1)
 
 '''
         fhandle.write(func)
