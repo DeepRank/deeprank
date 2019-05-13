@@ -8,6 +8,8 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
+from torchsummary import summary
+import pdb # xue
 
 
 import torch
@@ -195,6 +197,15 @@ class NeuralNet():
 
         # load the model
         self.net = model(self.data_set.input_shape)
+
+        # model summary
+        sys.stdout.flush()
+        if cuda is True:
+            device = torch.device("cuda")  # PyTorch v0.4.0
+        else:
+            device = torch.device("cpu")
+        summary(self.net.to(device), self.data_set.input_shape)
+        sys.stdout.flush()
 
         # load parameters of pretrained model if provided
         if self.pretrained_model:
