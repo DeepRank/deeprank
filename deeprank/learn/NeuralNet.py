@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
 from torchsummary import summary
-import pdb # xue
 
 
 import torch
@@ -204,7 +203,7 @@ class NeuralNet():
             device = torch.device("cuda")  # PyTorch v0.4.0
         else:
             device = torch.device("cpu")
-        summary(self.net.to(device), self.data_set.input_shape)
+        summary(self.net.to(device), self.data_set.input_shape, device = device.type)
         sys.stdout.flush()
 
         # load parameters of pretrained model if provided
