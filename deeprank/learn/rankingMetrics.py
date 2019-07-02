@@ -30,6 +30,17 @@ def hitrate(rs):
     nr = np.max((1,np.sum(rs)))
     return np.cumsum(rs) / nr
 
+def success(hitrate):
+    '''
+    Input:  hitrate = [0,  0, 0.3, 0.4]
+    Output: success = [0,  0,   1,   1]
+    '''
+
+    success = np.ones(len(hitrate))
+    idx = (hitrate ==0)
+    success[idx] = 0
+
+    return success
 
 def avprec(rs):
     return [average_precision(rs[:i]) for i in range(1,len(rs))]
