@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 # Li Xue
 #  2-May-2019 11:24
+#
+# Extract five molecules from each hdf5 file and write into a new h5 file.
+#
+# This script is used to generate a small set for debugging.
 
 import sys
 import re
 import h5py
 import os
 
-h5FL = sys.argv[1]#'001_1GPW.hdf5' # sys.argv[1]
+h5FL = sys.argv[1]#'001_1GPW.hdf5'
 outDIR = sys.argv[2] # '.../'
 
 filename = os.path.basename(h5FL)

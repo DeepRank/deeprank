@@ -16,7 +16,7 @@ def hitrate(rs):
 
     Example:
 
-    >>> r = [0,1,1]
+    >>> rs = [0,1,1]
     >>> hit_rate(r,nr)
 
 
@@ -27,6 +27,7 @@ def hitrate(rs):
     Returns:
         hirate (array): [recall@1,recall@2,...]
     """
+    rs =np.array(rs)
     nr = np.max((1,np.sum(rs)))
     return np.cumsum(rs) / nr
 

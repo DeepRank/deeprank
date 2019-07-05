@@ -214,7 +214,62 @@ def read_haddockScoreFL(HS_h5FL):
 
     return stats
 
-def plot_DR_iRMSD(DR_h5FL, HS_h5FL=None, epoch=None, figname=None):
+def plot_DR_iRMSD(modelIDs_all, DR, figname=None):
+    '''
+    Plot a scatter plot of DeepRank score vs. iRMSD for train, valid and test
+
+    Args:
+        modelIDs_all: a data frame.
+        figname (str): filename
+
+    '''
+    print('\n --> Scatter plot of DR vs. iRMSD:', figname, '\n')
+
+    labels = modelIDs_all['label'].unique() # ['train','valid','test']
+
+    # write a dataframe of DR, irmsd and label
+    to_plot = pd.DataFrame() # store the data for plotting
+    for l in labels:
+        # l = train, valid or test
+
+        # get irmsd
+        idx = modelIDs_all['label'] == l
+        modelIDs = modelIDs_all.loc[idx,'modelID']
+        source_hdf5FLs = modelIDs_all.loc[idx,'sourceFL']
+        irmsd = np.array(get_irmsd(source_hdf5FLs, modelIDs))
+
+        # get haddock score
+        HS, idx_keep = get_HS(modelIDs, haddockS)
+        irmsd = irmsd[idx_keep]
+
+        to_plot_tmp = pd.DataFrame(list(zip_equal(HS,irmsd)), columns = ['DR', 'irmsd'])
+        to_plot_tmp['label'] = l
+        to_plot = to_plot.append(to_plot_tmp)
+
+        #-- count num_hit
+        num_hits = len([x for x in irmsd if x <=4 ])
+        print(f"According to 'i-RMSD' -> num of hits for {l}: {num_hits} out of {len(irmsd)}")
+
+    # plot
+
+    font_size = 16
+    text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
+    p = ggplot(to_plot) + aes_string(y = 'irmsd', x = 'DR') +\
+            facet_grid(ro.Formula('.~label')) + \
+            geom_point(alpha = 0.5) + \
+            theme_bw() +\
+            theme(**{'plot.title' : text_style,
+                    'text':  text_style,
+                    'axis.title':  text_style,
+                    'axis.text.x': element_text(size = font_size + 2),
+                    'axis.text.y': element_text(size = font_size + 2)} ) + \
+            scale_y_continuous(name = "i-RMSD")
+
+    ggplot2.ggsave(figname, height = 7 , width = 7 * 1.5)
+
+
+
+def plot_DR_iRMSD_OLD(DR_h5FL, HS_h5FL=None, epoch=None, figname=None):
     '''
     Plot a scatter plot of HS vs. iRMSD
 
@@ -304,7 +359,7 @@ def plot_HS_iRMSD(modelIDs_all, haddockS, figname=None):
 
     font_size = 16
     text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
-    p = ggplot(DR_df) + aes_string(y = 'irmsd', x = 'HS') +\
+    p = ggplot(to_plot) + aes_string(y = 'irmsd', x = 'HS') +\
             facet_grid(ro.Formula('.~label')) + \
             geom_point(alpha = 0.5) + \
             theme_bw() +\
@@ -807,14 +862,15 @@ def main():
         1ZHI     1ZHI_294w   0       9.758          -19.3448
         1ZHI     1ZHI_89w    1       17.535         -11.2127
     '''
-
+    #-- add iRMSD to DR_HS_df
+    DR_HS_df = add_irmsd(DR_HS_df)
 
     DR_df.to_csv('xue.tsv', sep='\t')
     modelIDs = DR_df.loc[:,['label', 'modelID', 'sourceFL']]
 
     #-- plot
-    plot_HS_iRMSD(modelIDs, haddockS, figname=figname + '.irsmd_HS.png')
-    #plot_DR_iRMSD(deeprank_h5FL, HS_h5FL= HS_h5FL, epoch=epoch, figname=figname + '.irsmd_DR.png')
+    #plot_HS_iRMSD(modelIDs, haddockS, figname=figname + '.epo' + str(epoch) +'.irsmd_HS.png')
+    #plot_DR_iRMSD(modelIDs, DR, epoch=epoch, figname=figname + '.epo' + str(epoch) + '.irsmd_DR.png')
     #plot_boxplot(DR_df, figname=figname + '.epo' + str(epoch) + '.boxplot.png',inverse = False)
     #plot_successRate_hitRate(DR_HS_df, figname=figname + '.epo' + str(epoch) ,inverse = False)
 
