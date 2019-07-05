@@ -29,6 +29,7 @@ from deeprank.learn import rankingMetrics
 
 # classification metrics
 from deeprank.learn import classMetrics
+import pdb
 
 class NeuralNet():
 
@@ -125,6 +126,7 @@ class NeuralNet():
             # process it
             self.data_set.process_dataset()
 
+
         # convert the data to 2d if necessary
         if model_type == '2d':
 
@@ -197,7 +199,7 @@ class NeuralNet():
         # load the model
         self.net = model(self.data_set.input_shape)
 
-        # model summary
+        # print model summary
         sys.stdout.flush()
         if cuda is True:
             device = torch.device("cuda")  # PyTorch v0.4.0
@@ -346,7 +348,8 @@ class NeuralNet():
         # save the model
         self.save_model(filename='last_model.pth.tar')
 
-    def convertSeconds2Days(self,time):
+    @staticmethod
+    def convertSeconds2Days(time):
         # input time in seconds
 
         time = int(time)
@@ -357,7 +360,7 @@ class NeuralNet():
         minutes = time // 60
         time %= 60
         seconds = time
-        return '%02d:%02d:%02d:%02d'%(day,hour,minutes,seconds)
+        return '%02d-%02d:%02d:%02d'%(day,hour,minutes,seconds)
 
 
     def test(self, hdf5='test_data.hdf5'):
@@ -618,6 +621,10 @@ class NeuralNet():
 
             # validate the model
             if _valid_:
+
+                sys.stdout.flush()
+                print(f"\n\t=> validate the model\n")
+
                 self.valid_loss,self.data['valid'] = self._epoch(valid_loader,train_model=False)
                 self.losses['valid'].append(self.valid_loss)
                 if self.save_classmetrics:
@@ -626,6 +633,9 @@ class NeuralNet():
 
             # test the model
             if _test_:
+                sys.stdout.flush()
+                print(f"\n\t=> test the model\n")
+
                 test_loss,self.data['test'] = self._epoch(test_loader,train_model=False)
                 self.losses['test'].append(test_loss)
                 if self.save_classmetrics:
@@ -633,6 +643,8 @@ class NeuralNet():
                         self.classmetrics[i]['test'].append(self.data['test'][i])
 
             # train the model
+            sys.stdout.flush()
+            print(f"\n\t=> train the model\n")
             self.train_loss,self.data['train'] = self._epoch(train_loader,train_model=True)
             self.losses['train'].append(self.train_loss)
             if self.save_classmetrics:
@@ -728,7 +740,12 @@ class NeuralNet():
         #set train/eval mode
         self.net.train(mode=train_model)
 
+        mini_batch = 0
+
         for d in data_loader:
+            mini_batch = mini_batch + 1
+
+            print(f"  -> mini-batch: {mini_batch} ")
 
             # get the data
             inputs = d['feature']
@@ -801,6 +818,7 @@ class NeuralNet():
 
 
     def _get_variables(self,inputs,targets):
+        # xue: why not put this step to DataSet.py?
 
         '''Convert the feature/target in torch.Variables.
 
