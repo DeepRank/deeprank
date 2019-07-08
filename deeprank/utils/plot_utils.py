@@ -42,35 +42,25 @@ def zip_equal(*iterables):
         yield combo
 
 
-def sort_modelIDs_by_deeprank(modelIDs, deeprank_score):
-    out = F.softmax(torch.FloatTensor(deeprank_score), dim=1).data.numpy()[:,1]
-    xue = pd.DataFrame(list(zip_equal(modelIDs, out)), columns = ['modelID',  'final_S'])
-    xue_sorted = xue.sort_values(by='final_S', ascending=False)
-    modelIDs_sorted = list(xue_sorted['modelID'])
-    return modelIDs_sorted
-
-def plot_boxplot(DR_df,figname=None,inverse = False):
+def plot_boxplot(df,figname=None,inverse = False):
 
     '''
     Plot a boxplot of predictions vs. targets. Useful
     to visualize the performance of the training algorithm.
     This is only useful in classification tasks.
 
-    Args:
-        figname (str): filename
+    INPUT (pd.DataFrame):
 
-    INPUT (DR_df: pd.DataFrame):
-
-    label               modelID  target        DR                                          sourceFL
-    0  Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
-    1  Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
-    2  Test  1AVX_ranair-it0_6223       0  0.511688  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+       label               modelID  target        DR                                          sourceFL
+       Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+       Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+       Test  1AVX_ranair-it0_6223       0  0.511688  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
 
     '''
 
     print('\n --> Box Plot : ', figname, '\n')
 
-    data = DR_df
+    data = df
 
     font_size = 20
     line = "#1F3552"
@@ -98,7 +88,7 @@ def plot_boxplot(DR_df,figname=None,inverse = False):
 
 
     #p.plot()
-    ggplot2.ggsave(figname)
+    ggplot2.ggsave(figname, dpi = 100)
 
 
 def read_epoch_data(DR_h5FL, epoch):
@@ -106,9 +96,10 @@ def read_epoch_data(DR_h5FL, epoch):
     # read epoch data into a data frame
 
     OUTPUT (pd.DataFrame):
-                    modelID target        DR label
-    0  1AVX_ranair-it0_5286      0  0.503823  test
-    1     1AVX_ti5-itw_354w      1  0.502845  test
+
+    label               modelID  target        DR                                          sourceFL
+    0  Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+    1  Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     '''
 
     #-- 1. read deeprank output data for the specific epoch
@@ -149,9 +140,8 @@ def read_epoch_data(DR_h5FL, epoch):
         to_plot_tmp['label'] = l.capitalize()
         to_plot = to_plot.append(to_plot_tmp)
 
-        #-- normal check-up: count num_hit
-        num_hits = len(np.where(targets == '1')[0])
-        print(f"According to 'targets' -> num of hits for {l}: {num_hits} out of {len(targets)}")
+    to_plot['target'] = pd.Categorical(to_plot['target'], categories=['0', '1'])
+    to_plot['label'] = pd.Categorical(to_plot['label'], categories=['Train', 'Valid', 'Test'])
 
     cols = ['label', 'modelID', 'target', 'DR', 'sourceFL']
     to_plot = to_plot[cols]
@@ -185,14 +175,13 @@ def merge_HS_DR(DR_df, haddockS):
     HS, idx_keep = get_HS(modelIDs, haddockS)
 
     data = DR_df.iloc[idx_keep,:].copy()
-    data.drop('sourceFL', axis=1, inplace=True)
     data['HS'] = HS
     data['caseID'] = [re.split('_', x)[0] for x in data['modelID']]
 
 
     #-- reorder columns
     col_ori = data.columns
-    col = ['label', 'caseID', 'modelID', 'target']
+    col = ['label', 'caseID', 'modelID', 'target', 'sourceFL']
     col.extend( [x for x in col_ori if x not in col])
     data = data[col]
 
@@ -214,47 +203,24 @@ def read_haddockScoreFL(HS_h5FL):
 
     return stats
 
-def plot_DR_iRMSD(modelIDs_all, DR, figname=None):
+def plot_DR_iRMSD(df, figname=None):
     '''
     Plot a scatter plot of DeepRank score vs. iRMSD for train, valid and test
 
-    Args:
-        modelIDs_all: a data frame.
-        figname (str): filename
+    INPUT (a data frame):
+
+        label caseID               modelID target                                          sourceFL        DR      irmsd         HS
+        Test   1AVX  1AVX_ranair-it0_5286      0  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.503823  25.189108   6.980802
+        Test   1AVX     1AVX_ti5-itw_354w      1  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.502845   3.668682 -95.158100
 
     '''
     print('\n --> Scatter plot of DR vs. iRMSD:', figname, '\n')
 
-    labels = modelIDs_all['label'].unique() # ['train','valid','test']
-
-    # write a dataframe of DR, irmsd and label
-    to_plot = pd.DataFrame() # store the data for plotting
-    for l in labels:
-        # l = train, valid or test
-
-        # get irmsd
-        idx = modelIDs_all['label'] == l
-        modelIDs = modelIDs_all.loc[idx,'modelID']
-        source_hdf5FLs = modelIDs_all.loc[idx,'sourceFL']
-        irmsd = np.array(get_irmsd(source_hdf5FLs, modelIDs))
-
-        # get haddock score
-        HS, idx_keep = get_HS(modelIDs, haddockS)
-        irmsd = irmsd[idx_keep]
-
-        to_plot_tmp = pd.DataFrame(list(zip_equal(HS,irmsd)), columns = ['DR', 'irmsd'])
-        to_plot_tmp['label'] = l
-        to_plot = to_plot.append(to_plot_tmp)
-
-        #-- count num_hit
-        num_hits = len([x for x in irmsd if x <=4 ])
-        print(f"According to 'i-RMSD' -> num of hits for {l}: {num_hits} out of {len(irmsd)}")
-
-    # plot
+   # plot
 
     font_size = 16
     text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
-    p = ggplot(to_plot) + aes_string(y = 'irmsd', x = 'DR') +\
+    p = ggplot(df) + aes_string(y = 'irmsd', x = 'DR') +\
             facet_grid(ro.Formula('.~label')) + \
             geom_point(alpha = 0.5) + \
             theme_bw() +\
@@ -265,101 +231,28 @@ def plot_DR_iRMSD(modelIDs_all, DR, figname=None):
                     'axis.text.y': element_text(size = font_size + 2)} ) + \
             scale_y_continuous(name = "i-RMSD")
 
-    ggplot2.ggsave(figname, height = 7 , width = 7 * 1.5)
+    #p.plot()
+    ggplot2.ggsave(figname, height = 7 , width = 7 * 1.5, dpi = 100)
 
 
 
-def plot_DR_iRMSD_OLD(DR_h5FL, HS_h5FL=None, epoch=None, figname=None):
-    '''
-    Plot a scatter plot of HS vs. iRMSD
-
-    Args:
-        figname (str): filename
-
-    '''
-    print('\n --> Scatter plot of DeepRank vs. iRMSD:', figname, '\n')
-
-    labels = ['train','valid','test']
-
-    #-- read deeprank output data for the specific epoch
-    DR_data = read_deeprankFL(DR_h5FL, epoch)
-
-    # write a dataframe of DR and label
-    to_plot = pd.DataFrame()
-    for l in labels:
-        # l = train, valid or test
-        target = DR_data[l]['targets']
-        source_hdf5FLs = DR_data[l]['mol'][:,0]
-        modelIDs = list(DR_data[l]['mol'][:,1])
-        rawOut = DR_data[l]['outputs']
-        out = F.softmax(torch.FloatTensor(rawOut), dim = 1)
-        DR_score = np.array(out[:,1])
-
-        irmsd = get_irmsd(source_hdf5FLs, modelIDs)
-        to_plot_tmp = pd.DataFrame(list(zip_equal(modelIDs, rawOut, out, DR_score, irmsd, target)), columns = ['modelID','DR_rawOut', 'DR_out', 'DR_score', 'irmsd', 'target'])
-        to_plot_tmp['label'] = l
-        to_plot = to_plot.append(to_plot_tmp)
-
-        #-- count num_hit
-        num_hits = len([x for x in irmsd if x <=4 ])
-        print(f"According to 'i-RMSD' -> num of hits for {l}: {num_hits} out of {len(irmsd)}")
-
-    #-
-    to_plot.to_csv('DR_irmsd.tsv', sep='\t')
-    print('DR_irmsd.tsv generated')
-    # plot
-    kws = dict(s=5) # marker size
-    fig = sns.FacetGrid(to_plot, col = 'label')
-    fig = fig.map(sns.scatterplot, 'irmsd', 'DR_score', **kws)
-    axes = fig.axes
-#    axes[0,0].set_xlim(0,10)
-#axes[0,1].set_xlim(0,10)
-
-    fig.savefig(figname)
-
-
-
-def plot_HS_iRMSD(modelIDs_all, haddockS, figname=None):
+def plot_HS_iRMSD(df, figname=None):
     '''
     Plot a scatter plot of HS vs. iRMSD for train, valid and test
 
-    Args:
-        modelIDs_all: a data frame.
-        figname (str): filename
+    INPUT (a data frame):
+
+        label caseID               modelID target                                          sourceFL        DR      irmsd         HS
+        Test   1AVX  1AVX_ranair-it0_5286      0  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.503823  25.189108   6.980802
+        Test   1AVX     1AVX_ti5-itw_354w      1  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.502845   3.668682 -95.158100
 
     '''
     print('\n --> Scatter plot of HS vs. iRMSD:', figname, '\n')
 
-    labels = modelIDs_all['label'].unique() # ['train','valid','test']
-
-    # write a dataframe of HS, irmsd and label
-    to_plot = pd.DataFrame() # store the data for plotting
-    for l in labels:
-        # l = train, valid or test
-
-        # get irmsd
-        idx = modelIDs_all['label'] == l
-        modelIDs = modelIDs_all.loc[idx,'modelID']
-        source_hdf5FLs = modelIDs_all.loc[idx,'sourceFL']
-        irmsd = np.array(get_irmsd(source_hdf5FLs, modelIDs))
-
-        # get haddock score
-        HS, idx_keep = get_HS(modelIDs, haddockS)
-        irmsd = irmsd[idx_keep]
-
-        to_plot_tmp = pd.DataFrame(list(zip_equal(HS,irmsd)), columns = ['HS', 'irmsd'])
-        to_plot_tmp['label'] = l
-        to_plot = to_plot.append(to_plot_tmp)
-
-        #-- count num_hit
-        num_hits = len([x for x in irmsd if x <=4 ])
-        print(f"According to 'i-RMSD' -> num of hits for {l}: {num_hits} out of {len(irmsd)}")
-
     # plot
-
     font_size = 16
     text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
-    p = ggplot(to_plot) + aes_string(y = 'irmsd', x = 'HS') +\
+    p = ggplot(df) + aes_string(y = 'irmsd', x = 'HS') +\
             facet_grid(ro.Formula('.~label')) + \
             geom_point(alpha = 0.5) + \
             theme_bw() +\
@@ -370,7 +263,7 @@ def plot_HS_iRMSD(modelIDs_all, haddockS, figname=None):
                     'axis.text.y': element_text(size = font_size + 2)} ) + \
             scale_y_continuous(name = "i-RMSD")
 
-    ggplot2.ggsave(figname, height = 7 , width = 7 * 1.5)
+    ggplot2.ggsave(figname, height = 7 , width = 7 * 1.5, dpi=100)
 
 
 def plot_successRate_hitRate (df, figname=None,inverse = False):
@@ -409,13 +302,45 @@ def plot_successRate_hitRate (df, figname=None,inverse = False):
 
     '''
 
-
     #-- 1. calculate success rate and hit rate
     performance_per_case = evaluate(df)
     performance_ave = ave_evaluate(performance_per_case)
+    performance_ave = add_rank(performance_ave)
 
     #-- 2. plot
     plot_evaluation(performance_ave, figname)
+
+def add_rank(df):
+    '''
+    INPUT (a data frame):
+         label   success_DR  hitRate_DR  success_HS  hitRate_HS
+         Test          0.0    0.000000         0.0    0.000000
+         Test          0.0    0.000000         1.0    0.012821
+
+         Train         0.0    0.000000         1.0    0.012821
+         Train         0.0    0.000000         1.0    0.025641
+
+    OUTPUT:
+         label   success_DR  hitRate_DR  success_HS  hitRate_HS      rank
+         Test          0.0    0.000000         0.0    0.000000  0.000949
+         Test          0.0    0.000000         1.0    0.012821  0.001898
+
+         Train         0.0    0.000000         1.0    0.012821  0.002846
+         Train         0.0    0.000000         1.0    0.025641  0.003795
+
+    '''
+
+    #-- add the 'rank' column to df
+    rank = []
+    for l, df_per_label in df.groupby('label'):
+        num_mol = len(df_per_label)
+        rank_raw = np.array(range(num_mol )) + 1
+        rank.extend(rank_raw/num_mol )
+    df['rank'] = rank
+
+    df['label'] = pd.Categorical(df['label'], categories=['Train', 'Valid', 'Test'])
+
+    return df
 
 
 def ave_evaluate(data):
@@ -426,33 +351,33 @@ def ave_evaluate(data):
     data =
         label      caseID success_HS hitRate_HS success_DR hitRate_DR
 
-        train      1AVX   [0.0]      [0.0]      [0.0]      [0.0]
-        train      1AVX   [1.0]      [1.0]      [1.0]      [1.0]
+        train      1AVX   0.0      0.0      0.0      0.0
+        train      1AVX   1.0      1.0      1.0      1.0
 
-        train      2ACB   [0.0]      [0.0]      [0.0]      [0.0]
-        train      2ACB   [1.0]      [1.0]      [1.0]      [1.0]
+        train      2ACB   0.0      0.0      0.0      0.0
+        train      2ACB   1.0      1.0      1.0      1.0
 
-        test       7CEI   [0.0]      [0.0]      [0.0]      [0.0]
-        test       7CEI   [1.0]      [1.0]      [1.0]      [1.0]
+        test       7CEI   0.0      0.0      0.0      0.0
+        test       7CEI   1.0      1.0      1.0      1.0
 
-        test       5ACD   [0.0]      [0.0]      [0.0]      [0.0]
-        test       5ACD   [1.0]      [1.0]      [1.0]      [1.0]
+        test       5ACD   0.0      0.0      0.0      0.0
+        test       5ACD   1.0      1.0      1.0      1.0
 
     OUTPUT:
     new_data =
         label      caseID success_HS hitRate_HS success_DR hitRate_DR
 
-        train      1AVX   [0.0]      [0.0]      [0.0]      [0.0]
-        train      1AVX   [1.0]      [1.0]      [1.0]      [1.0]
+        train      1AVX   0.0      0.0      0.0      0.0
+        train      1AVX   1.0      1.0      1.0      1.0
 
-        train      2ACB   [0.0]      [0.0]      [0.0]      [0.0]
-        train      2ACB   [1.0]      [1.0]      [1.0]      [1.0]
+        train      2ACB   0.0      0.0      0.0      0.0
+        train      2ACB   1.0      1.0      1.0      1.0
 
-        test       7CEI   [0.0]      [0.0]      [0.0]      [0.0]
-        test       7CEI   [1.0]      [1.0]      [1.0]      [1.0]
+        test       7CEI   0.0      0.0      0.0      0.0
+        test       7CEI   1.0      1.0      1.0      1.0
 
-        test       5ACD   [0.0]      [0.0]      [0.0]      [0.0]
-        test       5ACD   [1.0]      [1.0]      [1.0]      [1.0]
+        test       5ACD   0.0      0.0      0.0      0.0
+        test       5ACD   1.0      1.0      1.0      1.0
 
     '''
 
@@ -483,9 +408,6 @@ def ave_evaluate(data):
             perf_ave[col] = perf_ave[col]/num_cases
 
         new_data = pd.concat([new_data, perf_ave])
-
-    new_data.to_csv('xue.rnk', sep = '\t')
-    print("xue.rnk generated")
 
     return new_data
 
@@ -552,125 +474,50 @@ def evaluate(data):
 
         out_df = pd.concat([out_df, out_df_tmp])
 
-    outFL = 'performance.rnk'
-    out_df.to_csv(outFL, sep='\t')
-    print(f"{outFL} generated")
 
     return out_df
 
-
-def evaluate_OLD(data):
-
-    '''
-    Calculate success rate and hit rate.
-
-    <INPUT>
-    data: a data frame.
-
-           label  caseID             modelID target        DR         HS
-           Test   1AVX  1AVX_ranair-it0_5286      0  0.503823   6.980802
-           Test   1AVX     1AVX_ti5-itw_354w      1  0.502845 -95.158100
-           Test   1AVX  1AVX_ranair-it0_6223      0  0.511688 -11.961460
-
-    <OUTPUT>
-    out_df: a data frame.
-    success: binary variable, indicating whether this case is a success when evaluating its top N models.
-
-        out_df :
-             label  caseID   success_DR   hitRate_DR   success_HS   hitRate_HS
-             train  1ZHI     1            0.1          0            0.01
-             train  1ZHI     1            0.2          1            0.3
-
-        where success =[0, 0, 1, 1, 1,...]: starting from rank 3 this case is a success
-
-    '''
-
-    out_df = pd.DataFrame()
-    labels = data.label.unique() #['train', 'test', 'valid']
-
-
-    for l in labels:
-        # l = 'train', 'test' or 'valid'
-
-        out_df_tmp = pd.DataFrame()
-
-        df = data.loc[data.label == l].copy()
-        pdb.set_trace()
-        methods = df.columns
-        methods = methods[3:]
-        df_grped = df.groupby('caseID')
-
-        for M in methods:
-#            df_sorted = df_one_case.apply(pd.DataFrame.sort_values, by= M, ascending=True)
-
-            success = []
-            hitrate = []
-            caseIDs = []
-            for caseID, df_one_case in df_grped:
-                df_sorted = df_one_case.sort_values( by= M, ascending=True)
-                hitrate.extend( rankingMetrics.hitrate(df_sorted['target']) )
-                success.extend( rankingMetrics.success(rankingMetrics.hitrate(df_sorted['target']) ))
-                caseIDs.extend([caseID] * len(df_one_case))
-
-            #hitrate = df_sorted['target'].apply(rankingMetrics.hitrate) # df_sorted['target']: class IDs for each model
-            #success = hitrate.apply(rankingMetrics.success) # success =[0, 0, 1, 1, 1,...]: starting from rank 3 this case is a success
-
-
-            out_df_tmp['label'] = [l] * len(df) # train, valid or test
-            out_df_tmp['caseID'] = caseIDs
-            out_df_tmp[f'success_{M}'] = success
-            out_df_tmp[f'hitRate_{M}'] = hitrate
-
-        out_df = pd.concat([out_df, out_df_tmp])
-
-#    outFL = 'performance.rnk'
-#    out_df.to_csv(outFL, sep='\t')
-#    print(f"{outFL} generated")
-
-    return out_df
 
 def plot_evaluation(df, figname):
     '''
-    # INPUT: a pandas data frame
-            label  success_HS  hitRate_HS  success_DR  hitRate_DR
-        0  valid         1.0         1.0         0.0         0.0
-        1  valid         0.0         1.0         0.0         0.0
+    INPUT:
+         label   success_DR  hitRate_DR  success_HS  hitRate_HS      rank
+         Test          0.0    0.000000         0.0    0.000000  0.000949
+         Test          0.0    0.000000         1.0    0.012821  0.001898
+
+         Train         0.0    0.000000         1.0    0.012821  0.002846
+         Train         0.0    0.000000         1.0    0.025641  0.003795
+
     '''
 
     #---------- hit rate plot -------
     figname1 = figname + '.hitRate.png'
     print(f'\n --> Hit Rate plot:', figname1, '\n')
-
     p = hit_rate_plot(df)
     #p.plot()
-    ggplot2.ggsave(figname1, height = 7 , width = 7 * 1.2)
+    ggplot2.ggsave(figname1, height = 7 , width = 7 * 1.2, dpi = 100)
+
 
     #---------- success rate plot -------
     figname2 = figname + '.successRate.png'
     print(f'\n --> Success Rate plot:', figname2, '\n')
 
     p = success_rate_plot(df)
-    ggplot2.ggsave(figname2, height = 7 , width = 7 * 1.2)
+    ggplot2.ggsave(figname2, height = 7 , width = 7 * 1.2, dpi=100)
 
 
 
 def hit_rate_plot(df):
     '''
-    # INPUT: a pandas data frame
-            label  success_HS  hitRate_HS  success_DR  hitRate_DR
-        0  valid         1.0         1.0         0.0         0.0
-        1  valid         0.0         1.0         0.0         0.0
+    INPUT:
+         label   success_DR  hitRate_DR  success_HS  hitRate_HS      rank
+         Test          0.0    0.000000         0.0    0.000000  0.000949
+         Test          0.0    0.000000         1.0    0.012821  0.001898
+
+         Train         0.0    0.000000         1.0    0.012821  0.002846
+         Train         0.0    0.000000         1.0    0.025641  0.003795
+
     '''
-
-
-    #-- add the 'rank' column to df
-    rank = []
-    for l, df_per_label in df.groupby('label'):
-        num_mol = len(df_per_label)
-        rank_raw = np.array(range(num_mol )) + 1
-        rank.extend(rank_raw/num_mol )
-    df['rank'] = rank
-
 
     #-- melt df
     df_melt = pd.melt(df, id_vars=['label', 'rank'])
@@ -698,9 +545,6 @@ def hit_rate_plot(df):
                 'axis.text.y': element_text(size = font_size)}) +\
             scale_x_continuous(**{'breaks':breaks, 'labels': xlabels})
 
-
-
-#    p.plot()
     return p
 
 def success_rate_plot(df):
@@ -710,8 +554,6 @@ def success_rate_plot(df):
         0  valid         1.0         1.0         0.0         0.0
         1  valid         0.0         1.0         0.0         0.0
     '''
-    pandas2ri.activate()
-
 
     #-- add the 'rank' column to df
     rank = []
@@ -750,59 +592,10 @@ def success_rate_plot(df):
 #    p.plot()
     return p
 
-
-
-
-
-def merge_HS_DR_OLD(HS_h5FL, DR_h5FL, epoch):
-
-    '''
-    OUTPUT (a list of data frame): data[l], where l is train, test or valid
-
-    data['train']:
-        caseID   modelID     target   score_method1  score_method2
-        1ZHI     1ZHI_294w   0       9.758          -19.3448
-        1ZHI     1ZHI_89w    1       17.535         -11.2127
-    '''
-
-    data = {}
-    labels = ['train', 'test', 'valid']
-
-    #-- read haddock data
-    stats = read_haddockScoreFL(HS_h5FL)
-    haddockS = stats['haddock-score']# haddockS[modelID] = score
-
-    #-- read deeprank output data for the specific epoch
-    DR_data = read_deeprankFL(DR_h5FL, epoch) # DR_data['train']
-
-    #-- merge HS with DR predictions, model IDs and class IDs
-    for l in labels:
-        # l = 'train'
-
-        modelIDs = DR_data[l]['mol'][:,1]
-        HS, idx_keep = get_HS(modelIDs, haddockS)
-
-        DR_rawOut = DR_data[l]['outputs']
-        DR = F.softmax(torch.FloatTensor(DR_rawOut), dim = 1)
-        DR = np.array(DR[:,0]) # the probability of a model being negative
-
-        targets =  DR_data[l]['targets']
-
-        df = pd.DataFrame(list(zip_equal(modelIDs[idx_keep], targets[idx_keep], HS, DR[idx_keep])), columns = ['modelID',  'target', 'HS', 'DR'])
-        df['caseID'] = [re.split('_', x)[0] for x in df['modelID']]
-        col = ['caseID', 'modelID', 'target', 'HS','DR']
-        df = df[col]
-
-        data[l] = df
-    return data
-
-
-
-
-def get_irmsd( source_hdf5, mol_name):
+def get_irmsd( source_hdf5, modelIDs):
 
     irmsd = []
-    for h5FL, modelID in zip_equal(source_hdf5, mol_name):
+    for h5FL, modelID in zip_equal(source_hdf5, modelIDs):
         # h5FL = '/home/lixue/DBs/BM5-haddock24/hdf5/000_1AY7.hdf5'
         f = h5py.File(h5FL, 'r')
         irmsd.append(f[modelID]['targets/IRMSD'][()])
@@ -821,20 +614,41 @@ def get_HS(modelIDs,haddockS):
             idx_keep.append(idx)
     return HS, idx_keep
 
+def add_irmsd(df):
 
-def main():
-    if len(sys.argv) !=4:
-        print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch fig_name")
-        sys.exit()
-    deeprank_h5FL = sys.argv[1] #the output h5 file from deeprank: 'epoch_data.hdf5'
-    epoch = int(sys.argv[2]) # 9
-    figname = sys.argv[3]
+    '''
+    INPUT (a data frame):
+    df:
+        label caseID   modelID                 sourceFL          target   score_method1  score_method2
+        train 1ZHI     1ZHI_294w  ..../hdf5/000_1ZHI.hdf5        0       9.758          -19.3448
+        test  1ACB     1ACB_89w   ..../hdf5/000_1ACB.hdf5        1       17.535         -11.2127
+
+    OUTPUT (a data frame):
+    df:
+        label    caseID   modelID     irmsd    target   score_method1  score_method2
+        train     1ZHI     1ZHI_294w   12.1    0       9.758          -19.3448
+        train     1ZHI     1ZHI_89w    1.3     1       17.535         -11.2127
+        ...
+        test      1ACB     1ACB_89w    2.4     1       17.535         -11.2127
+    '''
+
+    modelIDs = df['modelID']
+    source_hdf5FLs = df['sourceFL']
+    irmsd = np.array(get_irmsd(source_hdf5FLs, modelIDs))
+    df['irmsd'] = irmsd
+    return df
 
 
-    pandas2ri.activate()
 
-    HS_h5FL= '/home/lixue/DBs/BM5-haddock24/stats/stats.h5'
+def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
 
+    '''
+    OUTPUT: a data frame:
+
+        label caseID               modelID target                                          sourceFL        DR      irmsd         HS
+        Test   1AVX  1AVX_ranair-it0_5286      0  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.503823  25.189108   6.980802
+        Test   1AVX     1AVX_ti5-itw_354w      1  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.502845   3.668682 -95.158100
+    '''
     #-- read deeprank_h5FL epoch data into pd.DataFrame (DR_df)
     DR_df = read_epoch_data(deeprank_h5FL, epoch)
 
@@ -847,32 +661,77 @@ def main():
     2  Test  1AVX_ranair-it0_6223       0  0.511688  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
 
     '''
-    #-- read haddock data
+    #-- add iRMSD column to DR_df
+    DR_df = add_irmsd(DR_df)
+
+    #-- report the number of hits for train/valid/test
+    hit_statistics(DR_df)
+
+    #-- add HS to DR_df (note: bound complexes do not have HS)
     stats = read_haddockScoreFL(HS_h5FL)
     haddockS = stats['haddock-score']# haddockS[modelID] = score
-
-    #-- add HS to DR_df
     DR_HS_df = merge_HS_DR(DR_df, haddockS)
 
     '''
     DR_HS_df (a data frame):
 
-    data['train']:
-        caseID   modelID     target   score_method1  score_method2
-        1ZHI     1ZHI_294w   0       9.758          -19.3448
-        1ZHI     1ZHI_89w    1       17.535         -11.2127
-    '''
-    #-- add iRMSD to DR_HS_df
-    DR_HS_df = add_irmsd(DR_HS_df)
+    data:
+        label caseID   modelID                                          sourceFL          target   score_method1  score_method2
+        train 1ZHI     1ZHI_294w  /home/lixue/DBs/BM5-haddock24/hdf5/000_1ZHI.hdf5        0       9.758          -19.3448
+        test  1ACB     1ACB_89w   /home/lixue/DBs/BM5-haddock24/hdf5/000_1ACB.hdf5        1       17.535         -11.2127
 
-    DR_df.to_csv('xue.tsv', sep='\t')
-    modelIDs = DR_df.loc[:,['label', 'modelID', 'sourceFL']]
+
+    '''
+
+    return DR_HS_df
+
+def hit_statistics(df):
+
+    '''
+    Report the number of hits for Train, valid and test.
+
+    INPUT (a data frame):
+
+        label               modelID target        DR                                          sourceFL      irmsd
+        Test  1AVX_ranair-it0_5286      0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  25.189108
+        Test     1AVX_ti5-itw_354w      1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5   3.668682
+    '''
+
+    labels = ['Train', 'Valid', 'Test']
+    grouped = df.groupby('label')
+
+    #-- 1. count num_hit based on i-rmsd
+    num_hits = grouped['irmsd'].apply(lambda x: len(x[x<=4]))
+    num_models = grouped.apply(len)
+
+    for label in labels:
+        print(f"According to 'i-RMSD' -> num of hits for {label}: {num_hits[label]} out of {num_models[label]} models")
+
+    print("")
+    #-- 2. count num_hit based on the 'target' column
+    num_hits = grouped['target'].apply(lambda x: len(x[x=='1']))
+    num_models = grouped.apply(len)
+
+    for label in labels:
+        print(f"According to 'targets' -> num of hits for {label}: {num_hits[label]} out of {num_models[label]} models")
+
+def main(HS_h5FL= '/home/lixue/DBs/BM5-haddock24/stats/stats.h5'):
+    if len(sys.argv) !=4:
+        print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch fig_name")
+        sys.exit()
+    deeprank_h5FL = sys.argv[1] #the output h5 file from deeprank: 'epoch_data.hdf5'
+    epoch = int(sys.argv[2]) # 9
+    figname = sys.argv[3]
+
+    pandas2ri.activate()
+
+    df = prepare_df(deeprank_h5FL, HS_h5FL, epoch)
 
     #-- plot
-    #plot_HS_iRMSD(modelIDs, haddockS, figname=figname + '.epo' + str(epoch) +'.irsmd_HS.png')
-    #plot_DR_iRMSD(modelIDs, DR, epoch=epoch, figname=figname + '.epo' + str(epoch) + '.irsmd_DR.png')
-    #plot_boxplot(DR_df, figname=figname + '.epo' + str(epoch) + '.boxplot.png',inverse = False)
-    #plot_successRate_hitRate(DR_HS_df, figname=figname + '.epo' + str(epoch) ,inverse = False)
+    plot_HS_iRMSD(df, figname=figname + '.epo' + str(epoch) +'.irsmd_HS.png')
+    plot_DR_iRMSD(df, figname=figname + '.epo' + str(epoch) + '.irsmd_DR.png')
+    plot_boxplot(df, figname=figname + '.epo' + str(epoch) + '.boxplot.png',inverse = False)
+    plot_successRate_hitRate(df[['label', 'caseID', 'modelID', 'target', 'DR','HS']].copy(), figname=figname + '.epo' + str(epoch) ,inverse = False)
 
 if __name__ == '__main__':
     main()
