@@ -1,7 +1,7 @@
-Byte-compiled / optimized 
+Byte-compiled / optimized
 *__pycache__*
 
-# distribution 
+# distribution
 deeprank.egg-info
 database*
 
@@ -9,7 +9,7 @@ database*
 example/grid/ELEC
 example/grid/VDW
 example/grid/data_viz
-example/grid/input 
+example/grid/input
 example/workflow/test_out
 
 # datafile
@@ -26,3 +26,6 @@ example/workflow/test_out
 #docs/_build
 #docs/_static
 #docs/_templates
+
+# Mac OSX files
+.DS_Store
