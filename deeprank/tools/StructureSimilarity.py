@@ -417,7 +417,7 @@ class StructureSimilarity(object):
         Returns:
             dict: defintition of the residue pairs
         """
-        sql_ref = pdb2sql(self.ref,sqlfile='mol2.db')
+        sql_ref = pdb2sql(self.ref)
         residue_pairs_ref   = sql_ref.get_contact_residue(cutoff=cutoff,return_contact_pairs=True,
                                                           excludeH=True)
         sql_ref.close()
