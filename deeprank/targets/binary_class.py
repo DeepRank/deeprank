@@ -23,8 +23,8 @@ def __compute_target__(decoy, targrp):
         if target_name in targrp.keys():
             del targrp[target_name]
 
-    if targrp['IRMSD'].value <= irmsd_thr:
-        print (f"This is a hit (irmsd <= {irmsd_thr} A). {molname} -> irmsd: {targrp['IRMSD'].value}")
+    if targrp['IRMSD'][()] <= irmsd_thr:
+        print (f"This is a hit (irmsd <= {irmsd_thr} A). {molname} -> irmsd: {targrp['IRMSD'][()]}")
         classID = 1
     else:
         classID = 0
