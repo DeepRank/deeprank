@@ -16,7 +16,9 @@ import h5py
 #     hdf5_DIR = '/home/lixue/DBs/BM5-haddock24/hdf5_withGridFeature'
 #     count_hits_from_input(hdf5_DIR)
 
-h5FL = '/home/lixue/DBs/BM5-haddock24/hdf5_withGridFeature/000_1ACB.hdf5'
+#h5FL = '/projects/0/deeprank/BM5/hdf5/000_1ACB.hdf5'
+h5FL = '/projects/0/deeprank/BM5/hdf5_woGrid/hdf5/000_1ACB.hdf5'
+
 f = h5py.File(h5FL, 'r')
 
 modelIDs = list(f)
@@ -27,5 +29,6 @@ for modelID in modelIDs:
     FNAT =  f[modelID + '/targets/FNAT'][()]
     IRMSD =  f[modelID + '/targets/IRMSD'][()]
 
-    print(f"modelID: {modelID}, BIN: {BIN_CLASS}, irmsd: {IRMSD}")
+    if IRMSD <=4:
+        print(f"modelID: {modelID}, BIN: {BIN_CLASS}, irmsd: {IRMSD}")
 
