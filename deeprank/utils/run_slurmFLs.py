@@ -2,13 +2,16 @@
 # Li Xue
 # 20-Feb-2019 10:50
 
-# Split multiple jobs into batches and submit to cartesius
+'''
+Split multiple jobs into batches and submit to cartesius.
 
-#INPUT: a file that contains all the jobs, for example,
+INPUT: a file that contains all the jobs, for example,
 
+    python /projects/0/deeprank/change_BIN_CLASS.py /projects/000_1ACB.hdf5 &
+    python /projects/0/deeprank/change_BIN_CLASS.py /projects/000_1AK4.hdf5 &
+    ...
 
-
-
+'''
 import sys
 import re
 import os
@@ -17,7 +20,7 @@ import subprocess
 import time
 import shutil
 
-logDIR='/projects/0/deeprank/BM5/scripts/slurm/change_BINCLASS'
+logDIR='/projects/0/deeprank/BM5/scripts/slurm/change_BINCLASS/hdf5_withGridFeature'
 slurmDIR=logDIR
 num_cores = 24 # run 24 cores for each slurm job
 batch_size = num_cores # number of jobs per slurm file
@@ -127,7 +130,7 @@ def write_slurm_header(slurmFL, batchID, batch_size, logFL):
     jobName = 'batch' + str(batchID) + ".h5"
     header = header + "#SBATCH -J " + jobName + "\n"
     header = header + "#SBATCH -N 1\n"
-    header = header + "#SBATCH --ntasks-per-node={num_cores}\n"
+    header = header + f"#SBATCH --ntasks-per-node={num_cores}\n"
     header = header + "#SBATCH -t 04:00:00\n"
 
     header = header + "#SBATCH -o " + logFL + "\n"
@@ -175,5 +178,5 @@ if not os.path.isdir(slurmDIR):
 
 
 write_slurmscript('all_jobs.sh', batch_size, slurmDIR, logDIR)
-#submit_slurmscript(slurmDIR, 100)
+submit_slurmscript(slurmDIR, 200)
 
