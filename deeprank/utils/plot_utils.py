@@ -563,7 +563,7 @@ def success_rate_plot(df):
     p = ggplot(df_tmp) + \
             aes_string(x='rank', y = 'success_rate', color='Sets', linetype= 'Methods') + \
             geom_line(size=1) + \
-            labs(**{'x': 'Top models (%)', 'y': 'Hit Rate'}) + \
+            labs(**{'x': 'Top models (%)', 'y': 'Success Rate'}) + \
             theme_bw() + \
             theme(**{'legend.position': 'right',
                 'plot.title': text_style,
