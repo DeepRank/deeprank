@@ -25,14 +25,6 @@ import glob
 import numpy as np
 import scipy.stats as ss
 import pandas as pd
-import pdb
-
-def count_hits_new(df, col_name):
-    df_sorted = df.sort_values(by=col_name, ascending=True)
-    hitrate = rankingMetrics.hitrate(df_sorted['class']) # df_sorted['class']: class IDs for each model
-
-
-
 
 def count_hits(df,col_name):
     #-- for a given target, count whether it's hits in top 1, 2, 3 ... 400 when scored based on col_name
@@ -75,8 +67,6 @@ def count_hits(df,col_name):
     #-- final check
 
     if len(success[success == -1]) != 0 or len(num_hits[num_hits== -1]) != 0:
-        m = len(success[success == -1])
-        n = len(num_hits[num_hits == -1])
         sys.exit("the array of success or num_hits still have some elements not defined.")
 
     #--
@@ -95,112 +85,6 @@ def count_hits(df,col_name):
     print ("Success for %s: %s" %(col_name, a))
     return (success, hitRate);
 
-
-"""
-def count_hits_old(df,col_name):
-    #-- for a given target, coount whether it's hits in top 1, 2, 3 ... 400 when scored based on col_name
-    #
-    irmsd_cutoff = 4
-    num_models = df.shape[0]
-    df_sorted = df.sort_values(by=col_name)
-
-    ranks = np.floor(ss.rankdata(df_sorted[col_name]))
-
-    print ("count hits for %s (total number of models: %s)" %( col_name, num_models))
-
-    flag=0
-    rank=1
-    success=[0] #-- it is a binary list
-    num_hits=[0]
-    for i in range(0,num_models):
-        # i is the i-th row of df_sorted
-        if ranks[i]<= rank and df_sorted[i:i+1].irmsd.item() <= irmsd_cutoff:
-          #  print ("this is a hit")
-            if i ==0:
-                num_hits.append(1)
-            else:
-                num_hits.append(num_hits[-1]+1)
-            success.append(1);
-            flag=1
-        elif ranks[i]<= rank and df_sorted[i:i+1].irmsd.item() > irmsd_cutoff:
-          #  print ("this is NOT a hit")
-            if i==0:
-                num_hits.append(0)
-            else:
-                num_hits.append(num_hits[-1])
-            if flag ==1:
-                success.append(1);
-            else:
-                success.append(0)
-        rank = rank +1
-
-    #--
-    total_numHits = num_hits[-1]
-    print ("This target has a total num of hits (out of %d models): %d" % (num_models,total_numHits) )
-
-    if total_numHits ==0:
-        hitRate = [0] * (num_models+1) #-- hitRate also has a number to top 0
-    else:
-        hitRate = np.divide(num_hits,total_numHits);
-
-    a=np.array_str(np.asarray(hitRate))
-    print ("HitRate for %s: %s" %(col_name, a))
-    return (success, hitRate);
-
-def get_successRate_old(success, top_ranks):
-    #-- calculate the success rate for 1 to top_ranks
-    #-- success is a 2D binary dictionary: success[Method][target]
-
-    methods = success.keys();
-
-    SuccessRate={}
-    for M in methods:
-        num_successes=[0]* (top_ranks +1)
-        num_targets =0;
-        for T in range(0,num_targets):
-            num_successes=np.add(num_successes,success[M][T][0:top_ranks+1])
-            num_targets = num_targets+1
-        SuccessRate[M] = np.divide(num_successes,num_targets)
-    SuccessRate= pd.DataFrame(SuccessRate);
-
-    #-- add a column for 0, 1, ..., top_ranks
-    SuccessRate['top']=range(0,top_ranks+1)
-
-    print ("SuccessRate:")
-    print(SuccessRate)
-    return SuccessRate
-
-def get_hitRate_old(hitRate, top_ranks):
-    #-- calculate the average hit rate among all targets for 1 to top_ranks
-    #-- hitRate is a 2D dictionary: hitRate[Method][target]
-
-    targets = hitRate.keys();
-
-    HitRate_final = {}
-    for M in methods:
-        hitRate_sum =[0] * (top_ranks +1)
-        num_successes=[0]* (top_ranks +1)
-        num_targets =0;
-        print ("xue1:")
-        print (hitRate[M].keys())
-        for T in range(0,num_targets):
-            hitRate_sum = np.add(hitRate_sum , hitRate[M][T][0:top_ranks+1])
-            num_targets = num_targets+1
-
-        print("num_targets: %d"%num_targets)
-
-        HitRate_final[M] = np.divide(hitRate_sum,num_targets)
-    HitRate_final= pd.DataFrame(HitRate_final);
-
-    #-- add a column for 0, 1, ..., top_ranks
-    HitRate_final['top']=range(0,top_ranks+1)
-
-    print("HitRate:")
-    print(HitRate_final)
-    return HitRate_final
-
-"""
-
 def get_successRate(success, top_ranks, methods):
     #-- calculate the success rate for 1 to top_ranks
     #-- success is a binary dictionary: success[target]
@@ -212,7 +96,6 @@ def get_successRate(success, top_ranks, methods):
 
     SuccessRate={}
     for M_idx in range(0,num_methods):
-        num_successes=[0]* (top_ranks +1)
         for T in success.keys():
             # for each target, success is a 400 * num_method binary matrix,
             # indicating when returning top N models, this target has at least one hit or not
@@ -276,7 +159,6 @@ def main():
     print("There are %d .rnk files under %s"%(num_FLs,dataDir))
     num_targets = num_FLs;
 
-    scores=[None]*num_FLs
     success={}
     hitRate={}
 

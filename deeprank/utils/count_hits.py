@@ -4,8 +4,6 @@
 
 # Count the hits.
 
-import sys
-import re
 import h5py
 
 # def count_hits_from_input(hdf5_DIR = None):
@@ -16,8 +14,8 @@ import h5py
 #     hdf5_DIR = '/home/lixue/DBs/BM5-haddock24/hdf5_withGridFeature'
 #     count_hits_from_input(hdf5_DIR)
 
-#h5FL = '/projects/0/deeprank/BM5/hdf5/000_1ACB.hdf5'
-h5FL = '/projects/0/deeprank/BM5/hdf5_woGrid/hdf5/000_1ACB.hdf5'
+#h5FL = '/projects/0/deeprank/BM5/hdf5/hdf5_woGridFeature/000_1ACB.hdf5'
+h5FL = '/projects/0/deeprank/BM5/hdf5/hdf5_withGridFeature/013_2ABZ.hdf5'
 
 f = h5py.File(h5FL, 'r')
 

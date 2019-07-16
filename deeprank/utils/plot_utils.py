@@ -1,36 +1,23 @@
 # 1. plot prediction scores for class 0 and 1 using two-panel box plots
 # 2. hit rate plot
 # 3. success rate plot
-import os
 from deeprank.learn import rankingMetrics
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick
 import numpy as np
 import h5py
 import sys
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import pandas as pd
-import glob
 import re
-from tqdm import tqdm
 from itertools import zip_longest
-from SuccessHitRate import count_hits
-import rpy2
 
 import warnings
 from rpy2.rinterface import RRuntimeWarning
 warnings.filterwarnings("ignore", category=RRuntimeWarning)
 
-
 from rpy2.robjects.lib.ggplot2 import *
 from rpy2.robjects import pandas2ri
 import rpy2.robjects as ro
-import itertools
-import logging
-import pdb
 
 
 def zip_equal(*iterables):
@@ -63,7 +50,7 @@ def plot_boxplot(df,figname=None,inverse = False):
     data = df
 
     font_size = 20
-    line = "#1F3552"
+    #line = "#1F3552"
 
     text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
 
@@ -73,7 +60,7 @@ def plot_boxplot(df,figname=None,inverse = False):
     colormap = ro.StrVector([elt[1] for elt in colormap_raw])
     colormap.names = ro.StrVector([elt[0] for elt in colormap_raw])
 
-    p = ggplot(data) + \
+    ggplot(data) + \
             aes_string(x='target', y='DR' , fill='target' ) + \
             geom_boxplot( width = 0.2, alpha = 0.7) + \
             facet_grid(ro.Formula('.~label')) +\
@@ -120,13 +107,10 @@ def read_epoch_data(DR_h5FL, epoch):
     #-- 2. convert into pd.DataFrame
     labels = list(data) # labels = ['train', 'test', 'valid']
 
-    nwin = len(labels)
-
     # write a dataframe of DR and label
     to_plot = pd.DataFrame()
     for l in labels:
         # l = train, valid or test
-        target = data[l]['targets']
         source_hdf5FLs = data[l]['mol'][:,0]
         modelIDs = list(data[l]['mol'][:,1])
         DR_rawOut = data[l]['outputs']
@@ -220,7 +204,7 @@ def plot_DR_iRMSD(df, figname=None):
 
     font_size = 16
     text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
-    p = ggplot(df) + aes_string(y = 'irmsd', x = 'DR') +\
+    ggplot(df) + aes_string(y = 'irmsd', x = 'DR') +\
             facet_grid(ro.Formula('.~label')) + \
             geom_point(alpha = 0.5) + \
             theme_bw() +\
@@ -252,7 +236,7 @@ def plot_HS_iRMSD(df, figname=None):
     # plot
     font_size = 16
     text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
-    p = ggplot(df) + aes_string(y = 'irmsd', x = 'HS') +\
+    ggplot(df) + aes_string(y = 'irmsd', x = 'HS') +\
             facet_grid(ro.Formula('.~label')) + \
             geom_point(alpha = 0.5) + \
             theme_bw() +\
@@ -388,7 +372,6 @@ def ave_evaluate(data):
 
         # count the model number for each case
         grouped = perf_per_case.groupby('caseID')
-        num_col = perf_per_case.shape[1]
         num_models = grouped.apply(len)
         num_cases = len(grouped)
         print(f"{l}: {num_cases} cases")
@@ -493,7 +476,7 @@ def plot_evaluation(df, figname):
     #---------- hit rate plot -------
     figname1 = figname + '.hitRate.png'
     print(f'\n --> Hit Rate plot:', figname1, '\n')
-    p = hit_rate_plot(df)
+    hit_rate_plot(df)
     #p.plot()
     ggplot2.ggsave(figname1, height = 7 , width = 7 * 1.2, dpi = 100)
 

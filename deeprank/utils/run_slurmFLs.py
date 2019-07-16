@@ -18,7 +18,6 @@ import os
 import glob
 import subprocess
 import time
-import shutil
 
 logDIR='/projects/0/deeprank/BM5/scripts/slurm/change_BINCLASS/hdf5_withGridFeature'
 slurmDIR=logDIR
@@ -29,8 +28,9 @@ batch_size = num_cores # number of jobs per slurm file
 def write_slurmscript(all_job_FL, batch_size, slurmDIR, logDIR):
 
     #- split all_jobs.sh into mutliple files
-    subprocess.check_call(f'cp {all_job_FL} {slurmDIR}', shell = True)
-    subprocess.check_call(f'split -a 3 -d -l {batch_size} --additional-suffix=".slurm" {slurmDIR}/{all_job_FL} {slurmDIR}/batch', shell=True)
+    subprocess.check_call(['cp' , all_job_FL, slurmDIR])
+#    subprocess.check_call(['split' , '-a', '3' ,'-d', f'-l {batch_size}', '--additional-suffix=".slurm"' ,f"{slurmDIR}/{all_job_FL}", f"{slurmDIR}/batch"])
+    subprocess.check_call(['split' , '-a', '3' ,'-d', f'-l {batch_size}', '--additional-suffix=.slurm' ,f"{slurmDIR}/{all_job_FL}", f"{slurmDIR}/batch"])
 
     #-- add slurm header and tail to each file
 
@@ -49,7 +49,6 @@ def submit_slurmscript(slurm_dir, batch_size = 100):
     jobIDs=[]
     newjobIDs=[]
     num = 0
-    flag = 0
     for i in range(0,len(slu_FLs)):
 
         outFL=os.path.splitext(slu_FLs[i])[0] + '.out'
@@ -178,5 +177,5 @@ if not os.path.isdir(slurmDIR):
 
 
 write_slurmscript('all_jobs.sh', batch_size, slurmDIR, logDIR)
-submit_slurmscript(slurmDIR, 200)
+#submit_slurmscript(slurmDIR, 200)
 
