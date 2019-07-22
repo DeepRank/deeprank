@@ -443,7 +443,7 @@ def evaluate(data):
             for caseID, df_one_case in df_grped:
                 df_sorted = df_one_case.sort_values( by= M, ascending=True)
                 hitrate.extend( rankingMetrics.hitrate(df_sorted['target'].astype(np.int)) )
-                success.extend( rankingMetrics.success(rankingMetrics.hitrate(df_sorted['target'].astype(np.int)) ))
+                success.extend( rankingMetrics.success(df_sorted['target'].astype(np.int)) )
                 caseIDs.extend([caseID] * len(df_one_case))
 
             #hitrate = df_sorted['target'].apply(rankingMetrics.hitrate) # df_sorted['target']: class IDs for each model
