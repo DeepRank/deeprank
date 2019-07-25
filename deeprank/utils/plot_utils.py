@@ -42,7 +42,6 @@ def plot_boxplot(df,figname=None,inverse = False):
        Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
        Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
        Test  1AVX_ranair-it0_6223       0  0.511688  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
-
     '''
 
     print('\n --> Box Plot : ', figname, '\n')
@@ -319,7 +318,7 @@ def add_rank(df):
 
     #-- add the 'rank' column to df
     rank = []
-    for l, df_per_label in df.groupby('label'):
+    for _, df_per_label in df.groupby('label'):
         num_mol = len(df_per_label)
         rank_raw = np.array(range(num_mol )) + 1
         rank.extend(rank_raw/num_mol )
@@ -644,8 +643,8 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
     0  Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     1  Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     2  Test  1AVX_ranair-it0_6223       0  0.511688  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
-
     '''
+
     #-- add iRMSD column to DR_df
     DR_df = add_irmsd(DR_df)
 

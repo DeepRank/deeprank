@@ -37,6 +37,7 @@ def write_slurmscript(all_job_FL, batch_size, slurmDIR='tmp', logDIRi='tmp'):
     subprocess.check_call(command)
 
     command = f'split -a 3 -d -l {batch_size} --additional-suffix=.slurm {slurmDIR}/{all_job_FL} {slurmDIR}/batch'
+    print(command)
     command = split(command)
     subprocess.check_call(command)
 #    subprocess.check_call(['split' , '-a', '3' ,'-d', f'-l {batch_size}', '--additional-suffix=.slurm' ,f"{slurmDIR}/{all_job_FL}", f"{slurmDIR}/batch"])
