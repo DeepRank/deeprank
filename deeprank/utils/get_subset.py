@@ -7,7 +7,6 @@
 # This script is used to generate a small set for debugging.
 
 import sys
-import re
 import h5py
 import os
 
@@ -20,7 +19,6 @@ new_h5FL = outDIR + filename
 f_in = h5py.File(h5FL, 'r')
 f_out = h5py.File(new_h5FL,'w')
 modelIDs = list(f_in)
-modelIDs
 
 for x in modelIDs[0:5]:
     print(x)

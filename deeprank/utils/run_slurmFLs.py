@@ -12,11 +12,12 @@ INPUT: a file that contains all the jobs, for example,
     ...
 
 '''
-import sys
 import re
 import os
 import glob
 import subprocess
+from shlex import quote
+from shlex import split
 import time
 
 logDIR='/projects/0/deeprank/BM5/scripts/slurm/change_BINCLASS/hdf5_withGridFeature'
@@ -25,12 +26,20 @@ num_cores = 24 # run 24 cores for each slurm job
 batch_size = num_cores # number of jobs per slurm file
 
 
-def write_slurmscript(all_job_FL, batch_size, slurmDIR, logDIR):
+def write_slurmscript(all_job_FL, batch_size, slurmDIR='tmp', logDIRi='tmp'):
+
+    all_job_FL = quote(all_job_FL)
+    slurmDIR = quote(slurmDIR)
 
     #- split all_jobs.sh into mutliple files
-    subprocess.check_call(['cp' , all_job_FL, slurmDIR])
-#    subprocess.check_call(['split' , '-a', '3' ,'-d', f'-l {batch_size}', '--additional-suffix=".slurm"' ,f"{slurmDIR}/{all_job_FL}", f"{slurmDIR}/batch"])
-    subprocess.check_call(['split' , '-a', '3' ,'-d', f'-l {batch_size}', '--additional-suffix=.slurm' ,f"{slurmDIR}/{all_job_FL}", f"{slurmDIR}/batch"])
+    command = f'cp {all_job_FL} {slurmDIR}'
+    command = split(command)
+    subprocess.check_call(command)
+
+    command = f'split -a 3 -d -l {batch_size} --additional-suffix=.slurm {slurmDIR}/{all_job_FL} {slurmDIR}/batch'
+    command = split(command)
+    subprocess.check_call(command)
+#    subprocess.check_call(['split' , '-a', '3' ,'-d', f'-l {batch_size}', '--additional-suffix=.slurm' ,f"{slurmDIR}/{all_job_FL}", f"{slurmDIR}/batch"])
 
     #-- add slurm header and tail to each file
 
@@ -49,9 +58,9 @@ def submit_slurmscript(slurm_dir, batch_size = 100):
     jobIDs=[]
     newjobIDs=[]
     num = 0
-    for i in range(0,len(slu_FLs)):
+    for slu_FL in slu_FLs:
 
-        outFL=os.path.splitext(slu_FLs[i])[0] + '.out'
+        outFL=os.path.splitext(slu_FL)[0] + '.out'
 
         if os.path.isfile(outFL):
             print(f"{outFL} exists. Skip submitting slurm file.")
@@ -60,8 +69,12 @@ def submit_slurmscript(slurm_dir, batch_size = 100):
         num = num + 1
 
         if num <= batch_size:
-            command = ['sbatch',  slu_FLs[i] ]
-            print (" ".join(command))
+#            command = ['sbatch',  slu_FLs[i] ]
+#            print (" ".join(command))
+            slu_FL = quote(slu_FL)
+            command = f'sbatch {slu_FL}'
+            print(command)
+            command = split(command)
             jobID = subprocess.check_output(command)
             jobID = re.findall(r'\d+', str(jobID))
             jobID = jobID[0]
@@ -70,8 +83,12 @@ def submit_slurmscript(slurm_dir, batch_size = 100):
             newjobIDs.append(jobID) # these IDs will used for dependency=afterany
 
         if num >batch_size:
-            command=['sbatch', '--dependency=afterany:'+ ":".join(jobIDs), slu_FLs[i] ]
-            print (" ".join(command))
+#            command=['sbatch', '--dependency=afterany:'+ ":".join(jobIDs), slu_FLs[i] ]
+#            print (" ".join(command))
+
+            command = 'sbatch --dependency=afterany:' + ':'.join(jobIDs) + f'{slu_FLs[i]}'
+            print(command)
+            command = split(command)
             jobID = subprocess.check_output(command)
             jobID = re.findall(r'\d+', str(jobID))
             jobID = jobID[0]

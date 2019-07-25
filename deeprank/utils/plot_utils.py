@@ -60,7 +60,7 @@ def plot_boxplot(df,figname=None,inverse = False):
     colormap = ro.StrVector([elt[1] for elt in colormap_raw])
     colormap.names = ro.StrVector([elt[0] for elt in colormap_raw])
 
-    ggplot(data) + \
+    p= ggplot(data) + \
             aes_string(x='target', y='DR' , fill='target' ) + \
             geom_boxplot( width = 0.2, alpha = 0.7) + \
             facet_grid(ro.Formula('.~label')) +\
@@ -73,9 +73,9 @@ def plot_boxplot(df,figname=None,inverse = False):
                 'legend.position': 'right'} ) +\
             scale_x_discrete(name = "Target")
 
-
-    #p.plot()
+    # p.plot()
     ggplot2.ggsave(figname, dpi = 100)
+    return p
 
 
 def read_epoch_data(DR_h5FL, epoch):
@@ -204,7 +204,7 @@ def plot_DR_iRMSD(df, figname=None):
 
     font_size = 16
     text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
-    ggplot(df) + aes_string(y = 'irmsd', x = 'DR') +\
+    p = ggplot(df) + aes_string(y = 'irmsd', x = 'DR') +\
             facet_grid(ro.Formula('.~label')) + \
             geom_point(alpha = 0.5) + \
             theme_bw() +\
@@ -217,6 +217,7 @@ def plot_DR_iRMSD(df, figname=None):
 
     #p.plot()
     ggplot2.ggsave(figname, height = 7 , width = 7 * 1.5, dpi = 100)
+    return p
 
 
 
@@ -236,7 +237,7 @@ def plot_HS_iRMSD(df, figname=None):
     # plot
     font_size = 16
     text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
-    ggplot(df) + aes_string(y = 'irmsd', x = 'HS') +\
+    p= ggplot(df) + aes_string(y = 'irmsd', x = 'HS') +\
             facet_grid(ro.Formula('.~label')) + \
             geom_point(alpha = 0.5) + \
             theme_bw() +\
@@ -247,7 +248,9 @@ def plot_HS_iRMSD(df, figname=None):
                     'axis.text.y': element_text(size = font_size + 2)} ) + \
             scale_y_continuous(name = "i-RMSD")
 
+    #p.plot()
     ggplot2.ggsave(figname, height = 7 , width = 7 * 1.5, dpi=100)
+    return p
 
 
 def plot_successRate_hitRate (df, figname=None,inverse = False):
@@ -385,7 +388,7 @@ def ave_evaluate(data):
             # perf_per_case.columns = ['label', 'caseID', 'success_HS', 'hitRate_HS', 'success_DR', 'hitRate_DR']
             perf_ave[col] = np.zeros(top_N)
 
-            for caseID, perf_case in grouped:
+            for _, perf_case in grouped:
                 perf_ave[col] = perf_ave[col][0:top_N] + np.array(perf_case[col][0:top_N])
 
             perf_ave[col] = perf_ave[col]/num_cases
@@ -477,7 +480,6 @@ def plot_evaluation(df, figname):
     figname1 = figname + '.hitRate.png'
     print(f'\n --> Hit Rate plot:', figname1, '\n')
     hit_rate_plot(df)
-    #p.plot()
     ggplot2.ggsave(figname1, height = 7 , width = 7 * 1.2, dpi = 100)
 
 
@@ -485,7 +487,7 @@ def plot_evaluation(df, figname):
     figname2 = figname + '.successRate.png'
     print(f'\n --> Success Rate plot:', figname2, '\n')
 
-    p = success_rate_plot(df)
+    success_rate_plot(df)
     ggplot2.ggsave(figname2, height = 7 , width = 7 * 1.2, dpi=100)
 
 
@@ -540,7 +542,7 @@ def success_rate_plot(df):
 
     #-- add the 'rank' column to df
     rank = []
-    for l, df_per_label in df.groupby('label'):
+    for _, df_per_label in df.groupby('label'):
         num_mol = len(df_per_label)
         rank_raw = np.array(range(num_mol )) + 1
         rank.extend(rank_raw/num_mol )
@@ -662,8 +664,6 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
         label caseID   modelID                                          sourceFL          target   score_method1  score_method2
         train 1ZHI     1ZHI_294w  /home/lixue/DBs/BM5-haddock24/hdf5/000_1ZHI.hdf5        0       9.758          -19.3448
         test  1ACB     1ACB_89w   /home/lixue/DBs/BM5-haddock24/hdf5/000_1ACB.hdf5        1       17.535         -11.2127
-
-
     '''
 
     return DR_HS_df
