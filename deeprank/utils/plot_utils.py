@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import pandas as pd
 import re
 from itertools import zip_longest
+import pdb
 
 import warnings
 from rpy2.rinterface import RRuntimeWarning
@@ -376,7 +377,6 @@ def ave_evaluate(data):
         grouped = perf_per_case.groupby('caseID')
         num_models = grouped.apply(len)
         num_cases = len(grouped)
-        print(f"{l}: {num_cases} cases")
 
         #--
         top_N = min(num_models)
@@ -696,6 +696,28 @@ def hit_statistics(df):
 
     for label in labels:
         print(f"According to 'targets' -> num of hits for {label}: {num_hits[label]} out of {num_models[label]} models")
+
+    print("")
+    #-- 3. report num_cases_wo_hit
+    df_tmp = df.copy()
+    df_tmp['caseID'] = df['modelID'].apply(get_caseID)
+    grouped = df_tmp.groupby(['label', 'caseID'])
+    num_hits = grouped['target'].apply(lambda x: len(x[x==1]))
+    grp = num_hits.groupby('label')
+    num_cases_total = grp.apply(lambda x: len(x))
+    num_cases_wo_hit = grp.apply(lambda x: len(x==0))
+
+    for label in labels:
+        print(f"According to 'targets' -> {num_cases_wo_hit[label]} out of {num_cases_total[label]} cases do not have any hits for {label}")
+    print("")
+
+def get_caseID(modelID):
+    # modelID = 1AVX_ranair-it0_5286
+    # caseID = 1AVX
+
+    tmp = re.split('_', modelID)
+    caseID = tmp[0]
+    return caseID
 
 def main(HS_h5FL= '/home/lixue/DBs/BM5-haddock24/stats/stats.h5'):
     if len(sys.argv) !=4:
