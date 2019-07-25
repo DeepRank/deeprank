@@ -17,7 +17,7 @@ def hitrate(rs):
     Example:
 
     >>> rs = [0,1,1]
-    >>> hit_rate(r,nr)
+    >>> hitrate(r,nr)
 
 
     Attributes:
@@ -27,26 +27,35 @@ def hitrate(rs):
     Returns:
         hirate (array): [recall@1,recall@2,...]
     """
-    rs =np.array(rs)
-    nr = np.max((1,np.sum(rs)))
+    rs = np.array(rs)
+    nr = np.max((1, np.sum(rs)))
     return np.cumsum(rs) / nr
 
-def success(hitrate):
-    '''
-    Input:  hitrate = [0,  0, 0.3, 0.4]
-    Output: success = [0,  0,   1,   1]
-    '''
 
-    success = np.ones(len(hitrate))
-    idx = (hitrate ==0)
-    success[idx] = 0
+def success(rs):
+    """Success for positions ≤ k.
 
-    return success
+    Example:
+    >>> rs = [0, 0, 1, 0, 1, 0]
+    >>> success(rs)
+    [0, 0, 1, 1, 1, 1]
+
+    Args:
+        rs (array): binary relevance array
+
+    Returns:
+        success (array): [success@≤1, success@≤2,...]
+    """
+    success = np.cumsum(rs) > 0
+
+    return success.astype(np.int)
+
 
 def avprec(rs):
-    return [average_precision(rs[:i]) for i in range(1,len(rs))]
+    return [average_precision(rs[:i]) for i in range(1, len(rs))]
 
-def recall(rs,nr):
+
+def recall(rs, nr):
     """recall rate
     First element is rank 1, Relevance is binray
 
@@ -67,6 +76,7 @@ def recall(rs,nr):
     """
 
     return np.sum(rs)/nr
+
 
 def mean_reciprocal_rank(rs):
     """Score is reciprocal of the rank of the first relevant item
