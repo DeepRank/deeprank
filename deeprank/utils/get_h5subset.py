@@ -1,31 +1,49 @@
 #!/usr/bin/env python
-# Li Xue
-#  2-May-2019 11:24
-#
-# Extract five molecules from each hdf5 file and write into a new h5 file.
-#
-# This script is used to generate a small set for debugging.
+"""
+Extract first N groups of a hdf5 to a new hdf5 file.
 
-import sys
-import h5py
+Usage: python {0} <hdf5 input file> <hdf5 output file> <number of groups to write>
+Example: python {0} ./001_1GPW.hdf5  ./001_1GPW_sub10.hdf5 10
+"""
 import os
+import sys
 
-h5FL = sys.argv[1]#'001_1GPW.hdf5'
-outDIR = sys.argv[2] # '.../'
+import h5py
 
-filename = os.path.basename(h5FL)
-new_h5FL = outDIR + filename
+USAGE = __doc__.format(__file__)
 
-f_in = h5py.File(h5FL, 'r')
-f_out = h5py.File(new_h5FL,'w')
-modelIDs = list(f_in)
 
-for x in modelIDs[0:5]:
-    print(x)
-    f_in.copy(f_in[x],f_out)
-list(f_out)
-f_in.close()
-f_out.close()
+def check_input(args):
+    if len(args) != 3:
+        sys.stderr.write(USAGE)
+        sys.exit(1)
 
-print(f"{new_h5FL} generated.")
 
+def get_h5subset(fin, fout, n):
+    """Extract first number of groups and write to a new hdf5 file.
+
+    Args:
+        fin (hdf5): input hdf5 file.
+        fout (hdf5): output hdf5 file.
+        n (int): first n groups to write.
+    """
+    n = int(n)
+    h5 = h5py.File(fin, "r")
+    h5out = h5py.File(fout, "w")
+    print(f"First {n} groups in {fin}:")
+    for i in list(h5)[0:n]:
+        print(i)
+        h5.copy(h5[i], h5out)
+
+    print()
+    print(f"Groups in {fout}:")
+    print(list(h5out))
+    h5.close()
+    h5out.close()
+    print()
+    print(f"{fout} generated.")
+
+
+if __name__ == "__main__":
+    check_input(sys.argv[1:])
+    get_h5subset(*sys.argv[1:])
