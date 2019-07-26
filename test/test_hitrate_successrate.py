@@ -1,5 +1,5 @@
 import unittest
-from deeprank.utils.plot_utils import *
+from deeprank.utils.plot_utils import evaluate
 import os
 import pandas as pd
 from time import time
@@ -19,8 +19,6 @@ class TestGenerateData(unittest.TestCase):
     rawScoreFL = 'hitrate_successrate/scores_raw.tsv'
     groundTruth_FL = 'hitrate_successrate/success_hitrate_ANS.tsv'
 
-
-
     def test_1_hitrate_success_averaged_over_cases(self):
 
         def compare_hitrate_success_one_case(expected_df, real_df, caseID):
@@ -34,18 +32,17 @@ class TestGenerateData(unittest.TestCase):
                 expected = expected_df[col]
                 real = real_df[col]
                 error_msg = f"{col} for {label} {caseID} is not correct!"
-                assert (expected == real).all() , error_msg
-
+                assert (expected == real).all(), error_msg
 
         # calculate hitrate and success
-        rawScore = pd.read_csv(self.rawScoreFL, sep = '\t')
+        rawScore = pd.read_csv(self.rawScoreFL, sep='\t')
         hitrate_success_df = evaluate(rawScore)
 
         # compare with the grount truth
-        groundTruth_df = pd.read_csv(self.groundTruth_FL, sep = '\t')
+        groundTruth_df = pd.read_csv(self.groundTruth_FL, sep='\t')
 
         labels = groundTruth_df['label'].unique()
-        caseIDs ={}
+        caseIDs = {}
         truth_grp = groundTruth_df.groupby('label')
 
         for label, df in truth_grp:
@@ -53,15 +50,15 @@ class TestGenerateData(unittest.TestCase):
 
         for label in labels:
             for caseID in caseIDs[label]:
-                idx = (groundTruth_df['label'] == label ) & (groundTruth_df['caseID'] == caseID)
+                idx = (groundTruth_df['label'] == label) & (
+                    groundTruth_df['caseID'] == caseID)
                 expected_df = groundTruth_df[idx]
 
-                idx = (hitrate_success_df['label'] == label ) & (hitrate_success_df['caseID'] == caseID)
+                idx = (hitrate_success_df['label'] == label) & (
+                    hitrate_success_df['caseID'] == caseID)
                 real_df = hitrate_success_df[idx]
                 compare_hitrate_success_one_case(expected_df, real_df, caseID)
 
 
 if __name__ == "__main__":
     unittest.main()
-
-
