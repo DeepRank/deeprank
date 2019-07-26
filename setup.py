@@ -16,7 +16,7 @@ setup(
         'tqdm',
         'pandas',
         'matplotlib',
-        'torchsummary']
+        'torchsummary'],
 
     extras_require={
         'test': ['nose', 'coverage', 'pytest',
