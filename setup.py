@@ -15,7 +15,9 @@ setup(
         'h5py',
         'tqdm',
         'pandas',
-        'matplotlib', 'torchsummary' ],
+        'matplotlib',
+        'torchsummary',
+        'rpy2'],
 
     extras_require= {
         'test': ['nose', 'coverage', 'pytest',
