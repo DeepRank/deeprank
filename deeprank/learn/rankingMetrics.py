@@ -17,7 +17,7 @@ def hitrate(rs):
     Example:
 
     >>> rs = [0,1,1]
-    >>> hitrate(r,nr)
+    >>> hitrate(r)
 
 
     Attributes:
