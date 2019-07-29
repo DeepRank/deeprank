@@ -9,7 +9,6 @@ import torch.nn.functional as F
 import pandas as pd
 import re
 from itertools import zip_longest
-import pdb
 
 from cal_hitrate_successrate import evaluate
 from cal_hitrate_successrate import ave_evaluate
