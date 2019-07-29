@@ -44,4 +44,5 @@ def get_h5subset(fin, fout, n):
 
 if __name__ == "__main__":
     check_input(sys.argv[1:])
-    get_h5subset(*sys.argv[1:])
+    fin, fout, n = sys.argv[1:]
+    get_h5subset(fin, fout, n)
