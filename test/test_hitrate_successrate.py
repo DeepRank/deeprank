@@ -1,5 +1,5 @@
 import unittest
-from deeprank.utils.plot_utils import evaluate
+import deeprank.utils.plot_utils.evaluate as evaluate
 import os
 import pandas as pd
 from time import time
