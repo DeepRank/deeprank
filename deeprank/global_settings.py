@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Default DeepRank settings. 
+Default DeepRank settings.
 """
 
 ####################
 # DEBUG            #
 ####################
 
+#  DEBUG = False
 DEBUG = True
 
 ###########
@@ -19,35 +20,43 @@ DEFAULT_LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'brief': {
-            'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            'format': '%(message)s',
+        },
+        'precise': {
+            'format': '%(levelname)s: %(message)s',
         },
     },
     'filters': {
-        'use_levels': {
-            '()': 'deeprank.utils.log.useLevelsFilter',
-        },
         'require_debug': {
             '()': 'deeprank.utils.log.requireDebugFilter',
+        },
+        'use_only_info_level': {
+            '()': 'deeprank.utils.log.useLevelsFilter',
+            'levels': 'INFO',   # function parameter
+        },
+        'use_only_debug_level': {
+            '()': 'deeprank.utils.log.useLevelsFilter',
+            'levels': 'DEBUG',
         },
     },
     'handlers': {
         'stdout': {
             'level': 'INFO',
             'formatter': 'brief',
-            'filters': ['use_levels([logging.INFO])'],
+            'filters': ['use_only_info_level', ],
             'class': 'logging.StreamHandler',
             'stream': 'ext://sys.stdout',
         },
         'stderr': {
             'level': 'WARNING',
-            'formatter': 'brief',
+            'formatter': 'precise',
             'class': 'logging.StreamHandler',
             'stream': 'ext://sys.stderr',
         },
         'debug': {
             'level': 'DEBUG',
-            'formatter': 'brief',
-            'filters': ['require_debug', 'use_levels([logging.DEBUG])'],
+            'formatter': 'precise',
+            'filters': ['require_debug', 'use_only_debug_level'],
             'class': 'logging.StreamHandler',
             'stream': 'ext://sys.stderr',
         },
@@ -55,7 +64,7 @@ DEFAULT_LOGGING = {
     'loggers': {
         'deeprank': {
             'handlers': ['stdout', 'stderr', 'debug'],
-            'level': 'NOTSET',
+            'level': 'DEBUG',
         },
     }
 }
