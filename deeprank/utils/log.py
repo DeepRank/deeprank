@@ -1,5 +1,5 @@
 import logging
-from deeprank import global_settings
+from deeprank.conf import global_settings
 
 
 class useLevelsFilter(logging.Filter):

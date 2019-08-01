@@ -1,4 +1,3 @@
-
 import os
 import sys
 import importlib
@@ -6,6 +5,7 @@ import numpy as np
 import h5py
 from collections import OrderedDict
 import logging
+from deeprank.conf import logger
 from deeprank.tools import pdb2sql
 from deeprank.generate import GridTools as gt
 from deeprank.generate import settings
@@ -29,7 +29,7 @@ class DataGenerator(object):
 
     def __init__(self,pdb_select=None,pdb_source=None,pdb_native=None,pssm_source=None,
                  compute_targets = None, compute_features = None,
-                 data_augmentation=None, hdf5='database.h5',logger=None,debug=True,mpi_comm=None):
+                 data_augmentation=None, hdf5='database.h5', mpi_comm=None):
         """Generate the data (features/targets/maps) required for deeprank.
 
         Args:
@@ -40,8 +40,6 @@ class DataGenerator(object):
             compute_features (list(str), optional): List of python files computing the features
             data_augmentation (int, optional): Number of rotation performed one each complex
             hdf5 (str, optional): name of the hdf5 file where the data is saved
-            logger (None, optional): logger file
-            debug (bool, optional): print debuf info
             mpi_comm (MPI_COMM) : MPI COMMUNICATOR
 
         Raises:
@@ -89,8 +87,7 @@ class DataGenerator(object):
         self.feature_error = []
         self.map_error = []
 
-        self.logger = logger or logging.getLogger(__name__)
-        self.debug = debug
+        self.logger = logger
 
         # handle the pdb_select
         if not isinstance(self.pdb_select,list):

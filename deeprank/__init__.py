@@ -7,15 +7,11 @@ import warnings
 import logging
 import logging.config
 
-from . import global_settings
 from .tools import *
 from .generate import *
-
+from .conf import *
 # deep learning
 # import torch fals on Travis
 #from .learn import *
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
-
-logging.config.dictConfig(global_settings.DEFAULT_LOGGING)
-logger = logging.getLogger(__name__)
