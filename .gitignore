@@ -47,3 +47,5 @@ test/*.pdb
 
 # vscode setting
 .vscode
+
+.DS_Store
