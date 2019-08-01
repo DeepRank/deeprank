@@ -3,8 +3,10 @@ from deeprank import global_settings
 
 
 class useLevelsFilter(logging.Filter):
-    def __init__(self, *args):
-        self.levels = args
+    def __init__(self, levels):
+        if not isinstance(levels, (tuple, list)):
+            levels = (levels, )
+        self.levels = levels
 
     def __filter__(self, record):
         if record.levelname in self.levels:
