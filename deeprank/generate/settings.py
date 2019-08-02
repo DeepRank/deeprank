@@ -1,2 +1,2 @@
 def init():
-    global __PATH_PSSM_FILES__
+    global __PATH_PSSM_SOURCE__
