@@ -1,5 +1,6 @@
 import importlib
 import logging
+import warnings
 import os
 import re
 import sys
@@ -40,9 +41,11 @@ class DataGenerator(object):
         Args:
             pdb_select (list(str), optional): List of individual conformation for mapping
             pdb_source (list(str), optional): List of folders where to find the pdbs for mapping
-            pdb_native (list(str), optional): List of folders where to find the native comformations
+            pdb_native (list(str), optional): List of folders where to find the native comformations,
+                nust set it if having targets to compute in parameter "compute_targets".
             pssm_source (list(str), optional): List of folders where to find the PSSM files
-            compute_targets (list(str), optional): List of python files computing the features
+            compute_targets (list(str), optional): List of python files computing the targets,
+                "pdb_native" must be set if having targets to compute.
             compute_features (list(str), optional): List of python files computing the features
             data_augmentation (int, optional): Number of rotation performed one each complex
             hdf5 (str, optional): name of the hdf5 file where the data is saved, default to 'database.h5'
@@ -86,6 +89,7 @@ class DataGenerator(object):
 
         self.mpi_comm = mpi_comm
 
+        # set helper attributes
         self.all_pdb = []
         self.all_native = []
         self.pdb_path = []
@@ -101,8 +105,15 @@ class DataGenerator(object):
 
         # check that a source was given
         if self.pdb_source is None:
-            raise NotADirectoryError(
-                'You must provide one or several source directory where the pdbs are stored')
+            raise ValueError(
+                'You must provide one or several source directory where the pdbs are stored by setting "pdb_source')
+
+        # check native was given when compute_targets is required
+        if self.compute_targets and not self.pdb_native:
+            raise ValueError(
+                f'You must provide native pdbs by setting "pdb_native" for computing targets: {self.compute_targets}')
+        elif not self.compute_targets and self.pdb_native:
+            warnings.warn('Not need to provide native pdbs if having NO targets to compute')
 
         # handle the sources
         if not isinstance(self.pdb_source, list):
@@ -215,16 +226,16 @@ class DataGenerator(object):
             cplx_tqdm.set_postfix(mol=os.path.basename(cplx))
             self.logger.debug(f'\nProcessing PDB file: {cplx}')
 
+            # names of the molecule
+            mol_name = os.path.splitext(os.path.basename(cplx))[0]
+            mol_aug_name_list = []
+
             try:
 
                 ################################################
                 #   get the pdbs of the conformation and its ref
                 #   for the original data (not augmetned one)
                 ################################################
-
-                # names of the molecule
-                mol_aug_name_list = []
-                mol_name = os.path.splitext(os.path.basename(cplx))[0]
 
                 if verbose:
                     self.logger.info(f'\nMolecule: {mol_name}.'
@@ -245,16 +256,16 @@ class DataGenerator(object):
                     if len(self.all_native) > 0:
                         ref = list(
                             filter(lambda x: ref_name in x, self.all_native))
-                        if len(ref) > 1:
-                            raise ValueError('Multiple native found')
                         if len(ref) == 0:
                             raise ValueError('Native not found')
                         else:
-                            ref = ref[0]
+                            if len(ref) > 1:
+                                warnings.warn(f'Multiple native reference found, here used {ref[0]}')
+                            ref = ref[0] 
                         if ref == '':
                             ref = None
                     else:
-                        ref = None
+                        ref = None 
 
                 # crete a subgroup for the molecule
                 molgrp = self.f5.require_group(mol_name)
@@ -277,46 +288,55 @@ class DataGenerator(object):
                 ################################################
                 #   add the features
                 ################################################
+                error_flag = False  # when False: success; when True: failed
 
-                if verbose:
-                    self.logger.info(f'{"":4s}Calculating features...')
-
-                # add the features
-                molgrp.require_group('features')
-                molgrp.require_group('features_raw')
-
-                # TODO really need the error_flag?
-                error_flag = False  # error_flag => when False: success; when True: failed
                 if self.compute_features is not None:
+                    if verbose:
+                        self.logger.info(f'{"":4s}Calculating features...')
+
+                    molgrp.require_group('features')
+                    molgrp.require_group('features_raw')
+
                     error_flag = self._compute_features(self.compute_features,
                                                         molgrp['complex'][:],
                                                         molgrp['features'],
-                                                        molgrp['features_raw'])
-                if verbose:
-                    self.logger.info(f'{"":4s}Generated subgroup "features_raw"'
-                                     f' to store raw feature data.'
-                                     f'\n{"":4s}Generated subgroup "features"'
-                                     f' to store interface features.')
+                                                        molgrp['features_raw'],
+                                                        self.logger)
+                    if error_flag:
+                        self.feature_error += [mol_name]
+                        # go to next molecule, remove the errored mol later
+                        if remove_error:
+                            continue
+
+                    if verbose:
+                        if not error_flag or not remove_error:
+                            self.logger.info(f'{"":4s}Generated subgroup "features_raw"'
+                                            f' to store raw feature data.'
+                                            f'\n{"":4s}Generated subgroup "features"'
+                                            f' to store interface features.')
                     # TODO what is the meaning of features and features raw?
 
                 ################################################
                 #   add the targets
                 ################################################
-
-                if verbose:
-                    self.logger.info(f'{"":4s}Calculating targets...')
-
-                ###TODO debug target calculating?yy
-                # add the features
-                molgrp.require_group('targets')
                 if self.compute_targets is not None:
+                    if verbose:
+                        self.logger.info(f'{"":4s}Calculating targets...')
+
+                    if 'native' not in molgrp:
+                        raise ValueError(f"'native' not exist for {mol_name}. "+
+                        "You must provide reference pdb for computing targets")
+
+                    molgrp.require_group('targets')
+
                     self._compute_targets(self.compute_targets,
                                           molgrp['complex'][:],
-                                          molgrp['targets'])
+                                          molgrp['targets'],
+                                          self.logger)
 
-                if verbose:
-                    self.logger.info(f'{"":4s}Generated subgroup "targets"'
-                        f' to store targets, such as BIN_CLASS, IRMSD, etc.')
+                    if verbose:
+                        self.logger.info(f'{"":4s}Generated subgroup "targets" '
+                            f'to store targets, such as BIN_CLASS, dockQ, etc.')
 
                 ################################################
                 #   add the box center
@@ -326,8 +346,7 @@ class DataGenerator(object):
 
                 ###TODO grid calculating?
                 molgrp.require_group('grid_points')
-                center = self._get_grid_center(
-                    molgrp['complex'][:], contact_distance)
+                center = self._get_grid_center(molgrp['complex'][:], contact_distance)
                 molgrp['grid_points'].create_dataset('center', data=center)
 
                 if verbose:
@@ -351,10 +370,6 @@ class DataGenerator(object):
                 
                 # loop over the complexes
                 for _, mol_aug_name in enumerate(mol_aug_name_list):
-
-                    ################################################
-                    #   get the pdbs of the conformation and its ref
-                    ################################################
 
                     # crete a subgroup for the molecule
                     molgrp = self.f5.require_group(mol_aug_name)
@@ -391,39 +406,43 @@ class DataGenerator(object):
                     molgrp.attrs['angle'] = angle
                     molgrp.attrs['center'] = center
 
+
+                # cache aug mols if original mol has errored features
+                if error_flag:
+                    self.feature_error += mol_aug_name_list
+
                 if verbose and mol_aug_name_list:
                     self.logger.info(f'{"":2s}Completed data augmentation'
                     f' and generated top HDF5 groups, e.g. {mol_aug_name}.')
 
                 ################################################
-                #  report errors
+                # Successul message
                 ################################################
-                if error_flag:
-                    # error_flag => when False: success; when True: failed
-                    self.feature_error += [mol_name] + mol_aug_name_list
-                    self.logger.exception(
-                        'Error during the feature calculation of %s' % cplx)
-                
                 if verbose:
                     self.logger.info(
                         f'\nSuccessfully generated top HDF5 group "{mol_name}".')
 
-            except Exception as inst:
-                self.feature_error += [mol_name] + mol_aug_name_list
-                self.logger.exception(
-                    'Error during the feature calculation of %s' % cplx)
-                self.logger.debug('Error during the feature calculation of %s' %
-                                  cplx)
-                self.logger.debug(type(inst))
-                self.logger.debug(inst.args)
 
-        # remove the data where we had issues
-        if remove_error:
+            except Warning as ex:
+                Warnings.warn(ex)
+
+            # native not found error
+            except ValueError:
+                raise
+            
+            # all other errors
+            except:
+                raise 
+
+        ##################################################
+        # Post processing
+        ##################################################
+        #  Remove errored molecules
+        if remove_error and self.feature_error:
             for mol in self.feature_error:
-                #self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
-                self.logger.debug('removing %s from %s' % (mol, self.hdf5))
                 del self.f5[mol]
-                sys.stdout.flush()
+            self.logger.info(
+                f'Errored molecules are removed: {self.feature_error}')
 
         # close the file
         self.f5.close()
@@ -479,8 +498,11 @@ class DataGenerator(object):
             molgrp.require_group('features_raw')
 
             if self.compute_features is not None:
-                self._compute_features(
-                    self.compute_features, molgrp['complex'][:], molgrp['features'], molgrp['features_raw'])
+                self._compute_features(self.compute_features,
+                                        molgrp['complex'][:],
+                                        molgrp['features'],
+                                        molgrp['features_raw'],
+                                        self.logger)
 
         # copy the data from the original to the augmented
         for cplx_name in fnames_augmented:
@@ -583,11 +605,14 @@ class DataGenerator(object):
 
             # group of the molecule
             molgrp = f5[cplx_name]
+            molgrp.require_group['targets']
 
             # add the targets
             if self.compute_targets is not None:
-                self._compute_targets(
-                    self.compute_targets, molgrp['complex'][:], molgrp['targets'])
+                self._compute_targets(self.compute_targets,
+                                    molgrp['complex'][:],
+                                    molgrp['targets'],
+                                    self.logger)
 
         # copy the targets of the original to the rotated
         for cplx_name in fnames_augmented:
@@ -1145,7 +1170,7 @@ class DataGenerator(object):
 # ====================================================================================
 
     @staticmethod
-    def _compute_features(feat_list, pdb_data, featgrp, featgrp_raw):
+    def _compute_features(feat_list, pdb_data, featgrp, featgrp_raw, logger):
         """Compute the features
 
         Args:
@@ -1153,15 +1178,22 @@ class DataGenerator(object):
             pdb_data (bytes): PDB translated in bytes
             featgrp (str): name of the group where to store the xyz feature
             featgrp_raw (str): name of the group where to store the raw feature
+            logger (logger): name of logger object 
         """
         error_flag = False  # when False: success; when True: failed
         for feat in feat_list:
-            feat_module = importlib.import_module(feat, package=None)
-            error_flag = feat_module.__compute_feature__(
-                pdb_data, featgrp, featgrp_raw)
+            try:
+                feat_module = importlib.import_module(feat, package=None)
+                error_flag = feat_module.__compute_feature__(
+                    pdb_data, featgrp, featgrp_raw)
 
-            if re.search('ResidueDensity', feat) and error_flag == True:
-                return error_flag
+                if re.search('ResidueDensity', feat) and error_flag == True:
+                    return error_flag
+            except Warning:
+                warnings.warn("")
+            except Errors as ex:
+                if remove_error:
+                    
 
 
 # ====================================================================================
@@ -1171,13 +1203,14 @@ class DataGenerator(object):
 # ====================================================================================
 
     @staticmethod
-    def _compute_targets(targ_list, pdb_data, targrp):
+    def _compute_targets(targ_list, pdb_data, targrp, logger):
         """Compute the targets
 
         Args:
             targ_list (list(str)): list of function name
             pdb_data (bytes): PDB translated in btes
             targrp (str): name of the group where to store the targets
+            logger (logger): name of logger object
         """
         for targ in targ_list:
             targ_module = importlib.import_module(targ, package=None)
