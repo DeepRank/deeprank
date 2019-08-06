@@ -423,8 +423,8 @@ class DataGenerator(object):
                         f'\nSuccessfully generated top HDF5 group "{mol_name}".')
 
 
-            except Warning as ex:
-                Warnings.warn(ex)
+            # except Warning as ex:
+            #     Warnings.warn(ex)
 
             # native not found error
             except ValueError:
@@ -438,11 +438,15 @@ class DataGenerator(object):
         # Post processing
         ##################################################
         #  Remove errored molecules
-        if remove_error and self.feature_error:
-            for mol in self.feature_error:
-                del self.f5[mol]
-            self.logger.info(
-                f'Errored molecules are removed: {self.feature_error}')
+        if self.feature_error:
+            if remove_error:
+                for mol in self.feature_error:
+                    del f5[mol]
+                self.logger.info(
+                    f'Molecules with errored features are removed: {self.feature_error}')
+            else:
+                self.logger.warning(f"The following molecules has errored features:\n"
+                                f'{self.feature_error}')
 
         # close the file
         self.f5.close()
@@ -455,10 +459,11 @@ class DataGenerator(object):
 #
 # ====================================================================================
 
-    def add_feature(self, prog_bar=True):
+    def add_feature(self, remove_error=True, prog_bar=True):
         ''' Add a feature to an existing hdf5 file
 
         Args:
+            remove_error (bool): remove errored molecule
             prog_bar (bool, optional): use tqdm
 
         Example:
@@ -469,7 +474,7 @@ class DataGenerator(object):
         >>> database = DataGenerator(compute_features  = ['deeprank.features.ResidueDensity'],
         >>>                          hdf5=h5file)
         >>>
-        >>> database.add_feature(prog_bar=True)
+        >>> database.add_feature(remove_error=True, prog_bar=True)
         '''
 
         # check if file exists
@@ -483,8 +488,14 @@ class DataGenerator(object):
         # get the non rotated ones
         fnames_original = list(
             filter(lambda x: not re.search('_r\d+$', x), fnames))
+
+        # get the rotated ones
         fnames_augmented = list(
             filter(lambda x:  re.search('_r\d+$', x), fnames))
+        
+        # check feature_error
+        if not self.feature_error:
+            self.feature_error = []
 
         # computes the features of the original
         desc = '{:25s}'.format('Add features')
@@ -493,17 +504,21 @@ class DataGenerator(object):
             # molgrp
             molgrp = f5[cplx_name]
 
-            # the internal features
-            molgrp.require_group('features')
-            molgrp.require_group('features_raw')
-
+            error_flag = False
             if self.compute_features is not None:
-                self._compute_features(self.compute_features,
+                # the internal features
+                molgrp.require_group('features')
+                molgrp.require_group('features_raw')
+
+                error_flag = self._compute_features(self.compute_features,
                                         molgrp['complex'][:],
                                         molgrp['features'],
                                         molgrp['features_raw'],
                                         self.logger)
 
+                if error_flag:
+                    self.feature_error += [cplx_name]
+        
         # copy the data from the original to the augmented
         for cplx_name in fnames_augmented:
 
@@ -531,6 +546,22 @@ class DataGenerator(object):
                     # rotate
                     self._rotate_feature(
                         aug_molgrp, axis, angle, center, feat_name=[k])
+
+        # find errored augmented molecules
+        for mol in self.feature_error:
+            tmp_aug_error += list(filter(lambda x: mol in x, fnames_augmented))
+        self.feature_error += tmp_aug_error
+
+        #  Remove errored molecules
+        if self.feature_error:
+            if remove_error:
+                for mol in self.feature_error:
+                    del f5[mol]
+                self.logger.info(
+                    f'Molecules with errored features are removed: {self.feature_error}')
+            else:
+                self.logger.warning(f"The following molecules has errored features:\n"
+                                f'{self.feature_error}')
 
         # close the file
         f5.close()
