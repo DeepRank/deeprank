@@ -15,3 +15,4 @@ from .conf import *
 #from .learn import *
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
+logging.captureWarnings(True)
