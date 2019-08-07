@@ -323,16 +323,11 @@ class DataGenerator(object):
                     if verbose:
                         self.logger.info(f'{"":4s}Calculating targets...')
 
-                    if 'native' not in molgrp:
-                        raise ValueError(f"'native' not exist for {mol_name}. "+
-                        "You must provide reference pdb for computing targets")
-
                     molgrp.require_group('targets')
 
                     self._compute_targets(self.compute_targets,
                                           molgrp['complex'][:],
-                                          molgrp['targets'],
-                                          self.logger)
+                                          molgrp['targets'])
 
                     if verbose:
                         self.logger.info(f'{"":4s}Generated subgroup "targets" '
@@ -640,15 +635,10 @@ class DataGenerator(object):
             # add the targets
             if self.compute_targets is not None:
 
-                if 'native' not in molgrp:
-                    raise ValueError(f"'native' not exist for {cplx_name}. "+
-                    "You must provide reference pdb for computing targets")
-
                 molgrp.require_group['targets']
                 self._compute_targets(self.compute_targets,
                                     molgrp['complex'][:],
-                                    molgrp['targets'],
-                                    self.logger)
+                                    molgrp['targets'])
 
         # copy the targets of the original to the rotated
         for cplx_name in fnames_augmented:
@@ -1241,7 +1231,7 @@ class DataGenerator(object):
 # ====================================================================================
 
     @staticmethod
-    def _compute_targets(targ_list, pdb_data, targrp, logger):
+    def _compute_targets(targ_list, pdb_data, targrp):
         """Compute the targets
 
         Args:
