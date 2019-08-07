@@ -298,7 +298,7 @@ class DataGenerator(object):
                     molgrp.require_group('features_raw')
 
                     error_flag = self._compute_features(self.compute_features,
-                                                        molgrp['complex'][:],
+                                                        molgrp['complex'][()],
                                                         molgrp['features'],
                                                         molgrp['features_raw'],
                                                         self.logger)
@@ -326,7 +326,7 @@ class DataGenerator(object):
                     molgrp.require_group('targets')
 
                     self._compute_targets(self.compute_targets,
-                                          molgrp['complex'][:],
+                                          molgrp['complex'][()],
                                           molgrp['targets'])
 
                     if verbose:
@@ -341,7 +341,7 @@ class DataGenerator(object):
 
                 ###TODO grid calculating?
                 molgrp.require_group('grid_points')
-                center = self._get_grid_center(molgrp['complex'][:], contact_distance)
+                center = self._get_grid_center(molgrp['complex'][()], contact_distance)
                 molgrp['grid_points'].create_dataset('center', data=center)
 
                 if verbose:
@@ -391,7 +391,7 @@ class DataGenerator(object):
                     # grid center
                     molgrp.require_group('grid_points')
                     center = self._get_grid_center(
-                        molgrp['complex'][:], contact_distance)
+                        molgrp['complex'][()], contact_distance)
                     print(center)
                     molgrp['grid_points'].create_dataset('center', data=center)
 
@@ -506,7 +506,7 @@ class DataGenerator(object):
                 molgrp.require_group('features_raw')
 
                 error_flag = self._compute_features(self.compute_features,
-                                        molgrp['complex'][:],
+                                        molgrp['complex'][()],
                                         molgrp['features'],
                                         molgrp['features_raw'],
                                         self.logger)
@@ -534,7 +534,7 @@ class DataGenerator(object):
                 if k not in aug_molgrp['features']:
 
                     # copy
-                    data = src_molgrp['features/'+k][:]
+                    data = src_molgrp['features/'+k][()]
                     aug_molgrp.require_group('features')
                     aug_molgrp.create_dataset("features/"+k, data=data)
 
@@ -637,7 +637,7 @@ class DataGenerator(object):
 
                 molgrp.require_group['targets']
                 self._compute_targets(self.compute_targets,
-                                    molgrp['complex'][:],
+                                    molgrp['complex'][()],
                                     molgrp['targets'])
 
         # copy the targets of the original to the rotated
@@ -1354,7 +1354,7 @@ class DataGenerator(object):
         for fn in feat:
 
             # extract the data
-            data = molgrp['features/'+fn][:]
+            data = molgrp['features/'+fn][()]
 
             # xyz
             xyz = data[:, 1:4]
