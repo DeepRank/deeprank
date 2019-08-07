@@ -636,10 +636,15 @@ class DataGenerator(object):
 
             # group of the molecule
             molgrp = f5[cplx_name]
-            molgrp.require_group['targets']
 
             # add the targets
             if self.compute_targets is not None:
+
+                if 'native' not in molgrp:
+                    raise ValueError(f"'native' not exist for {cplx_name}. "+
+                    "You must provide reference pdb for computing targets")
+
+                molgrp.require_group['targets']
                 self._compute_targets(self.compute_targets,
                                     molgrp['complex'][:],
                                     molgrp['targets'],
