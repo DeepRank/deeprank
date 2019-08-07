@@ -1215,16 +1215,18 @@ class DataGenerator(object):
         for feat in feat_list:
             try:
                 feat_module = importlib.import_module(feat, package=None)
-                error_flag = feat_module.__compute_feature__(
-                    pdb_data, featgrp, featgrp_raw)
+                feat_module.__compute_feature__(pdb_data, featgrp, featgrp_raw)
 
-                if re.search('ResidueDensity', feat) and error_flag == True:
-                    return error_flag
-            except Warning:
-                warnings.warn("")
-            except Errors as ex:
-                if remove_error:
-                    
+                # if re.search('ResidueDensity', feat) and error_flag == True:
+                #     return error_flag
+            
+            # use FeatureCalculationError as uniformed interface
+            except FeatureCalculationError as ex:
+                logger.exception(ex)
+                error_flag = True
+
+        return error_flag
+        
 
 
 # ====================================================================================
