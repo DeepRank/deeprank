@@ -1265,7 +1265,7 @@ class DataGenerator(object):
                     for line in fi if line.startswith('ATOM')]
         #  PDB default line length is 80
         #  http://www.wwpdb.org/documentation/file-format
-        data = np.array(data).astype('|S80')
+        data = np.array(data).astype('|U80')
         dataset = molgrp.create_dataset(name, data=data)
 
 
@@ -1327,7 +1327,7 @@ class DataGenerator(object):
                 line += '{: 6.2f}'.format(0)    # temp
             data.append(line)
 
-        data = np.array(data).astype('|S80')
+        data = np.array(data).astype('|U80')
         dataset = molgrp.create_dataset(name, data=data)
 
         return center
