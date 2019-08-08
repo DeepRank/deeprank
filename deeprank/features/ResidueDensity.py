@@ -94,10 +94,14 @@ class ResidueDensity(FeatureClass):
 
         # handle with small interface or no interface
         if total_ctc == 0:
+            # first close the sql
+            self.sql.close()
+
             raise ValueError(
                 f"No residue contact found with the cutoff {cutoff}Å. "
                 f"Failed to calculate the feature residue contact "
                 f"density.")
+
         elif total_ctc < 5:  # this is an empirical value
             warnings.warn(
                 f"Only {total_ctc} residue contacts found with "
@@ -187,3 +191,6 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw):
     # export in the hdf5 file
     resdens.export_dataxyz_hdf5(featgrp)
     resdens.export_data_hdf5(featgrp_raw)
+
+    # close sql
+    resdens.sql.close()
