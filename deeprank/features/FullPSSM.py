@@ -1,70 +1,74 @@
 import os
-import numpy as np
-
+import warnings
 from time import time
 
-from deeprank.tools import pdb2sql
-from deeprank.tools import SASA
+import numpy as np
+
 from deeprank.features import FeatureClass
 from deeprank.generate import settings
-import sys
-
-printif = lambda string,cond: print(string) if cond else None
+from deeprank.tools import pdb2sql
 
 
-#####################################################################################
+def printif(string, cond): return print(string) if cond else None
+
+
+########################################################################
 #
 #   Definition of the class
 #
-#####################################################################################
+########################################################################
 
 class FullPSSM(FeatureClass):
 
-    def __init__(self,mol_name=None,pdbfile=None,pssm_path=None,
-                     debug=True,pssm_format='new'):
+    def __init__(self, mol_name=None, pdb_file=None, pssm_path=None,
+                 pssm_format='new'):
+        """Compute all the PSSM data.
 
-        '''Compute all the PSSM data.
-
-       Simply extracts all the PSSM information and store that into features
+            Simply extracts all the PSSM information and
+            store that into features
 
         Args:
-            mol_name (str): name of the molecule
-            pdbfile (str): name of the dbfile
-            pssm_path (str): path to the pssm data
+            mol_name (str): name of the molecule. Defaults to None.
+            pdb_file (str): name of the pdb_file. Defaults to None.
+            pssm_path (str): path to the pssm data. Defaults to None.
+            pssm_format (str): "old" or "new" pssm format. 
+                Defaults to 'new'.
 
-        Example:
-
-        >>> path = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/PSSM_newformat/'
-        >>> pssm = FullPSSM(mol_name = '2ABZ', pdbfile='2ABZ_1w.pdb',pssm_path=path)
-        >>>
-        >>> # get the pssm smoothed sum score
-        >>> pssm.read_PSSM_data()
-        >>> pssm.get_feature_value()
-        >>> print(pssm.feature_data_xyz)
-        '''
+        Examples:
+            >>> path = '/home/test/PSSM_newformat/'
+            >>> pssm = FullPSSM(mol_name='2ABZ', 
+            >>>                pdb_file='2ABZ_1w.pdb',
+            >>>                pssm_path=path)
+            >>> pssm.read_PSSM_data()
+            >>> pssm.get_feature_value()
+            >>> print(pssm.feature_data_xyz)
+        """
 
         super().__init__("Residue")
 
         self.mol_name = mol_name
-        self.pdbfile = pdbfile
+        self.pdb_file = pdb_file
         self.pssm_path = pssm_path
-        self.molname = self.get_mol_name(mol_name)
-        self.debug = debug
+        self.ref_mol_name = self.get_ref_mol_name(mol_name)
         self.pssm_format = pssm_format
 
-        if isinstance(pdbfile,str) and mol_name is None:
-            self.mol_name = os.path.splitext(pdbfile)[0]
+        if isinstance(pdb_file, str) and mol_name is None:
+            self.mol_name = os.path.splitext(pdb_file)[0]
 
-        res_names = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','LLE',
-                     'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL']
-        self.pssm_val_name = ['PSSM_' + n for n in res_names]
+        # the residue order in res_names must be consistent with
+        # that in PSSM file
+        res_names = ('ALA', 'ARG', 'ASN', 'ASP', 'CYS',
+                     'GLN', 'GLU', 'GLY', 'HIS', 'ILE',
+                     'LEU', 'LYS', 'MET', 'PHE', 'PRO',
+                     'SER', 'THR', 'TRP', 'TYR', 'VAL')
+        self.feature_names = tuple(['PSSM_' + n for n in res_names])
 
-        for name in self.pssm_val_name:
+        for name in self.feature_names:
             self.feature_data[name] = {}
             self.feature_data_xyz[name] = {}
 
     @staticmethod
-    def get_mol_name(mol_name):
+    def get_ref_mol_name(mol_name):
         """Get the bared mol name."""
         return mol_name.split('_')[0]
 
@@ -72,156 +76,181 @@ class FullPSSM(FeatureClass):
         """Read the PSSM data into a dictionary."""
 
         names = os.listdir(self.pssm_path)
-        fname = [n for n in names if n.find(self.molname)==0]
+        fnames = list(filter(lambda x: self.ref_mol_name in x, names))
+        num_pssm_files = len(fnames)
 
+        if num_pssm_files == 0:
+            raise FileNotFoundError(
+                f'No PSSM file found for '
+                f'{self.mol_name} in {self.pssm_path}')
 
-
-        # old format with one file for all data
+        # old format with one file for all chains
         # and only pssm data
         if self.pssm_format == 'old':
 
-            if len(fname)>1:
-                raise ValueError('Multiple PSSM files found for %s in %s',self.mol_name,self.pssm_path)
-            if len(fname)==0:
-                raise FileNotFoundError('No PSSM file found for %s in %s',self.mol_name,self.pssm_path)
+            if num_pssm_files > 1:
+                raise ValueError(
+                    f'Multiple PSSM files found for '
+                    f'{self.mol_name} in {self.pssm_path}')
             else:
-                fname = fname[0]
+                fname = fnames[0]
 
-            f = open(self.pssm_path + '/' + fname,'rb')
-            data = f.readlines()
-            f.close()
-            raw_data = list( map(lambda x: x.decode('utf-8').split(),data))
+            with open(os.path.join(self.pssm_path, fname), 'rb') as f:
+                data = f.readlines()
+            raw_data = list(map(lambda x: x.decode('utf-8').split(), data))
 
-            self.pssm_res_data  = np.array(raw_data)[:,:3]
-            self.pssm_res_data = [  (r[0],int(r[1]),r[2]) for r in self.pssm_res_data ]
-            self.pssm_data = np.array(raw_data)[:,3:].astype(np.float)
+            self.pssm_res_id = np.array(raw_data)[:, :3]
+            self.pssm_res_id = [(r[0], int(r[1]), r[2])
+                                for r in self.pssm_res_id]
+            self.pssm_data = np.array(raw_data)[:, 3:].astype(np.float)
+            """
+            pssm_res_id: [('B', 573, 'HIS'), (...)]
+            pssm_data: [[...], [...]]
+            """
 
         # new format with 2 files (each chain has one file)
         # and aligned mapping and IC (i.e. the iScore format)
         elif self.pssm_format == 'new':
 
-            if len(fname)<2:
-                raise FileNotFoundError('Only one PSSM file found for %s in %s',self.mol_name,self.pssm_path)
+            if num_pssm_files < 2:
+                raise FileNotFoundError(
+                    f'Only one PSSM file found for '
+                    f'{self.mol_name} in {self.pssm_path}')
 
             # get chain name
-            fname.sort()
-            chain_names = [n.split('.')[1] for n in fname]
+            fnames.sort()
+            chain_names = [n.split('.')[1] for n in fnames]
 
             resmap = {
-            'A' : 'ALA', 'R' : 'ARG', 'N' : 'ASN', 'D' : 'ASP', 'C' : 'CYS', 'E' : 'GLU', 'Q' : 'GLN',
-            'G' : 'GLY', 'H' : 'HIS', 'I' : 'ILE', 'L' : 'LEU', 'K' : 'LYS', 'M' : 'MET', 'F' : 'PHE',
-            'P' : 'PRO', 'S' : 'SER', 'T' : 'THR', 'W' : 'TRP', 'Y' : 'TYR', 'V' : 'VAL',
-            'B' : 'ASX', 'U' : 'SEC', 'Z' : 'GLX'
+                'A': 'ALA', 'R': 'ARG', 'N': 'ASN', 'D': 'ASP',
+                'C': 'CYS', 'E': 'GLU', 'Q': 'GLN', 'G': 'GLY',
+                'H': 'HIS', 'I': 'ILE', 'L': 'LEU', 'K': 'LYS',
+                'M': 'MET', 'F': 'PHE', 'P': 'PRO', 'S': 'SER',
+                'T': 'THR', 'W': 'TRP', 'Y': 'TYR', 'V': 'VAL',
+                'B': 'ASX', 'U': 'SEC', 'Z': 'GLX'
             }
 
             iiter = 0
-            for chainID, fn in zip(chain_names,fname):
+            for chainID, fn in zip(chain_names, fnames):
 
-                f = open(self.pssm_path + '/' + fn,'rb')
+                with open(os.path.join(self.pssm_path, fn), 'rb') as f:
+                    data = f.readlines()
+                raw_data = list(
+                    map(lambda x: x.decode('utf-8').split(), data))
 
-                data = f.readlines()
-                f.close()
-                raw_data = list( map(lambda x: x.decode('utf-8').split(),data))
-
-                rd  = np.array(raw_data)[1:,:2]
-                rd  = [  (chainID,int(r[0]),resmap[r[1]]) for r in rd ]
-                pd = np.array(raw_data)[1:,4:-1].astype(np.float)
-
+                rd = np.array(raw_data)[1:, :2]
+                rd = [(chainID, int(r[0]), resmap[r[1]]) for r in rd]
+                pd = np.array(raw_data)[1:, 4:-1].astype(np.float)
                 '''
                 rd: residue data
-                rd = [[('A', 1, 'MET'), ('A', 2, 'GLU')], [('B', 447, 'ARG'), ('B', 448, 'ASN')]]
+                rd = [('A', 1, 'MET'),
+                      ('A', 2, 'GLU'),
+                      ('B', 447, 'ARG')]
 
                 pd: pssm data
                 pd = [[-6. -7. -7. ... -7. -6. -4.]
-                 [-2. -1.  3. ... -6. -4. -2.]]
+                      [-2. -1.  3. ... -6. -4. -2.],
+                      [-3. -2.  -3. ... 2. 1. -5.]]
                 '''
 
-
-
                 if iiter == 0:
-                    self.pssm_res_data = rd
+                    self.pssm_res_id = rd
                     self.pssm_data = pd
                     iiter = 1
 
                 else:
-                    self.pssm_res_data += rd
-                    self.pssm_data = np.vstack((self.pssm_data,pd))
+                    self.pssm_res_id += rd
+                    self.pssm_data = np.vstack((self.pssm_data, pd))
 
-            self.pssm = dict(zip(self.pssm_res_data, self.pssm_data))
+        self.pssm = dict(zip(self.pssm_res_id, self.pssm_data))
 
-
-    def get_feature_value(self):
+    def get_feature_value(self, cutoff=5.5):
         """get the feature value."""
 
-        sql = pdb2sql(self.pdbfile)
+        sql = pdb2sql(self.pdb_file)
 
-        xyz_info = sql.get('chainID,resSeq,resName',name='CB')
-        xyz_info += sql.get('chainID,resSeq,resName',name='CA',resName='GLY')
+        # set achors for all residues and get their xyz
+        xyz_info = sql.get('chainID,resSeq,resName', name='CB')
+        xyz_info += sql.get('chainID,resSeq,resName', name='CA',
+                            resName='GLY')
 
-        xyz = sql.get('x,y,z',name='CB')
-        xyz += sql.get('x,y,z',name='CA',resName='GLY')
+        xyz = sql.get('x,y,z', name='CB')
+        xyz += sql.get('x,y,z', name='CA', resName='GLY')
 
         xyz_dict = {}
-        for pos,info in zip(xyz,xyz_info):
+        for pos, info in zip(xyz, xyz_info):
             xyz_dict[tuple(info)] = pos
 
-        contact_residue = sql.get_contact_residue(cutoff=5.5)
+        # get interface contact residues
+        # ctc_res = ([chain 1 residues], [chain2 residues])
+        ctc_res = sql.get_contact_residue(cutoff=cutoff)
         sql.close()
+        ctc_res = ctc_res[0] + ctc_res[1]
 
-        contact_residue = contact_residue[0] + contact_residue[1]
-        pssm_data_xyz = {}
-        pssm_data = {}
+        # handle with small interface or no interface
+        total_res = len(ctc_res)
+        if total_res == 0:
+            raise ValueError(
+                f"No interface residue found with the cutoff {cutoff}Å."
+                f" Failed to calculate the feature FullPSSM")
+        elif total_res < 5:  # this is an empirical value
+            warnings.warn(
+                f"Only {total_res} interface residues found with cutoff"
+                f" {cutoff}Å. Be careful with using the feature FullPSSM")
 
-        if len(contact_residue) ==0:
-            # if we have no contact atoms
-            print("WARNING: contact residues NOT found.")
-            pssm_data_xyz[tuple([0,0.,0.,0.])] = [0.0]
-            pssm_data_xyz[tuple([1,0.,0.,0.])] = [0.0]
-
+        # check if interface residues have pssm values
+        ctc_res_set = set(ctc_res)
+        pssm_res_set = set(self.pssm.keys())
+        if len(ctc_res_set.intersection(pssm_res_set)) == 0:
+            raise ValueError(
+                f"All interface residues have no pssm values."
+                f"Check residue chainID/ID/name consistency "
+                f"between PDB and PSSM files"
+            )
+        elif len(ctc_res_set.difference(pssm_res_set)) > 0:
+            ctc_res_wo_pssm = ctc_res_set.difference(pssm_res_set)
+            ctc_res_with_pssm = ctc_res_set - ctc_res_wo_pssm
+            warnings.warn(
+                f"The following interface residues have "
+                f" no pssm value:\n {ctc_res_wo_pssm}"
+            )
         else:
+            ctc_res_with_pssm = ctc_res
 
-            for res in contact_residue:
-                # res: ('B', 573, 'HIS')
+        # get feature values
+        for res in ctc_res_with_pssm:
+            chain = {'A': 0, 'B': 1}[res[0]]
+            key = tuple([chain] + xyz_dict[res])
+            for name, value in zip(self.feature_names, self.pssm[res]):
+                """
+                Make sure the feature_names and pssm[res] have
+                consistent order of the 20 residue types
+                name: PSSM_ALA
+                value: -3.0
+                res: ('B', 573, 'HIS')
+                key: (0, -19.346, 6.156, -3.44)
+                """
+                self.feature_data[name][res] = [value]
+                self.feature_data_xyz[name][key] = [value]
 
-                if res not in self.pssm_res_data:
-                    sys.stdout.flush()
-                    raise ValueError(f"Residue {res} does not have pssm value")
-
-                if tuple(res) in xyz_dict:
-                    #res: ('A', 13, 'ASP')
-                    chain = {'A':0,'B':1}[res[0]]
-                    key = tuple([chain] + xyz_dict[tuple(res)])
-                    #key: (0, -19.346, 6.156, -3.44)
-
-                    for name,value in zip(self.pssm_val_name,self.pssm[res]):
-                        # res: ('B', 573, 'HIS')
-                        # name: PSSM_ALA
-                        # value:-3.0
-                        # key: (0, -19.346, 6.156, -3.44)
-                        self.feature_data[name][res] = [value]
-                        self.feature_data_xyz[name][key] = [value]
-
-                else:
-                    printif([tuple(res), ' not found in the pdbfile'],self.debug)
 
 #####################################################################################
 #
 #   THE MAIN FUNCTION CALLED IN THE INTERNAL FEATURE CALCULATOR
 #
 #####################################################################################
-
-def __compute_feature__(pdb_data,featgrp,featgrp_raw):
+def __compute_feature__(pdb_data, featgrp, featgrp_raw):
 
     if settings.__PATH_PSSM_SOURCE__ is None:
         path = os.path.dirname(os.path.realpath(__file__))
-        PSSM = path + '/PSSM_NEW/'
+        PSSM = os.path.join(path,  'PSSM_NEW')
     else:
         PSSM = settings.__PATH_PSSM_SOURCE__
 
     mol_name = os.path.split(featgrp.name)[0]
     mol_name = mol_name.lstrip('/')
 
-    pssm = FullPSSM(mol_name,pdb_data,PSSM)
+    pssm = FullPSSM(mol_name, pdb_data, PSSM)
 
     # read the raw data
     pssm.read_PSSM_data()
@@ -234,22 +263,18 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
     pssm.export_data_hdf5(featgrp_raw)
 
 
-
-
-#####################################################################################
+########################################################################
 #
 #   IF WE JUST TEST THE CLASS
 #
-#####################################################################################
-
+########################################################################
 if __name__ == '__main__':
 
     t0 = time()
     path = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/PSSM_newformat/'
-    pssm = FullPSSM(mol_name = '1AK4', pdbfile='1AK4_100w.pdb',pssm_path=path)
-
+    pssm = FullPSSM(mol_name='1AK4', pdb_file='1AK4_100w.pdb', pssm_path=path)
 
     # get the pssm smoothed sum score
     pssm.read_PSSM_data()
     pssm.get_feature_value()
-    print(' Time %f ms' %((time()-t0)*1000))
+    print(' Time %f ms' % ((time()-t0)*1000))
