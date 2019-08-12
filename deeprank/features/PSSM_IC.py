@@ -33,9 +33,12 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw):
 if __name__ == '__main__':
 
     from time import time
+    import os
     t0 = time()
-    pdb_file = '/Users/cunliang/deeprank/test/1AK4/native/1AK4.pdb'
-    path = '/Users/cunliang/deeprank/test/1AK4/pssm_new'
+    # get base path */deeprank, i.e. the path of deeprank package
+    base_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    pdb_file = os.path.join(base_path, "test/1AK4/native/1AK4.pdb")
+    path = os.path.join(base_path, "test/1AK4/pssm_new")
     pssmic = FullPSSM('1AK4', pdb_file, path, out_type='pssmic')
 
     # get the pssm smoothed sum score
