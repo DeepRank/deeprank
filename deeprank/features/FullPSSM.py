@@ -281,8 +281,9 @@ if __name__ == '__main__':
 
     from time import time
     t0 = time()
-    pdb_file = '/Users/cunliang/deeprank/test/1AK4/native/1AK4.pdb'
-    path = '/Users/cunliang/deeprank/test/1AK4/pssm_new'
+    base_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    pdb_file = os.path.join(base_path, "test/1AK4/native/1AK4.pdb")
+    path = os.path.join(base_path, "test/1AK4/pssm_new")
     # pssm = FullPSSM(mol_name='1AK4', pdb_file=pdb_file, pssm_path=path,
     #                 pssm_format='new', out_type='pssmic')
     pssm = FullPSSM(mol_name='1AK4', pdb_file=pdb_file, pssm_path=path,
