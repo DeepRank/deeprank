@@ -15,10 +15,11 @@ setup(
         'h5py',
         'tqdm',
         'pandas',
-        'matplotlib', 'torchsummary' ],
+        'matplotlib',
+        'torchsummary'],
 
-    extras_require= {
+    extras_require={
         'test': ['nose', 'coverage', 'pytest',
-                 'pytest-cov','codacy-coverage','coveralls'],
+                 'pytest-cov', 'codacy-coverage', 'coveralls'],
     }
 )
