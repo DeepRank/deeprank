@@ -17,27 +17,9 @@ class BSA(FeatureClass):
         '''Compute the burried surface area feature
 
         Freesasa is required for this feature.
-
-        Install Freesasa option 1
-
-        >>> git clone https://github.com/mittinatten/freesasa.git
-        >>> cd freesasa
-        >>> autoconf -i configure.ac``
-
-        Install Freesasa option 2 (preferred)
-
-        >>> wget http://freesasa.github.io/freesasa-2.0.2.tar.gz
-        >>> tar -xvf freesasa-2.0.2.tar.gz
-        >>> cd freesasa
-        >>> ./configure --enable-python-bindings CFLAGS=-fPIC
-        >>> make
-        >>> make install
-
-        If the install of the python bindings fails because no python 
-        (problem with anaconda)
-
-        >>> cd ./bindings/python
-        >>> python setup.py install
+        From Freesasa version 2.0.3 the Python bindings are released
+        as a separate module. They can be installed using
+        >>> pip install freesasa
 
         Args :
             pdb_data (list(byte) or str): pdb data or pdb filename
@@ -101,11 +83,11 @@ class BSA(FeatureClass):
         self.bsa_data_xyz = {}
 
         # res = ([chain1 residues], [chain2 residues])
-        res = self.sql.get_contact_residue(cutoff=cutoff)
-        res = res[0] + res[1]
+        ctc_res = self.sql.get_contact_residue(cutoff=cutoff)
+        ctc_res = ctc_res[0] + ctc_res[1]
 
         # handle with small interface or no interface
-        total_res = len(res)
+        total_res = len(ctc_res)
         if total_res == 0:
             raise ValueError(
                 f"No interface residue found with the cutoff {cutoff}Å."
@@ -115,34 +97,35 @@ class BSA(FeatureClass):
                 f"Only {total_res} interface residues found with cutoff"
                 f" {cutoff}Å. Be careful with using the feature BSA")
 
-        for r in res:
+        for res in ctc_res:
 
             # define the selection string and the bsa for the complex
-            select_str = ('res, (resi %d) and (chain %s)' % (r[1], r[0]),)
+            select_str = ('res, (resi %d) and (chain %s)' % (res[1], res[0]),)
             asa_complex = freesasa.selectArea(
                 select_str, self.complex, self.result_complex)['res']
 
             # define the selection string and the bsa for the isolated
-            select_str = ('res, resi %d' % r[1],)
+            select_str = ('res, resi %d' % res[1],)
             asa_unbound = freesasa.selectArea(
-                select_str, self.chains[r[0]], self.result_chains[r[0]])['res']
+                select_str, self.chains[res[0]],
+                self.result_chains[res[0]])['res']
 
             # define the bsa
             bsa = asa_unbound - asa_complex
 
             # define the xyz key : (chain,x,y,z)
-            chain = {'A': 0, 'B': 1}[r[0]]
+            chain = {'A': 0, 'B': 1}[res[0]]
 
             atcenter = 'CB'
-            if r[2] == 'GLY':
+            if res[2] == 'GLY':
                 atcenter = 'CA'
             xyz = self.sql.get(
-                'x,y,z', resSeq=r[1], chainID=r[0], name=atcenter)[0]
-            #xyz = np.mean(self.sql.get('x,y,z',resSeq=r[1],chainID=r[0]),0)
-            xyzkey = tuple([chain]+xyz)
+                'x,y,z', resSeq=res[1], chainID=res[0], name=atcenter)[0]
+            # xyz = np.mean(self.sql.get('x,y,z',resSeq=r[1],chainID=r[0]),0)
+            xyzkey = tuple([chain] + xyz)
 
             # put the data in dict
-            self.bsa_data[r] = [bsa]
+            self.bsa_data[res] = [bsa]
             self.bsa_data_xyz[xyzkey] = [bsa]
 
         # pyt the data in dict
@@ -183,7 +166,15 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw):
 
 if __name__ == '__main__':
 
-    bsa = BSA('1AK4.pdb')
+    import os
+    from pprint import pprint
+    # get base path */deeprank, i.e. the path of deeprank package
+    base_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    pdb_file = os.path.join(base_path, "test/1AK4/native/1AK4.pdb")
+    bsa = BSA(pdb_file)
     bsa.get_structure()
-    # bsa.get_contact_residue_sasa()
+    bsa.get_contact_residue_sasa()
+    pprint(bsa.feature_data)
+    print()
+    pprint(bsa.feature_data_xyz)
     bsa.sql.close()
