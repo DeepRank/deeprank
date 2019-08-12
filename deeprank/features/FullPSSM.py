@@ -1,6 +1,5 @@
 import os
 import warnings
-from time import time
 
 import numpy as np
 
@@ -21,7 +20,7 @@ def printif(string, cond): return print(string) if cond else None
 class FullPSSM(FeatureClass):
 
     def __init__(self, mol_name=None, pdb_file=None, pssm_path=None,
-                 pssm_format='new'):
+                 pssm_format='new', out_type='pssmvalue'):
         """Compute all the PSSM data.
 
             Simply extracts all the PSSM information and
@@ -31,12 +30,15 @@ class FullPSSM(FeatureClass):
             mol_name (str): name of the molecule. Defaults to None.
             pdb_file (str): name of the pdb_file. Defaults to None.
             pssm_path (str): path to the pssm data. Defaults to None.
-            pssm_format (str): "old" or "new" pssm format. 
+            pssm_format (str): "old" or "new" pssm format.
                 Defaults to 'new'.
+            out_type (str): which feature to generate, 'pssmvalue' or 'pssmic'.
+                 Defaults to 'pssmvalue'. 'pssm_format' must be 'new'
+                 when set type is 'pssmic'.
 
         Examples:
             >>> path = '/home/test/PSSM_newformat/'
-            >>> pssm = FullPSSM(mol_name='2ABZ', 
+            >>> pssm = FullPSSM(mol_name='2ABZ',
             >>>                pdb_file='2ABZ_1w.pdb',
             >>>                pssm_path=path)
             >>> pssm.read_PSSM_data()
@@ -51,19 +53,30 @@ class FullPSSM(FeatureClass):
         self.pssm_path = pssm_path
         self.ref_mol_name = self.get_ref_mol_name(mol_name)
         self.pssm_format = pssm_format
+        self.out_type = out_type.lower()
 
         if isinstance(pdb_file, str) and mol_name is None:
             self.mol_name = os.path.splitext(pdb_file)[0]
 
-        # the residue order in res_names must be consistent with
-        # that in PSSM file
-        res_names = ('ALA', 'ARG', 'ASN', 'ASP', 'CYS',
-                     'GLN', 'GLU', 'GLY', 'HIS', 'ILE',
-                     'LEU', 'LYS', 'MET', 'PHE', 'PRO',
-                     'SER', 'THR', 'TRP', 'TYR', 'VAL')
-        self.feature_names = tuple(['PSSM_' + n for n in res_names])
+        if self.out_type == 'pssmic' and not self.pssm_format == 'new':
+            raise ValueError(f"You must provide 'new' format PSSM files"
+                             f" to generate PSSM IC features.")
 
-        for name in self.feature_names:
+        if self.out_type == 'pssmvalue':
+            # the residue order in res_names must be consistent with
+            # that in PSSM file
+            res_names = ('ALA', 'ARG', 'ASN', 'ASP', 'CYS',
+                         'GLN', 'GLU', 'GLY', 'HIS', 'ILE',
+                         'LEU', 'LYS', 'MET', 'PHE', 'PRO',
+                         'SER', 'THR', 'TRP', 'TYR', 'VAL')
+            self.feature_names = tuple(['PSSM_' + n for n in res_names])
+
+            for name in self.feature_names:
+                self.feature_data[name] = {}
+                self.feature_data_xyz[name] = {}
+        else:
+            name = 'pssm_ic'
+            self.feature_names = (name,)
             self.feature_data[name] = {}
             self.feature_data_xyz[name] = {}
 
@@ -140,18 +153,11 @@ class FullPSSM(FeatureClass):
 
                 rd = np.array(raw_data)[1:, :2]
                 rd = [(chainID, int(r[0]), resmap[r[1]]) for r in rd]
-                pd = np.array(raw_data)[1:, 4:-1].astype(np.float)
-                '''
-                rd: residue data
-                rd = [('A', 1, 'MET'),
-                      ('A', 2, 'GLU'),
-                      ('B', 447, 'ARG')]
-
-                pd: pssm data
-                pd = [[-6. -7. -7. ... -7. -6. -4.]
-                      [-2. -1.  3. ... -6. -4. -2.],
-                      [-3. -2.  -3. ... 2. 1. -5.]]
-                '''
+                if self.out_type == 'pssmvalue':
+                    pd = np.array(raw_data)[1:, 4:-1].astype(np.float)
+                else:
+                    pd = np.array(raw_data)[1:, -1].astype(np.float)
+                    pd = pd.reshape(pd.shape[0], -1)
 
                 if iiter == 0:
                     self.pssm_res_id = rd
@@ -192,11 +198,12 @@ class FullPSSM(FeatureClass):
         if total_res == 0:
             raise ValueError(
                 f"No interface residue found with the cutoff {cutoff}Å."
-                f" Failed to calculate the feature FullPSSM")
+                f" Failed to calculate the features of FullPSSM/PSSM_IC")
         elif total_res < 5:  # this is an empirical value
             warnings.warn(
-                f"Only {total_res} interface residues found with cutoff"
-                f" {cutoff}Å. Be careful with using the feature FullPSSM")
+                f"Only {total_res} interface residues found with "
+                f"cutoff {cutoff}Å. Be careful with using the features "
+                f" FullPSSM/PSSM_IC")
 
         # check if interface residues have pssm values
         ctc_res_set = set(ctc_res)
@@ -239,18 +246,20 @@ class FullPSSM(FeatureClass):
 #   THE MAIN FUNCTION CALLED IN THE INTERNAL FEATURE CALCULATOR
 #
 #####################################################################################
-def __compute_feature__(pdb_data, featgrp, featgrp_raw):
+
+
+def __compute_feature__(pdb_data, featgrp, featgrp_raw, out_type='pssmvalue'):
 
     if settings.__PATH_PSSM_SOURCE__ is None:
         path = os.path.dirname(os.path.realpath(__file__))
-        PSSM = os.path.join(path,  'PSSM_NEW')
+        path = os.path.join(path,  'PSSM_NEW')
     else:
-        PSSM = settings.__PATH_PSSM_SOURCE__
+        path = settings.__PATH_PSSM_SOURCE__
 
     mol_name = os.path.split(featgrp.name)[0]
     mol_name = mol_name.lstrip('/')
 
-    pssm = FullPSSM(mol_name, pdb_data, PSSM)
+    pssm = FullPSSM(mol_name, pdb_data, path, out_type=out_type)
 
     # read the raw data
     pssm.read_PSSM_data()
@@ -270,11 +279,19 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw):
 ########################################################################
 if __name__ == '__main__':
 
+    from time import time
     t0 = time()
-    path = '/home/nico/Documents/projects/deeprank/data/HADDOCK/BM4_dimers/PSSM_newformat/'
-    pssm = FullPSSM(mol_name='1AK4', pdb_file='1AK4_100w.pdb', pssm_path=path)
+    pdb_file = '/Users/cunliang/deeprank/test/1AK4/native/1AK4.pdb'
+    path = '/Users/cunliang/deeprank/test/1AK4/pssm_new'
+    # pssm = FullPSSM(mol_name='1AK4', pdb_file=pdb_file, pssm_path=path,
+    #                 pssm_format='new', out_type='pssmic')
+    pssm = FullPSSM(mol_name='1AK4', pdb_file=pdb_file, pssm_path=path,
+                    pssm_format='new', out_type='pssmvalue')
 
     # get the pssm smoothed sum score
     pssm.read_PSSM_data()
     pssm.get_feature_value()
+    print(pssm.feature_data)
+    print()
+    print(pssm.feature_data_xyz)
     print(' Time %f ms' % ((time()-t0)*1000))
