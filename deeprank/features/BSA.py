@@ -169,7 +169,8 @@ if __name__ == '__main__':
     import os
     from pprint import pprint
     # get base path */deeprank, i.e. the path of deeprank package
-    base_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    base_path = os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.realpath(__file__))))
     pdb_file = os.path.join(base_path, "test/1AK4/native/1AK4.pdb")
     bsa = BSA(pdb_file)
     bsa.get_structure()
