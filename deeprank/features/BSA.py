@@ -172,10 +172,12 @@ if __name__ == '__main__':
     base_path = os.path.dirname(os.path.dirname(os.path.dirname(
         os.path.realpath(__file__))))
     pdb_file = os.path.join(base_path, "test/1AK4/native/1AK4.pdb")
+
     bsa = BSA(pdb_file)
     bsa.get_structure()
     bsa.get_contact_residue_sasa()
+    bsa.sql.close()
+
     pprint(bsa.feature_data)
     print()
     pprint(bsa.feature_data_xyz)
-    bsa.sql.close()

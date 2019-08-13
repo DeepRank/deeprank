@@ -280,10 +280,13 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw, out_type='pssmvalue'):
 if __name__ == '__main__':
 
     from time import time
+    from pprint import pprint
     t0 = time()
-    base_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    base_path = os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.realpath(__file__))))
     pdb_file = os.path.join(base_path, "test/1AK4/native/1AK4.pdb")
     path = os.path.join(base_path, "test/1AK4/pssm_new")
+
     # pssm = FullPSSM(mol_name='1AK4', pdb_file=pdb_file, pssm_path=path,
     #                 pssm_format='new', out_type='pssmic')
     pssm = FullPSSM(mol_name='1AK4', pdb_file=pdb_file, pssm_path=path,
@@ -292,7 +295,8 @@ if __name__ == '__main__':
     # get the pssm smoothed sum score
     pssm.read_PSSM_data()
     pssm.get_feature_value()
-    print(pssm.feature_data)
+
+    pprint(pssm.feature_data)
     print()
-    print(pssm.feature_data_xyz)
+    pprint(pssm.feature_data_xyz)
     print(' Time %f ms' % ((time()-t0)*1000))
