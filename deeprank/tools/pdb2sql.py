@@ -71,6 +71,9 @@ class pdb2sql(object):
         if fix_chainID:
             self._fix_chainID()
 
+        # a few constant
+        self.residue_key = 'chainID,resSeq,resName'
+        # self.atom_key = 'chainID,resSeq,resName,name'
     ##################################################################################
     #
     #   CREATION AND PRINTING
@@ -617,8 +620,8 @@ class pdb2sql(object):
     def _extend_contact_to_residue(self,index1,index2,only_backbone_atoms):
 
         # extract the data
-        dataA = self.get('chainId,resName,resSeq',rowID=index1)
-        dataB = self.get('chainId,resName,resSeq',rowID=index2)
+        dataA = self.get(self.residue_key,rowID=index1)
+        dataB = self.get(self.residue_key,rowID=index2)
 
         # create tuple cause we want to hash through it
         #dataA = list(map(lambda x: tuple(x),dataA))
@@ -635,7 +638,7 @@ class pdb2sql(object):
 
         # contact of chain A
         for resdata in resA:
-            chainID,resName,resSeq = resdata
+            chainID, resSeq, resName= resdata
 
             if only_backbone_atoms:
                 index_contact_A += self.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq,name=self.backbone_type)
@@ -644,7 +647,7 @@ class pdb2sql(object):
 
         # contact of chain B
         for resdata in resB:
-            chainID,resName,resSeq = resdata
+            chainID, resSeq, resName= resdata
 
             if only_backbone_atoms:
                 index_contact_B += self.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq,name=self.backbone_type)
@@ -699,14 +702,14 @@ class pdb2sql(object):
             for iat1,atoms2 in atom_pairs.items():
 
                 # get the res info of the current atom
-                data1 = tuple(self.get('chainID,resSeq,resName',rowID=[iat1])[0])
+                data1 = tuple(self.get(self.residue_key,rowID=[iat1])[0])
 
                 # create a new entry in the dict if necessary
                 if data1 not in residue_contact_pairs:
                     residue_contact_pairs[data1] = set()
 
                 # get the res info of the atom in the other chain
-                data2 = self.get('chainID,resSeq,resName',rowID=atoms2)
+                data2 = self.get(self.residue_key,rowID=atoms2)
 
                 # store that in the dict without double
                 for resData in data2:
@@ -723,8 +726,8 @@ class pdb2sql(object):
             contact_atoms = self.get_contact_atoms(cutoff=cutoff,chain1=chain1,chain2=chain2,return_contact_pairs=False)
 
             # get the residue info
-            data1 = self.get('chainID,resSeq,resName',rowID=contact_atoms[0])
-            data2 = self.get('chainID,resSeq,resName',rowID=contact_atoms[1])
+            data1 = self.get(self.residue_key,rowID=contact_atoms[0])
+            data2 = self.get(self.residue_key,rowID=contact_atoms[1])
 
             # take only unique
             residue_contact_A = sorted(set([tuple(resData) for resData in data1]))
