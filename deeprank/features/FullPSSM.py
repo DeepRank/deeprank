@@ -7,15 +7,12 @@ from deeprank.features import FeatureClass
 from deeprank.generate import settings
 from deeprank.tools import pdb2sql
 
-
-def printif(string, cond): return print(string) if cond else None
-
-
 ########################################################################
 #
 #   Definition of the class
 #
 ########################################################################
+
 
 class FullPSSM(FeatureClass):
 
@@ -32,9 +29,9 @@ class FullPSSM(FeatureClass):
             pssm_path (str): path to the pssm data. Defaults to None.
             pssm_format (str): "old" or "new" pssm format.
                 Defaults to 'new'.
-            out_type (str): which feature to generate, 'pssmvalue' or 'pssmic'.
-                 Defaults to 'pssmvalue'. 'pssm_format' must be 'new'
-                 when set type is 'pssmic'.
+            out_type (str): which feature to generate, 'pssmvalue' or 
+                'pssmic'. Defaults to 'pssmvalue'. 
+                'pssm_format' must be 'new' when set type is 'pssmic'.
 
         Examples:
             >>> path = '/home/test/PSSM_newformat/'
@@ -241,11 +238,11 @@ class FullPSSM(FeatureClass):
                 self.feature_data_xyz[name][key] = [value]
 
 
-#####################################################################################
+########################################################################
 #
 #   THE MAIN FUNCTION CALLED IN THE INTERNAL FEATURE CALCULATOR
 #
-#####################################################################################
+########################################################################
 
 
 def __compute_feature__(pdb_data, featgrp, featgrp_raw, out_type='pssmvalue'):

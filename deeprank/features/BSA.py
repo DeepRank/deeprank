@@ -51,7 +51,8 @@ class BSA(FeatureClass):
         else:
             self.complex = freesasa.Structure()
             atomdata = self.sql.get('name,resName,resSeq,chainID,x,y,z')
-            for atomName, residueName, residueNumber, chainLabel, x, y, z in atomdata:
+            for atomName, residueName, residueNumber, chainLabel, x, y, z \
+                    in atomdata:
                 atomName = '{:>2}'.format(atomName[0])
                 self.complex.addAtom(atomName, residueName,
                                      residueNumber, chainLabel, x, y, z)
@@ -63,7 +64,8 @@ class BSA(FeatureClass):
             self.chains[label] = freesasa.Structure()
             atomdata = self.sql.get(
                 'name,resName,resSeq,chainID,x,y,z', chainID=label)
-            for atomName, residueName, residueNumber, chainLabel, x, y, z in atomdata:
+            for atomName, residueName, residueNumber, chainLabel, x, y, z \
+                    in atomdata:
                 atomName = '{:>2}'.format(atomName[0])
                 self.chains[label].addAtom(
                     atomName, residueName, residueNumber, chainLabel, x, y, z)
@@ -132,11 +134,11 @@ class BSA(FeatureClass):
         self.feature_data['bsa'] = self.bsa_data
         self.feature_data_xyz['bsa'] = self.bsa_data_xyz
 
-#####################################################################################
+########################################################################
 #
 #   THE MAIN FUNCTION CALLED IN THE INTERNAL FEATURE CALCULATOR
 #
-#####################################################################################
+########################################################################
 
 
 def __compute_feature__(pdb_data, featgrp, featgrp_raw):
@@ -158,11 +160,11 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw):
     bsa.sql.close()
 
 
-#####################################################################################
+########################################################################
 #
 #       TEST THE CLASS
 #
-#####################################################################################
+########################################################################
 
 if __name__ == '__main__':
 
