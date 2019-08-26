@@ -1,6 +1,8 @@
 #!/usr/bin/env python
-import h5py
 import os
+
+import h5py
+
 
 def clean_dataset(fname,feature=True,pdb=True,points=True,grid=False):
 
@@ -46,4 +48,3 @@ if __name__ == '__main__':
                  pdb = not args.keep_pdb,
                  points = not args.keep_pts,
                  grid = args.rm_grid )
-

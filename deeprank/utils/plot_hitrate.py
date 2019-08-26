@@ -1,15 +1,18 @@
 import os
-from deeprank.learn import rankingMetrics
+import sys
+
+import h5py
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
-import h5py
-import sys
+import pandas as pd
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import pandas as pd
+from deeprank.learn import rankingMetrics
 from ggplot import *
+
 
 def plot_boxplot_todo(hdf5,epoch=None,figname=None,inverse = False):
 

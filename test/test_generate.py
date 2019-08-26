@@ -1,7 +1,8 @@
-import unittest
-from deeprank.generate import *
 import os
+import unittest
 from time import time
+
+from deeprank.generate import *
 
 
 """
@@ -121,5 +122,3 @@ class TestGenerateData(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-

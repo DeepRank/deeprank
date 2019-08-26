@@ -1,7 +1,9 @@
+import glob
 import os
 import unittest
-import glob
+
 import numpy as np
+
 try:
   from deeprank.learn import *
   from deeprank.learn.model3d import cnn_reg as cnn3d
@@ -228,4 +230,3 @@ if __name__ == "__main__":
   TestLearn.test_learn_3d_class()
   TestLearn.test_learn_2d_reg()
   TestLearn.test_transfer()
-

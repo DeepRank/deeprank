@@ -2,11 +2,13 @@
 
 # This script can be used to create/correct target values
 
-import deeprank.generate.DataGenerator as DataGenerator
-import os
-import numpy as np
 import glob
+import os
 from time import time
+
+import numpy as np
+
+import deeprank.generate.DataGenerator as DataGenerator
 
 path = './'
 

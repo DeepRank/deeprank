@@ -1,10 +1,12 @@
-import os
 import glob
-import numpy as np
-from deeprank.learn import *
-from math import *
-import sys
+import os
 import re
+import sys
+from math import *
+
+import numpy as np
+
+from deeprank.learn import *
 from deeprank.learn.model3d import cnn_class as cnn3d
 from torch import optim
 

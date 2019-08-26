@@ -1,9 +1,9 @@
 import importlib
 import logging
-import warnings
 import os
 import re
 import sys
+import warnings
 from collections import OrderedDict
 
 import h5py

@@ -1,21 +1,24 @@
 # 1. plot prediction scores for class 0 and 1 using two-panel box plots
 # 2. plot hit rate plot
+import glob
 import os
-from deeprank.learn import rankingMetrics
+import pdb
+import re
+import sys
+
+import h5py
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
-import h5py
-import sys
+import pandas as pd
+from tqdm import tqdm
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import pandas as pd
+from deeprank.learn import rankingMetrics
 from ggplot import *
-import glob
-import re
-import pdb
-from tqdm import tqdm
+
 
 def plot_boxplot_todo(hdf5,epoch=None,figname=None,inverse = False):
 
@@ -399,5 +402,3 @@ def main():
     plot_boxplot(hdf5,epoch=epoch,figname=figname + '.boxplot.png',inverse = False)
 if __name__ == '__main__':
     main()
-
-

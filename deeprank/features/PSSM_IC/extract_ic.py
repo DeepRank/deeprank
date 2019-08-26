@@ -1,7 +1,6 @@
-import numpy as np
 import sys
 
-
+import numpy as np
 
 
 def write_newfile(names_oldfile,name_newfile):
@@ -93,8 +92,3 @@ for filenames in oldfiles:
 	name_newfile = './'+cplx_name[0]+'.PSSM_IC'
 	print('\nexport to \t%s\n' %(name_newfile))
 	write_newfile(filenames,name_newfile)
-
-
-
-
-

@@ -1,4 +1,5 @@
 import logging
+
 from deeprank.conf import global_settings
 
 

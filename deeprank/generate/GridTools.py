@@ -1,13 +1,13 @@
 
-import numpy as np
-import sys
 import itertools
-from scipy.signal import bspline
+import sys
 from time import time
 
+import numpy as np
+from scipy.signal import bspline
+
 from deeprank.conf import logger
-from deeprank.tools import pdb2sql
-from deeprank.tools import sparse
+from deeprank.tools import pdb2sql, sparse
 
 try:
     from tqdm import tqdm

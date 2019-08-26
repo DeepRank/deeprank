@@ -1,8 +1,9 @@
-from deeprank.features import AtomicFeature
-import numpy as np
-import pkg_resources
 import unittest
 
+import numpy as np
+import pkg_resources
+
+from deeprank.features import AtomicFeature
 
 # in case you change the ref don't forget to:
 # - comment the first line (E0=1)
@@ -40,6 +41,3 @@ atfeat.evaluate_pair_interaction(save_interactions=test_name,print_interactions=
 
 # # close the db
 # atfeat.sqldb.close()
-
-
-

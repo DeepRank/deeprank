@@ -1,9 +1,11 @@
-import numpy as np
 import pickle
-import torch.optim as optim
 
-from deeprank.learn import NetworkGenerator,NeuralNet
+import numpy as np
+
 import deeprank.learn.modelGenerator
+import torch.optim as optim
+from deeprank.learn import NetworkGenerator, NeuralNet
+
 
 class saved_model(object):
     def __init__(self,conv_layers_params=None,fc_layers_params=None,reward=None):
@@ -236,4 +238,3 @@ class MetaQNN(object):
         # train and save reward
         model.train(nepoch = 20)
         self.reward = model.test_loss
-

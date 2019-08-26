@@ -1,7 +1,7 @@
-from deeprank.generate import *
 import os
 from time import time
 
+from deeprank.generate import *
 
 """Test the data generation process."""
 
@@ -25,4 +25,3 @@ database = DataGenerator(pdb_source=pdb_src,pdb_native=pdb_native,
 print('{:25s}'.format('Create new database') + database.hdf5)
 database.create_database(prog_bar=True)
 print(' '*25 + '--> Done in %f s.' %(time()-t0))
-

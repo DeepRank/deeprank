@@ -1,6 +1,7 @@
 import os
 import pickle
 import warnings
+
 import numpy as np
 
 from deeprank.tools import pdb2sql
