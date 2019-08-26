@@ -25,9 +25,10 @@ def __compute_target__(decoy, targrp):
             del targrp[target_name]
 
     if targrp['IRMSD'][()] <= irmsd_thr:
-        print (f"This is a hit (irmsd <= {irmsd_thr} A). {molname} -> irmsd: {targrp['IRMSD'][()]}")
+        print(
+            f"This is a hit (irmsd <= {irmsd_thr} A). {molname} -> irmsd: {targrp['IRMSD'][()]}")
         classID = 1
     else:
         classID = 0
 
-    targrp.create_dataset('BIN_CLASS',data=np.array(classID))
+    targrp.create_dataset('BIN_CLASS', data=np.array(classID))

@@ -74,7 +74,7 @@ def recall(rs, nr):
         recall (int): recall value
     """
 
-    return np.sum(rs)/nr
+    return np.sum(rs) / nr
 
 
 def mean_reciprocal_rank(rs):

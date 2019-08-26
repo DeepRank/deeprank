@@ -18,11 +18,12 @@ def sensitivity(yp, yt):
     """
     tp = true_positive(yp, yt)
     p = positive(yt)
-    if p==0:
-        tpr=float('inf')
-        warnings.warn('Number of positive cases is 0, TPR or sensitivity is assigned as inf')
+    if p == 0:
+        tpr = float('inf')
+        warnings.warn(
+            'Number of positive cases is 0, TPR or sensitivity is assigned as inf')
     else:
-        tpr = tp/p
+        tpr = tp / p
     return tpr
 
 
@@ -39,10 +40,11 @@ def specificity(yp, yt):
     tn = true_negative(yp, yt)
     n = negative(yt)
     if n == 0:
-        warnings.warn('Number of negative cases is 0, TNR or sepcificity is assigned as inf')
+        warnings.warn(
+            'Number of negative cases is 0, TNR or sepcificity is assigned as inf')
         tnr = float('inf')
     else:
-        tnr = tn/n
+        tnr = tn / n
     return tnr
 
 
@@ -58,11 +60,12 @@ def precision(yp, yt):
     """
     tp = true_positive(yp, yt)
     fp = false_positive(yp, yt)
-    if tp+fp == 0:
-        warnings.warn('Total number of true positive and false positive cases is 0, PPV or precision is assigned as inf')
+    if tp + fp == 0:
+        warnings.warn(
+            'Total number of true positive and false positive cases is 0, PPV or precision is assigned as inf')
         ppv = float('inf')
     else:
-        ppv = tp/(tp+fp)
+        ppv = tp / (tp + fp)
     return ppv
 
 
@@ -80,7 +83,7 @@ def accuracy(yp, yt):
     tn = true_negative(yp, yt)
     p = positive(yt)
     n = negative(yt)
-    acc = (tp+tn)/(p+n)
+    acc = (tp + tn) / (p + n)
     return acc
 
 
@@ -97,7 +100,7 @@ def F1(yp, yt):
     tp = true_positive(yp, yt)
     fp = false_positive(yp, yt)
     fn = false_negative(yp, yt)
-    f1 = 2*tp/(2*tp+fp+fn)
+    f1 = 2 * tp / (2 * tp + fp + fn)
     return f1
 
 
@@ -109,7 +112,7 @@ def true_positive(yp, yt):
         yt (array): targets
     """
     yp, yt = _to_bool(yp), _to_bool(yt)
-    tp = np.logical_and(yp==True, yt==True)
+    tp = np.logical_and(yp, yt)
     return(np.sum(tp))
 
 
@@ -121,7 +124,7 @@ def true_negative(yp, yt):
         yt (array): targets
     """
     yp, yt = _to_bool(yp), _to_bool(yt)
-    tn = np.logical_and(yp==False, yt==False)
+    tn = np.logical_and(yp == False, yt == False)
     return(np.sum(tn))
 
 
@@ -133,7 +136,7 @@ def false_positive(yp, yt):
         yt (array): targets
     """
     yp, yt = _to_bool(yp), _to_bool(yt)
-    fp = np.logical_and(yp==True, yt==False)
+    fp = np.logical_and(yp, yt == False)
     return(np.sum(fp))
 
 
@@ -145,7 +148,7 @@ def false_negative(yp, yt):
         yt (array): targets
     """
     yp, yt = _to_bool(yp), _to_bool(yt)
-    fn = np.logical_and(yp==False, yt==True)
+    fn = np.logical_and(yp == False, yt == True)
     return(np.sum(fn))
 
 

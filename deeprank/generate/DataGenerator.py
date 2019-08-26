@@ -25,13 +25,25 @@ try:
 except ImportError:
     pass
 
-_printif = lambda string,cond: print(string) if cond else None
+
+def _printif(string, cond): return print(string) if cond else None
+
 
 class DataGenerator(object):
 
-    def __init__(self,pdb_select=None,pdb_source=None,pdb_native=None,pssm_source=None,
-                 compute_targets = None, compute_features = None,
-                 data_augmentation=None, hdf5='database.h5',logger=None,debug=True,mpi_comm=None):
+    def __init__(
+            self,
+            pdb_select=None,
+            pdb_source=None,
+            pdb_native=None,
+            pssm_source=None,
+            compute_targets=None,
+            compute_features=None,
+            data_augmentation=None,
+            hdf5='database.h5',
+            logger=None,
+            debug=True,
+            mpi_comm=None):
         """Generate the data (features/targets/maps) required for deeprank.
 
         Args:
@@ -70,18 +82,17 @@ class DataGenerator(object):
 
         settings.init()
 
-        self.pdb_select   = pdb_select  or []
-        self.pdb_source   = pdb_source  or []
-        self.pdb_native   = pdb_native  or []
+        self.pdb_select = pdb_select or []
+        self.pdb_source = pdb_source or []
+        self.pdb_native = pdb_native or []
 
         settings.__PATH_PSSM_SOURCE__ = pssm_source
-
 
         self.data_augmentation = data_augmentation
 
         self.hdf5 = hdf5
 
-        self.compute_targets  = compute_targets
+        self.compute_targets = compute_targets
         self.compute_features = compute_features
 
         self.all_pdb = []
@@ -95,31 +106,34 @@ class DataGenerator(object):
         self.debug = debug
 
         # handle the pdb_select
-        if not isinstance(self.pdb_select,list):
+        if not isinstance(self.pdb_select, list):
             self.pdb_select = [self.pdb_select]
 
         # check that a source was given
         if self.pdb_source is None:
-            raise NotADirectoryError('You must provide one or several source directory where the pdbs are stored')
+            raise NotADirectoryError(
+                'You must provide one or several source directory where the pdbs are stored')
 
         # handle the sources
-        if not isinstance(self.pdb_source,list):
+        if not isinstance(self.pdb_source, list):
             self.pdb_source = [self.pdb_source]
 
         # get all the conformation path
         for src in self.pdb_source:
             if os.path.isdir(src):
-                self.all_pdb += [os.path.join(src,fname) for fname in os.listdir(src) if fname.endswith('.pdb')]
+                self.all_pdb += [os.path.join(src, fname)
+                                 for fname in os.listdir(src) if fname.endswith('.pdb')]
             elif os.path.isfile(src):
                 self.all_pdb.append(src)
 
         # handle the native
-        if not isinstance(self.pdb_native,list):
+        if not isinstance(self.pdb_native, list):
             self.pdb_native = [self.pdb_native]
 
         for src in self.pdb_native:
             if os.path.isdir(src):
-                self.all_native +=  [os.path.join(src,fname) for fname in os.listdir(src)]
+                self.all_native += [os.path.join(src, fname)
+                                    for fname in os.listdir(src)]
             if os.path.isfile(src):
                 self.all_native.append(src)
 
@@ -133,14 +147,18 @@ class DataGenerator(object):
         # MPI COMM
         self.mpi_comm = mpi_comm
 
-#====================================================================================
+# ====================================================================================
 #
 #       CREATE THE DATABASE ALL AT ONCE IF ALL OPTIONS ARE GIVEN
 #
-#====================================================================================
+# ====================================================================================
 
-    def create_database(self,verbose=False,remove_error=True,prog_bar=False,contact_distance=8.5):
-
+    def create_database(
+            self,
+            verbose=False,
+            remove_error=True,
+            prog_bar=False,
+            contact_distance=8.5):
         '''Create the hdf5 file architecture and compute the features/targets.
 
         Args:
@@ -189,24 +207,24 @@ class DataGenerator(object):
                 self.local_pdbs = pdbs[0]
 
                 # send to other procs
-                for iP in range(1,size):
-                    self.mpi_comm.send(pdbs[iP],dest=iP,tag=11)
+                for iP in range(1, size):
+                    self.mpi_comm.send(pdbs[iP], dest=iP, tag=11)
 
             else:
                 # receive procs
-                self.local_pdbs = self.mpi_comm.recv(source=0,tag=11)
+                self.local_pdbs = self.mpi_comm.recv(source=0, tag=11)
 
             # change hdf5 name
             h5path, h5name = os.path.split(self.hdf5)
-            self.hdf5 = os.path.join(h5path, '%03d_' %rank + h5name)
+            self.hdf5 = os.path.join(h5path, '%03d_' % rank + h5name)
 
         # open the file
-        self.f5 = h5py.File(self.hdf5,'w')
+        self.f5 = h5py.File(self.hdf5, 'w')
         self.logger.info('Start Feature calculation')
 
         # get the local progress bar
         desc = '{:25s}'.format('Create database')
-        cplx_tqdm = tqdm(self.local_pdbs,desc=desc,disable = not prog_bar)
+        cplx_tqdm = tqdm(self.local_pdbs, desc=desc, disable=not prog_bar)
 
         if not prog_bar:
             print(desc, ':', self.hdf5)
@@ -215,7 +233,7 @@ class DataGenerator(object):
         for cplx in cplx_tqdm:
 
             cplx_tqdm.set_postfix(mol=os.path.basename(cplx))
-            self.logger.debug('MOLECULE %s' %(cplx))
+            self.logger.debug('MOLECULE %s' % (cplx))
 
             try:
 
@@ -240,11 +258,14 @@ class DataGenerator(object):
                     ref = cplx
                 else:
 
-                    if len(self.all_native)>0:
+                    if len(self.all_native) > 0:
 
-                        ref = list(filter(lambda x: ref_name in x,self.all_native))
+                        ref = list(
+                            filter(
+                                lambda x: ref_name in x,
+                                self.all_native))
 
-                        if len(ref)>1:
+                        if len(ref) > 1:
                             raise ValueError('Multiple native nout found')
                         if len(ref) == 0:
                             raise ValueError('Native not found')
@@ -259,16 +280,16 @@ class DataGenerator(object):
 
                 # talk a bit
                 if verbose:
-                    print('\n: Process complex %s' %(mol_name))
+                    print('\n: Process complex %s' % (mol_name))
 
                 # crete a subgroup for the molecule
                 molgrp = self.f5.require_group(mol_name)
                 molgrp.attrs['type'] = 'molecule'
 
                 # add the ref and the complex
-                self._add_pdb(molgrp,cplx,'complex')
+                self._add_pdb(molgrp, cplx, 'complex')
                 if ref is not None:
-                    self._add_pdb(molgrp,ref,'native')
+                    self._add_pdb(molgrp, ref, 'native')
 
                 ################################################
                 #   add the features
@@ -278,13 +299,12 @@ class DataGenerator(object):
                 molgrp.require_group('features')
                 molgrp.require_group('features_raw')
 
-                error_flag = False #error_flag => when False: success; when True: failed
+                error_flag = False  # error_flag => when False: success; when True: failed
                 if self.compute_features is not None:
                     error_flag = self._compute_features(self.compute_features,
-                                           molgrp['complex'][:],
-                                           molgrp['features'],
-                                           molgrp['features_raw'] )
-
+                                                        molgrp['complex'][:],
+                                                        molgrp['features'],
+                                                        molgrp['features_raw'])
 
                 ################################################
                 #   add the targets
@@ -301,9 +321,9 @@ class DataGenerator(object):
                 #   add the box center
                 ################################################
                 molgrp.require_group('grid_points')
-                center = self._get_grid_center(molgrp['complex'][:],contact_distance)
-                molgrp['grid_points'].create_dataset('center',data=center)
-
+                center = self._get_grid_center(
+                    molgrp['complex'][:], contact_distance)
+                molgrp['grid_points'].create_dataset('center', data=center)
 
                 ################################################
                 #   DATA AUGMENTATION
@@ -311,7 +331,12 @@ class DataGenerator(object):
 
                 # GET ALL THE NAMES
                 if self.data_augmentation is not None:
-                    mol_aug_name_list = [mol_name + '_r%03d' %(idir+1) for idir in range(self.data_augmentation)]
+                    mol_aug_name_list = [
+                        mol_name +
+                        '_r%03d' %
+                        (idir +
+                         1) for idir in range(
+                            self.data_augmentation)]
                 else:
                     mol_aug_name_list = []
 
@@ -328,26 +353,28 @@ class DataGenerator(object):
 
                     # copy the ref into it
                     if ref is not None:
-                        self._add_pdb(molgrp,ref,'native')
+                        self._add_pdb(molgrp, ref, 'native')
 
                     # get the rotation axis and angle
-                    axis,angle = self._get_aug_rot()
+                    axis, angle = self._get_aug_rot()
 
                     # create the new pdb
-                    center = self._add_aug_pdb(molgrp,cplx,'complex',axis,angle)
+                    center = self._add_aug_pdb(
+                        molgrp, cplx, 'complex', axis, angle)
 
                     # copy the targets/features
-                    self.f5.copy(mol_name+'/targets/', molgrp)
-                    self.f5.copy(mol_name+'/features/', molgrp)
+                    self.f5.copy(mol_name + '/targets/', molgrp)
+                    self.f5.copy(mol_name + '/features/', molgrp)
 
                     # rotate the feature
-                    self._rotate_feature(molgrp,axis,angle,center)
+                    self._rotate_feature(molgrp, axis, angle, center)
 
                     # grid center
                     molgrp.require_group('grid_points')
-                    center = self._get_grid_center(molgrp['complex'][:],contact_distance)
+                    center = self._get_grid_center(
+                        molgrp['complex'][:], contact_distance)
                     print(center)
-                    molgrp['grid_points'].create_dataset('center',data=center)
+                    molgrp['grid_points'].create_dataset('center', data=center)
 
                     # store the axis/angl/center as attriutes
                     # in case we need them later
@@ -356,24 +383,30 @@ class DataGenerator(object):
                     molgrp.attrs['center'] = center
 
                 if error_flag:
-                    #error_flag => when False: success; when True: failed
+                    # error_flag => when False: success; when True: failed
                     self.feature_error += [mol_name] + mol_aug_name_list
-                    self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
+                    self.logger.warning(
+                        'Error during the feature calculation of %s' %
+                        cplx, exc_info=True)
                     sys.stdout.flush()
 
             except Exception as inst:
 
                 self.feature_error += [mol_name] + mol_aug_name_list
-                self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
-                _printif('Error during the feature calculation of %s' %cplx,self.debug)
-                _printif(type(inst),self.debug)
-                _printif(inst.args,self.debug)
+                self.logger.warning(
+                    'Error during the feature calculation of %s' %
+                    cplx, exc_info=True)
+                _printif(
+                    'Error during the feature calculation of %s' %
+                    cplx, self.debug)
+                _printif(type(inst), self.debug)
+                _printif(inst.args, self.debug)
 
         # remove the data where we had issues
         if remove_error:
             for mol in self.feature_error:
                 #self.logger.warning('Error during the feature calculation of %s' %cplx,exc_info=True)
-                _printif('removing %s from %s' %(mol,self.hdf5),self.debug)
+                _printif('removing %s from %s' % (mol, self.hdf5), self.debug)
                 del self.f5[mol]
                 sys.stdout.flush()
 
@@ -381,17 +414,13 @@ class DataGenerator(object):
         self.f5.close()
 
 
-
-
-#====================================================================================
+# ====================================================================================
 #
 #       ADD FEATURES TO AN EXISTING DATASET
 #
-#====================================================================================
+# ====================================================================================
 
-
-    def add_feature(self,prog_bar=True):
-
+    def add_feature(self, prog_bar=True):
         ''' Add a feature to an existing hdf5 file
 
         Args:
@@ -410,19 +439,33 @@ class DataGenerator(object):
 
         # check if file exists
         if not os.path.isfile(self.hdf5):
-            raise FileNotFoundError('File %s does not exists' %self.hdf5)
+            raise FileNotFoundError('File %s does not exists' % self.hdf5)
 
         # get the folder names
-        f5 = h5py.File(self.hdf5,'a')
+        f5 = h5py.File(self.hdf5, 'a')
         fnames = f5.keys()
 
         # get the non rotated ones
-        fnames_original = list( filter(lambda x: not re.search('_r\d+$',x), fnames) )
-        fnames_augmented = list( filter(lambda x:  re.search('_r\d+$',x), fnames) )
+        fnames_original = list(
+            filter(
+                lambda x: not re.search(
+                    r'_r\d+$',
+                    x),
+                fnames))
+        fnames_augmented = list(
+            filter(
+                lambda x: re.search(
+                    r'_r\d+$',
+                    x),
+                fnames))
 
         # computes the features of the original
         desc = '{:25s}'.format('Add features')
-        for cplx_name in tqdm(fnames_original,desc=desc,ncols=100,disable = not prog_bar):
+        for cplx_name in tqdm(
+                fnames_original,
+                desc=desc,
+                ncols=100,
+                disable=not prog_bar):
 
             # molgrp
             molgrp = f5[cplx_name]
@@ -432,8 +475,11 @@ class DataGenerator(object):
             molgrp.require_group('features_raw')
 
             if self.compute_features is not None:
-                self._compute_features(self.compute_features, molgrp['complex'][:],molgrp['features'],molgrp['features_raw'] )
-
+                self._compute_features(
+                    self.compute_features,
+                    molgrp['complex'][:],
+                    molgrp['features'],
+                    molgrp['features_raw'])
 
         # copy the data from the original to the augmented
         for cplx_name in fnames_augmented:
@@ -442,7 +488,7 @@ class DataGenerator(object):
             aug_molgrp = f5[cplx_name]
 
             # get the source group
-            mol_name = re.split('_r\d+', molgrp.name)[0]
+            mol_name = re.split(r'_r\d+', molgrp.name)[0]
             src_molgrp = f5[mol_name]
 
             # get the rotation parameters
@@ -454,27 +500,25 @@ class DataGenerator(object):
             for k in molgrp['features']:
                 if k not in aug_molgrp['features']:
 
-                    #copy
-                    data = src_molgrp['features/'+k][:]
+                    # copy
+                    data = src_molgrp['features/' + k][:]
                     aug_molgrp.require_group('features')
-                    aug_molgrp.create_dataset("features/"+k,data=data)
+                    aug_molgrp.create_dataset("features/" + k, data=data)
 
-                    #rotate
-                    self._rotate_feature(aug_molgrp,axis,angle,center,feat_name=[k])
-
+                    # rotate
+                    self._rotate_feature(
+                        aug_molgrp, axis, angle, center, feat_name=[k])
 
         # close the file
         f5.close()
 
-#====================================================================================
+# ====================================================================================
 #
 #       ADD TARGETS TO AN EXISTING DATASET
 #
-#====================================================================================
+# ====================================================================================
 
-
-    def add_unique_target(self,targdict):
-
+    def add_unique_target(self, targdict):
         '''Add identical targets for all the complexes in the datafile.
 
         This is usefull if you want to add the binary class of all the complexes
@@ -489,18 +533,16 @@ class DataGenerator(object):
 
         # check if file exists
         if not os.path.isfile(self.hdf5):
-            raise FileNotFoundError('File %s does not exists' %self.hdf5)
+            raise FileNotFoundError('File %s does not exists' % self.hdf5)
 
-        f5 = h5py.File(self.hdf5,'a')
+        f5 = h5py.File(self.hdf5, 'a')
         for mol in list(f5.keys()):
             targrp = f5[mol].require_group('targets')
-            for name,value in targdict.items():
-                targrp.create_dataset(name,data=np.array([value]))
+            for name, value in targdict.items():
+                targrp.create_dataset(name, data=np.array([value]))
         f5.close()
 
-
-    def add_target(self,prog_bar=False):
-
+    def add_target(self, prog_bar=False):
         ''' Add a target to an existing hdf5 file
 
         Args:
@@ -519,29 +561,46 @@ class DataGenerator(object):
 
         # check if file exists
         if not os.path.isfile(self.hdf5):
-            raise FileNotFoundError('File %s does not exists' %self.hdf5)
+            raise FileNotFoundError('File %s does not exists' % self.hdf5)
 
         # name of the hdf5 file
-        f5 = h5py.File(self.hdf5,'a')
+        f5 = h5py.File(self.hdf5, 'a')
 
         # get the folder names
         fnames = f5.keys()
 
         # get the non rotated ones
-        fnames_original = list( filter(lambda x: not re.search('_r\d+$',x), fnames) )
-        fnames_augmented = list( filter(lambda x:  re.search('_r\d+$',x), fnames) )
+        fnames_original = list(
+            filter(
+                lambda x: not re.search(
+                    r'_r\d+$',
+                    x),
+                fnames))
+        fnames_augmented = list(
+            filter(
+                lambda x: re.search(
+                    r'_r\d+$',
+                    x),
+                fnames))
 
         # compute the targets  of the original
         desc = '{:25s}'.format('Add targets')
 
-        for cplx_name in tqdm(fnames_original,desc=desc,ncols=100,disable = not prog_bar):
+        for cplx_name in tqdm(
+                fnames_original,
+                desc=desc,
+                ncols=100,
+                disable=not prog_bar):
 
             # group of the molecule
             molgrp = f5[cplx_name]
 
             # add the targets
             if self.compute_targets is not None:
-                self._compute_targets(self.compute_targets, molgrp['complex'][:],molgrp['targets'])
+                self._compute_targets(
+                    self.compute_targets,
+                    molgrp['complex'][:],
+                    molgrp['targets'])
 
         # copy the targets of the original to the rotated
         for cplx_name in fnames_augmented:
@@ -550,41 +609,42 @@ class DataGenerator(object):
             aug_molgrp = f5[cplx_name]
 
             # get the source group
-            mol_name = re.split('_r\d+', molgrp.name)[0]
+            mol_name = re.split(r'_r\d+', molgrp.name)[0]
             src_molgrp = f5[mol_name]
 
             # copy the targets to the augmented
             for k in molgrp['targets']:
                 if k not in aug_molgrp['targets']:
-                    data = src_molgrp['targets/'+k][()]
+                    data = src_molgrp['targets/' + k][()]
                     aug_molgrp.require_group('targets')
-                    aug_molgrp.create_dataset("targets/"+k,data=data)
-
-
+                    aug_molgrp.create_dataset("targets/" + k, data=data)
 
         # close the file
         f5.close()
 
 
-
-#====================================================================================
+# ====================================================================================
 #
 #       PRECOMPUTE TEH GRID POINTS
 #
-#====================================================================================
+# ====================================================================================
 
     @staticmethod
-    def _get_grid_center(pdb,contact_distance):
+    def _get_grid_center(pdb, contact_distance):
         sqldb = pdb2sql(pdb)
 
-        xyz1 = np.array(sqldb.get('x,y,z',chainID='A'))
-        xyz2 = np.array(sqldb.get('x,y,z',chainID='B'))
+        xyz1 = np.array(sqldb.get('x,y,z', chainID='A'))
+        xyz2 = np.array(sqldb.get('x,y,z', chainID='B'))
 
-        index_b = sqldb.get('rowID',chainID='B')
+        index_b = sqldb.get('rowID', chainID='B')
 
         contact_atoms = []
-        for i,x0 in enumerate(xyz1):
-            contacts = np.where(np.sqrt(np.sum((xyz2-x0)**2,1)) < contact_distance)[0]
+        for i, x0 in enumerate(xyz1):
+            contacts = np.where(
+                np.sqrt(
+                    np.sum(
+                        (xyz2 - x0)**2,
+                        1)) < contact_distance)[0]
 
             if len(contacts) > 0:
                 contact_atoms += [i]
@@ -593,23 +653,33 @@ class DataGenerator(object):
         # create a set of unique indexes
         contact_atoms = list(set(contact_atoms))
 
-
-        center_contact = np.mean(np.array(sqldb.get('x,y,z',rowID=contact_atoms)),0)
+        center_contact = np.mean(
+            np.array(
+                sqldb.get(
+                    'x,y,z',
+                    rowID=contact_atoms)),
+            0)
         sqldb.close()
 
         return center_contact
 
-    def precompute_grid(self,grid_info, contact_distance = 8.5, prog_bar = False,time=False,try_sparse=True):
+    def precompute_grid(
+            self,
+            grid_info,
+            contact_distance=8.5,
+            prog_bar=False,
+            time=False,
+            try_sparse=True):
 
         # name of the hdf5 file
-        f5 = h5py.File(self.hdf5,'a')
+        f5 = h5py.File(self.hdf5, 'a')
 
         # check all the input PDB files
         mol_names = f5.keys()
 
         # get the local progress bar
         desc = '{:25s}'.format('Precompute grid points')
-        mol_tqdm = tqdm(mol_names,desc=desc, disable = not prog_bar)
+        mol_tqdm = tqdm(mol_names, desc=desc, disable=not prog_bar)
 
         if not prog_bar:
             print(desc, ':', self.hdf5)
@@ -622,33 +692,33 @@ class DataGenerator(object):
 
             # compute the data we want on the grid
             grid = gt.GridTools(molgrp=f5[mol],
-                             number_of_points = grid_info['number_of_points'],
-                             resolution = grid_info['resolution'],
-                             hdf5_file = f5,
-                             contact_distance = contact_distance,
-                             time = time,
-                             prog_bar = prog_bar,
-                             try_sparse = try_sparse)
+                                number_of_points=grid_info['number_of_points'],
+                                resolution=grid_info['resolution'],
+                                hdf5_file=f5,
+                                contact_distance=contact_distance,
+                                time=time,
+                                prog_bar=prog_bar,
+                                try_sparse=try_sparse)
 
         f5.close()
 
 
-#====================================================================================
+# ====================================================================================
 #
 #       MAP THE FEATURES TO THE GRID
 #
-#====================================================================================
+# ====================================================================================
 
-    def map_features(self,grid_info={},
-                     cuda=False,gpu_block=None,
+
+    def map_features(self, grid_info={},
+                     cuda=False, gpu_block=None,
                      cuda_kernel='/kernel_map.c',
-                     cuda_func_name = 'gaussian',
+                     cuda_func_name='gaussian',
                      try_sparse=True,
-                     reset=False,use_tmpdir=False,
+                     reset=False, use_tmpdir=False,
                      time=False,
-                     prog_bar=True,grid_prog_bar=False,
+                     prog_bar=True, grid_prog_bar=False,
                      remove_error=True):
-
         ''' Map the feature on a grid of points centered at the interface
 
         Args:
@@ -688,23 +758,23 @@ class DataGenerator(object):
         # disable CUDA when using MPI
         if self.mpi_comm is not None:
             if self.mpi_comm.Get_size() > 1:
-                if cuda == True:
+                if cuda:
                     print('Warning : CUDA mapping disabled when using MPI')
                     cuda = False
 
         # name of the hdf5 file
-        f5 = h5py.File(self.hdf5,'a')
+        f5 = h5py.File(self.hdf5, 'a')
 
         # check all the input PDB files
         mol_names = f5.keys()
 
         if len(mol_names) == 0:
-            _printif('No molecules found in %s' %self.hdf5,self.debug)
+            _printif('No molecules found in %s' % self.hdf5, self.debug)
             f5.close()
             return
 
         # fills in the grid data if not provided : default = NONE
-        grinfo = ['number_of_points','resolution']
+        grinfo = ['number_of_points', 'resolution']
         for gr in grinfo:
             if gr not in grid_info:
                 grid_info[gr] = None
@@ -717,21 +787,23 @@ class DataGenerator(object):
 
             # if we havent mapped anything yet or if we reset
             if 'mapped_features' not in list(f5[mol].keys()) or reset:
-                grid_info['feature'] = list(f5[mol+'/features'].keys())
+                grid_info['feature'] = list(f5[mol + '/features'].keys())
 
             # if we have already mapped stuff
             elif 'mapped_features' in list(f5[mol].keys()):
 
                 # feature name
-                all_feat = list(f5[mol+'/features'].keys())
+                all_feat = list(f5[mol + '/features'].keys())
 
                 # feature already mapped
-                mapped_feat = list(f5[mol+'/mapped_features/Feature_ind'].keys())
+                mapped_feat = list(
+                    f5[mol + '/mapped_features/Feature_ind'].keys())
 
                 # we select only the feture that were not mapped yet
                 grid_info['feature'] = []
                 for feat_name in all_feat:
-                    if not any(map(lambda x: x.startswith(feat_name+'_'), mapped_feat)):
+                    if not any(map(lambda x: x.startswith(
+                            feat_name + '_'), mapped_feat)):
                         grid_info['feature'].append(feat_name)
 
         # by default we do not map atomic densities
@@ -739,35 +811,35 @@ class DataGenerator(object):
             grid_info['atomic_densities'] = None
 
         # fills in the features mode if somes are missing : default = IND
-        modes = ['atomic_densities_mode','feature_mode']
+        modes = ['atomic_densities_mode', 'feature_mode']
         for m in modes:
             if m not in grid_info:
                 grid_info[m] = 'ind'
 
         # sanity check for cuda
-        if cuda and gpu_block is None: # pragma: no cover
+        if cuda and gpu_block is None:  # pragma: no cover
             print('Warning GPU block automatically set to 8 x 8 x 8')
             print('You can sepcify the block size with gpu_block=[n,m,k]')
-            gpu_block = [8,8,8]
+            gpu_block = [8, 8, 8]
 
         # initialize cuda
-        if cuda: # pragma: no cover
+        if cuda:  # pragma: no cover
 
             # compile cuda module
             npts = grid_info['number_of_points']
             res = grid_info['resolution']
-            module = self.compile_cuda_kernel(cuda_kernel,npts,res)
+            module = self.compile_cuda_kernel(cuda_kernel, npts, res)
 
             # get the cuda function for the atomic/residue feature
-            cuda_func = self.get_cuda_function(module,cuda_func_name)
+            cuda_func = self.get_cuda_function(module, cuda_func_name)
 
             # get the cuda function for the atomic densties
             cuda_atomic_name = 'atomic_densities'
-            cuda_atomic = self.get_cuda_function(module,cuda_atomic_name)
+            cuda_atomic = self.get_cuda_function(module, cuda_atomic_name)
 
         # get the local progress bar
         desc = '{:25s}'.format('Map Features')
-        mol_tqdm = tqdm(mol_names,desc=desc,disable = not prog_bar)
+        mol_tqdm = tqdm(mol_names, desc=desc, disable=not prog_bar)
 
         if not prog_bar:
             print(desc, ':', self.hdf5)
@@ -781,46 +853,48 @@ class DataGenerator(object):
             try:
 
                 # compute the data we want on the grid
-                grid = gt.GridTools(molgrp=f5[mol],
-                                 number_of_points = grid_info['number_of_points'],
-                                 resolution = grid_info['resolution'],
-                                 atomic_densities = grid_info['atomic_densities'],
-                                 atomic_densities_mode = grid_info['atomic_densities_mode'],
-                                 feature = grid_info['feature'],
-                                 feature_mode = grid_info['feature_mode'],
-                                 cuda = cuda,
-                                 gpu_block = gpu_block,
-                                 cuda_func = cuda_func,
-                                 cuda_atomic = cuda_atomic,
-                                 hdf5_file = f5,
-                                 time=time,
-                                 prog_bar=grid_prog_bar,
-                                 try_sparse=try_sparse)
+                grid = gt.GridTools(
+                    molgrp=f5[mol],
+                    number_of_points=grid_info['number_of_points'],
+                    resolution=grid_info['resolution'],
+                    atomic_densities=grid_info['atomic_densities'],
+                    atomic_densities_mode=grid_info['atomic_densities_mode'],
+                    feature=grid_info['feature'],
+                    feature_mode=grid_info['feature_mode'],
+                    cuda=cuda,
+                    gpu_block=gpu_block,
+                    cuda_func=cuda_func,
+                    cuda_atomic=cuda_atomic,
+                    hdf5_file=f5,
+                    time=time,
+                    prog_bar=grid_prog_bar,
+                    try_sparse=try_sparse)
 
-            except:
+            except BaseException:
 
                 self.map_error.append(mol)
-                self.logger.warning('Error during the mapping of %s' %mol,exc_info=True)
-                _printif('Error during the mapping of %s' %mol,self.debug)
+                self.logger.warning(
+                    'Error during the mapping of %s' %
+                    mol, exc_info=True)
+                _printif('Error during the mapping of %s' % mol, self.debug)
 
         # remove the molecule with issues
         if remove_error:
             for mol in self.map_error:
-                print('removing %s from %s' %(mol,self.hdf5))
+                print('removing %s from %s' % (mol, self.hdf5))
                 del f5[mol]
 
         # close he hdf5 file
         f5.close()
 
 
-#====================================================================================
+# ====================================================================================
 #
 #       REMOVE DATA FROM THE DATA SET
 #
-#====================================================================================
+# ====================================================================================
 
-    def remove(self,feature=True,pdb=True,points=True,grid=False):
-
+    def remove(self, feature=True, pdb=True, points=True, grid=False):
         '''Remove data from the data set.
 
         Equivalent to the cleandata command line tool. Once the data has been
@@ -834,10 +908,10 @@ class DataGenerator(object):
 
         '''
 
-        _printif('Remove features',self.debug)
+        _printif('Remove features', self.debug)
 
         # name of the hdf5 file
-        f5 = h5py.File(self.hdf5,'a')
+        f5 = h5py.File(self.hdf5, 'a')
 
         # get the folder names
         mol_names = f5.keys()
@@ -859,21 +933,18 @@ class DataGenerator(object):
         f5.close()
 
         # reclaim the space
-        os.system('h5repack %s _tmp.h5py' %self.hdf5)
-        os.system('mv _tmp.h5py %s' %self.hdf5)
+        os.system('h5repack %s _tmp.h5py' % self.hdf5)
+        os.system('mv _tmp.h5py %s' % self.hdf5)
 
 
-
-
-
-#====================================================================================
+# ====================================================================================
 #
 #       Simply tune or test the kernel
 #
-#====================================================================================
+# ====================================================================================
 
-    def _tune_cuda_kernel(self,grid_info,cuda_kernel='kernel_map.c',func='gaussian'): # pragma: no cover
 
+    def _tune_cuda_kernel(self, grid_info, cuda_kernel='kernel_map.c', func='gaussian'):  # pragma: no cover
         '''
         Tune the CUDA kernel using the kernel tuner
         http://benvanwerkhoven.github.io/kernel_tuner/
@@ -887,42 +958,41 @@ class DataGenerator(object):
             ValueError: If the tuner has not been used
         '''
 
-
         try:
             from kernel_tuner import tune_kernel
-        except:
+        except BaseException:
             print('Install the Kernel Tuner : \n \t\t pip install kernel_tuner')
             print('http://benvanwerkhoven.github.io/kernel_tuner/')
 
         # fills in the grid data if not provided : default = NONE
-        grinfo = ['number_of_points','resolution']
-        for gr  in grinfo:
+        grinfo = ['number_of_points', 'resolution']
+        for gr in grinfo:
             if gr not in grid_info:
                 raise ValueError('%s must be specified to tune the kernel')
 
         # define the grid
         center_contact = np.zeros(3)
-        nx,ny,nz = grid_info['number_of_points']
-        dx,dy,dz = grid_info['resolution']
-        lx,ly,lz = nx*dx,ny*dy,nz*dz
+        nx, ny, nz = grid_info['number_of_points']
+        dx, dy, dz = grid_info['resolution']
+        lx, ly, lz = nx * dx, ny * dy, nz * dz
 
-        x = np.linspace(0,lx,nx)
-        y = np.linspace(0,ly,ny)
-        z = np.linspace(0,lz,nz)
+        x = np.linspace(0, lx, nx)
+        y = np.linspace(0, ly, ny)
+        z = np.linspace(0, lz, nz)
 
         # create the dictionary containing the tune parameters
         tune_params = OrderedDict()
-        tune_params['block_size_x'] = [2,4,8,16,32]
-        tune_params['block_size_y'] = [2,4,8,16,32]
-        tune_params['block_size_z'] = [2,4,8,16,32]
+        tune_params['block_size_x'] = [2, 4, 8, 16, 32]
+        tune_params['block_size_y'] = [2, 4, 8, 16, 32]
+        tune_params['block_size_z'] = [2, 4, 8, 16, 32]
 
         # define the final grid
         grid = np.zeros(grid_info['number_of_points'])
 
         # arguments of the CUDA function
-        x0,y0,z0 = np.float32(0),np.float32(0),np.float32(0)
+        x0, y0, z0 = np.float32(0), np.float32(0), np.float32(0)
         alpha = np.float32(0)
-        args = [alpha,x0,y0,z0,x,y,z,grid]
+        args = [alpha, x0, y0, z0, x, y, z, grid]
 
         # dimensionality
         problem_size = grid_info['number_of_points']
@@ -933,21 +1003,29 @@ class DataGenerator(object):
 
         npts = grid_info['number_of_points']
         res = grid_info['resolution']
-        kernel_code = kernel_code_template % {'nx' : npts[0], 'ny': npts[1], 'nz' : npts[2], 'RES' : np.max(res)}
+        kernel_code = kernel_code_template % {
+            'nx': npts[0],
+            'ny': npts[1],
+            'nz': npts[2],
+            'RES': np.max(res)}
         tunable_kernel = self._tunable_kernel(kernel_code)
 
         # tune
-        result = tune_kernel(func, tunable_kernel,problem_size,args,tune_params)
+        result = tune_kernel(
+            func,
+            tunable_kernel,
+            problem_size,
+            args,
+            tune_params)
 
 
-#====================================================================================
+# ====================================================================================
 #
 #       Simply test the kernel
 #
-#====================================================================================
+# ====================================================================================
 
-    def _test_cuda(self,grid_info,gpu_block=8,cuda_kernel='kernel_map.c',func='gaussian'): # pragma: no cover
-
+    def _test_cuda(self, grid_info, gpu_block=8, cuda_kernel='kernel_map.c', func='gaussian'):  # pragma: no cover
         '''
         Test the CUDA kernel
 
@@ -964,61 +1042,62 @@ class DataGenerator(object):
         from time import time
 
         # fills in the grid data if not provided : default = NONE
-        grinfo = ['number_of_points','resolution']
-        for gr  in grinfo:
+        grinfo = ['number_of_points', 'resolution']
+        for gr in grinfo:
             if gr not in grid_info:
                 raise ValueError('%s must be specified to tune the kernel')
 
         # get the cuda function
         npts = grid_info['number_of_points']
         res = grid_info['resolution']
-        module = self._compile_cuda_kernel(cuda_kernel,npts,res)
-        cuda_func = self._get_cuda_function(module,func)
+        module = self._compile_cuda_kernel(cuda_kernel, npts, res)
+        cuda_func = self._get_cuda_function(module, func)
 
         # define the grid
         center_contact = np.zeros(3)
-        nx,ny,nz = grid_info['number_of_points']
-        dx,dy,dz = grid_info['resolution']
-        lx,ly,lz = nx*dx,ny*dy,nz*dz
+        nx, ny, nz = grid_info['number_of_points']
+        dx, dy, dz = grid_info['resolution']
+        lx, ly, lz = nx * dx, ny * dy, nz * dz
 
         # create the coordinate
-        x = np.linspace(0,lx,nx)
-        y = np.linspace(0,ly,ny)
-        z = np.linspace(0,lz,nz)
+        x = np.linspace(0, lx, nx)
+        y = np.linspace(0, ly, ny)
+        z = np.linspace(0, lz, nz)
 
         # book memp on the gpu
         x_gpu = gpuarray.to_gpu(x.astype(np.float32))
         y_gpu = gpuarray.to_gpu(y.astype(np.float32))
         z_gpu = gpuarray.to_gpu(z.astype(np.float32))
-        grid_gpu = gpuarray.zeros(grid_info['number_of_points'],np.float32)
+        grid_gpu = gpuarray.zeros(grid_info['number_of_points'], np.float32)
 
         #  make sure we have three block value
-        if not isinstance(gpu_block,list):
-            gpu_block = [gpu_block]*3
+        if not isinstance(gpu_block, list):
+            gpu_block = [gpu_block] * 3
 
         #  get the grid
-        gpu_grid = [ int(np.ceil(n/b)) for b,n in zip(gpu_block,grid_info['number_of_points'])]
+        gpu_grid = [int(np.ceil(n / b))
+                    for b, n in zip(gpu_block, grid_info['number_of_points'])]
         print('GPU BLOCK :', gpu_block)
         print('GPU GRID  :', gpu_grid)
 
-        xyz_center = np.random.rand(500,3).astype(np.float32)
+        xyz_center = np.random.rand(500, 3).astype(np.float32)
         alpha = np.float32(1)
         t0 = time()
         for xyz in xyz_center:
-            x0,y0,z0 = xyz
-            cuda_func(alpha,x0,y0,z0,x_gpu,y_gpu,z_gpu,grid_gpu,
-                    block=tuple(gpu_block),grid=tuple(gpu_grid))
+            x0, y0, z0 = xyz
+            cuda_func(alpha, x0, y0, z0, x_gpu, y_gpu, z_gpu, grid_gpu,
+                      block=tuple(gpu_block), grid=tuple(gpu_grid))
 
-        print('Done in : %f ms' %((time()-t0)*1000))
+        print('Done in : %f ms' % ((time() - t0) * 1000))
 
-#====================================================================================
+# ====================================================================================
 #
 #       Routines needed to handle CUDA
 #
-#====================================================================================
+# ====================================================================================
 
     @staticmethod
-    def _compile_cuda_kernel(cuda_kernel,npts,res): # pragma: no cover
+    def _compile_cuda_kernel(cuda_kernel, npts, res):  # pragma: no cover
         """Compile the cuda kernel
 
         Args:
@@ -1032,14 +1111,18 @@ class DataGenerator(object):
         # get the cuda kernel path
         kernel = os.path.dirname(os.path.abspath(__file__)) + '/' + cuda_kernel
         kernel_code_template = open(kernel, 'r').read()
-        kernel_code = kernel_code_template % {'nx' : npts[0], 'ny': npts[1], 'nz' : npts[2], 'RES' : np.max(res)}
+        kernel_code = kernel_code_template % {
+            'nx': npts[0],
+            'ny': npts[1],
+            'nz': npts[2],
+            'RES': np.max(res)}
 
         # compile the kernel
         mod = compiler.SourceModule(kernel_code)
         return mod
 
     @staticmethod
-    def _get_cuda_function(module,func_name):  # pragma: no cover
+    def _get_cuda_function(module, func_name):  # pragma: no cover
         """Get a single function from the compiled kernel
 
         Args:
@@ -1054,7 +1137,7 @@ class DataGenerator(object):
 
     # tranform the kernel to a tunable one
     @staticmethod
-    def _tunable_kernel(kernel): # pragma: no cover
+    def _tunable_kernel(kernel):  # pragma: no cover
         """Make a tunale kernel
 
         Args:
@@ -1063,17 +1146,20 @@ class DataGenerator(object):
         Returns:
             TYPE: tunable kernel
         """
-        switch_name = { 'blockDim.x' : 'block_size_x', 'blockDim.y' : 'block_size_y','blockDim.z' : 'block_size_z' }
-        for old,new in switch_name.items():
-            kernel = kernel.replace(old,new)
+        switch_name = {
+            'blockDim.x': 'block_size_x',
+            'blockDim.y': 'block_size_y',
+            'blockDim.z': 'block_size_z'}
+        for old, new in switch_name.items():
+            kernel = kernel.replace(old, new)
         return kernel
 
 
-#====================================================================================
+# ====================================================================================
 #
 #       FILTER DATASET
 #
-#===================================================================================
+# ===================================================================================
 
     def _filter_cplx(self):
         """Filter the name of the complexes."""
@@ -1082,26 +1168,25 @@ class DataGenerator(object):
         f = open(self.pdb_select)
         pdb_name = f.readlines()
         f.close()
-        pdb_name = [name.split()[0]+'.pdb' for name in pdb_name]
+        pdb_name = [name.split()[0] + '.pdb' for name in pdb_name]
 
         # create the filters
         tmp_path = []
         for name in pdb_name:
-            tmp_path += list(filter(lambda x: name in x,self.pdb_path))
+            tmp_path += list(filter(lambda x: name in x, self.pdb_path))
 
         # update the pdb_path
         self.pdb_path = tmp_path
 
 
-
-#====================================================================================
+# ====================================================================================
 #
 #       FEATURES ROUTINES
 #
-#====================================================================================
+# ====================================================================================
 
     @staticmethod
-    def _compute_features(feat_list,pdb_data,featgrp,featgrp_raw):
+    def _compute_features(feat_list, pdb_data, featgrp, featgrp_raw):
         """Compute the features
 
         Args:
@@ -1110,24 +1195,25 @@ class DataGenerator(object):
             featgrp (str): name of the group where to store the xyz feature
             featgrp_raw (str): name of the group where to store the raw feature
         """
-        error_flag = False # when False: success; when True: failed
+        error_flag = False  # when False: success; when True: failed
         for feat in feat_list:
-            feat_module = importlib.import_module(feat,package=None)
-            error_flag = feat_module.__compute_feature__(pdb_data,featgrp,featgrp_raw)
+            feat_module = importlib.import_module(feat, package=None)
+            error_flag = feat_module.__compute_feature__(
+                pdb_data, featgrp, featgrp_raw)
 
-            if re.search('ResidueDensity', feat) and error_flag == True:
+            if re.search('ResidueDensity', feat) and error_flag:
                 return error_flag
 
 
-#====================================================================================
+# ====================================================================================
 #
 #       TARGETS ROUTINES
 #
-#====================================================================================
+# ====================================================================================
 
 
     @staticmethod
-    def _compute_targets(targ_list,pdb_data,targrp):
+    def _compute_targets(targ_list, pdb_data, targrp):
         """Compute the targets
 
         Args:
@@ -1136,17 +1222,19 @@ class DataGenerator(object):
             targrp (str): name of the group where to store the targets
         """
         for targ in targ_list:
-            targ_module = importlib.import_module(targ,package=None)
-            targ_module.__compute_target__(pdb_data,targrp)
+            targ_module = importlib.import_module(targ, package=None)
+            targ_module.__compute_target__(pdb_data, targrp)
 
 
-#====================================================================================
+# ====================================================================================
 #
 #       ADD PDB FILE
 #
-#====================================================================================
+# ====================================================================================
+
+
     @staticmethod
-    def _add_pdb(molgrp,pdbfile,name):
+    def _add_pdb(molgrp, pdbfile, name):
         """ Add a pdb to a molgrp.
 
         Args:
@@ -1155,21 +1243,24 @@ class DataGenerator(object):
             name (str): dataset name in the hdf5 molgroup
         """
         # read the pdb and extract the ATOM lines
-        with open(pdbfile,'r') as fi:
-            data = [line.split('\n')[0] for line in fi if line.startswith('ATOM')]
+        with open(pdbfile, 'r') as fi:
+            data = [line.split('\n')[0]
+                    for line in fi if line.startswith('ATOM')]
         data = np.array(data).astype('|S73')
-        dataset = molgrp.create_dataset(name,data=data)
+        dataset = molgrp.create_dataset(name, data=data)
 
 
-#====================================================================================
+# ====================================================================================
 #
 #       AUGMENTED DATA
 #
-#====================================================================================
+# ====================================================================================
 
     # add a rotated pdb structure to the database
+
+
     @staticmethod
-    def _add_aug_pdb(molgrp,pdbfile,name,axis,angle):
+    def _add_aug_pdb(molgrp, pdbfile, name, axis, angle):
         """Add augmented pdbs to the dataset
 
         Args:
@@ -1186,7 +1277,7 @@ class DataGenerator(object):
         sqldb = pdb2sql(pdbfile)
 
         # rotate the positions
-        center = sqldb.rotation_around_axis(axis,angle)
+        center = sqldb.rotation_around_axis(axis, angle)
 
         # get the data
         sqldata = sqldb.get('*')
@@ -1202,31 +1293,31 @@ class DataGenerator(object):
             line += ' '
             line += '{:^4}'.format(d[1])    # name
             line += '{:>1}'.format(d[2])    # altLoc
-            line += '{:>3}'.format(d[3])    #resname
+            line += '{:>3}'.format(d[3])  # resname
             line += ' '
             line += '{:>1}'.format(d[4])    # chainID
             line += '{:>4}'.format(d[5])    # resSeq
             line += '{:>1}'.format(d[6])    # iCODE
             line += '   '
-            line += '{: 8.3f}'.format(d[7]) #x
-            line += '{: 8.3f}'.format(d[8]) #y
-            line += '{: 8.3f}'.format(d[9]) #z
+            line += '{: 8.3f}'.format(d[7])  # x
+            line += '{: 8.3f}'.format(d[8])  # y
+            line += '{: 8.3f}'.format(d[9])  # z
             try:
                 line += '{: 6.2f}'.format(d[10])    # occ
                 line += '{: 6.2f}'.format(d[11])    # temp
-            except:
+            except BaseException:
                 line += '{: 6.2f}'.format(0)    # occ
                 line += '{: 6.2f}'.format(0)    # temp
             data.append(line)
 
         data = np.array(data).astype('|S73')
-        dataset = molgrp.create_dataset(name,data=data)
+        dataset = molgrp.create_dataset(name, data=data)
 
         return center
 
     # rotate th xyz-formatted feature in the database
     @staticmethod
-    def _rotate_feature(molgrp,axis,angle,center,feat_name='all'):
+    def _rotate_feature(molgrp, axis, angle, center, feat_name='all'):
         """Rotate the raw feature values
 
         Args:
@@ -1240,33 +1331,38 @@ class DataGenerator(object):
             feat = list(molgrp['features'].keys())
         else:
             feat = feat_name
-            if not isinstance(feat,list):
+            if not isinstance(feat, list):
                 feat = list(feat)
 
         for fn in feat:
 
             # extract the data
-            data = molgrp['features/'+fn][:]
+            data = molgrp['features/' + fn][:]
 
             # xyz
-            xyz = data[:,1:4]
+            xyz = data[:, 1:4]
 
             # get the data
-            ct,st = np.cos(angle),np.sin(angle)
-            ux,uy,uz = axis
+            ct, st = np.cos(angle), np.sin(angle)
+            ux, uy, uz = axis
 
             # definition of the rotation matrix
             # see https://en.wikipedia.org/wiki/Rotation_matrix
-            rot_mat = np.array([
-            [ct + ux**2*(1-ct),         ux*uy*(1-ct) - uz*st,       ux*uz*(1-ct) + uy*st],
-            [uy*ux*(1-ct) + uz*st,      ct + uy**2*(1-ct),          uy*uz*(1-ct) - ux*st],
-            [uz*ux*(1-ct) - uy*st,      uz*uy*(1-ct) + ux*st,       ct + uz**2*(1-ct)   ]])
+            rot_mat = np.array([[ct + ux**2 * (1 - ct),
+                                 ux * uy * (1 - ct) - uz * st,
+                                 ux * uz * (1 - ct) + uy * st],
+                                [uy * ux * (1 - ct) + uz * st,
+                                 ct + uy**2 * (1 - ct),
+                                 uy * uz * (1 - ct) - ux * st],
+                                [uz * ux * (1 - ct) - uy * st,
+                                 uz * uy * (1 - ct) + ux * st,
+                                 ct + uz**2 * (1 - ct)]])
 
             # apply the rotation
-            xyz = np.dot(rot_mat,(xyz-center).T).T + center
+            xyz = np.dot(rot_mat, (xyz - center).T).T + center
 
             # put back the data
-            data[:,1:4] = xyz
+            data[:, 1:4] = xyz
 
     # get rotation axis and angle
     @staticmethod
@@ -1280,11 +1376,16 @@ class DataGenerator(object):
         # define the axis
         # uniform distribution on a sphere
         # http://mathworld.wolfram.com/SpherePointPicking.html
-        u1,u2 = np.random.rand(),np.random.rand()
-        teta,phi = np.arccos(2*u1-1),2*np.pi*u2
-        axis = [np.sin(teta)*np.cos(phi),np.sin(teta)*np.sin(phi),np.cos(teta)]
+        u1, u2 = np.random.rand(), np.random.rand()
+        teta, phi = np.arccos(2 * u1 - 1), 2 * np.pi * u2
+        axis = [
+            np.sin(teta) *
+            np.cos(phi),
+            np.sin(teta) *
+            np.sin(phi),
+            np.cos(teta)]
 
         # and the rotation angle
-        angle = -np.pi + np.pi*np.random.rand()
+        angle = -np.pi + np.pi * np.random.rand()
 
-        return axis,angle
+        return axis, angle

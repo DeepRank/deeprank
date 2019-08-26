@@ -21,7 +21,6 @@ from rpy2.robjects.lib.ggplot2 import *
 warnings.filterwarnings("ignore", category=RRuntimeWarning)
 
 
-
 def zip_equal(*iterables):
     sentinel = object()
     for combo in zip_longest(*iterables, fillvalue=sentinel):
@@ -31,8 +30,7 @@ def zip_equal(*iterables):
         yield combo
 
 
-def plot_boxplot(df,figname=None,inverse = False):
-
+def plot_boxplot(df, figname=None, inverse=False):
     '''
     Plot a boxplot of predictions vs. targets. Useful
     to visualize the performance of the training algorithm.
@@ -51,31 +49,31 @@ def plot_boxplot(df,figname=None,inverse = False):
     data = df
 
     font_size = 20
-    #line = "#1F3552"
+    # line = "#1F3552"
 
-    text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
+    text_style = element_text(size=font_size, family="Tahoma", face="bold")
 
-    colormap_raw =[['0','ivory3'],
-            ['1','steelblue']]
+    colormap_raw = [['0', 'ivory3'],
+                    ['1', 'steelblue']]
 
     colormap = ro.StrVector([elt[1] for elt in colormap_raw])
     colormap.names = ro.StrVector([elt[0] for elt in colormap_raw])
 
-    p= ggplot(data) + \
-            aes_string(x='target', y='DR' , fill='target' ) + \
-            geom_boxplot( width = 0.2, alpha = 0.7) + \
-            facet_grid(ro.Formula('.~label')) +\
-            scale_fill_manual(values = colormap ) + \
-            theme_bw() +\
-            theme(**{'plot.title' : text_style,
-                'text':  text_style,
-                'axis.title':  text_style,
-                'axis.text.x': element_text(size = font_size),
-                'legend.position': 'right'} ) +\
-            scale_x_discrete(name = "Target")
+    p = ggplot(data) + \
+        aes_string(x='target', y='DR', fill='target') + \
+        geom_boxplot(width=0.2, alpha=0.7) + \
+        facet_grid(ro.Formula('.~label')) +\
+        scale_fill_manual(values=colormap) + \
+        theme_bw() +\
+        theme(**{'plot.title': text_style,
+                 'text': text_style,
+                 'axis.title': text_style,
+                 'axis.text.x': element_text(size=font_size),
+                 'legend.position': 'right'}) +\
+        scale_x_discrete(name="Target")
 
     # p.plot()
-    ggplot2.ggsave(figname, dpi = 100)
+    ggplot2.ggsave(figname, dpi=100)
     return p
 
 
@@ -90,52 +88,68 @@ def read_epoch_data(DR_h5FL, epoch):
     1  Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     '''
 
-    #-- 1. read deeprank output data for the specific epoch
-    h5 = h5py.File(DR_h5FL,'r')
+    # -- 1. read deeprank output data for the specific epoch
+    h5 = h5py.File(DR_h5FL, 'r')
     if epoch is None:
-        print (f"epoch is not provided. Use the last epoch data.")
+        print(f"epoch is not provided. Use the last epoch data.")
         keys = list(h5.keys())
-        last_epoch_key = list(filter(lambda x: 'epoch_' in x,keys))[-1]
+        last_epoch_key = list(filter(lambda x: 'epoch_' in x, keys))[-1]
     else:
-        last_epoch_key = 'epoch_%04d' %epoch
+        last_epoch_key = 'epoch_%04d' % epoch
         if last_epoch_key not in h5:
-            print('Incorrect epcoh name\n Possible options are: ' + ' '.join(list(h5.keys())))
+            print(
+                'Incorrect epcoh name\n Possible options are: ' +
+                ' '.join(
+                    list(
+                        h5.keys())))
             h5.close()
             return
     data = h5[last_epoch_key]
 
-
-    #-- 2. convert into pd.DataFrame
-    labels = list(data) # labels = ['train', 'test', 'valid']
+    # -- 2. convert into pd.DataFrame
+    labels = list(data)  # labels = ['train', 'test', 'valid']
 
     # write a dataframe of DR and label
     to_plot = pd.DataFrame()
     for l in labels:
         # l = train, valid or test
-        source_hdf5FLs = data[l]['mol'][:,0]
-        modelIDs = list(data[l]['mol'][:,1])
+        source_hdf5FLs = data[l]['mol'][:, 0]
+        modelIDs = list(data[l]['mol'][:, 1])
         DR_rawOut = data[l]['outputs']
-        DR = F.softmax(torch.FloatTensor(DR_rawOut), dim = 1)
-        DR = np.array(DR[:,0]) # the probability of a model being negative
+        DR = F.softmax(torch.FloatTensor(DR_rawOut), dim=1)
+        DR = np.array(DR[:, 0])  # the probability of a model being negative
 
-        targets =  data[l]['targets'][()]
+        targets = data[l]['targets'][()]
         targets = targets.astype(np.str)
 
-        to_plot_tmp = pd.DataFrame(list(zip_equal(source_hdf5FLs, modelIDs, targets, DR)), columns = ['sourceFL', 'modelID', 'target', 'DR'])
+        to_plot_tmp = pd.DataFrame(
+            list(
+                zip_equal(
+                    source_hdf5FLs,
+                    modelIDs,
+                    targets,
+                    DR)),
+            columns=[
+                'sourceFL',
+                'modelID',
+                'target',
+                'DR'])
         to_plot_tmp['label'] = l.capitalize()
         to_plot = to_plot.append(to_plot_tmp)
 
-    to_plot['target'] = pd.Categorical(to_plot['target'], categories=['0', '1'])
-    to_plot['label'] = pd.Categorical(to_plot['label'], categories=['Train', 'Valid', 'Test'])
+    to_plot['target'] = pd.Categorical(
+        to_plot['target'], categories=['0', '1'])
+    to_plot['label'] = pd.Categorical(
+        to_plot['label'], categories=[
+            'Train', 'Valid', 'Test'])
 
     cols = ['label', 'modelID', 'target', 'DR', 'sourceFL']
     to_plot = to_plot[cols]
 
-
     return to_plot
 
-def merge_HS_DR(DR_df, haddockS):
 
+def merge_HS_DR(DR_df, haddockS):
     '''
     INPUT 1 (DR_df: a data frame):
 
@@ -154,20 +168,18 @@ def merge_HS_DR(DR_df, haddockS):
         Train 1ACB     1ACB_9w     1       14.535         -19.2127
     '''
 
-
-    #-- merge HS with DR predictions, model IDs and class IDs
+    # -- merge HS with DR predictions, model IDs and class IDs
     modelIDs = DR_df['modelID']
     HS, idx_keep = get_HS(modelIDs, haddockS)
 
-    data = DR_df.iloc[idx_keep,:].copy()
+    data = DR_df.iloc[idx_keep, :].copy()
     data['HS'] = HS
     data['caseID'] = [re.split('_', x)[0] for x in data['modelID']]
 
-
-    #-- reorder columns
+    # -- reorder columns
     col_ori = data.columns
     col = ['label', 'caseID', 'modelID', 'target', 'sourceFL']
-    col.extend( [x for x in col_ori if x not in col])
+    col.extend([x for x in col_ori if x not in col])
     data = data[col]
 
     return data
@@ -182,11 +194,14 @@ def read_haddockScoreFL(HS_h5FL):
     stats['haddock-score'] = {}
 #    stats['i-RMSD'] = {}
 
-    modelIDs = [ re.sub('.pdb','',x) for x in data['modelID'] ] # remove .pdb from model ID
+    modelIDs = [re.sub('.pdb', '', x)
+                for x in data['modelID']]  # remove .pdb from model ID
     stats['haddock-score'] = dict(zip_equal(modelIDs, data['haddock-score']))
-#    stats['i-RMSD'] = dict(zip(modelIDs, data['i-RMSD'])) # some i-RMSDs are wrong!!! Reported an issue.
+# stats['i-RMSD'] = dict(zip(modelIDs, data['i-RMSD'])) # some i-RMSDs are
+# wrong!!! Reported an issue.
 
     return stats
+
 
 def plot_DR_iRMSD(df, figname=None):
     '''
@@ -204,22 +219,21 @@ def plot_DR_iRMSD(df, figname=None):
    # plot
 
     font_size = 16
-    text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
-    p = ggplot(df) + aes_string(y = 'irmsd', x = 'DR') +\
-            facet_grid(ro.Formula('.~label')) + \
-            geom_point(alpha = 0.5) + \
-            theme_bw() +\
-            theme(**{'plot.title' : text_style,
-                    'text':  text_style,
-                    'axis.title':  text_style,
-                    'axis.text.x': element_text(size = font_size + 2),
-                    'axis.text.y': element_text(size = font_size + 2)} ) + \
-            scale_y_continuous(name = "i-RMSD")
+    text_style = element_text(size=font_size, family="Tahoma", face="bold")
+    p = ggplot(df) + aes_string(y='irmsd', x='DR') +\
+        facet_grid(ro.Formula('.~label')) + \
+        geom_point(alpha=0.5) + \
+        theme_bw() +\
+        theme(**{'plot.title': text_style,
+                 'text': text_style,
+                 'axis.title': text_style,
+                 'axis.text.x': element_text(size=font_size + 2),
+                 'axis.text.y': element_text(size=font_size + 2)}) + \
+        scale_y_continuous(name="i-RMSD")
 
-    #p.plot()
-    ggplot2.ggsave(figname, height = 7 , width = 7 * 1.5, dpi = 100)
+    # p.plot()
+    ggplot2.ggsave(figname, height=7, width=7 * 1.5, dpi=100)
     return p
-
 
 
 def plot_HS_iRMSD(df, figname=None):
@@ -237,24 +251,24 @@ def plot_HS_iRMSD(df, figname=None):
 
     # plot
     font_size = 16
-    text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
-    p= ggplot(df) + aes_string(y = 'irmsd', x = 'HS') +\
-            facet_grid(ro.Formula('.~label')) + \
-            geom_point(alpha = 0.5) + \
-            theme_bw() +\
-            theme(**{'plot.title' : text_style,
-                    'text':  text_style,
-                    'axis.title':  text_style,
-                    'axis.text.x': element_text(size = font_size + 2),
-                    'axis.text.y': element_text(size = font_size + 2)} ) + \
-            scale_y_continuous(name = "i-RMSD")
+    text_style = element_text(size=font_size, family="Tahoma", face="bold")
+    p = ggplot(df) + aes_string(y='irmsd', x='HS') +\
+        facet_grid(ro.Formula('.~label')) + \
+        geom_point(alpha=0.5) + \
+        theme_bw() +\
+        theme(**{'plot.title': text_style,
+                 'text': text_style,
+                 'axis.title': text_style,
+                 'axis.text.x': element_text(size=font_size + 2),
+                 'axis.text.y': element_text(size=font_size + 2)}) + \
+        scale_y_continuous(name="i-RMSD")
 
-    #p.plot()
-    ggplot2.ggsave(figname, height = 7 , width = 7 * 1.5, dpi=100)
+    # p.plot()
+    ggplot2.ggsave(figname, height=7, width=7 * 1.5, dpi=100)
     return p
 
 
-def plot_successRate_hitRate (df, figname=None,inverse = False):
+def plot_successRate_hitRate(df, figname=None, inverse=False):
     '''Plot the hit rate and success_rate of the different training/valid/test sets with HS (haddock scores)
 
     The hit rate is defined as:
@@ -290,12 +304,12 @@ def plot_successRate_hitRate (df, figname=None,inverse = False):
 
     '''
 
-    #-- 1. calculate success rate and hit rate
+    # -- 1. calculate success rate and hit rate
     performance_per_case = evaluate(df)
     performance_ave = ave_evaluate(performance_per_case)
     performance_ave = add_rank(performance_ave)
 
-    #-- 2. plot
+    # -- 2. plot
     plot_evaluation(performance_ave, figname)
 
 
@@ -311,20 +325,18 @@ def plot_evaluation(df, figname):
 
     '''
 
-    #---------- hit rate plot -------
+    # ---------- hit rate plot -------
     figname1 = figname + '.hitRate.png'
     print(f'\n --> Hit Rate plot:', figname1, '\n')
     hit_rate_plot(df)
-    ggplot2.ggsave(figname1, height = 7 , width = 7 * 1.2, dpi = 100)
+    ggplot2.ggsave(figname1, height=7, width=7 * 1.2, dpi=100)
 
-
-    #---------- success rate plot -------
+    # ---------- success rate plot -------
     figname2 = figname + '.successRate.png'
     print(f'\n --> Success Rate plot:', figname2, '\n')
 
     success_rate_plot(df)
-    ggplot2.ggsave(figname2, height = 7 , width = 7 * 1.2, dpi=100)
-
+    ggplot2.ggsave(figname2, height=7, width=7 * 1.2, dpi=100)
 
 
 def hit_rate_plot(df):
@@ -339,33 +351,36 @@ def hit_rate_plot(df):
 
     '''
 
-    #-- melt df
+    # -- melt df
     df_melt = pd.melt(df, id_vars=['label', 'rank'])
     idx1 = df_melt.variable.str.contains('^hitRate')
-    df_tmp = df_melt.loc[idx1,:].copy()
+    df_tmp = df_melt.loc[idx1, :].copy()
     df_tmp.columns = ['Sets', 'rank', 'Methods', 'hit_rate']
 
     tmp = list(df_tmp['Methods'])
-    df_tmp.loc[:,'Methods']= [re.sub('hitRate_','',x) for x in tmp] # success_DR -> DR
+    df_tmp.loc[:, 'Methods'] = [
+        re.sub('hitRate_', '', x) for x in tmp]  # success_DR -> DR
 
     font_size = 20
-    breaks = pd.to_numeric(np.arange(0,1.01,0.25))
-    xlabels = list(map(lambda x: str('%d' % (x*100)) + ' % ', np.arange(0,1.01,0.25)) )
-    text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
+    breaks = pd.to_numeric(np.arange(0, 1.01, 0.25))
+    xlabels = list(map(lambda x: str('%d' % (x * 100)) +
+                       ' % ', np.arange(0, 1.01, 0.25)))
+    text_style = element_text(size=font_size, family="Tahoma", face="bold")
 
     p = ggplot(df_tmp) + \
-            aes_string(x='rank', y = 'hit_rate', color='Sets', linetype= 'Methods') + \
-            geom_line(size=1) + \
-            labs(**{'x': 'Top models (%)', 'y': 'Hit Rate'}) + \
-            theme_bw() + \
-            theme(**{'legend.position': 'right',
-                'plot.title': text_style,
-                'text': text_style,
-                'axis.text.x': element_text(size = font_size),
-                'axis.text.y': element_text(size = font_size)}) +\
-            scale_x_continuous(**{'breaks':breaks, 'labels': xlabels})
+        aes_string(x='rank', y='hit_rate', color='Sets', linetype='Methods') + \
+        geom_line(size=1) + \
+        labs(**{'x': 'Top models (%)', 'y': 'Hit Rate'}) + \
+        theme_bw() + \
+        theme(**{'legend.position': 'right',
+                 'plot.title': text_style,
+                 'text': text_style,
+                 'axis.text.x': element_text(size=font_size),
+                 'axis.text.y': element_text(size=font_size)}) +\
+        scale_x_continuous(**{'breaks': breaks, 'labels': xlabels})
 
     return p
+
 
 def success_rate_plot(df):
     '''
@@ -375,44 +390,47 @@ def success_rate_plot(df):
         1  valid         0.0         1.0         0.0         0.0
     '''
 
-    #-- add the 'rank' column to df
+    # -- add the 'rank' column to df
     rank = []
     for _, df_per_label in df.groupby('label'):
         num_mol = len(df_per_label)
-        rank_raw = np.array(range(num_mol )) + 1
-        rank.extend(rank_raw/num_mol )
+        rank_raw = np.array(range(num_mol)) + 1
+        rank.extend(rank_raw / num_mol)
     df['rank'] = rank
 
-    #-- melt df
+    # -- melt df
     df_melt = pd.melt(df, id_vars=['label', 'rank'])
     idx1 = df_melt.variable.str.contains('^success_')
-    df_tmp = df_melt.loc[idx1,:].copy()
+    df_tmp = df_melt.loc[idx1, :].copy()
     df_tmp.columns = ['Sets', 'rank', 'Methods', 'success_rate']
 
     tmp = list(df_tmp['Methods'])
-    df_tmp.loc[:,'Methods']= [re.sub('success_','',x) for x in tmp] # success_DR -> DR
+    df_tmp.loc[:, 'Methods'] = [
+        re.sub('success_', '', x) for x in tmp]  # success_DR -> DR
 
     font_size = 20
-    breaks = pd.to_numeric(np.arange(0,1.01,0.25))
-    xlabels = list(map(lambda x: str('%d' % (x*100)) + ' % ', np.arange(0,1.01,0.25)) )
-    text_style = element_text(size = font_size, family = "Tahoma", face = "bold")
+    breaks = pd.to_numeric(np.arange(0, 1.01, 0.25))
+    xlabels = list(map(lambda x: str('%d' % (x * 100)) +
+                       ' % ', np.arange(0, 1.01, 0.25)))
+    text_style = element_text(size=font_size, family="Tahoma", face="bold")
 
     p = ggplot(df_tmp) + \
-            aes_string(x='rank', y = 'success_rate', color='Sets', linetype= 'Methods') + \
-            geom_line(size=1) + \
-            labs(**{'x': 'Top models (%)', 'y': 'Success Rate'}) + \
-            theme_bw() + \
-            theme(**{'legend.position': 'right',
-                'plot.title': text_style,
-                'text': text_style,
-                'axis.text.x': element_text(size = font_size),
-                'axis.text.y': element_text(size = font_size)}) +\
-            scale_x_continuous(**{'breaks':breaks, 'labels': xlabels})
+        aes_string(x='rank', y='success_rate', color='Sets', linetype='Methods') + \
+        geom_line(size=1) + \
+        labs(**{'x': 'Top models (%)', 'y': 'Success Rate'}) + \
+        theme_bw() + \
+        theme(**{'legend.position': 'right',
+                 'plot.title': text_style,
+                 'text': text_style,
+                 'axis.text.x': element_text(size=font_size),
+                 'axis.text.y': element_text(size=font_size)}) +\
+        scale_x_continuous(**{'breaks': breaks, 'labels': xlabels})
 
 #    p.plot()
     return p
 
-def get_irmsd( source_hdf5, modelIDs):
+
+def get_irmsd(source_hdf5, modelIDs):
 
     irmsd = []
     for h5FL, modelID in zip_equal(source_hdf5, modelIDs):
@@ -423,9 +441,8 @@ def get_irmsd( source_hdf5, modelIDs):
     return irmsd
 
 
-
-def get_HS(modelIDs,haddockS):
-    HS=[]
+def get_HS(modelIDs, haddockS):
+    HS = []
     idx_keep = []
 
     for idx, modelID in enumerate(modelIDs):
@@ -434,8 +451,8 @@ def get_HS(modelIDs,haddockS):
             idx_keep.append(idx)
     return HS, idx_keep
 
-def add_irmsd(df):
 
+def add_irmsd(df):
     '''
     INPUT (a data frame):
     df:
@@ -459,9 +476,7 @@ def add_irmsd(df):
     return df
 
 
-
 def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
-
     '''
     OUTPUT: a data frame:
 
@@ -469,7 +484,7 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
         Test   1AVX  1AVX_ranair-it0_5286      0  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.503823  25.189108   6.980802
         Test   1AVX     1AVX_ti5-itw_354w      1  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.502845   3.668682 -95.158100
     '''
-    #-- read deeprank_h5FL epoch data into pd.DataFrame (DR_df)
+    # -- read deeprank_h5FL epoch data into pd.DataFrame (DR_df)
     DR_df = read_epoch_data(deeprank_h5FL, epoch)
 
     '''
@@ -481,15 +496,15 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
     2  Test  1AVX_ranair-it0_6223       0  0.511688  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     '''
 
-    #-- add iRMSD column to DR_df
+    # -- add iRMSD column to DR_df
     DR_df = add_irmsd(DR_df)
 
-    #-- report the number of hits for train/valid/test
+    # -- report the number of hits for train/valid/test
     hit_statistics(DR_df)
 
-    #-- add HS to DR_df (note: bound complexes do not have HS)
+    # -- add HS to DR_df (note: bound complexes do not have HS)
     stats = read_haddockScoreFL(HS_h5FL)
-    haddockS = stats['haddock-score']# haddockS[modelID] = score
+    haddockS = stats['haddock-score']  # haddockS[modelID] = score
     DR_HS_df = merge_HS_DR(DR_df, haddockS)
 
     '''
@@ -503,8 +518,8 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
 
     return DR_HS_df
 
-def hit_statistics(df):
 
+def hit_statistics(df):
     '''
     Report the number of hits for Train, valid and test.
 
@@ -518,34 +533,38 @@ def hit_statistics(df):
     labels = ['Train', 'Valid', 'Test']
     grouped = df.groupby('label')
 
-    #-- 1. count num_hit based on i-rmsd
-    num_hits = grouped['irmsd'].apply(lambda x: len(x[x<=4]))
+    # -- 1. count num_hit based on i-rmsd
+    num_hits = grouped['irmsd'].apply(lambda x: len(x[x <= 4]))
     num_models = grouped.apply(len)
 
     for label in labels:
-        print(f"According to 'i-RMSD' -> num of hits for {label}: {num_hits[label]} out of {num_models[label]} models")
+        print(
+            f"According to 'i-RMSD' -> num of hits for {label}: {num_hits[label]} out of {num_models[label]} models")
 
     print("")
-    #-- 2. count num_hit based on the 'target' column
-    num_hits = grouped['target'].apply(lambda x: len(x[x=='1']))
+    # -- 2. count num_hit based on the 'target' column
+    num_hits = grouped['target'].apply(lambda x: len(x[x == '1']))
     num_models = grouped.apply(len)
 
     for label in labels:
-        print(f"According to 'targets' -> num of hits for {label}: {num_hits[label]} out of {num_models[label]} models")
+        print(
+            f"According to 'targets' -> num of hits for {label}: {num_hits[label]} out of {num_models[label]} models")
 
     print("")
-    #-- 3. report num_cases_wo_hit
+    # -- 3. report num_cases_wo_hit
     df_tmp = df.copy()
     df_tmp['caseID'] = df['modelID'].apply(get_caseID)
     grouped = df_tmp.groupby(['label', 'caseID'])
-    num_hits = grouped['target'].apply(lambda x: len(x[x==1]))
+    num_hits = grouped['target'].apply(lambda x: len(x[x == 1]))
     grp = num_hits.groupby('label')
     num_cases_total = grp.apply(lambda x: len(x))
-    num_cases_wo_hit = grp.apply(lambda x: len(x==0))
+    num_cases_wo_hit = grp.apply(lambda x: len(x == 0))
 
     for label in labels:
-        print(f"According to 'targets' -> {num_cases_wo_hit[label]} out of {num_cases_total[label]} cases do not have any hits for {label}")
+        print(
+            f"According to 'targets' -> {num_cases_wo_hit[label]} out of {num_cases_total[label]} cases do not have any hits for {label}")
     print("")
+
 
 def get_caseID(modelID):
     # modelID = 1AVX_ranair-it0_5286
@@ -555,12 +574,14 @@ def get_caseID(modelID):
     caseID = tmp[0]
     return caseID
 
-def main(HS_h5FL= '/home/lixue/DBs/BM5-haddock24/stats/stats.h5'):
-    if len(sys.argv) !=4:
+
+def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'):
+    if len(sys.argv) != 4:
         print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch fig_name")
         sys.exit()
-    deeprank_h5FL = sys.argv[1] #the output h5 file from deeprank: 'epoch_data.hdf5'
-    epoch = int(sys.argv[2]) # 9
+    # the output h5 file from deeprank: 'epoch_data.hdf5'
+    deeprank_h5FL = sys.argv[1]
+    epoch = int(sys.argv[2])  # 9
     figname = sys.argv[3]
 
     pandas2ri.activate()
@@ -568,10 +589,24 @@ def main(HS_h5FL= '/home/lixue/DBs/BM5-haddock24/stats/stats.h5'):
     df = prepare_df(deeprank_h5FL, HS_h5FL, epoch)
 
     #-- plot
-    plot_HS_iRMSD(df, figname=figname + '.epo' + str(epoch) +'.irsmd_HS.png')
+    plot_HS_iRMSD(df, figname=figname + '.epo' + str(epoch) + '.irsmd_HS.png')
     plot_DR_iRMSD(df, figname=figname + '.epo' + str(epoch) + '.irsmd_DR.png')
-    plot_boxplot(df, figname=figname + '.epo' + str(epoch) + '.boxplot.png',inverse = False)
-    plot_successRate_hitRate(df[['label', 'caseID', 'modelID', 'target', 'DR','HS']].copy(), figname=figname + '.epo' + str(epoch) ,inverse = False)
+    plot_boxplot(
+        df,
+        figname=figname +
+        '.epo' +
+        str(epoch) +
+        '.boxplot.png',
+        inverse=False)
+    plot_successRate_hitRate(df[['label',
+                                 'caseID',
+                                 'modelID',
+                                 'target',
+                                 'DR',
+                                 'HS']].copy(),
+                             figname=figname + '.epo' + str(epoch),
+                             inverse=False)
+
 
 if __name__ == '__main__':
     main()

@@ -57,7 +57,8 @@ def evaluate(data):
                 caseIDs.extend([caseID] * len(df_one_case))
 
             # hitrate = df_sorted['target'].apply(rankingMetrics.hitrate) # df_sorted['target']: class IDs for each model
-            # success = hitrate.apply(rankingMetrics.success) # success =[0, 0, 1, 1, 1,...]: starting from rank 3 this case is a success
+            # success = hitrate.apply(rankingMetrics.success) # success =[0, 0,
+            # 1, 1, 1,...]: starting from rank 3 this case is a success
 
             out_df_tmp['label'] = [l] * len(df)  # train, valid or test
             out_df_tmp['caseID'] = caseIDs
@@ -129,7 +130,7 @@ def ave_evaluate(data):
                 perf_ave[col] = perf_ave[col][0:top_N] + \
                     np.array(perf_case[col][0:top_N])
 
-            perf_ave[col] = perf_ave[col]/num_cases
+            perf_ave[col] = perf_ave[col] / num_cases
 
         new_data = pd.concat([new_data, perf_ave])
 
@@ -161,7 +162,7 @@ def add_rank(df):
     for _, df_per_label in df.groupby('label'):
         num_mol = len(df_per_label)
         rank_raw = np.array(range(num_mol)) + 1
-        rank.extend(rank_raw/num_mol)
+        rank.extend(rank_raw / num_mol)
     df['rank'] = rank
 
     df['label'] = pd.Categorical(df['label'], categories=[

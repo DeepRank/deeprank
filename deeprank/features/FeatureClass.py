@@ -5,8 +5,7 @@ import numpy as np
 
 class FeatureClass(object):
 
-    def __init__(self,feature_type):
-
+    def __init__(self, feature_type):
         ''' Master class fron which all the other Feature classes should be derived."""
 
         Each subclass must compute :
@@ -30,7 +29,7 @@ class FeatureClass(object):
         self.export_directories = {}
         self.error = False
 
-    def export_data_hdf5(self,featgrp):
+    def export_data_hdf5(self, featgrp):
         """Export the data in human readable format in an HDF5 file group.
 
         - For **atomic features**, the format of the data must be : chainID  resSeq resNum name [values]
@@ -39,22 +38,23 @@ class FeatureClass(object):
         """
 
         # loop through the datadict and name
-        for name,data in self.feature_data.items():
+        for name, data in self.feature_data.items():
 
             ds = []
-            for key,value in data.items():
+            for key, value in data.items():
 
                 # residue based feature
                 if len(key) == 3:
 
                     # tags
-                    feat = '{:>4}{:>10}{:>10}'.format(key[0],key[1],key[2])
+                    feat = '{:>4}{:>10}{:>10}'.format(key[0], key[1], key[2])
 
                 # atomic based features
                 elif len(key) == 4:
 
                     # tags
-                    feat = '{:>4}{:>10}{:>10}{:>10}'.format(key[0],key[1],key[2],key[3])
+                    feat = '{:>4}{:>10}{:>10}{:>10}'.format(
+                        key[0], key[1], key[2], key[3])
 
                 # values
                 for v in value:
@@ -64,20 +64,18 @@ class FeatureClass(object):
                 ds.append(feat)
 
             # put in the hdf5 file
-            if len(ds) ==0 :
+            if len(ds) == 0:
                 self.error = True
                 return
 
-            ds = np.array(ds).astype('|S'+str(len(ds[0])))
+            ds = np.array(ds).astype('|S' + str(len(ds[0])))
 
             # create the dataset
-            if name+'_raw' in featgrp:
-                old_data = featgrp[name+'_raw']
+            if name + '_raw' in featgrp:
+                old_data = featgrp[name + '_raw']
                 old_data[...] = ds
             else:
-                featgrp.create_dataset(name+'_raw',data=ds)
-
-
+                featgrp.create_dataset(name + '_raw', data=ds)
 
     ########################################
     #
@@ -91,22 +89,22 @@ class FeatureClass(object):
     # CON : only usefull for deeprank
     #
     ########################################
-    def export_dataxyz_hdf5(self,featgrp):
+
+    def export_dataxyz_hdf5(self, featgrp):
         """Export the data in xyz-val format in an HDF5 file group.
 
         For **atomic** and **residue** the format of the data must be :  x y z [values]
         """
 
-
         # loop through the datadict and name
-        for name,data in self.feature_data_xyz.items():
+        for name, data in self.feature_data_xyz.items():
 
             # create the data set
-            ds = np.array([list(key)+value for key,value in data.items()])
+            ds = np.array([list(key) + value for key, value in data.items()])
 
             # create the dataset
             if name in featgrp:
                 old = featgrp[name]
                 old[...] = ds
             else:
-                featgrp.create_dataset(name,data=ds)
+                featgrp.create_dataset(name, data=ds)

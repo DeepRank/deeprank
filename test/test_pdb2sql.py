@@ -11,15 +11,15 @@ class TestPDB2SQL(unittest.TestCase):
     def test_read(self):
         """Read a pdb and create a sql db."""
 
-        #db.prettyprint()
+        # db.prettyprint()
         self.db.get_colnames()
-        self.db.exportpdb('chainA.pdb', chainID = 'A')
+        self.db.exportpdb('chainA.pdb', chainID='A')
 
     def test_get(self):
         """Test get with large number of index."""
 
         index = list(range(1200))
-        self.db.get('x,y,z', rowID = index)
+        self.db.get('x,y,z', rowID=index)
 
     @unittest.expectedFailure
     def test_get_fails(self):
@@ -27,7 +27,7 @@ class TestPDB2SQL(unittest.TestCase):
 
         index_res = list(range(100))
         index_atoms = list(range(1200))
-        self.db.get('x,y,z', resSeq = index_res, rowID = index_atoms)
+        self.db.get('x,y,z', resSeq=index_res, rowID=index_atoms)
 
     def test_add_column(self):
         """Add a new column to the db and change its values."""
@@ -37,7 +37,7 @@ class TestPDB2SQL(unittest.TestCase):
         n = 100
         q = np.random.rand(n)
         ind = list(range(n))
-        self.db.update_column('CHARGE', q, index = ind)
+        self.db.update_column('CHARGE', q, index=ind)
 
     def test_update(self):
         """Update the database."""
@@ -45,30 +45,30 @@ class TestPDB2SQL(unittest.TestCase):
         n = 200
         index = list(range(n))
         vals = np.random.rand(n, 3)
-        self.db.update('x,y,z',vals, rowID = index)
+        self.db.update('x,y,z', vals, rowID=index)
         self.db.prettyprint()
-        self.db.update_xyz(vals, index = index)
+        self.db.update_xyz(vals, index=index)
 
     def test_update_all(self):
         xyz = self.db.get('x,y,z')
-        self.db.update('x,y,z',xyz)
+        self.db.update('x,y,z', xyz)
         self.db.prettyprint()
 
     def test_manip(self):
         """Manipualte part of the protein."""
 
         vect = np.random.rand(3)
-        self.db.translation(vect, chainID = 'A')
+        self.db.translation(vect, chainID='A')
 
         axis = np.random.rand(3)
         angle = np.random.rand()
-        self.db.rotation_around_axis(axis, angle, chainID = 'B')
+        self.db.rotation_around_axis(axis, angle, chainID='B')
 
-        a,b,c = np.random.rand(3)
-        self.db.rotation_euler(a,b,c,resName='VAL')
+        a, b, c = np.random.rand(3)
+        self.db.rotation_euler(a, b, c, resName='VAL')
 
-        mat = np.random.rand(3,3)
-        self.db.rotation_matrix(mat,chainID='A')
+        mat = np.random.rand(3, 3)
+        self.db.rotation_matrix(mat, chainID='A')
 
     def setUp(self):
         mol = './1AK4/decoys/1AK4_cm-it0_745.pdb'
@@ -76,6 +76,7 @@ class TestPDB2SQL(unittest.TestCase):
 
     def tearDown(self):
         self.db.close()
+
 
 if __name__ == '__main__':
     unittest.main()

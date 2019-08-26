@@ -33,5 +33,6 @@ class TestTools(unittest.TestCase):
         sasa.get_residue_center()
         sasa.neighbor_count()
 
+
 if __name__ == '__main__':
     unittest.main()

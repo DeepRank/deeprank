@@ -9,7 +9,7 @@ from deeprank.tools import pdb2sql
 
 class ResidueDensity(FeatureClass):
 
-    def __init__(self,pdb_data,chainA='A',chainB='B'):
+    def __init__(self, pdb_data, chainA='A', chainB='B'):
         """Compute the residue densities between polar/apolar/charged residues.
 
         Args :
@@ -28,42 +28,58 @@ class ResidueDensity(FeatureClass):
         """
 
         self.pdb_data = pdb_data
-        self.sql=pdb2sql(pdb_data)
-        self.chains_label = [chainA,chainB]
+        self.sql = pdb2sql(pdb_data)
+        self.chains_label = [chainA, chainB]
 
         self.feature_data = {}
         self.feature_data_xyz = {}
 
-        self.residue_types = {'CYS':'polar','HIS':'polar','ASN':'polar','GLN':'polar','SER':'polar','THR':'polar','TYR':'polar','TRP':'polar',
-                              'ALA':'apolar','PHE':'apolar','GLY':'apolar','ILE':'apolar','VAL':'apolar','MET':'apolar','PRO':'apolar','LEU':'apolar',
-                              'GLU':'charged','ASP':'charged','LYS':'charged','ARG':'charged'}
-        self.error = False # When True, feature calculation failed
+        self.residue_types = {
+            'CYS': 'polar',
+            'HIS': 'polar',
+            'ASN': 'polar',
+            'GLN': 'polar',
+            'SER': 'polar',
+            'THR': 'polar',
+            'TYR': 'polar',
+            'TRP': 'polar',
+            'ALA': 'apolar',
+            'PHE': 'apolar',
+            'GLY': 'apolar',
+            'ILE': 'apolar',
+            'VAL': 'apolar',
+            'MET': 'apolar',
+            'PRO': 'apolar',
+            'LEU': 'apolar',
+            'GLU': 'charged',
+            'ASP': 'charged',
+            'LYS': 'charged',
+            'ARG': 'charged'}
+        self.error = False  # When True, feature calculation failed
 
-
-
-    def get(self,cutoff=5.5):
+    def get(self, cutoff=5.5):
         """Get the densities."""
         res = self.sql.get_contact_residue(chain1=self.chains_label[0],
                                            chain2=self.chains_label[1],
-                                           cutoff = cutoff,
+                                           cutoff=cutoff,
                                            return_contact_pairs=True)
 
-        #if len(res) < 5:
-            # the interface is too small
+        # if len(res) < 5:
+        # the interface is too small
         #    self.error = True
         #    return
 
-
         self.residue_densities = {}
 
-        for key,other_res in res.items():
+        for key, other_res in res.items():
 
             # some residues are not amino acids
             if key[2] not in self.residue_types:
                 continue
 
             if key not in self.residue_densities:
-                self.residue_densities[key] = residue_pair(key,self.residue_types[key[2]])
+                self.residue_densities[key] = residue_pair(
+                    key, self.residue_types[key[2]])
             self.residue_densities[key].density['total'] += len(other_res)
 
             for key2 in other_res:
@@ -73,14 +89,17 @@ class ResidueDensity(FeatureClass):
                     continue
 
                 self.residue_densities[key].density[self.residue_types[key2[2]]] += 1
-                self.residue_densities[key].connections[self.residue_types[key2[2]]].append(key2)
+                self.residue_densities[key].connections[self.residue_types[key2[2]]].append(
+                    key2)
 
                 if key2 not in self.residue_densities:
-                    self.residue_densities[key2] = residue_pair(key2,self.residue_types[key2[2]])
+                    self.residue_densities[key2] = residue_pair(
+                        key2, self.residue_types[key2[2]])
 
                 self.residue_densities[key2].density['total'] += 1
                 self.residue_densities[key2].density[self.residue_types[key[2]]] += 1
-                self.residue_densities[key2].connections[self.residue_types[key[2]]].append(key)
+                self.residue_densities[key2].connections[self.residue_types[key[2]]].append(
+                    key)
 
     # uncomment for debug
     # def _print(self):
@@ -93,13 +112,14 @@ class ResidueDensity(FeatureClass):
         self.feature_data['RCD_total'] = {}
         self.feature_data_xyz['RCD_total'] = {}
 
-        restype = ['polar','apolar','charged']
-        pairtype = [ '-'.join(p) for p in list(itertools.combinations_with_replacement(restype,2))]
+        restype = ['polar', 'apolar', 'charged']
+        pairtype = [
+            '-'.join(p) for p in list(itertools.combinations_with_replacement(restype, 2))]
         for p in pairtype:
-            self.feature_data['RCD_'+p] = {}
-            self.feature_data_xyz['RCD_'+p] = {}
+            self.feature_data['RCD_' + p] = {}
+            self.feature_data_xyz['RCD_' + p] = {}
 
-        for key,res in self.residue_densities.items():
+        for key, res in self.residue_densities.items():
 
             # total density in raw format
             self.feature_data['RCD_total'][key] = [res.density['total']]
@@ -110,11 +130,16 @@ class ResidueDensity(FeatureClass):
                 atcenter = 'CA'
 
             # get the xyz of the center atom
-            xyz = self.sql.get('x,y,z',resSeq=key[1],chainID=key[0],name=atcenter)[0]
+            xyz = self.sql.get(
+                'x,y,z',
+                resSeq=key[1],
+                chainID=key[0],
+                name=atcenter)[0]
             #xyz = np.mean(self.sql.get('x,y,z',resSeq=key[1],chainID=key[0]),0).tolist()
 
-            xyz_key = tuple([{'A':0,'B':1}[key[0]]] + xyz)
-            self.feature_data_xyz['RCD_total'][xyz_key] = [res.density['total']]
+            xyz_key = tuple([{'A': 0, 'B': 1}[key[0]]] + xyz)
+            self.feature_data_xyz['RCD_total'][xyz_key] = [
+                res.density['total']]
 
             # iterate through all the connection
             for r in restype:
@@ -124,16 +149,16 @@ class ResidueDensity(FeatureClass):
                 self.feature_data[pairtype][key] = [res.density[r]]
                 self.feature_data_xyz[pairtype][xyz_key] = [res.density[r]]
 
+
 class residue_pair(object):
 
-    def __init__(self,res,rtype):
+    def __init__(self, res, rtype):
         """Ancillary class that holds information for a given residue."""
 
         self.res = res
         self.type = rtype
-        self.density = {'total':0,'polar':0,'apolar':0,'charged':0}
-        self.connections = {'polar':[],'apolar':[],'charged':[]}
-
+        self.density = {'total': 0, 'polar': 0, 'apolar': 0, 'charged': 0}
+        self.connections = {'polar': [], 'apolar': [], 'charged': []}
 
     # Uncomment for debug
     # def print(self):
@@ -154,15 +179,13 @@ class residue_pair(object):
     #             print('')
 
 
-
-
-#####################################################################################
+##########################################################################
 #
 #   THE MAIN FUNCTION CALLED IN THE INTERNAL FEATURE CALCULATOR
 #
-#####################################################################################
+##########################################################################
 
-def __compute_feature__(pdb_data,featgrp,featgrp_raw):
+def __compute_feature__(pdb_data, featgrp, featgrp_raw):
 
     error_flag = False
 
@@ -170,7 +193,7 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
     resdens = ResidueDensity(pdb_data)
 
     # get the densities
-    resdens.get(cutoff=5.5) # may set resdens.error to True
+    resdens.get(cutoff=5.5)  # may set resdens.error to True
 
     if not resdens.error:
         # extract the features
@@ -178,9 +201,9 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
 
         # export in the hdf5 file
         resdens.export_dataxyz_hdf5(featgrp)
-        resdens.export_data_hdf5(featgrp_raw) # may set resdens.error to True
+        resdens.export_data_hdf5(featgrp_raw)  # may set resdens.error to True
 
-    if resdens.error == True:
+    if resdens.error:
         error_flag = True
         print("WARNING: Failed to calculate ResidueDensity. This might be caused by a very small interface.")
     return error_flag
