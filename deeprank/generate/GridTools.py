@@ -227,6 +227,7 @@ class GridTools(object):
     ################################################################
 
     # add all the residue features to the data
+
     def add_all_features(self):
         """Add all the features toa given molecule."""
 
@@ -243,6 +244,7 @@ class GridTools(object):
             logif('      Total %f ms' % ((time() - t0) * 1000), self.time)
 
     # add all the atomic densities to the data
+
     def add_all_atomic_densities(self):
         """Add all atomic densities."""
 

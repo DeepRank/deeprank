@@ -950,7 +950,6 @@ class DataGenerator(object):
 #
 # ====================================================================================
 
-
     def remove(self, feature=True, pdb=True, points=True, grid=False):
         """Remove data from the data set.
 
@@ -1071,7 +1070,6 @@ class DataGenerator(object):
 #       Simply test the kernel
 #
 # ====================================================================================
-
 
     def _test_cuda(self, grid_info, gpu_block=8, cuda_kernel='kernel_map.c', func='gaussian'):  # pragma: no cover
         """Test the CUDA kernel.
@@ -1204,7 +1202,6 @@ class DataGenerator(object):
 #       FILTER DATASET
 #
 # ===================================================================================
-
 
     def _filter_cplx(self):
         """Filter the name of the complexes."""

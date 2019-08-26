@@ -16,8 +16,8 @@ def hitrate(rs):
 
     Example:
 
-    >>> r = [0,1,1]
-    >>> hit_rate(r,nr)
+    >>> rs = [0,1,1]
+    >>> hitrate(r)
 
 
     Attributes:
@@ -29,6 +29,25 @@ def hitrate(rs):
     """
     nr = np.max((1, np.sum(rs)))
     return np.cumsum(rs) / nr
+
+
+def success(rs):
+    """Success for positions ≤ k.
+
+    Example:
+    >>> rs = [0, 0, 1, 0, 1, 0]
+    >>> success(rs)
+    [0, 0, 1, 1, 1, 1]
+
+    Args:
+        rs (array): binary relevance array
+
+    Returns:
+        success (array): [success@≤1, success@≤2,...]
+    """
+    success = np.cumsum(rs) > 0
+
+    return success.astype(np.int)
 
 
 def avprec(rs):
