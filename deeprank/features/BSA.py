@@ -1,7 +1,9 @@
 import os
+
 import numpy as np
-from deeprank.tools import pdb2sql
+
 from deeprank.features import FeatureClass
+from deeprank.tools import pdb2sql
 
 try:
     import freesasa
@@ -9,11 +11,11 @@ try:
 except ImportError:
     print('Freesasa not found')
 
+
 class BSA(FeatureClass):
 
-    def __init__(self,pdb_data,chainA='A',chainB='B'):
-
-        '''Compute the burried surface area feature
+    def __init__(self, pdb_data, chainA='A', chainB='B'):
+        """Compute the burried surface area feature.
 
         Freesasa is required for this feature.
 
@@ -48,12 +50,11 @@ class BSA(FeatureClass):
         >>> bsa.get_structure()
         >>> bsa.get_contact_residue_sasa()
         >>> bsa.sql.close()
-
-        '''
+        """
 
         self.pdb_data = pdb_data
         self.sql = pdb2sql(pdb_data)
-        self.chains_label =  [chainA,chainB]
+        self.chains_label = [chainA, chainB]
 
         self.feature_data = {}
         self.feature_data_xyz = {}
@@ -64,73 +65,83 @@ class BSA(FeatureClass):
         """Get the pdb structure of the molecule."""
 
         # we can have a str or a list of bytes as input
-        if isinstance(self.pdb_data,str):
+        if isinstance(self.pdb_data, str):
             self.complex = freesasa.Structure(self.pdb_data)
         else:
             self.complex = freesasa.Structure()
             atomdata = self.sql.get('name,resName,resSeq,chainID,x,y,z')
-            for atomName,residueName,residueNumber,chainLabel,x,y,z in atomdata:
+            for atomName, residueName, residueNumber, chainLabel, x, y, z in atomdata:
                 atomName = '{:>2}'.format(atomName[0])
-                self.complex.addAtom(atomName,residueName,residueNumber,chainLabel,x,y,z)
+                self.complex.addAtom(
+                    atomName, residueName, residueNumber, chainLabel, x, y, z)
         self.result_complex = freesasa.calc(self.complex)
 
         self.chains = {}
         self.result_chains = {}
         for label in self.chains_label:
             self.chains[label] = freesasa.Structure()
-            atomdata = self.sql.get('name,resName,resSeq,chainID,x,y,z',chainID=label)
-            for atomName,residueName,residueNumber,chainLabel,x,y,z in atomdata:
+            atomdata = self.sql.get(
+                'name,resName,resSeq,chainID,x,y,z', chainID=label)
+            for atomName, residueName, residueNumber, chainLabel, x, y, z in atomdata:
                 atomName = '{:>2}'.format(atomName[0])
-                self.chains[label].addAtom(atomName,residueName,residueNumber,chainLabel,x,y,z)
+                self.chains[label].addAtom(
+                    atomName, residueName, residueNumber, chainLabel, x, y, z)
             self.result_chains[label] = freesasa.calc(self.chains[label])
 
-    def get_contact_residue_sasa(self,cutoff=5.5):
+    def get_contact_residue_sasa(self, cutoff=5.5):
         """Compute the feature value."""
 
         self.bsa_data = {}
         self.bsa_data_xyz = {}
 
         res = self.sql.get_contact_residue(cutoff=cutoff)
-        res = res[0]+res[1]
+        res = res[0] + res[1]
 
         for r in res:
 
             # define the selection string and the bsa for the complex
-            select_str = ('res, (resi %d) and (chain %s)' %(r[1],r[0]),)
-            asa_complex = freesasa.selectArea(select_str,self.complex,self.result_complex)['res']
+            select_str = ('res, (resi %d) and (chain %s)' % (r[1], r[0]),)
+            asa_complex = freesasa.selectArea(
+                select_str, self.complex, self.result_complex)['res']
 
             # define the selection string and the bsa for the isolated
-            select_str = ('res, resi %d' %r[1],)
-            asa_unbound = freesasa.selectArea(select_str,self.chains[r[0]],self.result_chains[r[0]])['res']
+            select_str = ('res, resi %d' % r[1],)
+            asa_unbound = freesasa.selectArea(
+                select_str, self.chains[r[0]], self.result_chains[r[0]])['res']
 
             # define the bsa
-            bsa = asa_unbound-asa_complex
+            bsa = asa_unbound - asa_complex
 
             # define the xyz key : (chain,x,y,z)
-            chain = {'A':0,'B':1}[r[0]]
+            chain = {'A': 0, 'B': 1}[r[0]]
 
             atcenter = 'CB'
             if r[2] == 'GLY':
                 atcenter = 'CA'
-            xyz = self.sql.get('x,y,z',resSeq=r[1],chainID=r[0],name=atcenter)[0]
+            xyz = self.sql.get(
+                'x,y,z',
+                resSeq=r[1],
+                chainID=r[0],
+                name=atcenter)[0]
             #xyz = np.mean(self.sql.get('x,y,z',resSeq=r[1],chainID=r[0]),0)
-            xyzkey = tuple([chain]+xyz)
+            xyzkey = tuple([chain] + xyz)
 
             # put the data in dict
-            self.bsa_data[r]           =  [bsa]
-            self.bsa_data_xyz[xyzkey]  =  [bsa]
+            self.bsa_data[r] = [bsa]
+            self.bsa_data_xyz[xyzkey] = [bsa]
 
         # pyt the data in dict
         self.feature_data['bsa'] = self.bsa_data
         self.feature_data_xyz['bsa'] = self.bsa_data_xyz
 
-#####################################################################################
+##########################################################################
 #
 #   THE MAIN FUNCTION CALLED IN THE INTERNAL FEATURE CALCULATOR
 #
-#####################################################################################
+##########################################################################
 
-def __compute_feature__(pdb_data,featgrp,featgrp_raw):
+
+def __compute_feature__(pdb_data, featgrp, featgrp_raw):
 
     # create the BSA instance
     bsa = BSA(pdb_data)
@@ -149,16 +160,15 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
     bsa.sql.close()
 
 
-#####################################################################################
+##########################################################################
 #
 #       TEST THE CLASS
 #
-#####################################################################################
+##########################################################################
 
 if __name__ == '__main__':
 
     bsa = BSA('1AK4.pdb')
     bsa.get_structure()
-    #bsa.get_contact_residue_sasa()
+    # bsa.get_contact_residue_sasa()
     bsa.sql.close()
-

@@ -1,5 +1,5 @@
 # deep learning
+from .modelGenerator import NetworkGenerator
 from .DataSet import DataSet
 from .NeuralNet import NeuralNet
-from .modelGenerator import NetworkGenerator
 from .metaqnn import MetaQNN

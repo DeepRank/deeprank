@@ -1,16 +1,24 @@
 import os
+
 import numpy as np
 
-from deeprank.tools import pdb2sql
 from deeprank.features import FeatureClass
+from deeprank.tools import pdb2sql
+
 
 class AtomicFeature(FeatureClass):
 
-    def __init__(self,pdbfile,param_charge=None,param_vdw=None,patch_file=None,
-        contact_distance=8.5, root_export = './',individual_directory=False,verbose=False):
-
-        '''
-        Compute the Coulomb, van der Waals interaction and charges
+    def __init__(
+            self,
+            pdbfile,
+            param_charge=None,
+            param_vdw=None,
+            patch_file=None,
+            contact_distance=8.5,
+            root_export='./',
+            individual_directory=False,
+            verbose=False):
+        """Compute the Coulomb, van der Waals interaction and charges.
 
         Args:
 
@@ -61,7 +69,7 @@ class AtomicFeature(FeatureClass):
         >>>
         >>> # close the db
         >>> atfeat.sqldb.close()
-        '''
+        """
 
         super().__init__("Atomic")
 
@@ -87,7 +95,7 @@ class AtomicFeature(FeatureClass):
         # read the force field
         self.read_charge_file()
 
-        if patch_file != None:
+        if patch_file is not None:
             self.patch = self.read_patch()
         else:
             self.patch = None
@@ -98,23 +106,21 @@ class AtomicFeature(FeatureClass):
         # get the contact atoms
         self.get_contact_atoms()
 
-    #####################################################################################
+    ##########################################################################
     #
     #   READ INPUT FILES
     #
-    #####################################################################################
+    ##########################################################################
 
     def read_charge_file(self):
-
-        '''Read the .top file given in entry.
+        """Read the .top file given in entry.
 
         This function creates :
 
             - self.charge : dictionary  {(resname,atname):charge}
             - self.valid_resnames : list ['VAL','ALP', .....]
             - self.at_name_type_convertor : dictionary {(resname,atname):attype}
-
-        '''
+        """
 
         f = open(self.param_charge)
         data = f.readlines()
@@ -131,66 +137,62 @@ class AtomicFeature(FeatureClass):
             # split the line
             words = l.split()
 
-            #get the resname/atname
-            res,atname = words[0],words[2]
+            # get the resname/atname
+            res, atname = words[0], words[2]
 
             # get the charge
             ind = l.find('charge=')
-            q = float(l[ind+7:ind+13])
+            q = float(l[ind + 7:ind + 13])
 
             # get the type
             attype = words[3].split('=')[-1]
 
             # store the charge
-            self.charge[(res,atname)] = q
+            self.charge[(res, atname)] = q
 
             # put the resname in a list so far
             resnames.append(res)
 
             # dictionary for conversion name/type
-            self.at_name_type_convertor[(res,atname)] = attype
+            self.at_name_type_convertor[(res, atname)] = attype
 
         self.valid_resnames = list(set(resnames))
 
-
     def read_patch(self):
-
-        '''Read the patchfile.
+        """Read the patchfile.
 
         This function creates
 
             - self.patch_charge : Dicitionary   {(resName,atName) : charge}
             - self.patch_type   : Dicitionary   {(resName,atName) : type}
-
-        '''
+        """
 
         f = open(self.patch_file)
         data = f.readlines()
         f.close()
 
-        self.patch_charge,self.patch_type = {},{}
+        self.patch_charge, self.patch_type = {}, {}
 
         for l in data:
 
             # ignore comments
-            if l[0] != '#' and l[0] != '!' and len(l.split())>0:
+            if l[0] != '#' and l[0] != '!' and len(l.split()) > 0:
 
                 words = l.split()
 
                 # get the new charge
                 ind = l.find('CHARGE=')
-                q = float(l[ind+7:ind+13])
-                self.patch_charge [(words[0],words[3])] = q
+                q = float(l[ind + 7:ind + 13])
+                self.patch_charge[(words[0], words[3])] = q
 
                 # get the new type if any
                 ind = l.find('TYPE=')
                 if ind != -1:
-                    type_ = l[ind+5:ind+9]
-                    self.patch_type[(words[0],words[3])] = type_.strip()
+                    type_ = l[ind + 5:ind + 9]
+                    self.patch_type[(words[0], words[3])] = type_.strip()
 
     def read_vdw_file(self):
-
-        ''' Read the .param file
+        """Read the .param file.
 
         The patch file must be of the form:
 
@@ -203,7 +205,7 @@ class AtomicFeature(FeatureClass):
         This function creates
 
             - self.vdw : dictionary {attype:[E1,S1]}
-        '''
+        """
 
         f = open(self.param_vdw)
         data = f.readlines()
@@ -224,39 +226,42 @@ class AtomicFeature(FeatureClass):
             if line[0][0] == '#':
                 continue
 
-            self.vdw_param[line[1]] = list(map(float,line[2:4]))
+            self.vdw_param[line[1]] = list(map(float, line[2:4]))
 
     def get_contact_atoms(self):
-
         """Get the contact atoms only select amino acids.
 
         The ligands are not considered.
         """
 
         # position of the chains
-        xyz1 = np.array(self.sqldb.get('x,y,z',chainID='A'))
-        xyz2 = np.array(self.sqldb.get('x,y,z',chainID='B'))
+        xyz1 = np.array(self.sqldb.get('x,y,z', chainID='A'))
+        xyz2 = np.array(self.sqldb.get('x,y,z', chainID='B'))
 
         # rowID of the second chain
-        index_a = self.sqldb.get('rowID',chainID='A')
-        index_b = self.sqldb.get('rowID',chainID='B')
+        index_a = self.sqldb.get('rowID', chainID='A')
+        index_b = self.sqldb.get('rowID', chainID='B')
 
         # resName of the chains
-        resName1 = np.array(self.sqldb.get('resName',chainID='A'))
-        resName2 = np.array(self.sqldb.get('resName',chainID='B'))
+        resName1 = np.array(self.sqldb.get('resName', chainID='A'))
+        resName2 = np.array(self.sqldb.get('resName', chainID='B'))
 
         # declare the contact atoms
         self.contact_atoms_A = []
         self.contact_atoms_B = []
 
-        #The contact atom pairs only co ntains pairs of atoms that are
+        # The contact atom pairs only co ntains pairs of atoms that are
         # in contact
         self.contact_pairs = {}
 
-        for i,x0 in enumerate(xyz1):
+        for i, x0 in enumerate(xyz1):
 
             # compute the contact atoms
-            contacts = np.where(np.sqrt(np.sum((xyz2-x0)**2,1)) < self.contact_distance)[0]
+            contacts = np.where(
+                np.sqrt(
+                    np.sum(
+                        (xyz2 - x0)**2,
+                        1)) < self.contact_distance)[0]
 
             # if we have contact atoms and resA is not a ligand
             if (len(contacts) > 0) and (resName1[i] in self.valid_resnames):
@@ -264,26 +269,32 @@ class AtomicFeature(FeatureClass):
                 # add i to the list
                 # add the index of b if its resname is not a ligand
                 self.contact_atoms_A += [index_a[i]]
-                self.contact_atoms_B += [index_b[k] for k in contacts if resName2[k] in self.valid_resnames]
+                self.contact_atoms_B += [index_b[k]
+                                         for k in contacts if resName2[k] in self.valid_resnames]
 
                 # add the contact pairs to the list
-                self.contact_pairs[index_a[i]] = [index_b[k] for k in contacts if resName2[k] in self.valid_resnames]
+                self.contact_pairs[index_a[i]] = [index_b[k]
+                                                  for k in contacts if resName2[k] in self.valid_resnames]
 
         # create a set of unique indexes
         self.contact_atoms_A = sorted(set(self.contact_atoms_A))
         self.contact_atoms_B = sorted(set(self.contact_atoms_B))
 
         # if no atoms were found
-        if len(self.contact_atoms_A)==0:
+        if len(self.contact_atoms_A) == 0:
             print('Warning : No contact atoms detected in atomicFeature')
 
-
     def _extend_contact_to_residue(self):
-        """Extend the contact atoms to entire residue where one atom is contacting."""
+        """Extend the contact atoms to entire residue where one atom is
+        contacting."""
 
         # extract the data
-        dataA = self.sqldb.get('chainId,resName,resSeq',rowID=self.contact_atoms_A)
-        dataB = self.sqldb.get('chainId,resName,resSeq',rowID=self.contact_atoms_B)
+        dataA = self.sqldb.get(
+            'chainId,resName,resSeq',
+            rowID=self.contact_atoms_A)
+        dataB = self.sqldb.get(
+            'chainId,resName,resSeq',
+            rowID=self.contact_atoms_B)
 
         # create tuple cause we want to hash through it
         dataA = [tuple(x) for x in dataA]
@@ -294,39 +305,43 @@ class AtomicFeature(FeatureClass):
         resB = list(set(dataB))
 
         # init the list
-        index_contact_A,index_contact_B = [],[]
+        index_contact_A, index_contact_B = [], []
 
         # contact of chain A
         for resdata in resA:
-            chainID,resName,resSeq = resdata
-            index_contact_A += self.sqldb.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq)
+            chainID, resName, resSeq = resdata
+            index_contact_A += self.sqldb.get('rowID',
+                                              chainID=chainID,
+                                              resName=resName,
+                                              resSeq=resSeq)
 
         # contact of chain B
         for resdata in resB:
-            chainID,resName,resSeq = resdata
-            index_contact_B += self.sqldb.get('rowID',chainID=chainID,resName=resName,resSeq=resSeq)
+            chainID, resName, resSeq = resdata
+            index_contact_B += self.sqldb.get('rowID',
+                                              chainID=chainID,
+                                              resName=resName,
+                                              resSeq=resSeq)
 
         # make sure that we don't have double (maybe optional)
         index_contact_A = sorted(set(index_contact_A))
         index_contact_B = sorted(set(index_contact_B))
 
-        return index_contact_A,index_contact_B
+        return index_contact_A, index_contact_B
 
-
-
-    #####################################################################################
+    ##########################################################################
     #
     #   Assign parameters
     #
-    #####################################################################################
+    ##########################################################################
 
     def assign_parameters(self):
+        """Assign to each atom in the pdb its charge and vdw interchain
+        parameters.
 
-        '''Assign to each atom in the pdb its charge and vdw interchain parameters.
-
-        Directly deals with the patch so that we don't loop over the residues
-        multiple times
-        '''
+        Directly deals with the patch so that we don't loop over the
+        residues multiple times
+        """
 
         # get all the resnumbers
         if self.verbose:
@@ -334,8 +349,7 @@ class AtomicFeature(FeatureClass):
 
         data = self.sqldb.get('chainID,resSeq,resName')
         natom = len(data)
-        data = np.unique(np.array(data),axis=0)
-
+        data = np.unique(np.array(data), axis=0)
 
         # declare the parameters for future insertion in SQL
         atcharge = np.zeros(natom)
@@ -343,56 +357,61 @@ class AtomicFeature(FeatureClass):
         atsig = np.zeros(natom)
 
         # check
-        attype = np.zeros(natom,dtype='<U5')
-        ataltResName = np.zeros(natom,dtype='<U5')
-
+        attype = np.zeros(natom, dtype='<U5')
+        ataltResName = np.zeros(natom, dtype='<U5')
 
         # add attribute to the db
 
         # loop over all the residues
-        for chain,resNum,resName in data:
+        for chain, resNum, resName in data:
 
             # atom types of the residue
             #query = "WHERE chainID='%s' AND resSeq=%s" %(chain,resNum)
-            atNames = np.array(self.sqldb.get('name',chainID=chain,resSeq=resNum))
-            rowID = np.array(self.sqldb.get('rowID',chainID=chain,resSeq=resNum))
+            atNames = np.array(
+                self.sqldb.get(
+                    'name',
+                    chainID=chain,
+                    resSeq=resNum))
+            rowID = np.array(
+                self.sqldb.get(
+                    'rowID',
+                    chainID=chain,
+                    resSeq=resNum))
 
             # get the alternative resname
-            altResName = self._get_altResName(resName,atNames)
+            altResName = self._get_altResName(resName, atNames)
 
             # get the charge of this residue
-            atcharge[rowID] = self._get_charge(resName,altResName,atNames)
+            atcharge[rowID] = self._get_charge(resName, altResName, atNames)
 
             # get the vdw parameters
-            eps,sigma,type_ = self._get_vdw(resName,altResName,atNames)
+            eps, sigma, type_ = self._get_vdw(resName, altResName, atNames)
             ateps[rowID] += eps
             atsig[rowID] += sigma
 
             ataltResName[rowID] = altResName
             attype[rowID] = type_
 
-
         # put the charge in SQL
         self.sqldb.add_column('CHARGE')
-        self.sqldb.update_column('CHARGE',atcharge)
+        self.sqldb.update_column('CHARGE', atcharge)
 
         # put the VDW in SQL
         self.sqldb.add_column('eps')
-        self.sqldb.update_column('eps',ateps)
+        self.sqldb.update_column('eps', ateps)
 
         self.sqldb.add_column('sig')
-        self.sqldb.update_column('sig',atsig)
+        self.sqldb.update_column('sig', atsig)
 
-        self.sqldb.add_column('type','TEXT')
-        self.sqldb.update_column('type',attype)
+        self.sqldb.add_column('type', 'TEXT')
+        self.sqldb.update_column('type', attype)
 
-        self.sqldb.add_column('altRes','TEXT')
-        self.sqldb.update_column('altRes',ataltResName)
+        self.sqldb.add_column('altRes', 'TEXT')
+        self.sqldb.update_column('altRes', ataltResName)
 
     @staticmethod
-    def _get_altResName(resName,atNames):
-
-        ''' Apply the patch data.
+    def _get_altResName(resName, atNames):
+        """Apply the patch data.
 
         This is adopted from preScan.pl
         This is very static and I don't quite like it
@@ -403,33 +422,35 @@ class AtomicFeature(FeatureClass):
         Args:
             resName (str): name of the residue
             atNames (list(str)): names of the atoms
-        '''
+        """
 
         new_type = {
-        'PROP' : ['all',    ['HT1','HT2'],                    [ ]],
-        'NTER' : ['all',    ['HT1','HT2','HT3'],              [ ]],
-        'CTER' : ['all',    ['OXT'],                          [ ]],
-        'CTN'  : ['all',    ['NT','HT1','HT2'],               [ ]],
-        'CYNH' : ['CYS',    ['1SG'],                          ['2SG']],
-        'DISU' : ['CYS',    ['1SG','2SG'],                    [ ]],
-        'HISE' : ['HIS',    ['ND1','CE1','CD2','NE2','HE2'],  ['HD1']],
-        'HISD' : ['HIS',    ['ND1','CE1','CD2','NE2','HD1'],  ['HE2']]
+            'PROP': ['all', ['HT1', 'HT2'], []],
+            'NTER': ['all', ['HT1', 'HT2', 'HT3'], []],
+            'CTER': ['all', ['OXT'], []],
+            'CTN': ['all', ['NT', 'HT1', 'HT2'], []],
+            'CYNH': ['CYS', ['1SG'], ['2SG']],
+            'DISU': ['CYS', ['1SG', '2SG'], []],
+            'HISE': ['HIS', ['ND1', 'CE1', 'CD2', 'NE2', 'HE2'], ['HD1']],
+            'HISD': ['HIS', ['ND1', 'CE1', 'CD2', 'NE2', 'HD1'], ['HE2']]
         }
 
         # this works fine now
 
         altResName = resName
-        for key,values in new_type.items():
+        for key, values in new_type.items():
 
             res, atpres, atabs = values
 
             if res == resName or res == 'all':
-                if all(x in atNames for x in atpres) and all(x not in atNames for x in atabs):
+                if all(
+                        x in atNames for x in atpres) and all(
+                        x not in atNames for x in atabs):
                     altResName = key
 
         return altResName
 
-    def _get_vdw(self,resName,altResName,atNames):
+    def _get_vdw(self, resName, altResName, atNames):
         """Get vdw itneraction terms.
 
         Args:
@@ -440,25 +461,26 @@ class AtomicFeature(FeatureClass):
 
         # in case the resname is not valid
         if resName not in self.valid_resnames:
-            vdw_eps   = [0.00]*len(atNames)
-            vdw_sigma = [0.00]*len(atNames)
-            type_ = ['None']*len(atNames)
+            vdw_eps = [0.00] * len(atNames)
+            vdw_sigma = [0.00] * len(atNames)
+            type_ = ['None'] * len(atNames)
 
-            return vdw_eps,vdw_sigma,type_
+            return vdw_eps, vdw_sigma, type_
 
-        vdw_eps,vdw_sigma,type_ = [],[],[]
+        vdw_eps, vdw_sigma, type_ = [], [], []
 
         for at in atNames:
 
-            if (altResName,at) in self.patch_type:
-                type_.append(self.patch_type[(altResName,at)])
-                vdw_data = self.vdw_param[self.patch_type[(altResName,at)]]
+            if (altResName, at) in self.patch_type:
+                type_.append(self.patch_type[(altResName, at)])
+                vdw_data = self.vdw_param[self.patch_type[(altResName, at)]]
                 vdw_eps.append(vdw_data[0])
                 vdw_sigma.append(vdw_data[1])
 
-            elif (resName,at) in self.at_name_type_convertor:
-                type_.append(self.at_name_type_convertor[(resName,at)])
-                vdw_data  = self.vdw_param[self.at_name_type_convertor[(resName,at)]]
+            elif (resName, at) in self.at_name_type_convertor:
+                type_.append(self.at_name_type_convertor[(resName, at)])
+                vdw_data = self.vdw_param[self.at_name_type_convertor[(
+                    resName, at)]]
                 vdw_eps.append(vdw_data[0])
                 vdw_sigma.append(vdw_data[1])
 
@@ -468,9 +490,9 @@ class AtomicFeature(FeatureClass):
                 vdw_eps.append(0.0)
                 vdw_sigma.append(0.0)
 
-        return vdw_eps,vdw_sigma,type_
+        return vdw_eps, vdw_sigma, type_
 
-    def _get_charge(self,resName,altResName,atNames):
+    def _get_charge(self, resName, altResName, atNames):
         """Get the charge information.
 
         Args:
@@ -481,39 +503,35 @@ class AtomicFeature(FeatureClass):
 
         # in case the resname is not valid
         if resName not in self.valid_resnames:
-            q = [0.0]*len(atNames)
+            q = [0.0] * len(atNames)
             return q
 
         # assign the charges
         q = []
         for at in atNames:
 
+            if (altResName, at) in self.patch_charge:
+                q.append(self.patch_charge[(altResName, at)])
 
-            if (altResName,at) in self.patch_charge:
-                q.append(self.patch_charge[(altResName,at)])
-
-
-            elif (resName,at) in self.charge:
-                q.append(self.charge[(resName,at)])
-
+            elif (resName, at) in self.charge:
+                q.append(self.charge[(resName, at)])
 
             else:
                 q.append(0.0)
 
         return q
 
-    #####################################################################################
+    ##########################################################################
     #
     #   Simple charges
     #
-    #####################################################################################
+    ##########################################################################
 
-    def evaluate_charges(self,extend_contact_to_residue=False):
-        """ Evaluate the charges.
+    def evaluate_charges(self, extend_contact_to_residue=False):
+        """Evaluate the charges.
 
         Args:
             extend_contact_to_residue (bool, optional): extend to res
-
         """
         if self.verbose:
             print('-- Compute list charge for contact atoms only')
@@ -521,7 +539,7 @@ class AtomicFeature(FeatureClass):
         if len(self.contact_atoms_A) == 0:
             self.feature_data['charge'] = {}
             self.feature_data_xyz['charge'] = {}
-            self.export_directories['charge'] = self.root_export+'/CHARGE/'
+            self.export_directories['charge'] = self.root_export + '/CHARGE/'
             return
 
         # extract information from the pdb2sq
@@ -536,11 +554,10 @@ class AtomicFeature(FeatureClass):
 
         # entire residue or not
         if extend_contact_to_residue:
-            indA,indB = self._extend_contact_to_residue()
-            index_contact_atoms = indA+indB
+            indA, indB = self._extend_contact_to_residue()
+            index_contact_atoms = indA + indB
         else:
             index_contact_atoms = self.contact_atoms_A + self.contact_atoms_B
-
 
         # loop over the chain A
         for i in index_contact_atoms:
@@ -552,14 +569,14 @@ class AtomicFeature(FeatureClass):
             charge_data[key] = [charge[i]]
 
             # xyz format
-            chain_dict = [{'A':0,'B':1}[key[0]]]
-            key = tuple( chain_dict + xyz[i,:].tolist())
+            chain_dict = [{'A': 0, 'B': 1}[key[0]]]
+            key = tuple(chain_dict + xyz[i, :].tolist())
             charge_data_xyz[key] = [charge[i]]
 
         # if we have no contact atoms
-        if len(charge_data_xyz)==0:
-            charge_data_xyz[tuple([0,0.,0.,0.])] = [0.0]
-            charge_data_xyz[tuple([1,0.,0.,0.])] = [0.0]
+        if len(charge_data_xyz) == 0:
+            charge_data_xyz[tuple([0, 0., 0., 0.])] = [0.0]
+            charge_data_xyz[tuple([1, 0., 0., 0.])] = [0.0]
 
         # add the electrosatic feature
         self.feature_data['charge'] = charge_data
@@ -567,17 +584,20 @@ class AtomicFeature(FeatureClass):
 
         # is that obsolte ?
         if self.individual_directory:
-            self.export_directories['charge'] = self.root_export+'/CHARGE/'
+            self.export_directories['charge'] = self.root_export + '/CHARGE/'
         else:
             self.export_directories['charge'] = self.root_export
 
-    #####################################################################################
+    ##########################################################################
     #
     #   PAIR INTERACTIONS
     #
-    #####################################################################################
+    ##########################################################################
 
-    def evaluate_pair_interaction(self,print_interactions=False,save_interactions=False):
+    def evaluate_pair_interaction(
+            self,
+            print_interactions=False,
+            save_interactions=False):
         """Evalaute the pair interactions (coulomb and vdw).
 
         Args:
@@ -591,7 +611,7 @@ class AtomicFeature(FeatureClass):
         if len(self.contact_atoms_A) == 0:
             self.feature_data['coulomb'] = {}
             self.feature_data_xyz['coulomb'] = {}
-            self.export_directories['coulomb'] = self.root_export+'/ELEC/'
+            self.export_directories['coulomb'] = self.root_export + '/ELEC/'
             return
 
         # extract information from the pdb2sq
@@ -600,7 +620,7 @@ class AtomicFeature(FeatureClass):
 
         charge = np.array(self.sqldb.get('CHARGE'))
         vdw = np.array(self.sqldb.get('eps,sig'))
-        eps,sig = vdw[:,0],vdw[:,1]
+        eps, sig = vdw[:, 0], vdw[:, 1]
 
         # define the dictionaries
         # these holds data like
@@ -614,42 +634,48 @@ class AtomicFeature(FeatureClass):
         vdw_data_xyz = {}
 
         # define the matrices
-        natA,natB = len(self.sqldb.get('x',chainID='A')),len(self.sqldb.get('x',chainID='B'))
-        matrix_elec = np.zeros((natA,natB))
-        matrix_vdw = np.zeros((natA,natB))
+        natA, natB = len(
+            self.sqldb.get(
+                'x', chainID='A')), len(
+            self.sqldb.get(
+                'x', chainID='B'))
+        matrix_elec = np.zeros((natA, natB))
+        matrix_vdw = np.zeros((natA, natB))
 
         # handle the export of the interaction breakdown
         _save_ = False
-        if save_interactions != False:
-            if save_interactions == True:
+        if save_interactions:
+            if save_interactions:
                 save_interactions = './'
             if os.path.isdir(save_interactions):
                 fname = save_interactions + '/atomic_pair_interaction.dat'
             else:
                 fname = save_interactions
-            f = open(fname,'w')
+            f = open(fname, 'w')
             _save_ = True
 
         # total energy terms
-        ec_tot,evdw_tot = 0,0
+        ec_tot, evdw_tot = 0, 0
 
         # loop over the chain A
-        for iA,indsB in self.contact_pairs.items():
+        for iA, indsB in self.contact_pairs.items():
 
             # coulomb terms
-            r = np.sqrt(np.sum((xyz[indsB,:]-xyz[iA,:])**2,1))
-            r[r==0] = 3.0
-            q1q2 = charge[iA]*charge[indsB]
-            ec = q1q2 * self.c / (self.eps0*r) * (1 - (r/self.contact_distance)**2 ) **2
+            r = np.sqrt(np.sum((xyz[indsB, :] - xyz[iA, :])**2, 1))
+            r[r == 0] = 3.0
+            q1q2 = charge[iA] * charge[indsB]
+            ec = q1q2 * self.c / (self.eps0 * r) * \
+                (1 - (r / self.contact_distance)**2) ** 2
 
             # coulomb terms
-            sigma_avg = 0.5*(sig[iA] + sig[indsB])
-            eps_avg = np.sqrt(eps[iA]*eps[indsB])
+            sigma_avg = 0.5 * (sig[iA] + sig[indsB])
+            eps_avg = np.sqrt(eps[iA] * eps[indsB])
 
             # normal LJ potential
-            evdw = 4.0 *eps_avg * (  (sigma_avg/r)**12  - (sigma_avg/r)**6 ) * self._prefactor_vdw(r)
+            evdw = 4.0 * eps_avg * \
+                ((sigma_avg / r)**12 - (sigma_avg / r)**6) * self._prefactor_vdw(r)
 
-            #total energy terms
+            # total energy terms
             ec_tot += np.sum(ec)
             evdw_tot += np.sum(evdw)
 
@@ -659,22 +685,22 @@ class AtomicFeature(FeatureClass):
             # store in matrix form so that
             # we don't have to recalculate for B
             indb_matrix = [i - natA for i in indsB]
-            matrix_elec[iA,indb_matrix] = ec
-            matrix_vdw[iA,indb_matrix]  = evdw
+            matrix_elec[iA, indb_matrix] = ec
+            matrix_vdw[iA, indb_matrix] = evdw
 
             # store in the dicts
             electro_data[keyA] = [np.sum(ec)]
             vdw_data[keyA] = [np.sum(evdw)]
 
             # store in the xyz dict
-            key = tuple([0]+xyz[iA,:].tolist())
+            key = tuple([0] + xyz[iA, :].tolist())
             electro_data_xyz[key] = [np.sum(ec)]
             vdw_data_xyz[key] = [np.sum(evdw)]
 
             # print the result
             if _save_ or print_interactions:
 
-                for iB,indexB in enumerate(indsB):
+                for iB, indexB in enumerate(indsB):
 
                     line = ''
                     keyB = tuple(atinfo[indexB])
@@ -703,7 +729,7 @@ class AtomicFeature(FeatureClass):
 
         # print the total interactions
         if print_interactions or _save_:
-            line='\n\n'
+            line = '\n\n'
             line += 'Total Evdw  = {:> 12.8f}\n'.format(evdw_tot)
             line += 'Total Eelec = {:> 12.8f}\n'.format(ec_tot)
             if print_interactions:
@@ -722,27 +748,26 @@ class AtomicFeature(FeatureClass):
             keyB = tuple(atinfo[indexB])
 
             # extract the values from the matrix
-            ec = matrix_elec[:,indexB-natA]
-            evdw = matrix_vdw[:,indexB-natA]
+            ec = matrix_elec[:, indexB - natA]
+            evdw = matrix_vdw[:, indexB - natA]
 
             # store in the dict
             electro_data[keyB] = [np.sum(ec)]
             vdw_data[keyB] = [np.sum(evdw)]
 
             # store the xyz dict
-            key = tuple([1]+xyz[indexB,:].tolist())
+            key = tuple([1] + xyz[indexB, :].tolist())
             electro_data_xyz[key] = [np.sum(ec)]
             vdw_data_xyz[key] = [np.sum(evdw)]
 
-
         # if we have no contact atoms
         if len(electro_data_xyz) == 0:
-            electro_data_xyz0[tuple([0,0.,0.,0.])] = [0.0]
-            electro_data_xyz0[tuple([1,0.,0.,0.])] = [0.0]
+            electro_data_xyz0[tuple([0, 0., 0., 0.])] = [0.0]
+            electro_data_xyz0[tuple([1, 0., 0., 0.])] = [0.0]
 
         if len(vdw_data_xyz) == 0:
-            vdw_data_xyz0[tuple([0,0.,0.,0.])] = [0.0]
-            vdw_data_xyz0[tuple([1,0.,0.,0.])] = [0.0]
+            vdw_data_xyz0[tuple([0, 0., 0., 0.])] = [0.0]
+            vdw_data_xyz0[tuple([1, 0., 0., 0.])] = [0.0]
 
         # add the electrosatic feature
         self.feature_data['coulomb'] = electro_data
@@ -752,27 +777,25 @@ class AtomicFeature(FeatureClass):
         self.feature_data['vdwaals'] = vdw_data
         self.feature_data_xyz['vdwaals'] = vdw_data_xyz
 
-
         # dict for export
         # I think that's obsolete
         if self.individual_directory:
-            self.export_directories['coulomb'] = self.root_export+'/ELEC/'
+            self.export_directories['coulomb'] = self.root_export + '/ELEC/'
         else:
             self.export_directories['coulomb'] = self.root_export
 
         if self.individual_directory:
-            self.export_directories['vdwaals'] = self.root_export+'/VDW/'
+            self.export_directories['vdwaals'] = self.root_export + '/VDW/'
         else:
             self.export_directories['vdwaals'] = self.root_export
 
-
-    #####################################################################################
+    ##########################################################################
     #
     #   ELECTROSTATIC
     #
-    #####################################################################################
+    ##########################################################################
 
-    def compute_coulomb_interchain_only(self,dosum=True,contact_only=False):
+    def compute_coulomb_interchain_only(self, dosum=True, contact_only=False):
         """Compute the coulomb interactions between the chains only.
 
         Args:
@@ -787,44 +810,62 @@ class AtomicFeature(FeatureClass):
 
             if len(self.contact_atoms_A) == 0:
                 self.feature_data['coulomb'] = {}
-                self.export_directories['coulomb'] = self.root_export+'/ELEC/'
+                self.export_directories['coulomb'] = self.root_export + '/ELEC/'
                 return
 
-            xyzA = np.array(self.sqldb.get('x,y,z',rowID=self.contact_atoms_A))
-            xyzB = np.array(self.sqldb.get('x,y,z',rowID=self.contact_atoms_B))
+            xyzA = np.array(
+                self.sqldb.get(
+                    'x,y,z',
+                    rowID=self.contact_atoms_A))
+            xyzB = np.array(
+                self.sqldb.get(
+                    'x,y,z',
+                    rowID=self.contact_atoms_B))
 
-            chargeA = np.array(self.sqldb.get('CHARGE',rowID=self.contact_atoms_A))
-            chargeB = np.array(self.sqldb.get('CHARGE',rowID=self.contact_atoms_B))
+            chargeA = np.array(
+                self.sqldb.get(
+                    'CHARGE',
+                    rowID=self.contact_atoms_A))
+            chargeB = np.array(
+                self.sqldb.get(
+                    'CHARGE',
+                    rowID=self.contact_atoms_B))
 
-            atinfoA = self.sqldb.get('chainID,resName,resSeq,name',rowID=self.contact_atoms_A)
-            atinfoB = self.sqldb.get('chainID,resName,resSeq,name',rowID=self.contact_atoms_B)
+            atinfoA = self.sqldb.get(
+                'chainID,resName,resSeq,name',
+                rowID=self.contact_atoms_A)
+            atinfoB = self.sqldb.get(
+                'chainID,resName,resSeq,name',
+                rowID=self.contact_atoms_B)
 
         else:
 
-            xyzA = np.array(self.sqldb.get('x,y,z',chainID='A'))
-            xyzB = np.array(self.sqldb.get('x,y,z',chainID='B'))
+            xyzA = np.array(self.sqldb.get('x,y,z', chainID='A'))
+            xyzB = np.array(self.sqldb.get('x,y,z', chainID='B'))
 
-            chargeA = np.array(self.sqldb.get('CHARGE',chainID='A'))
-            chargeB = np.array(self.sqldb.get('CHARGE',chainID='B'))
+            chargeA = np.array(self.sqldb.get('CHARGE', chainID='A'))
+            chargeB = np.array(self.sqldb.get('CHARGE', chainID='B'))
 
-            atinfoA = self.sqldb.get('chainID,resName,resSeq,name',chainID='A')
-            atinfoB = self.sqldb.get('chainID,resName,resSeq,name',chainID='B')
+            atinfoA = self.sqldb.get(
+                'chainID,resName,resSeq,name', chainID='A')
+            atinfoB = self.sqldb.get(
+                'chainID,resName,resSeq,name', chainID='B')
 
-        natA,natB = len(xyzA),len(xyzB)
-        matrix = np.zeros((natA,natB))
+        natA, natB = len(xyzA), len(xyzB)
+        matrix = np.zeros((natA, natB))
 
-        electro_data  = {}
+        electro_data = {}
 
         for iat in range(natA):
 
             # coulomb terms
-            r = np.sqrt(np.sum((xyzB-xyzA[iat,:])**2,1))
-            r[r==0]  = 3.0
-            q1q2 = chargeA[iat]*chargeB
-            value = q1q2/r
+            r = np.sqrt(np.sum((xyzB - xyzA[iat, :])**2, 1))
+            r[r == 0] = 3.0
+            q1q2 = chargeA[iat] * chargeB
+            value = q1q2 / r
 
             # store amd symmtrized these values
-            matrix[iat,:] = value
+            matrix[iat, :] = value
 
             # atinfo
             key = tuple(atinfoA[iat])
@@ -836,12 +877,11 @@ class AtomicFeature(FeatureClass):
 
         for iat in range(natB):
 
-
             # atinfo
             key = tuple(atinfoB[iat])
 
             # store
-            value = matrix[:,iat]
+            value = matrix[:, iat]
             if dosum:
                 value = [np.sum(value)]
             electro_data[key] = value
@@ -849,19 +889,17 @@ class AtomicFeature(FeatureClass):
         # add the feature to the dictionary of features
         self.feature_data['coulomb'] = electro_data
         if self.individual_directory:
-            self.export_directories['coulomb'] = self.root_export+'/ELEC/'
+            self.export_directories['coulomb'] = self.root_export + '/ELEC/'
         else:
             self.export_directories['coulomb'] = self.root_export
 
-
-    #####################################################################################
+    ##########################################################################
     #
     #   VAN DER WAALS
     #
-    #####################################################################################
+    ##########################################################################
 
-
-    def compute_vdw_interchain_only(self,dosum=True,contact_only=False):
+    def compute_vdw_interchain_only(self, dosum=True, contact_only=False):
         """Compute the vdw interactions between the chains only.
 
         Args:
@@ -875,54 +913,71 @@ class AtomicFeature(FeatureClass):
 
             if len(self.contact_atoms_A) == 0:
                 self.feature_data['coulomb'] = {}
-                self.export_directories['coulomb'] = self.root_export+'/ELEC/'
+                self.export_directories['coulomb'] = self.root_export + '/ELEC/'
                 return
 
+            xyzA = np.array(
+                self.sqldb.get(
+                    'x,y,z',
+                    rowID=self.contact_atoms_A))
+            xyzB = np.array(
+                self.sqldb.get(
+                    'x,y,z',
+                    rowID=self.contact_atoms_B))
 
-            xyzA = np.array(self.sqldb.get('x,y,z',rowID=self.contact_atoms_A))
-            xyzB = np.array(self.sqldb.get('x,y,z',rowID=self.contact_atoms_B))
+            vdwA = np.array(
+                self.sqldb.get(
+                    'eps,sig',
+                    rowID=self.contact_atoms_A))
+            vdwB = np.array(
+                self.sqldb.get(
+                    'eps,sig',
+                    rowID=self.contact_atoms_B))
 
-            vdwA = np.array(self.sqldb.get('eps,sig',rowID=self.contact_atoms_A))
-            vdwB = np.array(self.sqldb.get('eps,sig',rowID=self.contact_atoms_B))
+            epsA, sigA = vdwA[:, 0], vdwA[:, 1]
+            epsB, sigB = vdwB[:, 0], vdwB[:, 1]
 
-            epsA,sigA = vdwA[:,0],vdwA[:,1]
-            epsB,sigB = vdwB[:,0],vdwB[:,1]
-
-            atinfoA = self.sqldb.get('chainID,resName,resSeq,name',rowID=self.contact_atoms_A)
-            atinfoB = self.sqldb.get('chainID,resName,resSeq,name',rowID=self.contact_atoms_B)
+            atinfoA = self.sqldb.get(
+                'chainID,resName,resSeq,name',
+                rowID=self.contact_atoms_A)
+            atinfoB = self.sqldb.get(
+                'chainID,resName,resSeq,name',
+                rowID=self.contact_atoms_B)
 
         else:
 
-            xyzA = np.array(self.sqldb.get('x,y,z',chainID='A'))
-            xyzB = np.array(self.sqldb.get('x,y,z',chainID='B'))
+            xyzA = np.array(self.sqldb.get('x,y,z', chainID='A'))
+            xyzB = np.array(self.sqldb.get('x,y,z', chainID='B'))
 
-            vdwA = np.array(self.sqldb.get('eps,sig',chainID='A'))
-            vdwB = np.array(self.sqldb.get('eps,sig',chainID='B'))
+            vdwA = np.array(self.sqldb.get('eps,sig', chainID='A'))
+            vdwB = np.array(self.sqldb.get('eps,sig', chainID='B'))
 
-            epsA,sigA = vdwA[:,0],vdwA[:,1]
-            epsB,sigB = vdwB[:,0],vdwB[:,1]
+            epsA, sigA = vdwA[:, 0], vdwA[:, 1]
+            epsB, sigB = vdwB[:, 0], vdwB[:, 1]
 
-            atinfoA = self.sqldb.get('chainID,resName,resSeq,name',chainID='A')
-            atinfoB = self.sqldb.get('chainID,resName,resSeq,name',chainID='B')
+            atinfoA = self.sqldb.get(
+                'chainID,resName,resSeq,name', chainID='A')
+            atinfoB = self.sqldb.get(
+                'chainID,resName,resSeq,name', chainID='B')
 
-        natA,natB = len(xyzA),len(xyzB)
-        matrix = np.zeros((natA,natB))
+        natA, natB = len(xyzA), len(xyzB)
+        matrix = np.zeros((natA, natB))
 
-        vdw_data  = {}
+        vdw_data = {}
 
         for iat in range(natA):
 
             # vdW terms
-            r = np.sqrt(np.sum((xyzB-xyzA[iat,:])**2,1))
-            r[r==0]  = 3.0
-            sigma = 0.5*(sigA[iat] + sigB)
-            eps = np.sqrt(epsA[iat]*epsB)
+            r = np.sqrt(np.sum((xyzB - xyzA[iat, :])**2, 1))
+            r[r == 0] = 3.0
+            sigma = 0.5 * (sigA[iat] + sigB)
+            eps = np.sqrt(epsA[iat] * epsB)
 
             # normal LJ potential
-            value = 4*eps * (  (sigma/r)**12  - (sigma/r)**6 )
+            value = 4 * eps * ((sigma / r)**12 - (sigma / r)**6)
 
             # store these values
-            matrix[iat,:] = value
+            matrix[iat, :] = value
 
             # atinfo
             key = tuple(atinfoA[iat])
@@ -938,7 +993,7 @@ class AtomicFeature(FeatureClass):
             key = tuple(atinfoB[iat])
 
             # store
-            value = matrix[:,iat]
+            value = matrix[:, iat]
             if dosum:
                 value = [np.sum(value)]
             vdw_data[key] = value
@@ -946,7 +1001,7 @@ class AtomicFeature(FeatureClass):
         # add the feature to the dictionary of features
         self.feature_data['vdwaals'] = vdw_data
         if self.individual_directory:
-            self.export_directories['vdwaals'] = self.root_export+'/VDW/'
+            self.export_directories['vdwaals'] = self.root_export + '/VDW/'
         else:
             self.export_directories['vdwaals'] = self.root_export
 
@@ -954,23 +1009,23 @@ class AtomicFeature(FeatureClass):
     def _prefactor_vdw(r):
         """prefactor for vdw interactions."""
 
-        r_off,r_on = 8.5,6.5
+        r_off, r_on = 8.5, 6.5
         r2 = r**2
-        pref = (r_off**2-r2)**2 * (r_off**2 - r2 - 3*(r_on**2 - r2)) / (r_off**2-r_on**2)**3
-        pref[r>r_off] = 0.
-        pref[r<r_on]  = 1.0
+        pref = (r_off**2 - r2)**2 * (r_off**2 - r2 - 3 *
+                                     (r_on**2 - r2)) / (r_off**2 - r_on**2)**3
+        pref[r > r_off] = 0.
+        pref[r < r_on] = 1.0
         return pref
 
 
-#####################################################################################
+##########################################################################
 #
 #   THE MAIN FUNCTION CALLED IN THE INTERNAL FEATURE CALCULATOR
 #
-#####################################################################################
+##########################################################################
 
-def __compute_feature__(pdb_data,featgrp,featgrp_raw):
-
-    """Main function called in deeprank for the feature calculations
+def __compute_feature__(pdb_data, featgrp, featgrp_raw):
+    """Main function called in deeprank for the feature calculations.
 
     Args:
         pdb_data (list(bytes)): pdb information
@@ -981,9 +1036,9 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
     FF = path + '/forcefield/'
 
     atfeat = AtomicFeature(pdb_data,
-                           param_charge = FF + 'protein-allhdg5-4_new.top',
-                           param_vdw    = FF + 'protein-allhdg5-4_new.param',
-                           patch_file   = FF + 'patch.top')
+                           param_charge=FF + 'protein-allhdg5-4_new.top',
+                           param_vdw=FF + 'protein-allhdg5-4_new.param',
+                           patch_file=FF + 'patch.top')
 
     atfeat.assign_parameters()
 

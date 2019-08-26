@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-"""
-Extract first N groups of a hdf5 to a new hdf5 file.
+"""Extract first N groups of a hdf5 to a new hdf5 file.
 
 Usage: python {0} <hdf5 input file> <hdf5 output file> <number of groups to write>
 Example: python {0} ./001_1GPW.hdf5  ./001_1GPW_sub10.hdf5 10
 """
 import sys
+
 import h5py
 
 USAGE = __doc__.format(__file__)

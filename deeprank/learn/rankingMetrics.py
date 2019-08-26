@@ -1,4 +1,4 @@
-"""Information Retrieval metrics
+"""Information Retrieval metrics.
 
 Useful Resources:
 http://www.cs.utexas.edu/~mooney/ir-course/slides/Evaluation.ppt
@@ -11,8 +11,8 @@ import numpy as np
 
 
 def hitrate(rs):
-    """Hit rate Basically equivalent to the recall@k
-    First element is rank 1, Relevance is binray
+    """Hit rate Basically equivalent to the recall@k First element is rank 1,
+    Relevance is binray.
 
     Example:
 
@@ -55,8 +55,7 @@ def avprec(rs):
 
 
 def recall(rs, nr):
-    """recall rate
-    First element is rank 1, Relevance is binray
+    """recall rate First element is rank 1, Relevance is binray.
 
     Example:
 
@@ -74,11 +73,11 @@ def recall(rs, nr):
         recall (int): recall value
     """
 
-    return np.sum(rs)/nr
+    return np.sum(rs) / nr
 
 
 def mean_reciprocal_rank(rs):
-    """Score is reciprocal of the rank of the first relevant item
+    """Score is reciprocal of the rank of the first relevant item.
 
     First element is 'rank 1'.  Relevance is binary (nonzero is relevant).
 
@@ -105,7 +104,7 @@ def mean_reciprocal_rank(rs):
 
 
 def r_precision(r):
-    """Score is precision after all relevant documents have been retrieved
+    """Score is precision after all relevant documents have been retrieved.
 
     Relevance is binary (nonzero is relevant).
 
@@ -195,7 +194,7 @@ def average_precision(r):
 
 
 def mean_average_precision(rs):
-    """Score is mean average precision
+    """Score is mean average precision.
 
     Relevance is binary (nonzero is relevant).
 

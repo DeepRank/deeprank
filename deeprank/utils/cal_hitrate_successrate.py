@@ -1,11 +1,11 @@
 import numpy as np
 import pandas as pd
+
 from deeprank.learn import rankingMetrics
 
 
 def evaluate(data):
-    '''
-    Calculate success rate and hit rate.
+    """Calculate success rate and hit rate.
 
     <INPUT>
     data: a data frame.
@@ -25,8 +25,7 @@ def evaluate(data):
              train  1ZHI     1            0.2          1            0.3
 
         where success =[0, 0, 1, 1, 1,...]: starting from rank 3 this case is a success
-
-    '''
+    """
 
     out_df = pd.DataFrame()
     labels = data.label.unique()  # ['train', 'test', 'valid']
@@ -56,7 +55,8 @@ def evaluate(data):
                 caseIDs.extend([caseID] * len(df_one_case))
 
             # hitrate = df_sorted['target'].apply(rankingMetrics.hitrate) # df_sorted['target']: class IDs for each model
-            # success = hitrate.apply(rankingMetrics.success) # success =[0, 0, 1, 1, 1,...]: starting from rank 3 this case is a success
+            # success = hitrate.apply(rankingMetrics.success) # success =[0, 0,
+            # 1, 1, 1,...]: starting from rank 3 this case is a success
 
             out_df_tmp['label'] = [l] * len(df)  # train, valid or test
             out_df_tmp['caseID'] = caseIDs
@@ -69,8 +69,7 @@ def evaluate(data):
 
 
 def ave_evaluate(data):
-    '''
-    Calculate the average of each column over all cases.
+    """Calculate the average of each column over all cases.
 
     INPUT:
     data =
@@ -103,8 +102,7 @@ def ave_evaluate(data):
 
         test       5ACD   0.0      0.0      0.0      0.0
         test       5ACD   1.0      1.0      1.0      1.0
-
-    '''
+    """
 
     new_data = pd.DataFrame()
     for l, perf_per_case in data.groupby('label'):
@@ -128,7 +126,7 @@ def ave_evaluate(data):
                 perf_ave[col] = perf_ave[col][0:top_N] + \
                     np.array(perf_case[col][0:top_N])
 
-            perf_ave[col] = perf_ave[col]/num_cases
+            perf_ave[col] = perf_ave[col] / num_cases
 
         new_data = pd.concat([new_data, perf_ave])
 
@@ -136,11 +134,9 @@ def ave_evaluate(data):
 
 
 def add_rank(df):
-    '''
-    INPUT (a data frame):
-         label   success_DR  hitRate_DR  success_HS  hitRate_HS
-         Test          0.0    0.000000         0.0    0.000000
-         Test          0.0    0.000000         1.0    0.012821
+    """INPUT (a data frame): label   success_DR  hitRate_DR  success_HS
+    hitRate_HS Test          0.0    0.000000         0.0    0.000000 Test
+    0.0    0.000000         1.0    0.012821.
 
          Train         0.0    0.000000         1.0    0.012821
          Train         0.0    0.000000         1.0    0.025641
@@ -152,15 +148,14 @@ def add_rank(df):
 
          Train         0.0    0.000000         1.0    0.012821  0.002846
          Train         0.0    0.000000         1.0    0.025641  0.003795
-
-    '''
+    """
 
     # -- add the 'rank' column to df
     rank = []
     for _, df_per_label in df.groupby('label'):
         num_mol = len(df_per_label)
         rank_raw = np.array(range(num_mol)) + 1
-        rank.extend(rank_raw/num_mol)
+        rank.extend(rank_raw / num_mol)
     df['rank'] = rank
 
     df['label'] = pd.Categorical(df['label'], categories=[
