@@ -63,7 +63,7 @@ class TestAtomicFeature(unittest.TestCase):
 
 
             at_test = ( (ltest[0],ltest[1],ltest[2],ltest[3]),(ltest[4],ltest[5],ltest[6],ltest[7]) )
-            at_ref  = ( (lref[1] ,lref[0] ,lref[2] ,lref[3]) ,(lref[5] ,lref[4] ,lref[6] ,lref[7]) )
+            at_ref  = ( (lref[1] ,lref[2] ,lref[0] ,lref[3]) ,(lref[5] ,lref[6] ,lref[4] ,lref[7]) )
             if not at_test == at_ref:
                 raise AssertionError()
 
