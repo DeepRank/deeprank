@@ -4,7 +4,7 @@ import numpy as np
 
 import deeprank.learn.modelGenerator
 import torch.optim as optim
-from deeprank.learn import NetworkGenerator, NeuralNet
+from deeprank.learn import NetworkGenerator, NeuralNet, DataSet
 
 
 class saved_model(object):

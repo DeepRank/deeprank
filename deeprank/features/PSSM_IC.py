@@ -19,8 +19,6 @@ class PSSM_IC(FullPSSM):
 
 def __compute_feature__(pdb_data, featgrp, featgrp_raw):
 
-def __compute_feature__(pdb_data, featgrp, featgrp_raw):
-
     func(pdb_data, featgrp, featgrp_raw, out_type='pssmic')
 
 ##########################################################################
