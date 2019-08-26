@@ -5,8 +5,7 @@ from deeprank.learn import rankingMetrics
 
 
 def evaluate(data):
-    '''
-    Calculate success rate and hit rate.
+    """Calculate success rate and hit rate.
 
     <INPUT>
     data: a data frame.
@@ -26,8 +25,7 @@ def evaluate(data):
              train  1ZHI     1            0.2          1            0.3
 
         where success =[0, 0, 1, 1, 1,...]: starting from rank 3 this case is a success
-
-    '''
+    """
 
     out_df = pd.DataFrame()
     labels = data.label.unique()  # ['train', 'test', 'valid']
@@ -71,8 +69,7 @@ def evaluate(data):
 
 
 def ave_evaluate(data):
-    '''
-    Calculate the average of each column over all cases.
+    """Calculate the average of each column over all cases.
 
     INPUT:
     data =
@@ -105,8 +102,7 @@ def ave_evaluate(data):
 
         test       5ACD   0.0      0.0      0.0      0.0
         test       5ACD   1.0      1.0      1.0      1.0
-
-    '''
+    """
 
     new_data = pd.DataFrame()
     for l, perf_per_case in data.groupby('label'):
@@ -138,11 +134,9 @@ def ave_evaluate(data):
 
 
 def add_rank(df):
-    '''
-    INPUT (a data frame):
-         label   success_DR  hitRate_DR  success_HS  hitRate_HS
-         Test          0.0    0.000000         0.0    0.000000
-         Test          0.0    0.000000         1.0    0.012821
+    """INPUT (a data frame): label   success_DR  hitRate_DR  success_HS
+    hitRate_HS Test          0.0    0.000000         0.0    0.000000 Test
+    0.0    0.000000         1.0    0.012821.
 
          Train         0.0    0.000000         1.0    0.012821
          Train         0.0    0.000000         1.0    0.025641
@@ -154,8 +148,7 @@ def add_rank(df):
 
          Train         0.0    0.000000         1.0    0.012821  0.002846
          Train         0.0    0.000000         1.0    0.025641  0.003795
-
-    '''
+    """
 
     # -- add the 'rank' column to df
     rank = []

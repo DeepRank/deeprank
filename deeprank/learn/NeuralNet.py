@@ -85,7 +85,7 @@ class NeuralNet():
 
             Raises:
                 ValueError: if dataset format is not recognized
-            """
+        """
 
         # ------------------------------------------
         # Dataset
@@ -284,7 +284,8 @@ class NeuralNet():
             num_workers=1,
             save_model='best',
             save_epoch='intermediate'):
-        """Perform a simple training of the model. The data set is divided in training/validation sets.
+        """Perform a simple training of the model. The data set is divided in
+        training/validation sets.
 
         Args:
 
@@ -327,7 +328,6 @@ class NeuralNet():
         >>> model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
         >>> # save the model
         >>> model.save_model()
-
         """
 
         print('\n: Batch Size : %d' % train_batch_size)
@@ -397,7 +397,6 @@ class NeuralNet():
 
         Args:
             hdf5 (str, optional): hdf5 file to store the test results
-
         """
         # output
         fname = self.outdir + '/' + hdf5
@@ -422,7 +421,7 @@ class NeuralNet():
         self.f5.close()
 
     def save_model(self, filename='model.pth.tar'):
-        """save the model to disk
+        """save the model to disk.
 
         Args:
             filename (str, optional): name of the file
@@ -461,24 +460,20 @@ class NeuralNet():
         torch.save(state, filename)
 
     def load_model_params(self):
-        """Get model parameters from a saved model.
-        """
+        """Get model parameters from a saved model."""
         self.net.load_state_dict(self.state['state_dict'])
 
     def load_optimizer_params(self):
-        """Get optimizer parameters from a saved model.
-        """
+        """Get optimizer parameters from a saved model."""
         self.optimizer.load_state_dict(self.state['optimizer'])
 
     def load_nn_params(self):
-        """Get NeuralNet parameters from a saved model.
-        """
+        """Get NeuralNet parameters from a saved model."""
         self.task = self.state['task']
         self.criterion = self.state['criterion']
 
     def load_data_params(self):
-        '''Get dataset parameters from a saved model.
-        '''
+        """Get dataset parameters from a saved model."""
         self.data_set.select_feature = self.state['select_feature']
         self.data_set.select_target = self.state['select_target']
 
@@ -505,7 +500,8 @@ class NeuralNet():
         self.data_set.grid_info = self.state['grid_info']
 
     def _divide_dataset(self, divide_set, preshuffle, preshuffle_seed):
-        '''Divide the data set in a training validation and test according to the percentage in divide_set.
+        """Divide the data set in a training validation and test according to
+        the percentage in divide_set.
 
         Args:
             divide_set (list(float)): percentage used for training/validation/test
@@ -514,7 +510,7 @@ class NeuralNet():
 
         Returns:
             list(int),list(int),list(int): Indices of the training/validation/test set
-        '''
+        """
         # if user only provided one number
         # we assume it's the training percentage
         if not isinstance(divide_set, list):
@@ -864,7 +860,7 @@ class NeuralNet():
 
     def _get_variables(self, inputs, targets):
         # xue: why not put this step to DataSet.py?
-        '''Convert the feature/target in torch.Variables.
+        """Convert the feature/target in torch.Variables.
 
         The format is different for regression where the targets are float
         and classification where they are int.
@@ -876,7 +872,7 @@ class NeuralNet():
         Returns:
             torch.Variable: features
             torch.Variable: target values
-        '''
+        """
 
         # if cuda is available
         if self.cuda:
@@ -893,11 +889,11 @@ class NeuralNet():
         return inputs, targets
 
     def _export_losses(self, figname):
-        '''Plot the losses vs the epoch
+        """Plot the losses vs the epoch.
 
         Args:
             figname (str): name of the file where to export the figure
-        '''
+        """
 
         print('\n --> Loss Plot')
 
@@ -950,14 +946,13 @@ class NeuralNet():
             grp.create_dataset(k, data=v)
 
     def _plot_scatter_reg(self, figname):
-        '''Plot a scatter plots of predictions VS targets.
+        """Plot a scatter plots of predictions VS targets.
 
         Useful to visualize the performance of the training algorithm
 
         Args:
             figname (str): filename
-
-        '''
+        """
 
         # abort if we don't want to plot
         if self.plot is False:
@@ -998,15 +993,13 @@ class NeuralNet():
         plt.close()
 
     def _plot_boxplot_class(self, figname):
-        '''
-        Plot a boxplot of predictions VS targets useful '
-        to visualize the performance of the training algorithm
-        This is only usefull in classification tasks
+        """Plot a boxplot of predictions VS targets useful ' to visualize the
+        performance of the training algorithm This is only usefull in
+        classification tasks.
 
         Args:
             figname (str): filename
-
-        '''
+        """
 
         # abort if we don't want to plot
         if not self.plot:
@@ -1047,7 +1040,7 @@ class NeuralNet():
         plt.close()
 
     def plot_hit_rate(self, figname):
-        '''Plot the hit rate of the different training/valid/test sets
+        """Plot the hit rate of the different training/valid/test sets.
 
         The hit rate is defined as:
             the percentage of positive decoys that are included among the top m decoys.
@@ -1056,8 +1049,7 @@ class NeuralNet():
         Args:
             figname (str): filename for the plot
             irmsd_thr (float, optional): threshold for 'good' models
-
-        '''
+        """
 
         if self.plot is False:
             return

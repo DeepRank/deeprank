@@ -22,7 +22,7 @@ class FullPSSM(FeatureClass):
 
     def __init__(self, mol_name=None, pdbfile=None, pssm_path=None,
                  debug=True, pssm_format='new'):
-        '''Compute all the PSSM data.
+        """Compute all the PSSM data.
 
        Simply extracts all the PSSM information and store that into features
 
@@ -40,7 +40,7 @@ class FullPSSM(FeatureClass):
         >>> pssm.read_PSSM_data()
         >>> pssm.get_feature_value()
         >>> print(pssm.feature_data_xyz)
-        '''
+        """
 
         super().__init__("Residue")
 

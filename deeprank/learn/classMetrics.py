@@ -70,7 +70,7 @@ def precision(yp, yt):
 
 
 def accuracy(yp, yt):
-    """Accuracy
+    """Accuracy.
 
     Args:
         yp (array): predictions
@@ -88,7 +88,7 @@ def accuracy(yp, yt):
 
 
 def F1(yp, yt):
-    """F1 score
+    """F1 score.
 
     Args:
         yp (array): predictions
@@ -105,7 +105,7 @@ def F1(yp, yt):
 
 
 def true_positive(yp, yt):
-    """number of true positive cases
+    """number of true positive cases.
 
     Args:
         yp (array): predictions
@@ -117,7 +117,7 @@ def true_positive(yp, yt):
 
 
 def true_negative(yp, yt):
-    """number of true negative cases
+    """number of true negative cases.
 
     Args:
         yp (array): predictions
@@ -129,7 +129,7 @@ def true_negative(yp, yt):
 
 
 def false_positive(yp, yt):
-    """number of false positive cases
+    """number of false positive cases.
 
     Args:
         yp (array): predictions
@@ -141,7 +141,7 @@ def false_positive(yp, yt):
 
 
 def false_negative(yp, yt):
-    """number of false false cases
+    """number of false false cases.
 
     Args:
         yp (array): predictions
@@ -153,7 +153,7 @@ def false_negative(yp, yt):
 
 
 def positive(yt):
-    """The number of real positive cases
+    """The number of real positive cases.
 
     Args:
         yt (array): targets
@@ -163,7 +163,7 @@ def positive(yt):
 
 
 def negative(yt):
-    """The nunber of real negative cases
+    """The nunber of real negative cases.
 
     Args:
         yt (array): targets
@@ -173,7 +173,7 @@ def negative(yt):
 
 
 def _to_bool(x):
-    """convert array values to boolean values
+    """convert array values to boolean values.
 
     Args:
         x (array): values should be  0 or 1

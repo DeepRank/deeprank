@@ -58,7 +58,7 @@ class PSSM_IC(FeatureClass):
         return mol_name.split('_')[0]
 
     def read_PSSMIC_data(self):
-        """ Read the PSSM data."""
+        """Read the PSSM data."""
 
         names = os.listdir(self.pssmic_path)
         fname = [n for n in names if n.find(self.molname) == 0]

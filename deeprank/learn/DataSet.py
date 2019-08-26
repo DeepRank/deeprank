@@ -197,8 +197,10 @@ class DataSet():
 
     def process_dataset(self):
         """Process the data set.
-        Done by default. However must be turned off when one want to test a pretrained model. This can be done
-        by setting ``process=False`` in the creation of the ``DataSet`` instance.
+
+        Done by default. However must be turned off when one want to
+        test a pretrained model. This can be done by setting
+        ``process=False`` in the creation of the ``DataSet`` instance.
         """
 
         print('\n')
@@ -285,6 +287,7 @@ class DataSet():
 
     def __getitem__(self, index):
         """Get one item from its unique index.
+
         Args:
             index (int): index of the complex
         Returns:
@@ -341,10 +344,12 @@ class DataSet():
         return database
 
     def create_index_molecules(self):
-        '''Create the indexing of each molecule in the dataset.
-        Create the indexing: [ ('1ak4.hdf5,1AK4_100w),...,('1fqj.hdf5,1FGJ_400w)]
-        This allows to refer to one complex with its index in the list
-        '''
+        """Create the indexing of each molecule in the dataset.
+
+        Create the indexing: [
+        ('1ak4.hdf5,1AK4_100w),...,('1fqj.hdf5,1FGJ_400w)] This allows
+        to refer to one complex with its index in the list
+        """
         print("   Processing data set")
 
         self.index_complexes = []
@@ -445,7 +450,7 @@ class DataSet():
         self.ntest = self.ntot - self.ntrain - self.nvalid
 
     def _select_pdb(self, mol_names):
-        """Select complexes
+        """Select complexes.
 
         Args:
             mol_names (list): list of complex names
@@ -477,7 +482,9 @@ class DataSet():
         return mol_names
 
     def filter(self, molgrp):
-        '''Filter the molecule according to a dictionary, e.g., dict_filter={'DOCKQ':'>0.1', 'IRMSD':'<=4 or >10'}).
+        """Filter the molecule according to a dictionary, e.g.,
+        dict_filter={'DOCKQ':'>0.1', 'IRMSD':'<=4 or >10'}).
+
         The filter is based on the attribute self.dict_filter
         that must be either of the form: { 'name' : cond } or None
         Args:
@@ -486,7 +493,7 @@ class DataSet():
             bool: True if we keep the complex False otherwise
         Raises:
             ValueError: If an unsuported condition is provided
-        '''
+        """
         if self.dict_filter is None:
             return True
 
@@ -691,8 +698,7 @@ class DataSet():
         print("You don't need to specify _chainA _chainB for each feature. The code will append it automatically")
 
     def get_pairing_feature(self):
-        """Creates the index of paired features.
-        """
+        """Creates the index of paired features."""
 
         if self.pair_chain_feature:
 
@@ -710,6 +716,7 @@ class DataSet():
 
     def get_input_shape(self):
         """Get the size of the data and input.
+
         Reminder :
         self.data_shape  : shape of the raw 3d data set
         self.input_shape : input size of the CNN (potentially after 2d transformation)
@@ -732,10 +739,11 @@ class DataSet():
         self.input_shape = feature.shape
 
     def get_grid_shape(self):
-        '''Get the shape of the matrices.
+        """Get the shape of the matrices.
+
         Raises:
             ValueError: If no grid shape is provided or is present in the HDF5 file
-        '''
+        """
 
         if self.mapfly is False:
 
@@ -769,7 +777,7 @@ class DataSet():
                 'Impossible to determine sparse grid shape.\nIf you are not loading a pretrained model, specify grid_shape or grid_info')
 
     def compute_norm(self):
-        """ compute the normalization factors."""
+        """compute the normalization factors."""
 
         print("   Normalization factor :")
 
@@ -821,8 +829,7 @@ class DataSet():
         print(self.target_min, self.target_max)
 
     def get_norm(self):
-        """Get the normalization values for the features.
-        """
+        """Get the normalization values for the features."""
 
         print("   Normalization factor :")
 
@@ -851,8 +858,7 @@ class DataSet():
         self.target_max = self.param_norm['targets'][self.select_target].max
 
     def _read_norm(self):
-        """Read or create the normalization file for the complex.
-        """
+        """Read or create the normalization file for the complex."""
         # loop through all the filename
         for f5 in self.train_database:
 
@@ -896,8 +902,9 @@ class DataSet():
 
     def _get_target_ordering(self, order):
         """Determine if ordering of the target.
-        This can be lower the better or higher the better
-        If it can't determine the ordering 'lower' is assumed
+
+        This can be lower the better or higher the better If it can't
+        determine the ordering 'lower' is assumed
         """
 
         lower_list = ['IRMSD', 'LRMSD', 'HADDOCK']
@@ -919,6 +926,7 @@ class DataSet():
 
     def backtransform_target(self, data):
         """Returns the values of the target after de-normalization.
+
         Args:
             data (list(float)): normalized data
         Returns:
@@ -933,6 +941,7 @@ class DataSet():
 
     def _normalize_target(self, target):
         """Normalize the values of the targets.
+
         Args:
             target (list(float)): raw data
         Returns:
@@ -945,6 +954,7 @@ class DataSet():
 
     def _normalize_feature(self, feature):
         """Normalize the values of the features.
+
         Args:
             feature (np.array): raw feature values
         Returns:
@@ -974,7 +984,9 @@ class DataSet():
 
     @staticmethod
     def _mad_based_outliers(points, minv, maxv, thresh=3.5):
-        """Mean absolute deviation based outlier detection. (Experimental).
+        """Mean absolute deviation based outlier detection.
+
+        (Experimental).
         Args:
             points (np.array): raw input data
             minv (float): Minimum (negative) value requested
@@ -1003,13 +1015,14 @@ class DataSet():
         return points
 
     def load_one_molecule(self, fname, mol=None):
-        '''Load the feature/target of a single molecule.
+        """Load the feature/target of a single molecule.
+
         Args:
             fname (str): hdf5 file name
             mol (None or str, optional): name of the complex in the hdf5
         Returns:
             np.array,float: features, targets
-        '''
+        """
         t0 = time.time()
 
         outtype = 'float32'
@@ -1079,7 +1092,7 @@ class DataSet():
             outtype), np.array([target]).astype(outtype)
 
     def map_one_molecule(self, fname, mol=None, angle=None, axis=None):
-        '''Map the feature and load feature/target of a single molecule.
+        """Map the feature and load feature/target of a single molecule.
 
         Args:
             fname (str): hdf5 file name
@@ -1087,7 +1100,7 @@ class DataSet():
 
         Returns:
             np.array,float: features, targets
-        '''
+        """
         t0 = time.time()
 
         outtype = 'float32'
@@ -1130,7 +1143,8 @@ class DataSet():
 
     @staticmethod
     def convert2d(feature, proj2d):
-        '''Convert the 3D volumetric feature to a 2D planar data set.
+        """Convert the 3D volumetric feature to a 2D planar data set.
+
         proj2d specifies the dimension that we want to consider as channel
         for example for proj2d = 0 the 2D images are in the yz plane and
         the stack along the x dimension is considered as extra channels
@@ -1139,7 +1153,7 @@ class DataSet():
             proj2d (int): projection
         Returns:
             np.array: projected features
-        '''
+        """
         nc, nx, ny, nz = feature.shape
         if proj2d == 0:
             feature = feature.reshape(-1, 1, ny, nz).squeeze()
@@ -1153,6 +1167,7 @@ class DataSet():
     @staticmethod
     def make_feature_pair(feature, op):
         """Pair the features of both chains.
+
         Args:
             feature (np.array): raw features
             op (callable): function to combine the features
@@ -1262,8 +1277,7 @@ class DataSet():
 
     @staticmethod
     def _densgrid(center, vdw_radius, grid, npts):
-        ''' Function to map individual atomic density on the grid.
-
+        """Function to map individual atomic density on the grid.
 
         The formula is equation (1) of the Koes paper
         Protein-Ligand Scoring with Convolutional NN Arxiv:1612.02751v1
@@ -1274,7 +1288,7 @@ class DataSet():
 
         Returns:
             TYPE: np.array (mapped density)
-        '''
+        """
 
         x0, y0, z0 = center
         dd = np.sqrt((grid[0] - x0)**2 + (grid[1] - y0)**2 + (grid[2] - z0)**2)
@@ -1341,7 +1355,7 @@ class DataSet():
 
     @staticmethod
     def _featgrid(center, value, grid, npts):
-        '''Map an individual feature (atomic or residue) on the grid
+        """Map an individual feature (atomic or residue) on the grid.
 
         Args:
             center (list(float)): position of the feature center
@@ -1353,7 +1367,7 @@ class DataSet():
 
         Raises:
             ValueError: Description
-        '''
+        """
 
         # shortcut for th center
         x0, y0, z0 = center
@@ -1376,7 +1390,7 @@ class DataSet():
     # get rotation axis and angle
     @staticmethod
     def _get_aug_rot():
-        """Get the rotation angle/axis
+        """Get the rotation angle/axis.
 
         Returns:
             list(float): axis of rotation
@@ -1401,14 +1415,13 @@ class DataSet():
 
     @staticmethod
     def _rotate_coord(xyz, xyz0, angle, axis):
-        """Rotate a part or all of the molecule around a specified axis
+        """Rotate a part or all of the molecule around a specified axis.
 
         Args:
             xyz (np.array): position of the atoms
             xyz0 (np.array): rotation center
             axis (np.array): axis of rotation
             angle (float): angle of rotation in radian
-
         """
 
         # get the data

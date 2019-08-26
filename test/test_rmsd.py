@@ -79,7 +79,8 @@ class TestStructureSimilarity(unittest.TestCase):
 
     @staticmethod
     def test_slow():
-        """Compute IRMSD/LRMSD from pdb2sql methd to make sure it doesn't crash."""
+        """Compute IRMSD/LRMSD from pdb2sql methd to make sure it doesn't
+        crash."""
 
         # specify wich data to us
         MOL = './1AK4/'

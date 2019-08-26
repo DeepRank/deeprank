@@ -20,13 +20,12 @@ class SASA(object):
 
         Args:
             pdbfile (str): PDB file of the conformation
-
         """
 
         self.pdbfile = pdbfile
 
     def get_center(self, chainA='A', chainB='B', center='cb'):
-        '''Get the center of the resiudes.
+        """Get the center of the resiudes.
 
         center = cb --> the center is located on the carbon beta of each residue
         center = 'center' --> average position of all atoms of the residue
@@ -39,7 +38,7 @@ class SASA(object):
                 center = 'center' --> average position of all atoms of the residue
         Raises:
             ValueError: If the center is not recpgnized
-        '''
+        """
 
         if center == 'center':
             self.get_residue_center(chainA=chainA, chainB=chainB)
@@ -51,12 +50,12 @@ class SASA(object):
                 center)
 
     def get_residue_center(self, chainA='A', chainB='B'):
-        '''Compute the average position of all the residues.
+        """Compute the average position of all the residues.
 
         Args:
             chainA (str, optional): Name of the first chain
             chainB (str, optional): Name of the second chain
-        '''
+        """
 
         sql = pdb2sql(self.pdbfile)
         resA = np.array(sql.get('resSeq,resName', chainID=chainA))
@@ -92,12 +91,12 @@ class SASA(object):
         sql.close()
 
     def get_residue_carbon_beta(self, chainA='A', chainB='B'):
-        '''Extract the position of the carbon beta of each residue.
+        """Extract the position of the carbon beta of each residue.
 
         Args:
             chainA (str, optional): Name of the first chain
             chainB (str, optional): Name of the second chain
-        '''
+        """
 
         sql = pdb2sql(self.pdbfile)
         resA = np.array(
@@ -132,7 +131,7 @@ class SASA(object):
             chainA='A',
             chainB='B',
             center='cb'):
-        '''Compute teh SASA folowing the neighbour vector approach.
+        """Compute teh SASA folowing the neighbour vector approach.
 
         The method is based on Eq on page 1097 of https://link.springer.com/article/10.1007%2Fs00894-009-0454-9
 
@@ -145,7 +144,7 @@ class SASA(object):
 
         Returns:
             dict: neighbouring vectors
-        '''
+        """
 
         # get the center
         self.get_center(chainA=chainA, chainB=chainB, center=center)
@@ -185,7 +184,7 @@ class SASA(object):
             chainA='A',
             chainB='B',
             center='cb'):
-        '''Compute the neighbourhood count of each residue.
+        """Compute the neighbourhood count of each residue.
 
         The method is based on Eq on page 1097 of https://link.springer.com/article/10.1007%2Fs00894-009-0454-9
 
@@ -198,7 +197,7 @@ class SASA(object):
 
         Returns:
             dict: Neighborhood count
-        '''
+        """
 
         # get the center
         self.get_center(chainA=chainA, chainB=chainB, center=center)
@@ -219,7 +218,7 @@ class SASA(object):
 
     @staticmethod
     def neighbor_weight(dist, lbound, ubound):
-        """Neighboor weight
+        """Neighboor weight.
 
         Args:
             dist (np.array): distance from neighboors

@@ -10,7 +10,8 @@ from deeprank.tools import sparse
 class NormalizeData(object):
 
     def __init__(self, fname, shape=None):
-        """Compute the normalization factor for the features and targets of a given HDF5 file.
+        """Compute the normalization factor for the features and targets of a
+        given HDF5 file.
 
         The normalization of the features is done through the NormParam class that assumes gaussian distribution.
         Hence the Normalized data should be normally distributed with a 0 mean value and 1 standard deviation.
@@ -26,7 +27,6 @@ class NormalizeData(object):
 
         >>> norm = NormalizeData('1ak4.hdf5')
         >>> norm.get()
-
         """
         self.fname = fname
         self.parameters = {'features': {}, 'targets': {}}
@@ -187,7 +187,8 @@ class NormParam(object):
         self.sqmean = sqmean
 
     def add(self, mean, var):
-        """ Add the mean value, sqmean and variance of a new molecule to the corresponding attributes."""
+        """Add the mean value, sqmean and variance of a new molecule to the
+        corresponding attributes."""
         self.mean += mean
         self.sqmean += mean**2
         self.var += var
@@ -216,7 +217,6 @@ class MinMaxParam(object):
     Args:
         minv (float, optional): minimal value
         maxv (float, optional): maximal value
-
     """
 
     def __init__(self, minv=None, maxv=None):

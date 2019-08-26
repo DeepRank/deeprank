@@ -10,9 +10,8 @@ from deeprank.tools import pdb2sql, sparse
 
 
 def visualize3Ddata(hdf5=None, mol_name=None, out=None):
-    '''
-    This function can be used to generate cube files for the visualization of the mapped
-    data in VMD
+    """This function can be used to generate cube files for the visualization
+    of the mapped data in VMD.
 
     Usage
     python generate_cube_files.py <mol_dir_name>
@@ -31,7 +30,7 @@ def visualize3Ddata(hdf5=None, mol_name=None, out=None):
     quick vizualisation of the data by typing
 
     vmd -e <feature_name>.vmd
-    '''
+    """
 
     outdir = out
 

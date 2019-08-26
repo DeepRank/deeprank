@@ -42,7 +42,6 @@ class NetworkGenerator(object):
         >>> MG = NetworkGenerator(name='test',fname='model_test.py',conv_layers=conv_layers,fc_layers=fc_layers)
         >>> MG.print()
         >>> MG.write()
-
         """
         # name of the model
         self.name = name

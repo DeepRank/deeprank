@@ -2,16 +2,14 @@
 # Li Xue
 # 20-Feb-2019 10:50
 
-'''
-Split multiple jobs into batches and submit to cartesius.
+"""Split multiple jobs into batches and submit to cartesius.
 
 INPUT: a file that contains all the jobs, for example,
 
     python /projects/0/deeprank/change_BIN_CLASS.py /projects/000_1ACB.hdf5 &
     python /projects/0/deeprank/change_BIN_CLASS.py /projects/000_1AK4.hdf5 &
     ...
-
-'''
+"""
 import glob
 import os
 import re

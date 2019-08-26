@@ -34,7 +34,6 @@ class FeatureClass(object):
 
         - For **atomic features**, the format of the data must be : chainID  resSeq resNum name [values]
         - For **residue features**, the format must be : chainID  resSeq resNum [values]
-
         """
 
         # loop through the datadict and name

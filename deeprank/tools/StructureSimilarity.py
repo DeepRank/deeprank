@@ -38,7 +38,6 @@ class StructureSimilarity(object):
         >>> Fnat = sim.compute_Fnat_pdb2sql()
         >>> Fnat_fast = sim.compute_Fnat_fast(ref_pairs='1AK4.ref_pairs')
         >>> dockQ = sim.compute_DockQScore(Fnat_fast,lrmsd_fast,irmsd_fast)
-
         """
 
         self.decoy = decoy
@@ -145,7 +144,7 @@ class StructureSimilarity(object):
         return self.get_rmsd(xyz_decoy_short, xyz_ref_short)
 
     def compute_lzone(self, save_file=True, filename=None):
-        """Compute the zone for L-RMSD calculation
+        """Compute the zone for L-RMSD calculation.
 
         Args:
             save_file (bool, optional): save the zone file
@@ -202,7 +201,7 @@ class StructureSimilarity(object):
             method='svd',
             cutoff=10.0,
             check=True):
-        """Fast method to compute the i-rmsd
+        """Fast method to compute the i-rmsd.
 
         Require the precalculation of the izone
         A dedicated routine is implemented to comoute the izone
@@ -288,7 +287,7 @@ class StructureSimilarity(object):
         return self.get_rmsd(xyz_contact_decoy, xyz_contact_ref)
 
     def compute_izone(self, cutoff=5.0, save_file=True, filename=None):
-        """Compute the zones  for i-rmsd calculationss
+        """Compute the zones  for i-rmsd calculationss.
 
         Args:
             cutoff (float, optional): cutoff for the contact atoms
@@ -343,7 +342,7 @@ class StructureSimilarity(object):
             return resData
 
     def compute_Fnat_fast(self, ref_pairs=None, cutoff=5):
-        """Compute the FNAT of the conformation
+        """Compute the FNAT of the conformation.
 
         Args:
             ref_pairs (str, optional): file name describing the pairs
@@ -446,7 +445,7 @@ class StructureSimilarity(object):
             cutoff=5.0,
             save_file=True,
             filename=None):
-        """Compute the residue pair on the reference conformation
+        """Compute the residue pair on the reference conformation.
 
         Args:
             cutoff (float, optional): cutoff for the contact atoms
@@ -586,7 +585,7 @@ class StructureSimilarity(object):
 
     @staticmethod
     def get_identical_atoms(db1, db2, chain):
-        """Return that atoms shared by both databse for a specific chain
+        """Return that atoms shared by both databse for a specific chain.
 
         Args:
             db1 (TYPE): pdb2sql database of the first conformation
@@ -622,7 +621,7 @@ class StructureSimilarity(object):
             method='svd',
             izone=None,
             exportpath=None):
-        """Slow method to compute the i-rmsd
+        """Slow method to compute the i-rmsd.
 
         Require the precalculation of the izone. A dedicated routine is implemented to comoute the izone
         if izone is not given in argument the routine will compute them automatically
@@ -745,7 +744,7 @@ class StructureSimilarity(object):
 
     @staticmethod
     def get_izone_rowID(sql, izone, return_only_backbone_atoms=True):
-        """Compute the index of the izone atoms
+        """Compute the index of the izone atoms.
 
         Args:
             sql (pdb2sql): database of the conformation
@@ -796,7 +795,7 @@ class StructureSimilarity(object):
         return index_contact
 
     def compute_Fnat_pdb2sql(self, cutoff=5.0):
-        """Slow method to compute the FNAT usign pdb2sql
+        """Slow method to compute the FNAT usign pdb2sql.
 
         Args:
             cutoff (float, optional): cutoff for the contact atoms
@@ -845,7 +844,7 @@ class StructureSimilarity(object):
 
     @staticmethod
     def read_xyz_zone(pdb_file, resData, return_not_in_zone=False):
-        """Read the xyz of the zone atoms
+        """Read the xyz of the zone atoms.
 
         Args:
             pdb_file (str): filename containing the pdb of the molecule
@@ -1013,7 +1012,7 @@ class StructureSimilarity(object):
 
     @staticmethod
     def compute_DockQScore(Fnat, lrmsd, irmsd, d1=8.5, d2=1.5):
-        """Compute the DockQ Score
+        """Compute the DockQ Score.
 
         Args:
             Fnat (float): Fnat value
@@ -1029,7 +1028,7 @@ class StructureSimilarity(object):
 
     @staticmethod
     def get_rmsd(P, Q):
-        """compute the RMSD
+        """compute the RMSD.
 
         Args:
             P (np.array(nx3)): position of the points in the first molecule
@@ -1043,7 +1042,7 @@ class StructureSimilarity(object):
 
     @staticmethod
     def get_trans_vect(P):
-        """Get the translationv vector to the origin
+        """Get the translationv vector to the origin.
 
         Args:
             P (np.array(nx3)): position of the points in the molecule
@@ -1072,7 +1071,7 @@ class StructureSimilarity(object):
 
     @staticmethod
     def get_rotation_matrix_Kabsh(P, Q):
-        '''Get the rotation matrix to aligh two point clouds.
+        """Get the rotation matrix to aligh two point clouds.
 
         The method is based on th Kabsh approach
         https://cnx.org/contents/HV-RsdwL@23/Molecular-Distance-Measures
@@ -1086,7 +1085,7 @@ class StructureSimilarity(object):
 
         Raises:
             ValueError: matrix have different sizes
-        '''
+        """
 
         pshape = P.shape
         qshape = Q.shape
@@ -1129,7 +1128,7 @@ class StructureSimilarity(object):
 
     @staticmethod
     def get_rotation_matrix_quaternion(P, Q):
-        '''Get the rotation matrix to aligh two point clouds
+        """Get the rotation matrix to aligh two point clouds.
 
         The method is based on the quaternion approach
         http://www.ams.stonybrook.edu/~coutsias/papers/rmsd17.pdf
@@ -1143,7 +1142,7 @@ class StructureSimilarity(object):
 
         Raises:
             ValueError: matrix have different sizes
-        '''
+        """
 
         pshape = P.shape
         qshape = Q.shape
@@ -1209,7 +1208,7 @@ class StructureSimilarity(object):
 
     @staticmethod
     def translation(xyz, vect):
-        """Translate a fragment
+        """Translate a fragment.
 
         Args:
             xyz (np.array): position of the fragment
@@ -1257,7 +1256,7 @@ class StructureSimilarity(object):
 
     @staticmethod
     def rotation_euler(xyz, alpha, beta, gamma):
-        """Rotate a fragment from Euler rotation angle
+        """Rotate a fragment from Euler rotation angle.
 
         Args:
             xyz (np.array): original positions
@@ -1288,7 +1287,7 @@ class StructureSimilarity(object):
 
     @staticmethod
     def rotation_matrix(xyz, rot_mat, center=True):
-        """Rotate a fragment from a roation matrix
+        """Rotate a fragment from a roation matrix.
 
         Args:
             xyz (np.array): original positions

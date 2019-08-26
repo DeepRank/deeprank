@@ -31,10 +31,9 @@ def zip_equal(*iterables):
 
 
 def plot_boxplot(df, figname=None, inverse=False):
-    '''
-    Plot a boxplot of predictions vs. targets. Useful
-    to visualize the performance of the training algorithm.
-    This is only useful in classification tasks.
+    """Plot a boxplot of predictions vs. targets. Useful to visualize the
+    performance of the training algorithm. This is only useful in
+    classification tasks.
 
     INPUT (pd.DataFrame):
 
@@ -42,7 +41,7 @@ def plot_boxplot(df, figname=None, inverse=False):
        Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
        Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
        Test  1AVX_ranair-it0_6223       0  0.511688  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
-    '''
+    """
 
     print('\n --> Box Plot : ', figname, '\n')
 
@@ -78,15 +77,14 @@ def plot_boxplot(df, figname=None, inverse=False):
 
 
 def read_epoch_data(DR_h5FL, epoch):
-    '''
-    # read epoch data into a data frame
+    """# read epoch data into a data frame.
 
     OUTPUT (pd.DataFrame):
 
     label               modelID  target        DR                                          sourceFL
     0  Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     1  Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
-    '''
+    """
 
     # -- 1. read deeprank output data for the specific epoch
     h5 = h5py.File(DR_h5FL, 'r')
@@ -150,8 +148,7 @@ def read_epoch_data(DR_h5FL, epoch):
 
 
 def merge_HS_DR(DR_df, haddockS):
-    '''
-    INPUT 1 (DR_df: a data frame):
+    """INPUT 1 (DR_df: a data frame):
 
     label               modelID  target        DR                                          sourceFL
     0  Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
@@ -166,7 +163,7 @@ def merge_HS_DR(DR_df, haddockS):
         Test  1ZHI     1ZHI_294w   0       9.758          -19.3448
         Test  1ZHI     1ZHI_89w    1       17.535         -11.2127
         Train 1ACB     1ACB_9w     1       14.535         -19.2127
-    '''
+    """
 
     # -- merge HS with DR predictions, model IDs and class IDs
     modelIDs = DR_df['modelID']
@@ -204,16 +201,15 @@ def read_haddockScoreFL(HS_h5FL):
 
 
 def plot_DR_iRMSD(df, figname=None):
-    '''
-    Plot a scatter plot of DeepRank score vs. iRMSD for train, valid and test
+    """Plot a scatter plot of DeepRank score vs. iRMSD for train, valid and
+    test.
 
     INPUT (a data frame):
 
         label caseID               modelID target                                          sourceFL        DR      irmsd         HS
         Test   1AVX  1AVX_ranair-it0_5286      0  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.503823  25.189108   6.980802
         Test   1AVX     1AVX_ti5-itw_354w      1  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.502845   3.668682 -95.158100
-
-    '''
+    """
     print('\n --> Scatter plot of DR vs. iRMSD:', figname, '\n')
 
    # plot
@@ -237,16 +233,14 @@ def plot_DR_iRMSD(df, figname=None):
 
 
 def plot_HS_iRMSD(df, figname=None):
-    '''
-    Plot a scatter plot of HS vs. iRMSD for train, valid and test
+    """Plot a scatter plot of HS vs. iRMSD for train, valid and test.
 
     INPUT (a data frame):
 
         label caseID               modelID target                                          sourceFL        DR      irmsd         HS
         Test   1AVX  1AVX_ranair-it0_5286      0  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.503823  25.189108   6.980802
         Test   1AVX     1AVX_ti5-itw_354w      1  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.502845   3.668682 -95.158100
-
-    '''
+    """
     print('\n --> Scatter plot of HS vs. iRMSD:', figname, '\n')
 
     # plot
@@ -269,7 +263,8 @@ def plot_HS_iRMSD(df, figname=None):
 
 
 def plot_successRate_hitRate(df, figname=None, inverse=False):
-    '''Plot the hit rate and success_rate of the different training/valid/test sets with HS (haddock scores)
+    """Plot the hit rate and success_rate of the different training/valid/test
+    sets with HS (haddock scores)
 
     The hit rate is defined as:
         the percentage of positive decoys that are included among the top m decoys.
@@ -300,9 +295,7 @@ def plot_successRate_hitRate(df, figname=None, inverse=False):
             1ACB     1            0.2          1            0.4
             ...
     2. Calculate success rate and hit rate over all cases.
-
-
-    '''
+    """
 
     # -- 1. calculate success rate and hit rate
     performance_per_case = evaluate(df)
@@ -383,12 +376,9 @@ def hit_rate_plot(df):
 
 
 def success_rate_plot(df):
-    '''
-    # INPUT: a pandas data frame
-            label  success_HS  hitRate_HS  success_DR  hitRate_DR
-        0  valid         1.0         1.0         0.0         0.0
-        1  valid         0.0         1.0         0.0         0.0
-    '''
+    """# INPUT: a pandas data frame label  success_HS  hitRate_HS  success_DR
+    hitRate_DR 0  valid         1.0         1.0         0.0         0.0 1
+    valid         0.0         1.0         0.0         0.0."""
 
     # -- add the 'rank' column to df
     rank = []
@@ -520,15 +510,14 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
 
 
 def hit_statistics(df):
-    '''
-    Report the number of hits for Train, valid and test.
+    """Report the number of hits for Train, valid and test.
 
     INPUT (a data frame):
 
         label               modelID target        DR                                          sourceFL      irmsd
         Test  1AVX_ranair-it0_5286      0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  25.189108
         Test     1AVX_ti5-itw_354w      1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5   3.668682
-    '''
+    """
 
     labels = ['Train', 'Valid', 'Test']
     grouped = df.groupby('label')

@@ -2,16 +2,15 @@ import numpy as np
 
 
 def __compute_target__(decoy, targrp):
-    """
-        pdb_data (bytes): PDB translated in bytes
-        targrp (h5 file handle): name of the group where to store the targets
+    """pdb_data (bytes): PDB translated in bytes targrp (h5 file handle): name
+    of the group where to store the targets.
 
-        e.g.,
-        f = h5py.File('1LFD.hdf5')
-        targrp = f['1LFD_9w/targets']
+    e.g.,
+    f = h5py.File('1LFD.hdf5')
+    targrp = f['1LFD_9w/targets']
 
-        list(targrp)
-        ['DOCKQ', 'FNAT', 'IRMSD', 'LRMSD']
+    list(targrp)
+    ['DOCKQ', 'FNAT', 'IRMSD', 'LRMSD']
     """
 
     irmsd_thr = 4
