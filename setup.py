@@ -19,8 +19,8 @@ setup(
         'torchsummary',
         'freesasa'],
 
-    extras_require= {
+    extras_require={
         'test': ['nose', 'coverage', 'pytest',
-                 'pytest-cov','codacy-coverage','coveralls'],
+                 'pytest-cov', 'codacy-coverage', 'coveralls'],
     }
 )

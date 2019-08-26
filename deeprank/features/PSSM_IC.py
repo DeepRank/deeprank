@@ -11,11 +11,11 @@ from deeprank.features.FullPSSM import __compute_feature__ as func
 class PSSM_IC(FullPSSM):
     pass
 
-#####################################################################################
+##########################################################################
 #
 #   THE MAIN FUNCTION CALLED IN THE INTERNAL FEATURE CALCULATOR
 #
-#####################################################################################
+##########################################################################
 
 
 def __compute_feature__(pdb_data, featgrp, featgrp_raw):
@@ -23,11 +23,11 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw):
     func(pdb_data, featgrp, featgrp_raw, out_type='pssmic')
 
 
-#####################################################################################
+##########################################################################
 #
 #   IF WE JUST TEST THE CLASS
 #
-#####################################################################################
+##########################################################################
 
 
 if __name__ == '__main__':
@@ -51,4 +51,4 @@ if __name__ == '__main__':
     print()
     pprint(pssmic.feature_data_xyz)
     print()
-    print(' Time %f ms' % ((time()-t0)*1000))
+    print(' Time %f ms' % ((time() - t0) * 1000))

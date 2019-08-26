@@ -17,18 +17,20 @@ test_name = './atomic_features/test_2OUL_1.dat'
 # get the force field included in deeprank
 # if another FF has been used to compute the ref
 # change also this path to the correct one
-FF = pkg_resources.resource_filename('deeprank.features','') + '/forcefield/'
+FF = pkg_resources.resource_filename('deeprank.features', '') + '/forcefield/'
 
 # declare the feature calculator instance
-atfeat = AtomicFeature(pdb,fix_chainID=True,
-                       param_charge = FF + 'protein-allhdg5-4_new.top',
-                       param_vdw    = FF + 'protein-allhdg5-4_new.param',
-                       patch_file   = FF + 'patch.top')
+atfeat = AtomicFeature(pdb, fix_chainID=True,
+                       param_charge=FF + 'protein-allhdg5-4_new.top',
+                       param_vdw=FF + 'protein-allhdg5-4_new.param',
+                       patch_file=FF + 'patch.top')
 # assign parameters
 atfeat.assign_parameters()
 
 # only compute the pair interactions here
-atfeat.evaluate_pair_interaction(save_interactions=test_name,print_interactions=True)
+atfeat.evaluate_pair_interaction(
+    save_interactions=test_name,
+    print_interactions=True)
 
 
 # # make sure that the other properties are not crashing

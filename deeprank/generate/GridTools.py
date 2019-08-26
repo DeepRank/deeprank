@@ -32,33 +32,33 @@ class GridTools(object):
 
         Args:
             molgrp(str): name of the group of the molecule in the HDF5 file.
-            number_of_points(int, optional): number of points we want in 
+            number_of_points(int, optional): number of points we want in
                 each direction of the grid.
             resolution(float, optional): distance(in Angs) between two points.
-            atomic_densities(dict, optional): dictionary of atom types with 
+            atomic_densities(dict, optional): dictionary of atom types with
                 their vdw radius, e.g. {'CA':1.7, 'C':1.7, 'N':1.55, 'O':1.52}
-            atomic_densities_mode(str, optional): Mode for mapping 
+            atomic_densities_mode(str, optional): Mode for mapping
                 (deprecated must be 'ind').
             feature(None, optional): Name of the features to be mapped.
-                By default all the features present in 
+                By default all the features present in
                 hdf5_file['< molgrp > /features/] will be mapped.
             feature_mode(str, optional): Mode for mapping
                 (deprecated must be 'ind').
-            contact_distance(float, optional): the dmaximum distance 
-                between two contact atoms default 8.5Å. 
+            contact_distance(float, optional): the dmaximum distance
+                between two contact atoms default 8.5Å.
             cuda(bool, optional): Use CUDA or not.
             gpu_block(tuple(int), optional): GPU block size to use.
-            cuda_func(None, optional): Name of the CUDA function to be 
+            cuda_func(None, optional): Name of the CUDA function to be
                 used for the mapping of the features.
                 Must be present in kernel_cuda.c.
-            cuda_atomic(None, optional): Name of the CUDA function to be 
+            cuda_atomic(None, optional): Name of the CUDA function to be
                 used for the mapping of the atomic densities.
                 Must be present in kernel_cuda.c.
             prog_bar(bool, optional): print progression bar for
                 individual grid (default False).
-            time(bool, optional): print timing statistic for 
+            time(bool, optional): print timing statistic for
                 individual grid (default False).
-            try_sparse(bool, optional): Try to store the matrix in 
+            try_sparse(bool, optional): Try to store the matrix in
                 sparse format (default True).
         """
 
@@ -73,12 +73,12 @@ class GridTools(object):
         # parameter of the grid
         if number_of_points is not None:
             if not isinstance(number_of_points, list):
-                number_of_points = [number_of_points]*3
+                number_of_points = [number_of_points] * 3
             self.npts = np.array(number_of_points).astype('int')
 
         if resolution is not None:
             if not isinstance(resolution, list):
-                resolution = [resolution]*3
+                resolution = [resolution] * 3
             self.res = np.array(resolution)
 
         # feature requested
@@ -93,7 +93,7 @@ class GridTools(object):
         self.cuda = cuda
         if self.cuda:  # pragma: no cover
             self.gpu_block = gpu_block
-            self.gpu_grid = [int(np.ceil(n/b))
+            self.gpu_grid = [int(np.ceil(n / b))
                              for b, n in zip(self.gpu_block, self.npts)]
 
         # cuda
@@ -131,7 +131,7 @@ class GridTools(object):
         # if we already have an output containing the grid
         # we update the existing features
         _update_ = False
-        if self.mol_basename+'/grid_points/x' in self.hdf5:
+        if self.mol_basename + '/grid_points/x' in self.hdf5:
             _update_ = True
 
         if _update_:
@@ -179,7 +179,7 @@ class GridTools(object):
         self.read_pdb()
 
         # read the grid from the hdf5
-        grid = self.hdf5.get(self.mol_basename+'/grid_points/')
+        grid = self.hdf5.get(self.mol_basename + '/grid_points/')
         self.x, self.y, self.z = grid['x'][()], grid['y'][()], grid['z'][()]
 
         # create the grid
@@ -189,7 +189,7 @@ class GridTools(object):
         # set the resolution/dimension
         self.npts = np.array([len(self.x), len(self.y), len(self.z)])
         self.res = np.array(
-            [self.x[1]-self.x[0], self.y[1]-self.y[0], self.z[1]-self.z[0]])
+            [self.x[1] - self.x[0], self.y[1] - self.y[0], self.z[1] - self.z[0]])
 
         # map the features
         self.add_all_features()
@@ -240,7 +240,7 @@ class GridTools(object):
             t0 = time()
             logif('-- Save Features to HDF5', self.time)
             self.hdf5_grid_data(dict_data, 'Feature_%s' % (self.feature_mode))
-            logif('      Total %f ms' % ((time()-t0)*1000), self.time)
+            logif('      Total %f ms' % ((time() - t0) * 1000), self.time)
 
     # add all the atomic densities to the data
     def add_all_atomic_densities(self):
@@ -257,7 +257,7 @@ class GridTools(object):
             logif('-- Save Atomic Densities to HDF5', self.time)
             self.hdf5_grid_data(self.atdens, 'AtomicDensities_%s' %
                                 (self.atomic_densities_mode))
-            logif('      Total %f ms' % ((time()-t0)*1000), self.time)
+            logif('      Total %f ms' % ((time() - t0) * 1000), self.time)
 
     ################################################################
     # define the grid points
@@ -275,11 +275,11 @@ class GridTools(object):
         logif('-- Resolution of %1.2fx%1.2fx%1.2f Angs' %
               (self.res[0], self.res[1], self.res[2]), self.time)
 
-        halfdim = 0.5*(self.npts*self.res)
+        halfdim = 0.5 * (self.npts * self.res)
         center = self.center_contact
 
-        low_lim = center-halfdim
-        hgh_lim = low_lim + self.res*(np.array(self.npts)-1)
+        low_lim = center - halfdim
+        hgh_lim = low_lim + self.res * (np.array(self.npts) - 1)
 
         self.x = np.linspace(low_lim[0], hgh_lim[0], self.npts[0])
         self.y = np.linspace(low_lim[1], hgh_lim[1], self.npts[1])
@@ -317,7 +317,7 @@ class GridTools(object):
             try:
                 from pycuda import driver, compiler, gpuarray, tools
                 import pycuda.autoinit
-            except:
+            except BaseException:
                 raise ImportError("Error when importing pyCuda in GridTools")
 
             # book mem on the gpu
@@ -334,7 +334,8 @@ class GridTools(object):
                      self.sqldb.get('rowID', chainID='B'))
 
         # loop over all the data we want
-        for atomtype, vdw_rad in self.local_tqdm(self.atomic_densities.items()):
+        for atomtype, vdw_rad in self.local_tqdm(
+                self.atomic_densities.items()):
 
             t0 = time()
 
@@ -352,7 +353,7 @@ class GridTools(object):
                 xyzB = np.array(self.sqldb.get(
                     'x,y,z', chainID='B', name=atomtype))
 
-            tprocess = time()-t0
+            tprocess = time() - t0
 
             t0 = time()
             # if we use CUDA
@@ -365,8 +366,10 @@ class GridTools(object):
                 for pos in xyzA:
                     x0, y0, z0 = pos.astype(np.float32)
                     vdw = np.float32(vdw_rad)
-                    self.cuda_atomic(vdw, x0, y0, z0, x_gpu, y_gpu, z_gpu, grid_gpu, block=tuple(
-                        self.gpu_block), grid=tuple(self.gpu_grid))
+                    self.cuda_atomic(
+                        vdw, x0, y0, z0, x_gpu, y_gpu, z_gpu, grid_gpu, block=tuple(
+                            self.gpu_block), grid=tuple(
+                            self.gpu_grid))
                     atdensA = grid_gpu.get()
 
                 # reset the grid
@@ -376,8 +379,10 @@ class GridTools(object):
                 for pos in xyzB:
                     x0, y0, z0 = pos.astype(np.float32)
                     vdw = np.float32(vdw_rad)
-                    self.cuda_atomic(vdw, x0, y0, z0, x_gpu, y_gpu, z_gpu, grid_gpu, block=tuple(
-                        self.gpu_block), grid=tuple(self.gpu_grid))
+                    self.cuda_atomic(
+                        vdw, x0, y0, z0, x_gpu, y_gpu, z_gpu, grid_gpu, block=tuple(
+                            self.gpu_block), grid=tuple(
+                            self.gpu_grid))
                     atdensB = grid_gpu.get()
 
             # if we don't use CUDA
@@ -397,22 +402,22 @@ class GridTools(object):
 
             # create the final grid : A - B
             if mode == 'diff':
-                self.atdens[atomtype] = atdensA-atdensB
+                self.atdens[atomtype] = atdensA - atdensB
 
             # create the final grid : A + B
             elif mode == 'sum':
-                self.atdens[atomtype] = atdensA+atdensB
+                self.atdens[atomtype] = atdensA + atdensB
 
             # create the final grid : A and B
             elif mode == 'ind':
-                self.atdens[atomtype+'_chainA'] = atdensA
-                self.atdens[atomtype+'_chainB'] = atdensB
+                self.atdens[atomtype + '_chainA'] = atdensA
+                self.atdens[atomtype + '_chainB'] = atdensB
             else:
                 raise ValueError(f'Atomic density mode {mode} not recognized')
 
-            tgrid = time()-t0
-            logif('     Process time %f ms' % (tprocess*1000), self.time)
-            logif('     Grid    time %f ms' % (tgrid*1000), self.time)
+            tgrid = time() - t0
+            logif('     Process time %f ms' % (tprocess * 1000), self.time)
+            logif('     Grid    time %f ms' % (tgrid * 1000), self.time)
 
     # compute the atomic denisties on the grid
     def densgrid(self, center, vdw_radius):
@@ -438,10 +443,10 @@ class GridTools(object):
         dgrid = np.zeros(self.npts)
 
         index_shortd = dd < vdw_radius
-        index_longd = (dd >= vdw_radius) & (dd < 1.5*vdw_radius)
+        index_longd = (dd >= vdw_radius) & (dd < 1.5 * vdw_radius)
         dgrid[index_shortd] = np.exp(-2 * dd[index_shortd]**2 / vdw_radius**2)
-        dgrid[index_longd] = 4./np.e**2/vdw_radius**2 * dd[index_longd]**2 \
-            - 12./np.e**2/vdw_radius*dd[index_longd] + 9./np.e**2
+        dgrid[index_longd] = 4. / np.e**2 / vdw_radius**2 * dd[index_longd]**2 \
+            - 12. / np.e**2 / vdw_radius * dd[index_longd] + 9. / np.e**2
         return dgrid
 
     ################################################################
@@ -482,7 +487,7 @@ class GridTools(object):
             try:
                 from pycuda import driver, compiler, gpuarray, tools
                 import pycuda.autoinit
-            except:
+            except BaseException:
                 raise ImportError("Error when importing pyCuda in GridTools")
 
             # book mem on the gpu
@@ -524,7 +529,7 @@ class GridTools(object):
                     float(data[0].split()[3])
                     feature_type = 'residue'
                     ntext = 3
-                except:
+                except BaseException:
                     feature_type = 'atomic'
                     ntext = 4
 
@@ -538,7 +543,7 @@ class GridTools(object):
                 data_test = data[0, ntext:]
 
             # define the length of the output
-            if transform == None:
+            if transform is None:
                 nFeat = len(data_test)
             elif callable(transform):
                 nFeat = len(transform(data_test))
@@ -550,19 +555,19 @@ class GridTools(object):
             # that will in fine holds all the data
             if nFeat == 1:
                 if self.feature_mode == 'ind':
-                    dict_data[feature_name+'_chainA'] = np.zeros(self.npts)
-                    dict_data[feature_name+'_chainB'] = np.zeros(self.npts)
+                    dict_data[feature_name + '_chainA'] = np.zeros(self.npts)
+                    dict_data[feature_name + '_chainB'] = np.zeros(self.npts)
                 else:
                     dict_data[feature_name] = np.zeros(self.npts)
             else:
                 for iF in range(nFeat):
                     if self.feature_mode == 'ind':
-                        dict_data[feature_name+'_chainA_%03d' %
+                        dict_data[feature_name + '_chainA_%03d' %
                                   iF] = np.zeros(self.npts)
-                        dict_data[feature_name+'_chainB_%03d' %
+                        dict_data[feature_name + '_chainB_%03d' %
                                   iF] = np.zeros(self.npts)
                     else:
-                        dict_data[feature_name+'_%03d' %
+                        dict_data[feature_name + '_%03d' %
                                   iF] = np.zeros(self.npts)
 
             # rest the grid and get the x y z values
@@ -648,7 +653,7 @@ class GridTools(object):
                     coeff = 1
                 if self.feature_mode == "ind":
                     fname = feature_name + "_chain" + chain
-                tprocess += time()-t0
+                tprocess += time() - t0
 
                 t0 = time()
                 # map this feature(s) on the grid(s)
@@ -658,14 +663,14 @@ class GridTools(object):
                             self.featgrid(pos, feat_values)
                     else:
                         for iF in range(nFeat):
-                            dict_data[fname+'_%03d' % iF] += coeff * \
+                            dict_data[fname + '_%03d' % iF] += coeff * \
                                 self.featgrid(pos, feat_values[iF])
 
                 # try to use cuda to speed it up
                 else:  # pragma: no cover
                     if nFeat == 1:
                         x0, y0, z0 = pos.astype(np.float32)
-                        alpha = np.float32(coeff*feat_values)
+                        alpha = np.float32(coeff * feat_values)
                         self.cuda_func(alpha,
                                        x0, y0, z0,
                                        x_gpu, y_gpu, z_gpu,
@@ -676,14 +681,14 @@ class GridTools(object):
                         raise ValueError(
                             'CUDA only possible for single-valued features')
 
-                tgrid += time()-t0
+                tgrid += time() - t0
 
             if self.cuda:  # pragma: no cover
                 dict_data[fname] = grid_gpu.get()
                 driver.Context.synchronize()
 
-            logif('     Process time %f ms' % (tprocess*1000), self.time)
-            logif('     Grid    time %f ms' % (tgrid*1000), self.time)
+            logif('     Process time %f ms' % (tprocess * 1000), self.time)
+            logif('     Grid    time %f ms' % (tgrid * 1000), self.time)
 
         return dict_data
 
@@ -705,28 +710,28 @@ class GridTools(object):
 
         # shortcut for th center
         x0, y0, z0 = center
-        sigma = np.sqrt(1./2)
-        beta = 0.5/(sigma**2)
+        sigma = np.sqrt(1. / 2)
+        beta = 0.5 / (sigma**2)
 
         # simple Gaussian
         if type_ == 'gaussian':
             dd = np.sqrt((self.xgrid - x0)**2
                          + (self.ygrid - y0)**2
                          + (self.zgrid - z0)**2)
-            dd = value*np.exp(-beta*dd)
+            dd = value * np.exp(-beta * dd)
             return dd
 
         # fast gaussian
         elif type_ == 'fast_gaussian':
 
-            cutoff = 5.*beta
+            cutoff = 5. * beta
 
             dd = np.sqrt((self.xgrid - x0)**2
                          + (self.ygrid - y0)**2
                          + (self.zgrid - z0)**2)
             dgrid = np.zeros(self.npts)
 
-            dgrid[dd < cutoff] = value*np.exp(-beta*dd[dd < cutoff])
+            dgrid[dd < cutoff] = value * np.exp(-beta * dd[dd < cutoff])
 
             return dgrid
 
@@ -736,7 +741,7 @@ class GridTools(object):
             spl = bspline((self.xgrid - x0) / self.res[0], spline_order) \
                 * bspline((self.ygrid - y0) / self.res[1], spline_order) \
                 * bspline((self.zgrid - z0) / self.res[2], spline_order)
-            dd = value*spl
+            dd = value * spl
             return dd
 
         # nearest neighbours
@@ -775,7 +780,7 @@ class GridTools(object):
             dgrid = np.zeros(self.npts)
 
             for w, pt in zip(W, points):
-                dgrid[pt[0], pt[1], pt[2]] = w*value
+                dgrid[pt[0], pt[1], pt[2]] = w * value
 
             return dgrid
 
@@ -791,7 +796,7 @@ class GridTools(object):
     def export_grid_points(self):
         """export the grid points to the hdf5 file."""
 
-        grd = self.hdf5.require_group(self.mol_basename+'/grid_points')
+        grd = self.hdf5.require_group(self.mol_basename + '/grid_points')
         grd.create_dataset('x', data=self.x)
         grd.create_dataset('y', data=self.y)
         grd.create_dataset('z', data=self.z)
@@ -813,7 +818,7 @@ class GridTools(object):
         """
         # get the group og the feature
         feat_group = self.hdf5.require_group(
-            self.mol_basename+'/mapped_features/'+data_name)
+            self.mol_basename + '/mapped_features/' + data_name)
 
         # gothrough all the feature elements
         for key, value in dict_data.items():
@@ -833,7 +838,7 @@ class GridTools(object):
                 spg = sparse.FLANgrid()
                 spg.from_dense(value, beta=1E-2)
                 if self.time:
-                    print('      Sparsing time %f ms' % ((time()-t0)*1000))
+                    print('      Sparsing time %f ms' % ((time() - t0) * 1000))
 
                 # if we have a sparse matrix
                 if spg.sparse:

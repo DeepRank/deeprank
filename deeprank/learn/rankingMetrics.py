@@ -27,14 +27,15 @@ def hitrate(rs):
     Returns:
         hirate (array): [recall@1,recall@2,...]
     """
-    nr = np.max((1,np.sum(rs)))
+    nr = np.max((1, np.sum(rs)))
     return np.cumsum(rs) / nr
 
 
 def avprec(rs):
-    return [average_precision(rs[:i]) for i in range(1,len(rs))]
+    return [average_precision(rs[:i]) for i in range(1, len(rs))]
 
-def recall(rs,nr):
+
+def recall(rs, nr):
     """recall rate
     First element is rank 1, Relevance is binray
 
@@ -54,7 +55,8 @@ def recall(rs,nr):
         recall (int): recall value
     """
 
-    return np.sum(rs)/nr
+    return np.sum(rs) / nr
+
 
 def mean_reciprocal_rank(rs):
     """Score is reciprocal of the rank of the first relevant item

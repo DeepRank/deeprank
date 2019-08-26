@@ -37,7 +37,7 @@ def __compute_target__(decoy, targrp):
     if tarelem not in targrp:
         _ = rmsd_fnat.__compute_target__(decoy, targrp, tarelem)
     # empty dataset
-    elif targrp[tarelem][()].shape == None:
+    elif targrp[tarelem][()].shape is None:
         del targrp[tarelem]
         warnings.warn(f"Removed old {tarname} from {molname}")
         _ = rmsd_fnat.__compute_target__(decoy, targrp, tarelem)

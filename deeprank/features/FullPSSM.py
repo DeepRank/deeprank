@@ -29,8 +29,8 @@ class FullPSSM(FeatureClass):
             pssm_path (str): path to the pssm data. Defaults to None.
             pssm_format (str): "old" or "new" pssm format.
                 Defaults to 'new'.
-            out_type (str): which feature to generate, 'pssmvalue' or 
-                'pssmic'. Defaults to 'pssmvalue'. 
+            out_type (str): which feature to generate, 'pssmvalue' or
+                'pssmic'. Defaults to 'pssmvalue'.
                 'pssm_format' must be 'new' when set type is 'pssmic'.
 
         Examples:
@@ -249,7 +249,7 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw, out_type='pssmvalue'):
 
     if settings.__PATH_PSSM_SOURCE__ is None:
         path = os.path.dirname(os.path.realpath(__file__))
-        path = os.path.join(path,  'PSSM_NEW')
+        path = os.path.join(path, 'PSSM_NEW')
     else:
         path = settings.__PATH_PSSM_SOURCE__
 
@@ -296,4 +296,4 @@ if __name__ == '__main__':
     pprint(pssm.feature_data)
     print()
     pprint(pssm.feature_data_xyz)
-    print(' Time %f ms' % ((time()-t0)*1000))
+    print(' Time %f ms' % ((time() - t0) * 1000))

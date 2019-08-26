@@ -18,24 +18,24 @@ class AtomicFeature(FeatureClass):
 
             pdbfile (str): pdb file of the molecule
 
-            param_charge (str): file name of the force field file 
-                containing the charges e.g. protein-allhdg5.4_new.top. 
+            param_charge (str): file name of the force field file
+                containing the charges e.g. protein-allhdg5.4_new.top.
                 Must be of the format:
                     * CYM  atom O   type=O      charge=-0.500 end
                     * ALA    atom N   type=NH1     charge=-0.570 end
 
-            param_vdw (str): file name of the force field containing 
+            param_vdw (str): file name of the force field containing
                 vdw parameters e.g. protein-allhdg5.4_new.param.
                 Must be of the format:
                     * NONBonded  CYAA    0.105   3.750       0.013    3.750
                     * NONBonded  CCIS    0.105   3.750       0.013    3.750
 
-            patch_file (str): file name of a valid patch file for 
+            patch_file (str): file name of a valid patch file for
                 the parameters e.g. patch.top.
-                The way we handle the patching is very manual and 
+                The way we handle the patching is very manual and
                 should be made more automatic.
 
-            contact_cutoff (float): the maximum distance in Å 
+            contact_cutoff (float): the maximum distance in Å
                 between 2 contact atoms.
 
             verbose (bool): print or not.
@@ -87,7 +87,7 @@ class AtomicFeature(FeatureClass):
         # read the force field
         self.read_charge_file()
 
-        if patch_file != None:
+        if patch_file is not None:
             self.read_patch()
         else:
             self.patch_charge, self.patch_type = {}, {}
@@ -134,7 +134,7 @@ class AtomicFeature(FeatureClass):
 
             # get the charge
             ind = l.find('charge=')
-            q = float(l[ind+7:ind+13])
+            q = float(l[ind + 7:ind + 13])
 
             # get the type
             attype = words[3].split('=')[-1]
@@ -172,13 +172,13 @@ class AtomicFeature(FeatureClass):
 
                 # get the new charge
                 ind = l.find('CHARGE=')
-                q = float(l[ind+7:ind+13])
+                q = float(l[ind + 7:ind + 13])
                 self.patch_charge[(words[0], words[3])] = q
 
                 # get the new type if any
                 ind = l.find('TYPE=')
                 if ind != -1:
-                    type_ = l[ind+5:ind+9]
+                    type_ = l[ind + 5:ind + 9]
                     self.patch_type[(words[0], words[3])] = type_.strip()
 
     def read_vdw_file(self):
@@ -248,7 +248,7 @@ class AtomicFeature(FeatureClass):
 
             # compute the contact atoms
             contacts = np.where(
-                np.sqrt(np.sum((xyz2-x0)**2, 1)) < self.contact_cutoff)[0]
+                np.sqrt(np.sum((xyz2 - x0)**2, 1)) < self.contact_cutoff)[0]
 
             # if we have contact atoms and resA is not a ligand
             if (len(contacts) > 0) and (resName1[i] in self.valid_resnames):
@@ -276,7 +276,7 @@ class AtomicFeature(FeatureClass):
             raise ValueError("No contact atoms detected in AtomicFeature")
 
     def _extend_contact_to_residue(self):
-        """Extend the contact atoms to entire residue 
+        """Extend the contact atoms to entire residue
             where one atom is contacting.
         """
 
@@ -322,10 +322,10 @@ class AtomicFeature(FeatureClass):
     ####################################################################
 
     def assign_parameters(self):
-        '''Assign to each atom in the pdb its charge and vdw 
+        '''Assign to each atom in the pdb its charge and vdw
             interchain parameters.
 
-        Directly deals with the patch so that we don't loop over 
+        Directly deals with the patch so that we don't loop over
         the residues multiple times.
         '''
 
@@ -395,8 +395,8 @@ class AtomicFeature(FeatureClass):
         This is very static and I don't quite like it
         The structure of the dictionary is as following
 
-        { NEWRESTYPE: 'OLDRESTYPE', 
-                       [atom types that must be present], 
+        { NEWRESTYPE: 'OLDRESTYPE',
+                       [atom types that must be present],
                        [atom types that must NOT be present]]}
 
         Args:
@@ -438,9 +438,9 @@ class AtomicFeature(FeatureClass):
 
         # in case the resname is not valid
         if resName not in self.valid_resnames:
-            vdw_eps = [0.00]*len(atNames)
-            vdw_sigma = [0.00]*len(atNames)
-            type_ = ['None']*len(atNames)
+            vdw_eps = [0.00] * len(atNames)
+            vdw_sigma = [0.00] * len(atNames)
+            type_ = ['None'] * len(atNames)
 
             return vdw_eps, vdw_sigma, type_
 
@@ -481,7 +481,7 @@ class AtomicFeature(FeatureClass):
         """
         # in case the resname is not valid
         if resName not in self.valid_resnames:
-            q = [0.0]*len(atNames)
+            q = [0.0] * len(atNames)
             return q
 
         # assign the charges
@@ -527,7 +527,7 @@ class AtomicFeature(FeatureClass):
         # entire residue or not
         if extend_contact_to_residue:
             indA, indB = self._extend_contact_to_residue()
-            index_contact_atoms = indA+indB
+            index_contact_atoms = indA + indB
         else:
             index_contact_atoms = self.contact_atoms_A + self.contact_atoms_B
 
@@ -594,8 +594,8 @@ class AtomicFeature(FeatureClass):
 
         # handle the export of the interaction breakdown
         _save_ = False
-        if save_interactions != False:
-            if save_interactions == True:
+        if save_interactions:
+            if save_interactions:
                 save_interactions = './'
             if os.path.isdir(save_interactions):
                 fname = os.path.join(save_interactions,
@@ -612,19 +612,19 @@ class AtomicFeature(FeatureClass):
         for iA, indsB in self.contact_pairs.items():
 
             # coulomb terms
-            r = np.sqrt(np.sum((xyz[indsB, :]-xyz[iA, :])**2, 1))
+            r = np.sqrt(np.sum((xyz[indsB, :] - xyz[iA, :])**2, 1))
             r[r == 0] = 3.0
-            q1q2 = charge[iA]*charge[indsB]
-            ec = q1q2 * self.c / (self.eps0*r) * \
-                (1 - (r/self.contact_cutoff)**2) ** 2
+            q1q2 = charge[iA] * charge[indsB]
+            ec = q1q2 * self.c / (self.eps0 * r) * \
+                (1 - (r / self.contact_cutoff)**2) ** 2
 
             # coulomb terms
-            sigma_avg = 0.5*(sig[iA] + sig[indsB])
-            eps_avg = np.sqrt(eps[iA]*eps[indsB])
+            sigma_avg = 0.5 * (sig[iA] + sig[indsB])
+            eps_avg = np.sqrt(eps[iA] * eps[indsB])
 
             # normal LJ potential
             evdw = 4.0 * eps_avg * \
-                ((sigma_avg/r)**12 - (sigma_avg/r)**6) * self._prefactor_vdw(r)
+                ((sigma_avg / r)**12 - (sigma_avg / r)**6) * self._prefactor_vdw(r)
 
             # total energy terms
             ec_tot += np.sum(ec)
@@ -644,7 +644,7 @@ class AtomicFeature(FeatureClass):
             vdw_data[keyA] = [np.sum(evdw)]
 
             # store in the xyz dict
-            key = tuple([0]+xyz[iA, :].tolist())
+            key = tuple([0] + xyz[iA, :].tolist())
             electro_data_xyz[key] = [np.sum(ec)]
             vdw_data_xyz[key] = [np.sum(evdw)]
 
@@ -700,15 +700,15 @@ class AtomicFeature(FeatureClass):
             keyB = tuple(atinfo[indexB])
 
             # extract the values from the matrix
-            ec = matrix_elec[:, indexB-natA]
-            evdw = matrix_vdw[:, indexB-natA]
+            ec = matrix_elec[:, indexB - natA]
+            evdw = matrix_vdw[:, indexB - natA]
 
             # store in the dict
             electro_data[keyB] = [np.sum(ec)]
             vdw_data[keyB] = [np.sum(evdw)]
 
             # store the xyz dict
-            key = tuple([1]+xyz[indexB, :].tolist())
+            key = tuple([1] + xyz[indexB, :].tolist())
             electro_data_xyz[key] = [np.sum(ec)]
             vdw_data_xyz[key] = [np.sum(evdw)]
 
@@ -775,10 +775,10 @@ class AtomicFeature(FeatureClass):
         for iat in range(natA):
 
             # coulomb terms
-            r = np.sqrt(np.sum((xyzB-xyzA[iat, :])**2, 1))
+            r = np.sqrt(np.sum((xyzB - xyzA[iat, :])**2, 1))
             r[r == 0] = 3.0
-            q1q2 = chargeA[iat]*chargeB
-            value = q1q2/r
+            q1q2 = chargeA[iat] * chargeB
+            value = q1q2 / r
 
             # store amd symmtrized these values
             matrix[iat, :] = value
@@ -862,13 +862,13 @@ class AtomicFeature(FeatureClass):
         for iat in range(natA):
 
             # vdW terms
-            r = np.sqrt(np.sum((xyzB-xyzA[iat, :])**2, 1))
+            r = np.sqrt(np.sum((xyzB - xyzA[iat, :])**2, 1))
             r[r == 0] = 3.0
-            sigma = 0.5*(sigA[iat] + sigB)
-            eps = np.sqrt(epsA[iat]*epsB)
+            sigma = 0.5 * (sigA[iat] + sigB)
+            eps = np.sqrt(epsA[iat] * epsB)
 
             # normal LJ potential
-            value = 4*eps * ((sigma/r)**12 - (sigma/r)**6)
+            value = 4 * eps * ((sigma / r)**12 - (sigma / r)**6)
 
             # store these values
             matrix[iat, :] = value
@@ -898,8 +898,8 @@ class AtomicFeature(FeatureClass):
 
         r_off, r_on = 8.5, 6.5
         r2 = r**2
-        pref = (r_off**2-r2)**2 * (r_off**2 - r2 - 3 *
-                                   (r_on**2 - r2)) / (r_off**2-r_on**2)**3
+        pref = (r_off**2 - r2)**2 * (r_off**2 - r2 - 3 *
+                                     (r_on**2 - r2)) / (r_off**2 - r_on**2)**3
         pref[r > r_off] = 0.
         pref[r < r_on] = 1.0
         return pref

@@ -130,7 +130,7 @@ class SASA(object):
             center='cb'):
         '''Compute teh SASA folowing the neighbour vector approach.
 
-        The method is based on Eq on page 1097 of 
+        The method is based on Eq on page 1097 of
         https://link.springer.com/article/10.1007%2Fs00894-009-0454-9
 
         Args:
@@ -138,7 +138,7 @@ class SASA(object):
             ubound (float, optional): upper bound
             chainA (str, optional): name of the first chain
             chainB (str, optional): name of the second chain
-            center (str, optional): specify the center 
+            center (str, optional): specify the center
                 (see get_residue_center)
 
         Returns:
@@ -185,7 +185,7 @@ class SASA(object):
             center='cb'):
         '''Compute the neighbourhood count of each residue.
 
-        The method is based on Eq on page 1097 of 
+        The method is based on Eq on page 1097 of
         https://link.springer.com/article/10.1007%2Fs00894-009-0454-9
 
         Args:
@@ -193,7 +193,7 @@ class SASA(object):
             ubound (float, optional): upper bound
             chainA (str, optional): name of the first chain
             chainB (str, optional): name of the second chain
-            center (str, optional): specify the center 
+            center (str, optional): specify the center
             (see get_residue_center)
 
         Returns:

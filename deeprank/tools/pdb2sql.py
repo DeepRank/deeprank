@@ -117,7 +117,8 @@ class pdb2sql(object):
                     }
 
         # delimtier of the column format
-        # taken from http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM
+        # taken from
+        # http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM
         self.delimiter = {
             'serial': [6, 11],
             'name': [12, 16],
@@ -159,7 +160,7 @@ class pdb2sql(object):
         for ic, (colname, coltype) in enumerate(self.col.items()):
             header += f'{colname} {coltype}'
             qm += '?'
-            if ic < ncol-1:
+            if ic < ncol - 1:
                 header += ', '
                 qm += ','
 
@@ -287,7 +288,7 @@ class pdb2sql(object):
         names = list(map(lambda x: x[0], cd.description))
         print('\trowID')
         for n in names:
-            print('\t'+n)
+            print('\t' + n)
 
     # print the database
     def prettyprint(self):
@@ -362,7 +363,7 @@ class pdb2sql(object):
         # check if the column exists
         try:
             self.c.execute(f"SELECT EXISTS(SELECT {atnames} FROM ATOM)")
-        except:
+        except BaseException:
             logger.error(
                 f"Column {atnames} not found in the database")
             self.get_colnames()
@@ -393,7 +394,7 @@ class pdb2sql(object):
 
                 try:
                     self.c.execute(f"SELECT EXISTS(SELECT {k} FROM ATOM)")
-                except:
+                except BaseException:
                     logger.error(f'Column {k} not found in the database')
                     self.get_colnames()
                     return
@@ -429,7 +430,7 @@ class pdb2sql(object):
 
                         # cut in chunck
                         chunck_size = self.max_sql_values
-                        vchunck = [v[i:i+chunck_size]
+                        vchunck = [v[i:i + chunck_size]
                                    for i in range(0, nv, chunck_size)]
 
                         data = []
@@ -443,7 +444,7 @@ class pdb2sql(object):
                     else:
 
                         if k == 'rowID':
-                            vals = vals + tuple([iv+1 for iv in v])
+                            vals = vals + tuple([iv + 1 for iv in v])
                         else:
                             vals = vals + tuple(v)
 
@@ -451,12 +452,12 @@ class pdb2sql(object):
 
                     nv = 1
                     if k == 'rowID':
-                        vals = vals + (v+1,)
+                        vals = vals + (v + 1,)
                     else:
                         vals = vals + (v,)
 
                 # create the condition for that key
-                conditions.append(k + neg + ' in (' + ','.join('?'*nv) + ')')
+                conditions.append(k + neg + ' in (' + ','.join('?' * nv) + ')')
 
             # stitch the conditions and append to the query
             query += ' AND '.join(conditions)
@@ -576,7 +577,11 @@ class pdb2sql(object):
         for i, x0 in enumerate(xyz1):
 
             # compute the contact atoms
-            contacts = np.where(np.sqrt(np.sum((xyz2-x0)**2, 1)) <= cutoff)[0]
+            contacts = np.where(
+                np.sqrt(
+                    np.sum(
+                        (xyz2 - x0)**2,
+                        1)) <= cutoff)[0]
 
             # exclude the H if required
             if excludeH and atName1[i][0] == 'H':
@@ -839,7 +844,7 @@ class pdb2sql(object):
         # check if the column exists
         try:
             self.c.execute(f"SELECT EXISTS(SELECT {attribute} FROM ATOM)")
-        except:
+        except BaseException:
             logger.error(f'Column {attribute} not found in the database')
             self.get_colnames()
             raise ValueError(f'Attribute name {attribute} not recognized')
@@ -886,7 +891,7 @@ class pdb2sql(object):
 
         # prepare the query
         query = 'UPDATE ATOM SET '
-        query = query + ', '.join(map(lambda x: x+'=?', attribute))
+        query = query + ', '.join(map(lambda x: x + '=?', attribute))
         # if len(kwargs)>0: # why did I do that ...
         query = query + ' WHERE rowID=?'
 
@@ -898,7 +903,7 @@ class pdb2sql(object):
 
             # if len(kwargs)>0: Same here why did I do that ?
             # here the conversion of the indexes is a bit annoying
-            tmp_data += [rowID[i]+1]
+            tmp_data += [rowID[i] + 1]
 
             data.append(tmp_data)
 
@@ -918,8 +923,8 @@ class pdb2sql(object):
             ... index=list(range(10)))
         '''
 
-        if index == None:
-            data = [[v, i+1] for i, v in enumerate(values)]
+        if index is None:
+            data = [[v, i + 1] for i, v in enumerate(values)]
         else:
             # shouldn't that be ind+1 ?
             data = [[v, ind] for v, ind in zip(values, index)]
@@ -945,10 +950,11 @@ class pdb2sql(object):
             >>> db.update_xyz(vals,index=index)
         '''
 
-        if index == None:
-            data = [[pos[0], pos[1], pos[2], i+1] for i, pos in enumerate(xyz)]
+        if index is None:
+            data = [[pos[0], pos[1], pos[2], i + 1]
+                    for i, pos in enumerate(xyz)]
         else:
-            data = [[pos[0], pos[1], pos[2], ind+1]
+            data = [[pos[0], pos[1], pos[2], ind + 1]
                     for pos, ind in zip(xyz, index)]
 
         query = 'UPDATE ATOM SET x=?, y=?, z=? WHERE rowID=?'
@@ -996,7 +1002,7 @@ class pdb2sql(object):
         # check if the column exists
         try:
             self.c.execute(f"SELECT EXISTS(SELECT {colname} FROM ATOM)")
-        except:
+        except BaseException:
             logger.error(f'Column {colname} not found in the database')
             self.get_colnames()
             return
@@ -1024,7 +1030,7 @@ class pdb2sql(object):
             self.c.execute(query, values)
 
         elif key == 'index':
-            values = tuple([value] + [v+1 for v in cond])
+            values = tuple([value] + [v + 1 for v in cond])
             qm = ','.join(['?' for i in range(len(cond))])
             query = f'UPDATE ATOM SET {colname}=? WHERE rowID in ({qm})'
             self.c.execute(query, values)
@@ -1131,7 +1137,7 @@ class pdb2sql(object):
 
         Args:
             vect (np.array): translation vector
-            **kwargs: keyword argument to select the atoms. 
+            **kwargs: keyword argument to select the atoms.
                 See pdb2sql.get()
 
         Examples:
@@ -1148,7 +1154,7 @@ class pdb2sql(object):
         Args:
             axis (np.array): axis of rotation
             angle (float): angle of rotation in radian
-            **kwargs: keyword argument to select the atoms. 
+            **kwargs: keyword argument to select the atoms.
                 See pdb2sql.get()
 
         Returns:
@@ -1171,12 +1177,12 @@ class pdb2sql(object):
         # definition of the rotation matrix
         # see https://en.wikipedia.org/wiki/Rotation_matrix
         rot_mat = np.array([
-            [ct + ux**2*(1-ct), ux*uy*(1-ct) - uz*st, ux*uz*(1-ct) + uy*st],
-            [uy*ux*(1-ct) + uz*st, ct + uy**2*(1-ct), uy*uz*(1-ct) - ux*st],
-            [uz*ux*(1-ct) - uy*st, uz*uy*(1-ct) + ux*st, ct + uz**2*(1-ct)]])
+            [ct + ux**2 * (1 - ct), ux * uy * (1 - ct) - uz * st, ux * uz * (1 - ct) + uy * st],
+            [uy * ux * (1 - ct) + uz * st, ct + uy**2 * (1 - ct), uy * uz * (1 - ct) - ux * st],
+            [uz * ux * (1 - ct) - uy * st, uz * uy * (1 - ct) + ux * st, ct + uz**2 * (1 - ct)]])
 
         # apply the rotation
-        xyz = np.dot(rot_mat, (xyz-xyz0).T).T + xyz0
+        xyz = np.dot(rot_mat, (xyz - xyz0).T).T + xyz0
         self.update('x,y,z', xyz, **kwargs)
 
         return xyz0
@@ -1188,7 +1194,7 @@ class pdb2sql(object):
             alpha (float): angle of rotation around the x axis
             beta (float): angle of rotation around the y axis
             gamma (float): angle of rotation around the z axis
-            **kwargs: keyword argument to select the atoms. 
+            **kwargs: keyword argument to select the atoms.
                 See pdb2sql.get()
 
         Examples:
@@ -1212,7 +1218,7 @@ class pdb2sql(object):
         rot_mat = np.dot(rx, np.dot(ry, rz))
 
         # apply the rotation
-        xyz = np.dot(rot_mat, (xyz-xyz0).T).T + xyz0
+        xyz = np.dot(rot_mat, (xyz - xyz0).T).T + xyz0
 
         self.update('x,y,z', xyz, **kwargs)
 
@@ -1221,9 +1227,9 @@ class pdb2sql(object):
 
         Args:
             rot_mat (np.array): 3x3 rotation matrix
-            center (bool, optional): center the molecule before 
+            center (bool, optional): center the molecule before
                 applying the rotation.
-            **kwargs: keyword argument to select the atoms. 
+            **kwargs: keyword argument to select the atoms.
                 See pdb2sql.get()
 
         Examples:
@@ -1234,7 +1240,7 @@ class pdb2sql(object):
 
         if center:
             xyz0 = np.mean(xyz)
-            xyz = np.dot(rot_mat, (xyz-xyz0).T).T + xyz0
+            xyz = np.dot(rot_mat, (xyz - xyz0).T).T + xyz0
         else:
             xyz = np.dot(rot_mat, (xyz).T).T
         self.update('x,y,z', xyz, **kwargs)

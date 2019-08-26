@@ -8,7 +8,7 @@ from deeprank.tools import pdb2sql
 class ResidueDensity(FeatureClass):
 
     def __init__(self, pdb_data, chainA='A', chainB='B'):
-        """Compute the residue contacts between 
+        """Compute the residue contacts between
            polar/apolar/charged residues.
 
         Args :
@@ -90,7 +90,7 @@ class ResidueDensity(FeatureClass):
         total_ctc = 0
         for i in self.residue_contacts:
             total_ctc += self.residue_contacts[i].density['total']
-        total_ctc = total_ctc/2
+        total_ctc = total_ctc / 2
 
         # handle with small interface or no interface
         if total_ctc == 0:
@@ -109,7 +109,7 @@ class ResidueDensity(FeatureClass):
                 f"residue contact density")
 
     def extract_features(self):
-        """Compute the feature of residue contacts between 
+        """Compute the feature of residue contacts between
             polar/apolar/charged residues.
 
             It generates following features:
@@ -129,8 +129,8 @@ class ResidueDensity(FeatureClass):
         pairtype = ['-'.join(p) for p in
                     list(itertools.combinations_with_replacement(restype, 2))]
         for p in pairtype:
-            self.feature_data['RCD_'+p] = {}
-            self.feature_data_xyz['RCD_'+p] = {}
+            self.feature_data['RCD_' + p] = {}
+            self.feature_data_xyz['RCD_' + p] = {}
 
         for key, res in self.residue_contacts.items():
 

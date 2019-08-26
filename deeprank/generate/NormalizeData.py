@@ -92,7 +92,7 @@ class NormalizeData(object):
         for mol in mol_names:
 
             # get the mapped features group
-            data_group = f5.get(mol+'/mapped_features/')
+            data_group = f5.get(mol + '/mapped_features/')
 
             # loop over all the feature types
             for feat_types, feat_names in data_group.items():
@@ -114,7 +114,7 @@ class NormalizeData(object):
                         )
 
                     # load the matrix
-                    feat_data = data_group[feat_types+'/'+name]
+                    feat_data = data_group[feat_types + '/' + name]
                     if feat_data.attrs['sparse']:
                         mat = sparse.FLANgrid(sparse=True,
                                               index=feat_data['index'][:],
@@ -128,7 +128,7 @@ class NormalizeData(object):
                         np.mean(mat), np.var(mat))
 
             # get the target groups
-            target_group = f5.get(mol+'/targets')
+            target_group = f5.get(mol + '/targets')
 
             # loop over all the targets
             for tname, tval in target_group.items():

@@ -4,12 +4,12 @@ import numpy as np
 class FeatureClass(object):
 
     def __init__(self, feature_type):
-        """Master class from which all the other feature classes 
+        """Master class from which all the other feature classes
             should be derived.
 
             Each subclass must compute:
 
-            - self.feature_data: dictionary of features in 
+            - self.feature_data: dictionary of features in
                 human readable format, e.g.
 
                 for atomic features:
@@ -22,7 +22,7 @@ class FeatureClass(object):
                     data_dict_pssmALA = {residue_info: [values]}
                         residue_info = (chainID, resSeq, resName, name)
 
-            - self.feature_data_xyz: dictionary of features in 
+            - self.feature_data_xyz: dictionary of features in
                 xyz-val format, e.g.
 
                 {'coulomb': data_dict_clb, 'vdwaals': data_dict_vdw}
@@ -39,9 +39,9 @@ class FeatureClass(object):
     def export_data_hdf5(self, featgrp):
         """Export the data in human readable format to HDF5's group.
 
-            - For atomic features, the format of the data must be: 
+            - For atomic features, the format of the data must be:
                 {(chainID, resSeq, resName, name): [values]}
-            - For residue features, the format must be: 
+            - For residue features, the format must be:
                 {(chainID, resSeq, resName): [values]}
         """
         # loop through the datadict and name
@@ -71,14 +71,14 @@ class FeatureClass(object):
                 # append
                 ds.append(feat)
 
-            ds = np.array(ds).astype('|S'+str(len(ds[0])))
+            ds = np.array(ds).astype('|S' + str(len(ds[0])))
 
             # create the dataset
-            if name+'_raw' in featgrp:
-                old_data = featgrp[name+'_raw']
+            if name + '_raw' in featgrp:
+                old_data = featgrp[name + '_raw']
                 old_data[...] = ds
             else:
-                featgrp.create_dataset(name+'_raw', data=ds)
+                featgrp.create_dataset(name + '_raw', data=ds)
 
     ########################################
     #
@@ -100,7 +100,7 @@ class FeatureClass(object):
         for name, data in self.feature_data_xyz.items():
 
             # create the data set
-            ds = np.array([list(key)+value for key, value in data.items()])
+            ds = np.array([list(key) + value for key, value in data.items()])
 
             # create the dataset
             if name in featgrp:

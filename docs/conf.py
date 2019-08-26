@@ -25,11 +25,24 @@ from unittest.mock import MagicMock
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
-            return MagicMock()
+        return MagicMock()
 
-MOCK_MODULES = ['numpy', 'scipy','h5py','scipy.signal','torch','torch.utils',
-                'torch.utils.data', 'matplotlib','matplotlib.pyplot','torch.autograd','torch.nn',
-                'torch.optim','torch.cuda','tqdm']
+
+MOCK_MODULES = [
+    'numpy',
+    'scipy',
+    'h5py',
+    'scipy.signal',
+    'torch',
+    'torch.utils',
+    'torch.utils.data',
+    'matplotlib',
+    'matplotlib.pyplot',
+    'torch.autograd',
+    'torch.nn',
+    'torch.optim',
+    'torch.cuda',
+    'tqdm']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 sys.path.insert(0, os.path.abspath('../'))
@@ -196,12 +209,11 @@ texinfo_documents = [
 ]
 
 
-
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'python': ('https://docs.python.org/', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
-    'pytorch' :('http://pytorch.org/docs/0.3.1/',None),
+    'pytorch': ('http://pytorch.org/docs/0.3.1/', None),
 }
 
 

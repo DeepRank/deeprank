@@ -11,16 +11,16 @@ def __compute_target__(decoy, targrp, tarname, save_file=False):
 
     Args:
         decoy(bytes): pdb data of the decoy
-        targrp(hdf5 file handle): HDF5 'targets' group 
+        targrp(hdf5 file handle): HDF5 'targets' group
         tarnames(str): it must be IRMSD, LRMSD or FNAT.
-        save_file(bool): save .izone, .lzone or .ref_pairs file or not, 
+        save_file(bool): save .izone, .lzone or .ref_pairs file or not,
             defaults to False.
 
     Returns:
         float: value of IRMSD, LRMSD or FNAT.
 
     Raises:
-        ValueError: Wrong target name 
+        ValueError: Wrong target name
         ValueError: native complex not exist
         ValueError: native complex has empty dataset
 
@@ -58,8 +58,9 @@ def __compute_target__(decoy, targrp, tarname, save_file=False):
             target = 1.0
 
         targrp.create_dataset(tarname, data=np.array(target))
-        warnings.warn(f"{molname} is a native/reference complex "
-                      f"without '_' in filename. Assign {target} for {tarname}")
+        warnings.warn(
+            f"{molname} is a native/reference complex "
+            f"without '_' in filename. Assign {target} for {tarname}")
 
     # or it's a decoy
     else:
@@ -67,7 +68,7 @@ def __compute_target__(decoy, targrp, tarname, save_file=False):
             raise ValueError(
                 f"'native' not exist for {molname}. "
                 f"You must provide reference pdb for computing targets")
-        elif molgrp['native'][()].shape == None:
+        elif molgrp['native'][()].shape is None:
             raise ValueError(
                 f"'native' dataset is empty for {molname}. "
                 f"You must provide reference pdb for computing targets")
