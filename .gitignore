@@ -49,3 +49,5 @@ test/*.pdb
 .vscode
 
 .DS_Store
+test/1AK4/atomic_features/test_1AK4_100w.dat
+test/2OUL/atomic_features/test_2OUL_1.dat
