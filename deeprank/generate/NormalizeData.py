@@ -7,7 +7,7 @@ from deeprank.tools import sparse
 
 class NormalizeData(object):
 
-    def __init__(self,fname,shape=None):
+    def __init__(self, fname, shape=None):
         """Compute the normalization factor for the features and targets of a given HDF5 file.
 
         The normalization of the features is done through the NormParam class that assumes gaussian distribution.
@@ -27,13 +27,11 @@ class NormalizeData(object):
 
         """
         self.fname = fname
-        self.parameters = {'features':{},'targets':{}}
+        self.parameters = {'features': {}, 'targets': {}}
         self.shape = shape
         self.fexport = os.path.splitext(self.fname)[0] + '_norm.pckl'
         self.skip_feature = []
         self.skip_target = []
-
-
 
     def get(self):
         """Get the normalization and write them to file."""
@@ -44,23 +42,21 @@ class NormalizeData(object):
         self._process_data()
         self._export_data()
 
-
     def _load(self):
         """Load data from already existing normalization file."""
 
         if os.path.isfile(self.fexport):
 
-            f = open(self.fexport,'rb')
+            f = open(self.fexport, 'rb')
             self.parameters = pickle.load(f)
             f.close()
 
-            for _,feat_name in self.parameters['features'].items():
-                for name,_ in feat_name.items():
+            for _, feat_name in self.parameters['features'].items():
+                for name, _ in feat_name.items():
                     self.skip_feature.append(name)
 
             for target in self.parameters['targets'].keys():
                 self.skip_target.append(target)
-
 
     def _extract_shape(self):
         """Get the shape of the data in the hdf5 file."""
@@ -68,7 +64,7 @@ class NormalizeData(object):
         if self.shape is not None:
             return
 
-        f5 = h5py.File(self.fname,'r')
+        f5 = h5py.File(self.fname, 'r')
         mol = list(f5.keys())[0]
         mol_data = f5.get(mol)
 
@@ -77,26 +73,27 @@ class NormalizeData(object):
             nx = mol_data['grid_points']['x'].shape[0]
             ny = mol_data['grid_points']['y'].shape[0]
             nz = mol_data['grid_points']['z'].shape[0]
-            self.shape=(nx,ny,nz)
+            self.shape = (nx, ny, nz)
 
         else:
-            raise ValueError('Impossible to determine sparse grid shape.\\n Specify argument grid_shape=(x,y,z)')
+            raise ValueError(
+                'Impossible to determine sparse grid shape.\\n Specify argument grid_shape=(x,y,z)')
 
     def _extract_data(self):
         """Extract the data from the different maps."""
 
-        f5 = h5py.File(self.fname,'r')
+        f5 = h5py.File(self.fname, 'r')
         mol_names = list(f5.keys())
         self.nmol = len(mol_names)
 
         # loop over the molecules
         for mol in mol_names:
 
-            #get the mapped features group
+            # get the mapped features group
             data_group = f5.get(mol+'/mapped_features/')
 
             # loop over all the feature types
-            for feat_types,feat_names in data_group.items():
+            for feat_types, feat_names in data_group.items():
 
                 # if feature type not in param add
                 if feat_types not in self.parameters['features']:
@@ -111,7 +108,8 @@ class NormalizeData(object):
 
                     # create the param if it doesn't already exists
                     if name not in self.parameters['features'][feat_types]:
-                        self.parameters['features'][feat_types][name] = NormParam()
+                        self.parameters['features'][feat_types][name] = NormParam(
+                        )
 
                     # load the matrix
                     feat_data = data_group[feat_types+'/'+name]
@@ -124,13 +122,14 @@ class NormalizeData(object):
                         mat = feat_data['value'][:]
 
                     # add the parameter (mean and var)
-                    self.parameters['features'][feat_types][name].add(np.mean(mat),np.var(mat))
+                    self.parameters['features'][feat_types][name].add(
+                        np.mean(mat), np.var(mat))
 
             # get the target groups
             target_group = f5.get(mol+'/targets')
 
             # loop over all the targets
-            for tname,tval in target_group.items():
+            for tname, tval in target_group.items():
 
                 # we skip the already computed target
                 if tname in self.skip_target:
@@ -147,15 +146,16 @@ class NormalizeData(object):
 
     def _process_data(self):
         """Compute the standard deviation of the data."""
-        for feat_types,feat_dict in self.parameters['features'].items():
+        for feat_types, feat_dict in self.parameters['features'].items():
             for feat in feat_dict:
-                self.parameters['features'][feat_types][feat].process(self.nmol)
+                self.parameters['features'][feat_types][feat].process(
+                    self.nmol)
 
     def _export_data(self):
         """Pickle the data to file."""
 
-        f = open(self.fexport,'wb')
-        pickle.dump(self.parameters,f)
+        f = open(self.fexport, 'wb')
+        pickle.dump(self.parameters, f)
         f.close()
 
 
@@ -184,18 +184,18 @@ class NormParam(object):
         self.var = var
         self.sqmean = sqmean
 
-    def add(self,mean,var):
+    def add(self, mean, var):
         """ Add the mean value, sqmean and variance of a new molecule to the corresponding attributes."""
         self.mean += mean
         self.sqmean += mean**2
         self.var += var
 
-    def process(self,n):
+    def process(self, n):
         """Compute the standard deviation of the ensemble."""
 
         # normalize the mean and var
-        self.mean   /= n
-        self.var    /= n
+        self.mean /= n
+        self.var /= n
         self.sqmean /= n
 
         # get the std
@@ -203,6 +203,7 @@ class NormParam(object):
         self.std += self.sqmean
         self.std -= self.mean**2
         self.std = np.sqrt(self.std)
+
 
 class MinMaxParam(object):
 
@@ -216,15 +217,15 @@ class MinMaxParam(object):
 
     """
 
-    def __init__(self,minv=None,maxv=None):
+    def __init__(self, minv=None, maxv=None):
         self.min = minv
         self.max = maxv
 
-    def update(self,val):
+    def update(self, val):
 
         if self.min is None:
             self.min = val
             self.max = val
         else:
-            self.min = min(self.min,val)
-            self.max = max(self.max,val)
+            self.min = min(self.min, val)
+            self.max = max(self.max, val)
