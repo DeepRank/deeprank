@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def __compute_target__(decoy, targrp):
     """
         pdb_data (bytes): PDB translated in bytes
@@ -30,4 +31,3 @@ def __compute_target__(decoy, targrp):
         classID = 0
 
     targrp.create_dataset('BIN_CLASS',data=np.array(classID))
-

@@ -1,13 +1,12 @@
 import os
-import numpy as np
-
+import sys
 from time import time
 
-from deeprank.tools import pdb2sql
-from deeprank.tools import SASA
+import numpy as np
+
 from deeprank.features import FeatureClass
 from deeprank.generate import settings
-import sys
+from deeprank.tools import SASA, pdb2sql
 
 printif = lambda string,cond: print(string) if cond else None
 

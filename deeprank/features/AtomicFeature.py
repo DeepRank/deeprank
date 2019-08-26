@@ -1,8 +1,10 @@
 import os
+
 import numpy as np
 
-from deeprank.tools import pdb2sql
 from deeprank.features import FeatureClass
+from deeprank.tools import pdb2sql
+
 
 class AtomicFeature(FeatureClass):
 

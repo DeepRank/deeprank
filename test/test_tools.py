@@ -1,6 +1,6 @@
 import unittest
-from deeprank.tools import pdb2sql
-from deeprank.tools import SASA
+
+from deeprank.tools import SASA, pdb2sql
 
 
 class TestTools(unittest.TestCase):

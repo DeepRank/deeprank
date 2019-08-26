@@ -1,35 +1,36 @@
 #!/usr/bin/env python
-import sys
 import os
+import pdb
+import sys
 import time
+
 import h5py
-import  matplotlib
-matplotlib.use('agg')
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
 from torchsummary import summary
 
-
 import torch
-from torch.autograd import Variable
+# cuda
+import torch.cuda
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils.data as data_utils
-
-# cuda
-import torch.cuda
-
-# dataset
-from deeprank.learn import DataSet
-
-# ranking metrics
-from deeprank.learn import rankingMetrics
-
 # classification metrics
-from deeprank.learn import classMetrics
-import pdb
+# ranking metrics
+# dataset
+from deeprank.learn import DataSet, classMetrics, rankingMetrics
+from torch.autograd import Variable
+
+matplotlib.use('agg')
+
+
+
+
+
+
 
 class NeuralNet():
 

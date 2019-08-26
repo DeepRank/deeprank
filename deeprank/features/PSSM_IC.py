@@ -1,11 +1,11 @@
 import os
-import numpy as np
-
 from time import time
 
-from deeprank.tools import pdb2sql
+import numpy as np
+
 from deeprank.features import FeatureClass
 from deeprank.generate import settings
+from deeprank.tools import pdb2sql
 
 printif = lambda string,cond: print(string) if cond else None
 

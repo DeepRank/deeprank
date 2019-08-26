@@ -1,7 +1,10 @@
-from deeprank.features import AtomicFeature
+import unittest
+
 import numpy as np
 import pkg_resources
-import unittest
+
+from deeprank.features import AtomicFeature
+
 
 class TestAtomicFeature(unittest.TestCase):
     """Test StructureSimialrity."""
@@ -139,4 +142,3 @@ class TestAtomicFeature(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

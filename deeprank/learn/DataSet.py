@@ -1,20 +1,18 @@
-import os
 import glob
-import sys
-import time
-import h5py
+import os
 import pickle
 import re
-
+import sys
+import time
 from functools import partial
 
-from torch import FloatTensor
-
+import h5py
 import numpy as np
-
-from deeprank.generate import NormParam, MinMaxParam, NormalizeData
-from deeprank.tools import sparse, pdb2sql
 from tqdm import tqdm
+
+from deeprank.generate import MinMaxParam, NormalizeData, NormParam
+from deeprank.tools import pdb2sql, sparse
+from torch import FloatTensor
 
 # import torch.utils.data as data_utils
 # The class used to subclass data_utils.Dataset

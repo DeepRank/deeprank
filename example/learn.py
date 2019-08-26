@@ -1,14 +1,15 @@
-import os
 import glob
+import os
+
 import numpy as np
 
 from deeprank.learn import *
+#-- for classification
+from deeprank.learn.model3d import cnn_class as cnn3d
 
 #-- for regression
 #from deeprank.learn.model3d import cnn_reg as cnn3d
 
-#-- for classification
-from deeprank.learn.model3d import cnn_class as cnn3d
 
 
 database = './hdf5/*1ak4.hdf5'

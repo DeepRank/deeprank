@@ -1,7 +1,9 @@
 import os
+
 import numpy as np
-from deeprank.tools import pdb2sql
+
 from deeprank.features import FeatureClass
+from deeprank.tools import pdb2sql
 
 try:
     import freesasa
@@ -161,4 +163,3 @@ if __name__ == '__main__':
     bsa.get_structure()
     #bsa.get_contact_residue_sasa()
     bsa.sql.close()
-

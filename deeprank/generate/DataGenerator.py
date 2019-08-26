@@ -1,15 +1,17 @@
 
-import os
-import sys
 import importlib
-import numpy as np
-import h5py
-from collections import OrderedDict
 import logging
-from deeprank.tools import pdb2sql
+import os
+import re
+import sys
+from collections import OrderedDict
+
+import h5py
+import numpy as np
+
 from deeprank.generate import GridTools as gt
 from deeprank.generate import settings
-import re
+from deeprank.tools import pdb2sql
 
 try:
     from tqdm import tqdm

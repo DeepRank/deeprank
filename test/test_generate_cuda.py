@@ -1,8 +1,9 @@
-import unittest
-import sys
 import os
-from deeprank.generate import *
+import sys
+import unittest
 from time import time
+
+from deeprank.generate import *
 
 try:
     import pycuda
@@ -69,4 +70,3 @@ class TestGenerateCUDA(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

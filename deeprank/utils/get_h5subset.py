@@ -6,6 +6,7 @@ Usage: python {0} <hdf5 input file> <hdf5 output file> <number of groups to writ
 Example: python {0} ./001_1GPW.hdf5  ./001_1GPW_sub10.hdf5 10
 """
 import sys
+
 import h5py
 
 USAGE = __doc__.format(__file__)

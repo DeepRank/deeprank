@@ -1,6 +1,8 @@
 import unittest
-from deeprank.utils.cal_hitrate_successrate import evaluate
+
 import pandas as pd
+
+from deeprank.utils.cal_hitrate_successrate import evaluate
 
 
 """

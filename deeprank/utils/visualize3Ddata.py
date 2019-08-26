@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
-import numpy as  np
-import subprocess as sp
 import os
+import subprocess as sp
+
 import h5py
-from deeprank.tools import pdb2sql
-from deeprank.tools import sparse
+import numpy as np
+
+from deeprank.tools import pdb2sql, sparse
+
 
 def visualize3Ddata(hdf5=None,mol_name=None,out=None):
 

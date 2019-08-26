@@ -1,26 +1,25 @@
 # 1. plot prediction scores for class 0 and 1 using two-panel box plots
 # 2. hit rate plot
 # 3. success rate plot
-import numpy as np
-import h5py
-import sys
-import torch
-import torch.nn.functional as F
-import pandas as pd
 import re
+import sys
+import warnings
 from itertools import zip_longest
 
-from cal_hitrate_successrate import evaluate
-from cal_hitrate_successrate import ave_evaluate
-from cal_hitrate_successrate import add_rank
+import h5py
+import numpy as np
+import pandas as pd
 
-import warnings
+import rpy2.robjects as ro
+import torch
+import torch.nn.functional as F
+from cal_hitrate_successrate import add_rank, ave_evaluate, evaluate
 from rpy2.rinterface import RRuntimeWarning
+from rpy2.robjects import pandas2ri
+from rpy2.robjects.lib.ggplot2 import *
+
 warnings.filterwarnings("ignore", category=RRuntimeWarning)
 
-from rpy2.robjects.lib.ggplot2 import *
-from rpy2.robjects import pandas2ri
-import rpy2.robjects as ro
 
 
 def zip_equal(*iterables):
@@ -576,5 +575,3 @@ def main(HS_h5FL= '/home/lixue/DBs/BM5-haddock24/stats/stats.h5'):
 
 if __name__ == '__main__':
     main()
-
-

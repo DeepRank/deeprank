@@ -1,6 +1,9 @@
-from deeprank.tools.StructureSimilarity import StructureSimilarity
 import os
+
 import numpy as np
+
+from deeprank.tools.StructureSimilarity import StructureSimilarity
+
 
 def __compute_target__(decoy,targrp):
 
@@ -53,4 +56,3 @@ def __compute_target__(decoy,targrp):
 
         dockQ = sim.compute_DockQScore(Fnat,lrmsd,irmsd)
         targrp.create_dataset('DOCKQ',data=np.array(dockQ))
-

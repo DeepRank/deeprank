@@ -1,5 +1,7 @@
 import os
+
 import numpy as np
+
 
 class FeatureClass(object):
 

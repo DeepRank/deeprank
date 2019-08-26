@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
-import deeprank.generate
-import h5py
 import os
+
+import h5py
+
+import deeprank.generate
+
 
 def clean_dataset(fname,feature=True,pdb=True,points=True,grid=False):
 
@@ -52,6 +55,3 @@ if __name__ == '__main__':
 
 	#os.system('h5repack %s _tmp.h5py' %args.hdf5)
 	#os.system('mv _tmp.h5py %s' %args.hdf5)
-
-
-	

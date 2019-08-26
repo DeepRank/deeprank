@@ -1,4 +1,5 @@
 import numpy as np
+
 _printif = lambda string,cond: print(string) if cond else None
 
 

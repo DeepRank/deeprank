@@ -1,6 +1,10 @@
+import os
+import pickle
+
 import numpy as np
+
 from deeprank.tools import pdb2sql
-import os,pickle
+
 _printif = lambda string,cond: print(string) if cond else None
 
 class StructureSimilarity(object):

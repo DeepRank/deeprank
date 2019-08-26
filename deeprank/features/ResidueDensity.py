@@ -1,9 +1,10 @@
-import numpy as np
 import itertools
-from deeprank.tools import pdb2sql
-from deeprank.features import FeatureClass
 import sys
 
+import numpy as np
+
+from deeprank.features import FeatureClass
+from deeprank.tools import pdb2sql
 
 
 class ResidueDensity(FeatureClass):
@@ -183,4 +184,3 @@ def __compute_feature__(pdb_data,featgrp,featgrp_raw):
         error_flag = True
         print("WARNING: Failed to calculate ResidueDensity. This might be caused by a very small interface.")
     return error_flag
-

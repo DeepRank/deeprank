@@ -1,7 +1,6 @@
 from deeprank.generate import *
 from mpi4py import MPI
 
-
 comm = MPI.COMM_WORLD
 
 # name of the hdf5 to generate
@@ -59,4 +58,3 @@ database.create_database(prog_bar=True)
 # print('{:25s}'.format('Normalization') + database.hdf5)
 # norm = NormalizeData(database.hdf5)
 # norm.get()
-

@@ -1,15 +1,16 @@
 
-import numpy as np
-import subprocess as sp
-import os, sys
 import itertools
-from scipy.signal import bspline
+import logging
+import os
+import subprocess as sp
+import sys
 from collections import OrderedDict
 from time import time
-import logging
 
-from deeprank.tools import pdb2sql
-from deeprank.tools import sparse
+import numpy as np
+from scipy.signal import bspline
+
+from deeprank.tools import pdb2sql, sparse
 
 try:
     from tqdm import tqdm
@@ -823,6 +824,3 @@ class GridTools(object):
                 sub_feat_group.create_dataset('value',data=value,compression='gzip',compression_opts=9)
 
 ########################################################################################################
-
-
-

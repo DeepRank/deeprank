@@ -1,9 +1,9 @@
+import os
 import sqlite3
 import subprocess as sp
-import os
-import numpy as np
 from time import time
 
+import numpy as np
 
 
 class pdb2sql(object):

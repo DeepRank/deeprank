@@ -1,6 +1,9 @@
 import unittest
+
 import numpy as np
+
 from deeprank.tools import pdb2sql
+
 
 class TestPDB2SQL(unittest.TestCase):
     """Test PDB2SQL."""

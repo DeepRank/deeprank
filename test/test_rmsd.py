@@ -1,7 +1,10 @@
-import unittest
-import numpy as np
-from deeprank.tools import StructureSimilarity
 import os
+import unittest
+
+import numpy as np
+
+from deeprank.tools import StructureSimilarity
+
 
 class TestStructureSimilarity(unittest.TestCase):
     """Test StructureSimialrity."""
@@ -93,4 +96,3 @@ class TestStructureSimilarity(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

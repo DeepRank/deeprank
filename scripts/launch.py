@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-from deeprank.generate import *
 import os
 from time import time
+
 import numpy as np
+
 from cleandata import *
+from deeprank.generate import *
 
 ##########################################################################
 #
@@ -122,6 +124,3 @@ if __name__ == '__main__':
 
         # generate the data
         generate(MOL,clean=args.clean)
-
-
-

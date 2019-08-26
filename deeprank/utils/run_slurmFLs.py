@@ -12,13 +12,12 @@ INPUT: a file that contains all the jobs, for example,
     ...
 
 '''
-import re
-import os
 import glob
+import os
+import re
 import subprocess
-from shlex import quote
-from shlex import split
 import time
+from shlex import quote, split
 
 logDIR='/projects/0/deeprank/BM5/scripts/slurm/change_BINCLASS/hdf5_withGridFeature'
 slurmDIR=logDIR
@@ -196,4 +195,3 @@ if not os.path.isdir(slurmDIR):
 
 write_slurmscript('all_jobs.sh', batch_size, slurmDIR, logDIR)
 #submit_slurmscript(slurmDIR, 200)
-
