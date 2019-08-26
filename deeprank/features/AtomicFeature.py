@@ -657,13 +657,13 @@ class AtomicFeature(FeatureClass):
                     keyB = tuple(atinfo[indexB])
 
                     line += '{:<3s}'.format(keyA[0])
-                    line += '\t{:>1s}'.format(keyA[1])
-                    line += '\t{:>4d}'.format(keyA[2])
+                    line += '\t{:>1d}'.format(keyA[1])
+                    line += '\t{:>4s}'.format(keyA[2])
                     line += '\t{:^4s}'.format(keyA[3])
 
                     line += '\t{:<3s}'.format(keyB[0])
-                    line += '\t{:>1s}'.format(keyB[1])
-                    line += '\t{:>4d}'.format(keyB[2])
+                    line += '\t{:>1d}'.format(keyB[1])
+                    line += '\t{:>4s}'.format(keyB[2])
                     line += '\t{:^4s}'.format(keyB[3])
 
                     line += '\t{: 6.3f}'.format(r[iB])
