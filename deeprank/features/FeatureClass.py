@@ -4,8 +4,8 @@ import numpy as np
 class FeatureClass(object):
 
     def __init__(self, feature_type):
-        """Master class from which all the other feature classes
-            should be derived.
+        """Master class from which all the other feature classes should be
+        derived.
 
             Each subclass must compute:
 
@@ -39,10 +39,10 @@ class FeatureClass(object):
     def export_data_hdf5(self, featgrp):
         """Export the data in human readable format to HDF5's group.
 
-            - For atomic features, the format of the data must be:
-                {(chainID, resSeq, resName, name): [values]}
-            - For residue features, the format must be:
-                {(chainID, resSeq, resName): [values]}
+        - For atomic features, the format of the data must be:
+            {(chainID, resSeq, resName, name): [values]}
+        - For residue features, the format must be:
+            {(chainID, resSeq, resName): [values]}
         """
         # loop through the datadict and name
         for name, data in self.feature_data.items():
@@ -92,8 +92,8 @@ class FeatureClass(object):
     def export_dataxyz_hdf5(self, featgrp):
         """Export the data in xyz-val format in an HDF5 file group.
 
-            For atomic and residue the format of the data must be:
-                {(chainNum(0 or 1), x, y, z): [values]}
+        For atomic and residue the format of the data must be:
+        {(chainNum(0 or 1), x, y, z): [values]}
         """
 
         # loop through the datadict and name

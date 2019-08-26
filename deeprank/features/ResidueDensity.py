@@ -8,8 +8,7 @@ from deeprank.tools import pdb2sql
 class ResidueDensity(FeatureClass):
 
     def __init__(self, pdb_data, chainA='A', chainB='B'):
-        """Compute the residue contacts between
-           polar/apolar/charged residues.
+        """Compute the residue contacts between polar/apolar/charged residues.
 
         Args :
             pdb_data (list(byte) or str): pdb data or pdb filename
@@ -41,7 +40,7 @@ class ResidueDensity(FeatureClass):
                               'LYS': 'charged', 'ARG': 'charged'}
 
     def get(self, cutoff=5.5):
-        """Get residue contacts
+        """Get residue contacts.
 
         Raises:
             ValueError: No residue contact found.
@@ -109,17 +108,12 @@ class ResidueDensity(FeatureClass):
                 f"residue contact density")
 
     def extract_features(self):
-        """Compute the feature of residue contacts between
-            polar/apolar/charged residues.
+        """Compute the feature of residue contacts between polar/apolar/charged
+        residues.
 
-            It generates following features:
-                RCD_apolar-apolar
-                RCD_apolar-charged
-                RCD_charged-charged
-                RCD_polar-apolar
-                RCD_polar-charged
-                RCD_polar-polar
-                RCD_total
+        It generates following features:     RCD_apolar-apolar
+        RCD_apolar-charged     RCD_charged-charged     RCD_polar-apolar
+        RCD_polar-charged     RCD_polar-polar     RCD_total
         """
 
         self.feature_data['RCD_total'] = {}  # raw data for human read

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Default DeepRank settings.
-"""
+"""Default DeepRank settings."""
 
 ####################
 # DEBUG            #

@@ -72,7 +72,6 @@ class DataGenerator(object):
         >>>                                            'deeprank.features.PSSM_IC',
         >>>                                            'deeprank.features.BSA'],
         >>>                          hdf5=h5file)
-
         """
 
         self.pdb_select = pdb_select or []
@@ -148,7 +147,7 @@ class DataGenerator(object):
             remove_error=True,
             prog_bar=False,
             contact_distance=8.5):
-        '''Create the hdf5 file architecture and compute the features/targets.
+        """Create the hdf5 file architecture and compute the features/targets.
 
         Args:
             verbose (bool, optional): Print creation details
@@ -177,7 +176,7 @@ class DataGenerator(object):
         >>>
         >>> #create new files
         >>> database.create_database(prog_bar=True)
-        '''
+        """
         # check decoy pdb files
         if len(self.pdb_path) == 0:
             raise ValueError(f"Decoy pdb files not found. Check class "
@@ -484,7 +483,7 @@ class DataGenerator(object):
 
 
     def add_feature(self, remove_error=True, prog_bar=True):
-        ''' Add a feature to an existing hdf5 file
+        """Add a feature to an existing hdf5 file.
 
         Args:
             remove_error (bool): remove errored molecule
@@ -499,7 +498,7 @@ class DataGenerator(object):
         >>>                          hdf5=h5file)
         >>>
         >>> database.add_feature(remove_error=True, prog_bar=True)
-        '''
+        """
 
         # check if file exists
         if not os.path.isfile(self.hdf5):
@@ -604,7 +603,7 @@ class DataGenerator(object):
 # ====================================================================================
 
     def add_unique_target(self, targdict):
-        '''Add identical targets for all the complexes in the datafile.
+        """Add identical targets for all the complexes in the datafile.
 
         This is usefull if you want to add the binary class of all the complexes
         created from decoys or natives
@@ -614,7 +613,7 @@ class DataGenerator(object):
 
         >>> database = DataGenerator(hdf5='1ak4.hdf5')
         >>> database.add_unique_target({'DOCKQ':1.0})
-        '''
+        """
 
         # check if file exists
         if not os.path.isfile(self.hdf5):
@@ -628,7 +627,7 @@ class DataGenerator(object):
         f5.close()
 
     def add_target(self, prog_bar=False):
-        ''' Add a target to an existing hdf5 file
+        """Add a target to an existing hdf5 file.
 
         Args:
             prog_bar (bool, optional): Use tqdm
@@ -642,7 +641,7 @@ class DataGenerator(object):
         >>>                          hdf5=h5file)
         >>>
         >>> database.add_target(prog_bar=True)
-        '''
+        """
 
         # check if file exists
         if not os.path.isfile(self.hdf5):
@@ -772,7 +771,7 @@ class DataGenerator(object):
                      time=False,
                      prog_bar=True, grid_prog_bar=False,
                      remove_error=True):
-        ''' Map the feature on a grid of points centered at the interface
+        """Map the feature on a grid of points centered at the interface.
 
         Args:
             grid_info (dict): Informaton for the grid.
@@ -802,8 +801,7 @@ class DataGenerator(object):
         >>> }
         >>>
         >>> database.map_features(grid_info,try_sparse=True,time=False,prog_bar=True)
-
-        '''
+        """
 
         # default CUDA
         cuda_func = None
@@ -954,7 +952,7 @@ class DataGenerator(object):
 
 
     def remove(self, feature=True, pdb=True, points=True, grid=False):
-        '''Remove data from the data set.
+        """Remove data from the data set.
 
         Equivalent to the cleandata command line tool. Once the data has been
         removed from the file it is impossible to add new features/targets
@@ -964,8 +962,7 @@ class DataGenerator(object):
             pdb (bool, optional): Remove the pdbs
             points (bool, optional): remove teh grid points
             grid (bool, optional): remove the maps
-
-        '''
+        """
 
         self.logger.debug('Remove features')
 
@@ -1003,8 +1000,7 @@ class DataGenerator(object):
 # ====================================================================================
 
     def _tune_cuda_kernel(self, grid_info, cuda_kernel='kernel_map.c', func='gaussian'):  # pragma: no cover
-        '''
-        Tune the CUDA kernel using the kernel tuner
+        """Tune the CUDA kernel using the kernel tuner
         http://benvanwerkhoven.github.io/kernel_tuner/
 
         Args:
@@ -1014,7 +1010,7 @@ class DataGenerator(object):
 
         Raises:
             ValueError: If the tuner has not been used
-        '''
+        """
 
         try:
             from kernel_tuner import tune_kernel
@@ -1078,8 +1074,7 @@ class DataGenerator(object):
 
 
     def _test_cuda(self, grid_info, gpu_block=8, cuda_kernel='kernel_map.c', func='gaussian'):  # pragma: no cover
-        '''
-        Test the CUDA kernel
+        """Test the CUDA kernel.
 
         Args:
             grid_info (dict): Information for the grid definition
@@ -1089,7 +1084,7 @@ class DataGenerator(object):
 
         Raises:
             ValueError: If the kernel has not been installed
-        '''
+        """
 
         from time import time
 
@@ -1150,7 +1145,7 @@ class DataGenerator(object):
 
     @staticmethod
     def _compile_cuda_kernel(cuda_kernel, npts, res):  # pragma: no cover
-        """Compile the cuda kernel
+        """Compile the cuda kernel.
 
         Args:
             cuda_kernel (str): filename
@@ -1172,7 +1167,7 @@ class DataGenerator(object):
 
     @staticmethod
     def _get_cuda_function(module, func_name):  # pragma: no cover
-        """Get a single function from the compiled kernel
+        """Get a single function from the compiled kernel.
 
         Args:
             module (compiler.SourceModule): compiled kernel module
@@ -1187,7 +1182,7 @@ class DataGenerator(object):
     # tranform the kernel to a tunable one
     @staticmethod
     def _tunable_kernel(kernel):  # pragma: no cover
-        """Make a tunale kernel
+        """Make a tunale kernel.
 
         Args:
             kernel (str): String of the kernel
@@ -1237,7 +1232,7 @@ class DataGenerator(object):
 
     @staticmethod
     def _compute_features(feat_list, pdb_data, featgrp, featgrp_raw, logger):
-        """Compute the features
+        """Compute the features.
 
         Args:
             feat_list (list(str)): list of function name,
@@ -1273,7 +1268,7 @@ class DataGenerator(object):
 
     @staticmethod
     def _compute_targets(targ_list, pdb_data, targrp):
-        """Compute the targets
+        """Compute the targets.
 
         Args:
             targ_list (list(str)): list of function name
@@ -1294,7 +1289,7 @@ class DataGenerator(object):
 
     @staticmethod
     def _add_pdb(molgrp, pdbfile, name):
-        """ Add a pdb to a molgrp.
+        """Add a pdb to a molgrp.
 
         Args:
             molgrp (str): mopl group where tp add the pdb
@@ -1321,7 +1316,7 @@ class DataGenerator(object):
 
     @staticmethod
     def _add_aug_pdb(molgrp, pdbfile, name, axis, angle):
-        """Add augmented pdbs to the dataset
+        """Add augmented pdbs to the dataset.
 
         Args:
             molgrp (str): name of the molgroup
@@ -1379,7 +1374,7 @@ class DataGenerator(object):
 
     @staticmethod
     def _rotate_feature(molgrp, axis, angle, center, feat_name='all'):
-        """Rotate the raw feature values
+        """Rotate the raw feature values.
 
         Args:
             molgrp (str): name pf the molgrp
@@ -1413,7 +1408,7 @@ class DataGenerator(object):
 
     @staticmethod
     def _rotate_xyz(xyz, axis, angle, center):
-        """Get the rotated xyz
+        """Get the rotated xyz.
 
         Args:
             xyz(np.array): original xyz coordinates
@@ -1450,7 +1445,7 @@ class DataGenerator(object):
 
     @staticmethod
     def _get_aug_rot():
-        """Get the rotation angle/axis
+        """Get the rotation angle/axis.
 
         Returns:
             list(float): axis of rotation

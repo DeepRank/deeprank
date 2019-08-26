@@ -21,15 +21,13 @@ from ggplot import *
 
 
 def plot_boxplot_todo(hdf5, epoch=None, figname=None, inverse=False):
-    '''
-    Plot a boxplot of predictions VS targets useful '
-    to visualize the performance of the training algorithm
-    This is only usefull in classification tasks
+    """Plot a boxplot of predictions VS targets useful ' to visualize the
+    performance of the training algorithm This is only usefull in
+    classification tasks.
 
     Args:
         figname (str): filename
-
-    '''
+    """
 
     print('\n --> Box Plot : ', figname, '\n')
 
@@ -97,15 +95,13 @@ def sort_modelIDs_by_deeprank(modelIDs, deeprank_score):
 
 
 def plot_boxplot(hdf5, epoch=None, figname=None, inverse=False):
-    '''
-    Plot a boxplot of predictions VS targets useful '
-    to visualize the performance of the training algorithm
-    This is only usefull in classification tasks
+    """Plot a boxplot of predictions VS targets useful ' to visualize the
+    performance of the training algorithm This is only usefull in
+    classification tasks.
 
     Args:
         figname (str): filename
-
-    '''
+    """
 
     print('\n --> Box Plot : ', figname, '\n')
 
@@ -168,7 +164,8 @@ def plot_hit_rate_withHS(
         epoch=None,
         figname=None,
         inverse=False):
-    '''Plot the hit rate of the different training/valid/test sets with HS (haddock scores)
+    """Plot the hit rate of the different training/valid/test sets with HS
+    (haddock scores)
 
     The hit rate is defined as:
         the percentage of positive decoys that are included among the top m decoys.
@@ -178,8 +175,7 @@ def plot_hit_rate_withHS(
         HS_DIR (str): the directory where HS files are stored
         figname (str): filename for the plot
         irmsd_thr (float, optional): threshold for 'good' models
-
-    '''
+    """
 
     print('\n --> Hit Rate :', figname, '\n')
 
@@ -380,7 +376,7 @@ def read_haddockScoreFL(HS_DIR):
 
 
 def plot_hit_rate(hdf5, epoch=None, figname=None, inverse=False):
-    '''Plot the hit rate of the different training/valid/test sets
+    """Plot the hit rate of the different training/valid/test sets.
 
     The hit rate is defined as:
         the percentage of positive decoys that are included among the top m decoys.
@@ -389,8 +385,7 @@ def plot_hit_rate(hdf5, epoch=None, figname=None, inverse=False):
     Args:
         figname (str): filename for the plot
         irmsd_thr (float, optional): threshold for 'good' models
-
-    '''
+    """
 
     print('\n --> Hit Rate :', figname, '\n')
 

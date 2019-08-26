@@ -11,8 +11,7 @@ class AtomicFeature(FeatureClass):
 
     def __init__(self, pdbfile, param_charge=None, param_vdw=None,
                  patch_file=None, contact_cutoff=8.5, verbose=False):
-        '''
-        Compute the Coulomb, van der Waals interaction and charges
+        """Compute the Coulomb, van der Waals interaction and charges.
 
         Args:
 
@@ -63,7 +62,7 @@ class AtomicFeature(FeatureClass):
         >>>
         >>> # close the db
         >>> atfeat.sqldb.close()
-        '''
+        """
 
         super().__init__("Atomic")
 
@@ -105,15 +104,14 @@ class AtomicFeature(FeatureClass):
     ####################################################################
 
     def read_charge_file(self):
-        '''Read the .top file given in entry.
+        """Read the .top file given in entry.
 
         This function creates :
 
         - self.charge : dictionary  {(resname,atname):charge}
         - self.valid_resnames : list ['VAL','ALP', .....]
         - self.at_name_type_convertor : dict {(resname,atname):attype}
-
-        '''
+        """
 
         with open(self.param_charge) as f:
             data = f.readlines()
@@ -151,14 +149,13 @@ class AtomicFeature(FeatureClass):
         self.valid_resnames = list(set(resnames))
 
     def read_patch(self):
-        '''Read the patchfile.
+        """Read the patchfile.
 
         This function creates
 
             - self.patch_charge : Dict {(resName,atName) : charge}
             - self.patch_type   : Dict {(resName,atName) : type}
-
-        '''
+        """
 
         with open(self.patch_file) as f:
             data = f.readlines()
@@ -182,7 +179,7 @@ class AtomicFeature(FeatureClass):
                     self.patch_type[(words[0], words[3])] = type_.strip()
 
     def read_vdw_file(self):
-        ''' Read the .param file
+        """Read the .param file.
 
         The param file must be of the form:
 
@@ -195,7 +192,7 @@ class AtomicFeature(FeatureClass):
         This function creates
 
             - self.vdw : dictionary {attype:[E1,S1]}
-        '''
+        """
 
         with open(self.param_vdw) as f:
             data = f.readlines()
@@ -276,9 +273,8 @@ class AtomicFeature(FeatureClass):
             raise ValueError("No contact atoms detected in AtomicFeature")
 
     def _extend_contact_to_residue(self):
-        """Extend the contact atoms to entire residue
-            where one atom is contacting.
-        """
+        """Extend the contact atoms to entire residue where one atom is
+        contacting."""
 
         # extract the data
         dataA = self.sqldb.get(self.residue_key,
@@ -322,12 +318,12 @@ class AtomicFeature(FeatureClass):
     ####################################################################
 
     def assign_parameters(self):
-        '''Assign to each atom in the pdb its charge and vdw
-            interchain parameters.
+        """Assign to each atom in the pdb its charge and vdw interchain
+        parameters.
 
-        Directly deals with the patch so that we don't loop over
-        the residues multiple times.
-        '''
+        Directly deals with the patch so that we don't loop over the
+        residues multiple times.
+        """
 
         # get all the resnumbers
         if self.verbose:
@@ -389,7 +385,7 @@ class AtomicFeature(FeatureClass):
 
     @staticmethod
     def _get_altResName(resName, atNames):
-        ''' Apply the patch data.
+        """Apply the patch data.
 
         This is adopted from preScan.pl
         This is very static and I don't quite like it
@@ -402,7 +398,7 @@ class AtomicFeature(FeatureClass):
         Args:
             resName (str): name of the residue
             atNames (list(str)): names of the atoms
-        '''
+        """
 
         new_type = {
             'PROP': ['all', ['HT1', 'HT2'], []],
@@ -505,11 +501,10 @@ class AtomicFeature(FeatureClass):
     ####################################################################
 
     def evaluate_charges(self, extend_contact_to_residue=False):
-        """ Evaluate the charges.
+        """Evaluate the charges.
 
         Args:
             extend_contact_to_residue (bool, optional): extend to res
-
         """
         if self.verbose:
             print('-- Compute list charge for contact atoms only')
@@ -912,7 +907,7 @@ class AtomicFeature(FeatureClass):
 ########################################################################
 
 def __compute_feature__(pdb_data, featgrp, featgrp_raw):
-    """Main function called in deeprank for the feature calculations
+    """Main function called in deeprank for the feature calculations.
 
     Args:
         pdb_data (list(bytes)): pdb information

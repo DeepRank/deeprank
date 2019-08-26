@@ -203,7 +203,7 @@ class GridTools(object):
     ################################################################
 
     def read_pdb(self):
-        """ Create a sql databse for the pdb."""
+        """Create a sql databse for the pdb."""
 
         self.sqldb = pdb2sql(self.molgrp['complex'][()])
 
@@ -298,7 +298,7 @@ class GridTools(object):
 
     # compute all the atomic densities data
     def map_atomic_densities(self, only_contact=True):
-        """Map the atomic densities to the grid
+        """Map the atomic densities to the grid.
 
         Args:
             only_contact(bool, optional): Map only the contact atoms
@@ -421,8 +421,7 @@ class GridTools(object):
 
     # compute the atomic denisties on the grid
     def densgrid(self, center, vdw_radius):
-        ''' Function to map individual atomic density on the grid.
-
+        """Function to map individual atomic density on the grid.
 
         The formula is equation (1) of the Koes paper
         Protein-Ligand Scoring with Convolutional NN Arxiv:1612.02751v1
@@ -433,7 +432,7 @@ class GridTools(object):
 
         Returns:
             TYPE: np.array (mapped density)
-        '''
+        """
 
         x0, y0, z0 = center
         dd = np.sqrt((self.xgrid - x0)**2
@@ -457,7 +456,7 @@ class GridTools(object):
 
     # map residue a feature on the grid
     def map_features(self, featlist, transform=None):
-        '''Map individual feature to the grid.
+        """Map individual feature to the grid.
 
         For residue based feature the feature file must be of the format
         chainID residue_name(3-letter)  residue_number [values]
@@ -475,7 +474,7 @@ class GridTools(object):
         Raises:
             ImportError: Description
             ValueError: Description
-        '''
+        """
 
         # declare the total dictionary
         dict_data = {}
@@ -694,7 +693,7 @@ class GridTools(object):
 
     # compute the a given feature on the grid
     def featgrid(self, center, value, type_='fast_gaussian'):
-        '''Map an individual feature (atomic or residue) on the grid
+        """Map an individual feature (atomic or residue) on the grid.
 
         Args:
             center (list(float)): position of the feature center
@@ -706,7 +705,7 @@ class GridTools(object):
 
         Raises:
             ValueError: Description
-        '''
+        """
 
         # shortcut for th center
         x0, y0, z0 = center
@@ -810,7 +809,7 @@ class GridTools(object):
     # save the data in the hdf5 file
 
     def hdf5_grid_data(self, dict_data, data_name):
-        """Save the mapped feature to the hdf5 file
+        """Save the mapped feature to the hdf5 file.
 
         Args:
             dict_data(dict): feature values stored as a dict

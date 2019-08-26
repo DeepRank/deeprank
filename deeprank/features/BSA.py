@@ -14,7 +14,7 @@ except ImportError:
 class BSA(FeatureClass):
 
     def __init__(self, pdb_data, chainA='A', chainB='B'):
-        '''Compute the burried surface area feature
+        """Compute the burried surface area feature.
 
         Freesasa is required for this feature.
         From Freesasa version 2.0.3 the Python bindings are released
@@ -31,8 +31,7 @@ class BSA(FeatureClass):
         >>> bsa.get_structure()
         >>> bsa.get_contact_residue_sasa()
         >>> bsa.sql.close()
-
-        '''
+        """
         self.pdb_data = pdb_data
         self.sql = pdb2sql(pdb_data)
         self.chains_label = [chainA, chainB]

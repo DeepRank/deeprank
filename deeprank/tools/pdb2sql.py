@@ -17,7 +17,7 @@ class pdb2sql(object):
                  fix_chainID=True,
                  verbose=False,
                  no_extra=True):
-        '''Create a SQL data base for a PDB file.
+        """Create a SQL data base for a PDB file.
 
         This allows to easily parse and extract information of the PDB
         using SQL queries. This is a local version of the pdb2sql tool
@@ -59,7 +59,7 @@ class pdb2sql(object):
             >>>
             >>> # close the database
             >>> db.close()
-        '''
+        """
         self.pdbfile = pdbfile
         self.sqlfile = sqlfile
         self.is_valid = True
@@ -319,7 +319,7 @@ class pdb2sql(object):
     ####################################################################
 
     def get(self, atnames, **kwargs):
-        '''Get data from the sql database.
+        """Get data from the sql database.
 
         Get the values of specified attributes for a specific selection.
 
@@ -355,7 +355,7 @@ class pdb2sql(object):
             >>> db = pdb2sql(filename)
             >>> xyz = db.get('x,y,z',name = ['CA', 'CB'])
             >>> xyz = db.get('x,y,z',chainID='A',resName=['VAL', 'LEU'])
-        '''
+        """
 
         # the asked keys
         keys = kwargs.keys()
@@ -552,7 +552,6 @@ class pdb2sql(object):
 
             >>> db = pdb2sql(filename)
             >>> db.get_contact_atoms(cutoff=5.0,return_contact_pairs=True)
-
         """
         # xyz of the chains
         xyz1 = np.array(self.get('x,y,z', chainID=chain1))
@@ -805,7 +804,7 @@ class pdb2sql(object):
     ####################################################################
 
     def add_column(self, colname, coltype='FLOAT', default=0):
-        '''Add an extra column to the ATOM table.
+        """Add an extra column to the ATOM table.
 
         Args:
             colname (str): name of the column
@@ -813,7 +812,7 @@ class pdb2sql(object):
                 (default FLOAT)
             default (int, optional): default value to fill in the column
                 (default 0.0)
-        '''
+        """
 
         query = "ALTER TABLE ATOM ADD COLUMN '%s' %s DEFAULT %s" % (
             colname, coltype, str(default))
@@ -910,7 +909,7 @@ class pdb2sql(object):
         self.c.executemany(query, data)
 
     def update_column(self, colname, values, index=None):
-        '''Update a single column.
+        """Update a single column.
 
         Args:
             colname (str): name of the column to update
@@ -921,7 +920,7 @@ class pdb2sql(object):
         Examples:
             >>> db.update_column('x', np.random.rand(10),
             ... index=list(range(10)))
-        '''
+        """
 
         if index is None:
             data = [[v, i + 1] for i, v in enumerate(values)]
@@ -934,7 +933,7 @@ class pdb2sql(object):
         # self.conn.commit()
 
     def update_xyz(self, xyz, index=None):
-        '''Update the xyz information.
+        """Update the xyz information.
 
         Update the positions of the atoms selected
         if index=None the position of all the atoms are changed
@@ -948,7 +947,7 @@ class pdb2sql(object):
             >>> index = list(range(n))
             >>> vals = np.random.rand(n,3)
             >>> db.update_xyz(vals,index=index)
-        '''
+        """
 
         if index is None:
             data = [[pos[0], pos[1], pos[2], i + 1]
@@ -961,8 +960,8 @@ class pdb2sql(object):
         self.c.executemany(query, data)
 
     def put(self, colname, value, **kwargs):
-        """Update the value of the attribute with value specified with
-            possible selection.
+        """Update the value of the attribute with value specified with possible
+        selection.
 
         Args:
             colname (str): must be a valid attribute name.
@@ -1062,7 +1061,7 @@ class pdb2sql(object):
 
     # export to pdb file
     def exportpdb(self, fname, **kwargs):
-        """Export a PDB file with kwargs selection
+        """Export a PDB file with kwargs selection.
 
         Args:
             fname (str): Name of the file
@@ -1133,7 +1132,7 @@ class pdb2sql(object):
     ####################################################################
 
     def translation(self, vect, **kwargs):
-        """Translate a part or all of the molecule
+        """Translate a part or all of the molecule.
 
         Args:
             vect (np.array): translation vector
@@ -1149,7 +1148,7 @@ class pdb2sql(object):
         self.update('x,y,z', xyz, **kwargs)
 
     def rotation_around_axis(self, axis, angle, **kwargs):
-        """Rotate a molecule around a specified axis
+        """Rotate a molecule around a specified axis.
 
         Args:
             axis (np.array): axis of rotation
@@ -1188,7 +1187,7 @@ class pdb2sql(object):
         return xyz0
 
     def rotation_euler(self, alpha, beta, gamma, **kwargs):
-        """Rotate a part or all of the molecule from Euler rotation axis
+        """Rotate a part or all of the molecule from Euler rotation axis.
 
         Args:
             alpha (float): angle of rotation around the x axis
@@ -1223,7 +1222,7 @@ class pdb2sql(object):
         self.update('x,y,z', xyz, **kwargs)
 
     def rotation_matrix(self, rot_mat, center=True, **kwargs):
-        """Rotate a part or all of the molecule from a rotation matrix
+        """Rotate a part or all of the molecule from a rotation matrix.
 
         Args:
             rot_mat (np.array): 3x3 rotation matrix

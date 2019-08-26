@@ -26,7 +26,7 @@ class NaivePSSM(FeatureClass):
             nmask=17,
             nsmooth=3,
             debug=False):
-        '''Compute compressed PSSM data.
+        """Compute compressed PSSM data.
 
         The method is adapted from:
         Simplified Sequence-based method for ATP-binding prediction using contextual local evolutionary conservation
@@ -52,7 +52,7 @@ class NaivePSSM(FeatureClass):
         >>> pssm.process_pssm_data()
         >>> pssm.get_feature_value()
         >>> print(pssm.feature_data_xyz)
-        '''
+        """
 
         super().__init__("Residue")
         print("== Warning : Please don't use NaivePSSM as a feature it's very experimental")

@@ -7,7 +7,7 @@ def _printif(string, cond): return print(string) if cond else None
 class FLANgrid(object):
 
     def __init__(self, sparse=None, index=None, value=None, shape=None):
-        """Flat Array sparse matrix
+        """Flat Array sparse matrix.
 
         Args:
             sparse (bool, optional): Sparse or Not
@@ -22,14 +22,14 @@ class FLANgrid(object):
         self.shape = shape
 
     def from_dense(self, data, beta=None, debug=False):
-        '''Create a sparse matrix from a dense one.
+        """Create a sparse matrix from a dense one.
 
         Args:
             data (np.array): Dense matrix
             beta (float, optional): threshold to determine if a sparse
                 rep is valuable
             debug (bool, optional): print debug information
-        '''
+        """
         if beta is not None:
             thr = beta * np.mean(np.abs(data))
             index = np.argwhere(np.abs(data) > thr)
@@ -74,7 +74,7 @@ class FLANgrid(object):
             self.value = data.astype(np.float32)
 
     def to_dense(self, shape=None):
-        """Create a dense matrix
+        """Create a dense matrix.
 
         Args:
             shape (3x3 array, optional): Shape of the matrix
@@ -118,7 +118,7 @@ class FLANgrid(object):
         return ind
 
     def _get_single_index_array(self, index):
-        """Get the single index for multiple elements
+        """Get the single index for multiple elements.
 
         # get the index can be used with a map
         # self.index = np.array( list( map(self._get_single_index,index) ) ).astype(index_type)
