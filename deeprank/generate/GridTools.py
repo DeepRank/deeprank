@@ -797,9 +797,10 @@ class GridTools(object):
         grd.create_dataset('z', data=self.z)
 
         # add center or update it when the old value is different
-        if 'center' not in grd or \
-                not all(grd['center'][()] == self.center_contact):
+        if 'center' not in grd:
             grd.create_dataset('center', data=self.center_contact)
+        elif not all(grd['center'][()] == self.center_contact):
+            grd['center'][...] = self.center_contact
 
     # save the data in the hdf5 file
 
