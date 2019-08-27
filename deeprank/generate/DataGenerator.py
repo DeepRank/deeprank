@@ -1,5 +1,4 @@
 import importlib
-import logging
 import os
 import re
 import sys
@@ -9,9 +8,9 @@ from collections import OrderedDict
 import h5py
 import numpy as np
 
-from deeprank.conf import logger
+from deeprank import config
+from deeprank.config import logger
 from deeprank.generate import GridTools as gt
-from deeprank.generate import settings
 from deeprank.tools import pdb2sql
 
 try:
@@ -78,8 +77,8 @@ class DataGenerator(object):
         self.pdb_source = pdb_source or []
         self.pdb_native = pdb_native or []
 
-        settings.init()
-        settings.__PATH_PSSM_SOURCE__ = pssm_source
+        if pssm_source is not None:
+            config.PATH_PSSM_SOURCE = pssm_source
 
         self.compute_targets = compute_targets
         self.compute_features = compute_features
@@ -108,6 +107,15 @@ class DataGenerator(object):
         # handle the sources
         if not isinstance(self.pdb_source, list):
             self.pdb_source = [self.pdb_source]
+        
+        # handle pssm source
+        pssm_features = ('deeprank.features.FullPSSM',
+                        'deeprank.features.PSSM_IC')
+        if config.PATH_PSSM_SOURCE is None and \
+            set.intersection(set(pssm_features), set(self.compute_features)):
+            raise ValueError(
+                'You must provide "pssm_source" to compaute PSSM features.')
+
 
         # get all the conformation path
         for src in self.pdb_source:
@@ -211,14 +219,11 @@ class DataGenerator(object):
         ##################################################
         # Start generating HDF5 database
         ##################################################
-        self.logger.info('# Start creating HDF5 database')
+        self.logger.info(f'\n# Start creating HDF5 database: {self.hdf5}')
 
         # get the local progress bar
         desc = '{:25s}'.format('Creating database')
         cplx_tqdm = tqdm(self.local_pdbs, desc=desc, disable=not prog_bar)
-
-        if not prog_bar:
-            self.logger.info(f'{desc}: {self.hdf5}')
 
         for cplx in cplx_tqdm:
 
@@ -437,7 +442,7 @@ class DataGenerator(object):
                 ################################################
                 if verbose:
                     self.logger.info(
-                        f'\nSuccessfully generated top HDF5 group "{mol_name}".')
+                        f'\nSuccessfully generated top HDF5 group "{mol_name}".\n')
 
             # all other errors
             except BaseException:
@@ -472,7 +477,7 @@ class DataGenerator(object):
 
         # close the file
         self.f5.close()
-        self.logger.info(f'\n# Successfully created database: {self.hdf5}')
+        self.logger.info(f'\n# Successfully created database: {self.hdf5}\n')
 
 
 # ====================================================================================
@@ -1024,7 +1029,6 @@ class DataGenerator(object):
                 raise ValueError('%s must be specified to tune the kernel')
 
         # define the grid
-        center_contact = np.zeros(3)
         nx, ny, nz = grid_info['number_of_points']
         dx, dy, dz = grid_info['resolution']
         lx, ly, lz = nx * dx, ny * dy, nz * dz
@@ -1061,8 +1065,8 @@ class DataGenerator(object):
         tunable_kernel = self._tunable_kernel(kernel_code)
 
         # tune
-        result = tune_kernel(func, tunable_kernel,
-                             problem_size, args, tune_params)
+        tune_kernel(func, tunable_kernel,
+                    problem_size, args, tune_params)
 
 
 # ====================================================================================
@@ -1099,7 +1103,6 @@ class DataGenerator(object):
         cuda_func = self._get_cuda_function(module, func)
 
         # define the grid
-        center_contact = np.zeros(3)
         nx, ny, nz = grid_info['number_of_points']
         dx, dy, dz = grid_info['resolution']
         lx, ly, lz = nx * dx, ny * dy, nz * dz

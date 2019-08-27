@@ -3,8 +3,8 @@ import warnings
 
 import numpy as np
 
+from deeprank import config
 from deeprank.features import FeatureClass
-from deeprank.generate import settings
 from deeprank.tools import pdb2sql
 
 ########################################################################
@@ -226,14 +226,12 @@ class FullPSSM(FeatureClass):
             chain = {'A': 0, 'B': 1}[res[0]]
             key = tuple([chain] + xyz_dict[res])
             for name, value in zip(self.feature_names, self.pssm[res]):
-                """
-                Make sure the feature_names and pssm[res] have
-                consistent order of the 20 residue types
-                name: PSSM_ALA
-                value: -3.0
-                res: ('B', 573, 'HIS')
-                key: (0, -19.346, 6.156, -3.44)
-                """
+                # Make sure the feature_names and pssm[res] have
+                # consistent order of the 20 residue types
+                # name: PSSM_ALA
+                # value: -3.0
+                # res: ('B', 573, 'HIS')
+                # key: (0, -19.346, 6.156, -3.44)
                 self.feature_data[name][res] = [value]
                 self.feature_data_xyz[name][key] = [value]
 
@@ -247,12 +245,12 @@ class FullPSSM(FeatureClass):
 
 def __compute_feature__(pdb_data, featgrp, featgrp_raw, out_type='pssmvalue'):
 
-    if settings.__PATH_PSSM_SOURCE__ is None:
-        path = os.path.dirname(os.path.realpath(__file__))
-        path = os.path.join(path, 'PSSM_NEW')
+    if config.PATH_PSSM_SOURCE is None:
+        raise FileExistsError(f"No available PSSM source, "
+                    f"check 'config.PATH_PSSM_SOURCE'")
     else:
-        path = settings.__PATH_PSSM_SOURCE__
-
+        path = config.PATH_PSSM_SOURCE
+    
     mol_name = os.path.split(featgrp.name)[0]
     mol_name = mol_name.lstrip('/')
 
