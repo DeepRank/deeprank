@@ -3,6 +3,7 @@ import warnings
 
 from deeprank.features import FeatureClass
 from deeprank.tools import pdb2sql
+from deeprank import config
 
 
 class ResidueDensity(FeatureClass):
@@ -28,16 +29,7 @@ class ResidueDensity(FeatureClass):
         self.feature_data = {}
         self.feature_data_xyz = {}
 
-        self.residue_types = {'CYS': 'polar', 'HIS': 'polar',
-                              'ASN': 'polar', 'GLN': 'polar',
-                              'SER': 'polar', 'THR': 'polar',
-                              'TYR': 'polar', 'TRP': 'polar',
-                              'ALA': 'apolar', 'PHE': 'apolar',
-                              'GLY': 'apolar', 'ILE': 'apolar',
-                              'VAL': 'apolar', 'MET': 'apolar',
-                              'PRO': 'apolar', 'LEU': 'apolar',
-                              'GLU': 'charged', 'ASP': 'charged',
-                              'LYS': 'charged', 'ARG': 'charged'}
+        self.residue_types = config.AA_properties
 
     def get(self, cutoff=5.5):
         """Get residue contacts.

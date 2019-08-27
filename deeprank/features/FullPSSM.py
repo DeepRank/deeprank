@@ -62,10 +62,7 @@ class FullPSSM(FeatureClass):
         if self.out_type == 'pssmvalue':
             # the residue order in res_names must be consistent with
             # that in PSSM file
-            res_names = ('ALA', 'ARG', 'ASN', 'ASP', 'CYS',
-                         'GLN', 'GLU', 'GLY', 'HIS', 'ILE',
-                         'LEU', 'LYS', 'MET', 'PHE', 'PRO',
-                         'SER', 'THR', 'TRP', 'TYR', 'VAL')
+            res_names = config.AA_codes_pssm_ordered
             self.feature_names = tuple(['PSSM_' + n for n in res_names])
 
             for name in self.feature_names:
@@ -129,14 +126,7 @@ class FullPSSM(FeatureClass):
             fnames.sort()
             chain_names = [n.split('.')[1] for n in fnames]
 
-            resmap = {
-                'A': 'ALA', 'R': 'ARG', 'N': 'ASN', 'D': 'ASP',
-                'C': 'CYS', 'E': 'GLU', 'Q': 'GLN', 'G': 'GLY',
-                'H': 'HIS', 'I': 'ILE', 'L': 'LEU', 'K': 'LYS',
-                'M': 'MET', 'F': 'PHE', 'P': 'PRO', 'S': 'SER',
-                'T': 'THR', 'W': 'TRP', 'Y': 'TYR', 'V': 'VAL',
-                'B': 'ASX', 'U': 'SEC', 'Z': 'GLX'
-            }
+            resmap = config.AA_codes_1to3
 
             iiter = 0
             for chainID, fn in zip(chain_names, fnames):
