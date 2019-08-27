@@ -17,7 +17,9 @@ setup(
         'pandas',
         'matplotlib',
         'torchsummary',
-        'freesasa'],
+        'freesasa',
+        'torch'
+        ],
 
     extras_require={
         'test': ['nose', 'coverage', 'pytest',
