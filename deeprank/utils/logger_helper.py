@@ -1,6 +1,6 @@
 import logging
 
-from deeprank.conf import global_settings
+import deeprank.config
 
 
 class useLevelsFilter(logging.Filter):
@@ -16,4 +16,4 @@ class useLevelsFilter(logging.Filter):
 
 class requireDebugFilter(logging.Filter):
     def filter(self, record):
-        return global_settings.DEBUG
+        return deeprank.config.DEBUG
