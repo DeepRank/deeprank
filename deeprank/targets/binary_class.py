@@ -2,7 +2,7 @@ import warnings
 
 import numpy as np
 
-from deeprank.conf import logger
+from deeprank.config import logger
 from deeprank.targets import rmsd_fnat
 
 

@@ -7,7 +7,7 @@ import logging.config
 import sys
 import warnings
 
-from .conf import *
+from .config import *
 from .generate import *
 from .tools import *
 

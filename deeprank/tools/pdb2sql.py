@@ -6,7 +6,7 @@ import warnings
 
 import numpy as np
 
-from deeprank.conf import logger
+from deeprank.config import logger
 
 
 class pdb2sql(object):

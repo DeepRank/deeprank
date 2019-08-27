@@ -6,7 +6,7 @@ from time import time
 import numpy as np
 from scipy.signal import bspline
 
-from deeprank.conf import logger
+from deeprank.config import logger
 from deeprank.tools import pdb2sql, sparse
 
 try:
