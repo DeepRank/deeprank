@@ -109,14 +109,12 @@ class FullPSSM(FeatureClass):
                 data = f.readlines()
             raw_data = list(map(lambda x: x.decode('utf-8').split(), data))
 
+            # pssm_res_id: [('B', 573, 'HIS'), (...)]
+            # pssm_data: [[...], [...]]
             self.pssm_res_id = np.array(raw_data)[:, :3]
             self.pssm_res_id = [(r[0], int(r[1]), r[2])
                                 for r in self.pssm_res_id]
             self.pssm_data = np.array(raw_data)[:, 3:].astype(np.float)
-            """
-            pssm_res_id: [('B', 573, 'HIS'), (...)]
-            pssm_data: [[...], [...]]
-            """
 
         # new format with 2 files (each chain has one file)
         # and aligned mapping and IC (i.e. the iScore format)
@@ -250,7 +248,7 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw, out_type='pssmvalue'):
                     f"check 'config.PATH_PSSM_SOURCE'")
     else:
         path = config.PATH_PSSM_SOURCE
-    
+ 
     mol_name = os.path.split(featgrp.name)[0]
     mol_name = mol_name.lstrip('/')
 

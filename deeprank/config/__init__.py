@@ -10,5 +10,5 @@ DEBUG = False
 logging.config.dictConfig(logger_settings.DEFAULT_LOGGING)
 logger = logging.getLogger('deeprank')
 
-# Default PSSM path 
+# Default PSSM path
 PATH_PSSM_SOURCE = None

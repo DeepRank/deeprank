@@ -107,7 +107,7 @@ class DataGenerator(object):
         # handle the sources
         if not isinstance(self.pdb_source, list):
             self.pdb_source = [self.pdb_source]
-        
+
         # handle pssm source
         pssm_features = ('deeprank.features.FullPSSM',
                         'deeprank.features.PSSM_IC')
