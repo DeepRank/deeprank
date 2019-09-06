@@ -227,19 +227,19 @@ class DataSet():
         logger.info('=')
         logger.info('=\t Training data')
         for f in self.train_database:
-            logger.info('=\t ->', f)
+            logger.info(f'=\t -> {f}')
         logger.info('=')
         if not self.valid_database:
             logger.info('=\t Validation data')
             for f in self.valid_database:
-                logger.info('=\t ->', f)
+                logger.info(f'=\t -> {f}')
         logger.info('=')
         if not self.test_database:
             logger.info('=\t Test data')
             for f in self.test_database:
-                logger.info('=\t ->', f)
+                logger.info(f'=\t -> {f}')
         logger.info('=')
-        logger.info('=' * 40, '\n')
+        logger.info('=' * 40 + '\n')
         sys.stdout.flush()
 
         # check if the files are ok
@@ -279,7 +279,7 @@ class DataSet():
                 self.get_norm()
 
         logger.info('\n')
-        logger.info("   Data Set Info")
+        logger.info("   Data Set Info:")
         logger.info(f'   Training set        : {self.ntrain} conformations')
         if self.data_augmentation is not None:
             logger.info(
@@ -353,7 +353,7 @@ class DataSet():
 
         for name in remove_file:
             database.remove(name)
-        if not remove_file:
+        if remove_file:
             logger.info(f'\t -> Empty or corrput databases are removed:\n'
                         f'{remove_file}')
 
@@ -369,7 +369,7 @@ class DataSet():
         Raises:
             ValueError: No aviable training data after filtering.
         """
-        logger.info("   Processing data set")
+        logger.info("\n\n   Processing data set:")
 
         self.index_complexes = []
 
@@ -811,7 +811,7 @@ class DataSet():
     def compute_norm(self):
         """compute the normalization factors."""
 
-        logger.info("   Normalization factor :")
+        # logger.info("   Normalization factor :")
 
         # loop over all the complexes in the database
         first = True
@@ -862,7 +862,7 @@ class DataSet():
     def get_norm(self):
         """Get the normalization values for the features."""
 
-        logger.info("   Normalization factor :")
+        # logger.info("   Normalization factor :")
 
         # declare the dict of class instance
         # where we'll store the normalization parameter
