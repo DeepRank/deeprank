@@ -336,24 +336,15 @@ class GridTools(object):
                      self.sqldb.get('rowID', chainID='B'))
 
         # loop over all the data we want
-        for atomtype, vdw_rad in self.local_tqdm(
+        for elementtype, vdw_rad in self.local_tqdm(
                 self.atomic_densities.items()):
 
             t0 = time()
 
-            # get the contact atom that of the correct type on both chains
-            if only_contact:
-                xyzA = np.array(self.sqldb.get(
-                    'x,y,z', rowID=index[0], name=atomtype))
-                xyzB = np.array(self.sqldb.get(
-                    'x,y,z', rowID=index[1], name=atomtype))
-
-            else:
-                # get the atom that are of the correct type on both chains
-                xyzA = np.array(self.sqldb.get(
-                    'x,y,z', chainID='A', name=atomtype))
-                xyzB = np.array(self.sqldb.get(
-                    'x,y,z', chainID='B', name=atomtype))
+            xyzA = np.array(self.sqldb.get(
+                'x,y,z', rowID=index[0], element=elementtype))
+            xyzB = np.array(self.sqldb.get(
+                'x,y,z', rowID=index[1], element=elementtype))
 
             tprocess = time() - t0
 
@@ -404,16 +395,16 @@ class GridTools(object):
 
             # create the final grid : A - B
             if mode == 'diff':
-                self.atdens[atomtype] = atdensA - atdensB
+                self.atdens[elementtype] = atdensA - atdensB
 
             # create the final grid : A + B
             elif mode == 'sum':
-                self.atdens[atomtype] = atdensA + atdensB
+                self.atdens[elementtype] = atdensA + atdensB
 
             # create the final grid : A and B
             elif mode == 'ind':
-                self.atdens[atomtype + '_chainA'] = atdensA
-                self.atdens[atomtype + '_chainB'] = atdensB
+                self.atdens[elementtype + '_chainA'] = atdensA
+                self.atdens[elementtype + '_chainB'] = atdensB
             else:
                 raise ValueError(f'Atomic density mode {mode} not recognized')
 
