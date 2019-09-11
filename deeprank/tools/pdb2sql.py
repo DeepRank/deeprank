@@ -113,7 +113,8 @@ class pdb2sql(object):
                     'y': 'REAL',
                     'z': 'REAL',
                     'occ': 'REAL',
-                    'temp': 'REAL'
+                    'temp': 'REAL',
+                    'element': 'TEXT' 
                     }
 
         # delimtier of the column format
@@ -131,7 +132,9 @@ class pdb2sql(object):
             'y': [38, 46],
             'z': [46, 54],
             'occ': [54, 60],
-            'temp': [60, 66]}
+            'temp': [60, 66],
+            'element': [76,78]
+            }
 
         if self.no_extra:
             del self.col['occ']
@@ -230,6 +233,10 @@ class pdb2sql(object):
                 elif coltype == 'REAL':
                     data_col = float(data_col)
 
+                # get element if it does not exist
+                if colname == "element" and not data_col: 
+                    data_col = pdb2sql._get_element(line)
+
                 # append keep the comma !!
                 # we need proper tuple
                 at += (data_col,)
@@ -239,6 +246,42 @@ class pdb2sql(object):
 
         # push in the database
         self.c.executemany(f'INSERT INTO ATOM VALUES ({qm})', data_atom)
+
+    @staticmethod
+    def _get_element(pdb_line):
+        """Get element type from the atom type of a pdb line
+        
+        Notes:
+            Atom type occupies 13-16th columns of a PDB line.
+            http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM
+            Four situations exist:
+                13 14 15 16
+                   C  A      The element is C
+                C  A         The element is Ca   
+                1  H  G      The element is H
+                H  E  2  1   The element is H
+
+        Args:
+            pdb_line(str): one PDB ATOM line
+        
+        Returns:
+            [str]: element name
+        """
+
+        first_char = pdb_line[12].strip()
+        last_char = pdb_line[15].strip()
+        if first_char:
+            if first_char in "0123456789":
+                elem = pdb_line[13]
+            elif first_char == "H" and last_char:
+                elem = "H"
+            else:
+                elem = pdb_line[12:14]
+            
+        else:
+            elem = pdb_line[13]
+        return elem
+
 
     def _fix_chainID(self):
         """Fix the chain ID if necessary.
@@ -1077,6 +1120,8 @@ class pdb2sql(object):
         # write each line
         # the PDB format is pretty strict
         # http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM
+        # TODO make sure the output of atom type on correct position.
+        # TODO use exportpdb in DataGenerator
         f = open(fname, 'w')
         for d in data:
             line = 'ATOM  '
