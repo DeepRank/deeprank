@@ -71,3 +71,16 @@ AA_properties = {
     'TRP': 'polar',
     'TYR': 'polar'
     }
+
+
+# atom vdw radius
+# https://en.wikipedia.org/wiki/Van_der_Waals_radius
+
+atom_vdw_radius_noH = {
+    "C": 1.7,
+    "N": 1.55,
+    "O": 1.52,
+    "S": 1.8,
+    }
+
+atom_vdw_radius = {**atom_vdw_radius_noH, "H": 1.1}
