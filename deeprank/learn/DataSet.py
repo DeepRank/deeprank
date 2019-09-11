@@ -93,7 +93,7 @@ class DataSet():
             pair_chain_feature (None or callable, optional):
                 method to pair features of chainA and chainB
                 Example : np.sum (sum the chainA and chainB features)
-            transform_to_2D (bool, optional): 
+            transform_to_2D (bool, optional):
                 Boolean to use 2d maps instead of full 3d
                 Default : False
             projection (int): Projection axis from 3D to 2D:
@@ -898,7 +898,7 @@ class DataSet():
 
             # if the file doesn't exist we create it
             if not os.path.isfile(fdata):
-                logger.info("      Computing norm for ", f5)
+                logger.info(f"      Computing norm for {f5}")
                 norm = NormalizeData(f5, shape=self.grid_shape)
                 norm.get()
 
@@ -1277,7 +1277,7 @@ class DataSet():
             npts(tuple): number of points on axis x,y,z
             angle(float): rotation angle
             axis(list): rotation axis
-       
+
         Returns:
             list : atomic densities of each atom type on each chain
         """
