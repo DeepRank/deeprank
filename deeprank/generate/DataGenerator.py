@@ -1303,7 +1303,7 @@ class DataGenerator(object):
                     for line in fi if line.startswith('ATOM')]
         #  PDB default line length is 80
         #  http://www.wwpdb.org/documentation/file-format
-        data = np.array(data).astype('|S73')
+        data = np.array(data).astype('|S78')
         molgrp.create_dataset(name, data=data)
 
 
@@ -1341,6 +1341,8 @@ class DataGenerator(object):
         # close the db
         sqldb.close()
 
+        # TODO the output does not obey PDB format
+        # TODO should not strip them!
         # export the data to h5
         data = []
         for d in sqldata:
@@ -1358,6 +1360,7 @@ class DataGenerator(object):
             line += '{: 8.3f}'.format(d[7])  # x
             line += '{: 8.3f}'.format(d[8])  # y
             line += '{: 8.3f}'.format(d[9])  # z
+            # TODO add the element
             try:
                 line += '{: 6.2f}'.format(d[10])    # occ
                 line += '{: 6.2f}'.format(d[11])    # temp
@@ -1366,7 +1369,7 @@ class DataGenerator(object):
                 line += '{: 6.2f}'.format(0)    # temp
             data.append(line)
 
-        data = np.array(data).astype('|S73')
+        data = np.array(data).astype('|S78')
         molgrp.create_dataset(name, data=data)
 
         return center
