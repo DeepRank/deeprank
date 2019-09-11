@@ -378,7 +378,7 @@ class NeuralNet():
 
         Args:
             hdf5 (str, optional): hdf5 file to store the test results
-   
+
         Examples:
             >>> # adress of the database
             >>> database = '1ak4.hdf5'
