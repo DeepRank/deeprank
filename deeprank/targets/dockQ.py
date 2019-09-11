@@ -1,58 +1,32 @@
-import os
+import warnings
 
 import numpy as np
 
+from deeprank.targets import rmsd_fnat
 from deeprank.tools.StructureSimilarity import StructureSimilarity
 
 
 def __compute_target__(decoy, targrp):
+    """calculate DOCKQ.
 
-    # fet the mol group
-    molgrp = targrp.parent
-    molname = molgrp.name
+    Args:
+        decoy(bytes): pdb data of the decoy
+        targrp(hdf5 file handle): HDF5 'targets' group
 
-    path = os.path.dirname(os.path.realpath(__file__))
-    ZONE = path + '/zones/'
+    Examples:
+        >>> f = h5py.File('1LFD.hdf5')
+        >>> decoy = f['1LFD_9w/complex'][()]
+        >>> targrp = f['1LFD_9w/targets']
+    """
 
-    if not os.path.isdir(ZONE):
-        os.mkdir(ZONE)
+    tarname = 'DOCKQ'
+    if tarname in targrp.keys():
+        del targrp[tarname]
+        warnings.warn(f"Removed old {tarname} from {targrp.parent.name}")
 
-    for target_name in ['LRMSD', 'IRMSD', 'FNAT', 'DOCKQ']:
-        if target_name in targrp.keys():
-            del targrp[target_name]
+    irmsd = rmsd_fnat.__compute_target__(decoy, targrp, "IRMSD")
+    lrmsd = rmsd_fnat.__compute_target__(decoy, targrp, "LRMSD")
+    fnat = rmsd_fnat.__compute_target__(decoy, targrp, "FNAT")
 
-    # if we have a ref
-    if '_' not in molname:
-
-        # lrmsd = irmsd = 0 | fnat = dockq = 1
-        print(f"WARNING: {molname} has no '_' indicating it is a bound complex. Assign 0, 0, 1 and 1 for lrmsd, irmsd, fnat, DockQ, respectively")
-        targrp.create_dataset('LRMSD', data=np.array(0.0))
-        targrp.create_dataset('IRMSD', data=np.array(0.0))
-        targrp.create_dataset('FNAT', data=np.array(1.0))
-        targrp.create_dataset('DOCKQ', data=np.array(1.0))
-
-    # or it's a decoy
-    else:
-
-        # compute the izone/lzone/ref_pairs
-        molname = molname.split('_')[0]
-        lzone = ZONE + molname + '.lzone'
-        izone = ZONE + molname + '.izone'
-        ref_pairs = ZONE + molname + '.ref_pairs'
-
-        # init the class
-        decoy = molgrp['complex'][:]
-        ref = molgrp['native'][:]
-        sim = StructureSimilarity(decoy, ref)
-
-        lrmsd = sim.compute_lrmsd_fast(method='svd', lzone=lzone)
-        targrp.create_dataset('LRMSD', data=np.array(lrmsd))
-
-        irmsd = sim.compute_irmsd_fast(method='svd', izone=izone)
-        targrp.create_dataset('IRMSD', data=np.array(irmsd))
-
-        Fnat = sim.compute_Fnat_fast(ref_pairs=ref_pairs)
-        targrp.create_dataset('FNAT', data=np.array(Fnat))
-
-        dockQ = sim.compute_DockQScore(Fnat, lrmsd, irmsd)
-        targrp.create_dataset('DOCKQ', data=np.array(dockQ))
+    dockQ = StructureSimilarity.compute_DockQScore(fnat, lrmsd, irmsd)
+    targrp.create_dataset(tarname, data=np.array(dockQ))

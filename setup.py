@@ -16,7 +16,10 @@ setup(
         'tqdm',
         'pandas',
         'matplotlib',
-        'torchsummary'],
+        'torchsummary',
+        'freesasa',
+        'torch'
+        ],
 
     extras_require={
         'test': ['nose', 'coverage', 'pytest',

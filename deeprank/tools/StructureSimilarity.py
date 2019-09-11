@@ -1,12 +1,10 @@
 import os
 import pickle
+import warnings
 
 import numpy as np
 
 from deeprank.tools import pdb2sql
-
-
-def _printif(string, cond): return print(string) if cond else None
 
 
 class StructureSimilarity(object):
@@ -14,30 +12,44 @@ class StructureSimilarity(object):
     def __init__(self, decoy, ref, verbose=False):
         """Compute the structure similarity between different molecules.
 
-        This class allows to compute the i-RMSD, L-RMSD, Fnat and DockQ score of a given conformation.
-        This can be a replacement for ProFIT. Note that the calculation of the zones are done by the class itself
-        and does not require any extra input. This local class could be replaced by pdb2sql.StructureSimilarity.
-        (https://github.com/DeepRank/pdb2sql)
+        This class allows to compute the i-RMSD, L-RMSD, Fnat and DockQ
+        score of a given conformation.
+        This can be a replacement for ProFIT.
+        Note that the calculation of the zones are done by the class
+        itself and does not require any extra input.
+        This local class could be replaced by
+        pdb2sql.StructureSimilarity(https://github.com/DeepRank/pdb2sql)
+
+        Note:
+            1. The decoy and pdb must have consistent residue numbering.
+            2. The zone files here are different with those from ProFit.
+                lzone: only zone for fitting.
+                izone: zone for both fitting and rmsd calculation.
+            Be careful with ProFit zone files that contain RZONE/RATOMS.
 
         Args:
             decoy (str): file name of the decoy
             ref (str): file name of the reference
             verbose (bool, optional): print debug information
 
-
-        Example :
-
-        >>> from deeprank.tools import StructureSimilarity
-        >>> decoy = '1AK4_1w.pdb'
-        >>> ref = '1AK4.pdb'
-        >>> sim = StructureSimilarity(decoy,ref)
-        >>> irmsd_fast = sim.compute_irmsd_fast(method='svd',izone='1AK4.izone')
-        >>> irmsd = sim.compute_irmsd_pdb2sql(method='svd',izone='1AK4.izone')
-        >>> lrmsd_fast = sim.compute_lrmsd_fast(method='svd',lzone='1AK4.lzone',check=True)
-        >>> lrmsd = sim.compute_lrmsd_pdb2sql(exportpath=None,method='svd')
-        >>> Fnat = sim.compute_Fnat_pdb2sql()
-        >>> Fnat_fast = sim.compute_Fnat_fast(ref_pairs='1AK4.ref_pairs')
-        >>> dockQ = sim.compute_DockQScore(Fnat_fast,lrmsd_fast,irmsd_fast)
+        Examples:
+            >>> from deeprank.tools import StructureSimilarity
+            >>> decoy = '1AK4_1w.pdb'
+            >>> ref = '1AK4.pdb'
+            >>> sim = StructureSimilarity(decoy,ref)
+            >>> irmsd_fast = sim.compute_irmsd_fast(method='svd',
+            ...     izone='1AK4.izone')
+            >>> irmsd = sim.compute_irmsd_pdb2sql(method='svd',
+            ...     izone='1AK4.izone')
+            >>> lrmsd_fast = sim.compute_lrmsd_fast(method='svd',
+            ...     lzone='1AK4.lzone',check=True)
+            >>> lrmsd = sim.compute_lrmsd_pdb2sql(exportpath=None,
+            ...     method='svd')
+            >>> Fnat = sim.compute_Fnat_pdb2sql()
+            >>> Fnat_fast = sim.compute_fnat_fast(
+            ...     ref_pairs='1AK4.ref_pairs')
+            >>> dockQ = sim.compute_DockQScore(Fnat_fast,
+            ...     lrmsd_fast,irmsd_fast)
         """
 
         self.decoy = decoy
@@ -48,16 +60,20 @@ class StructureSimilarity(object):
         """Fast routine to compute the L-RMSD.
 
         This routine parse the PDB directly without using pdb2sql.
-        L-RMSD is computed by aligning the longest chain of the decoy to the one of the reference
-        and computing the RMSD of the shortest chain between decoy and reference.
 
-        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models
-              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879
+        L-RMSD is computed by aligning the longest chain of the decoy to
+        the one of the reference and computing the RMSD of the shortest
+        chain between decoy and reference. See reference:
+            DockQ: A Quality Measure for Protein-Protein Docking Models
+            https://doi.org/10.1371/journal.pone.0161879
 
         Args:
-            lzone (None, optional): name of the file containing the zone definition. If None the file will be calculated first
-            method (str, optional): Method to align the fragments ('svd','quaternion')
-            check (bool, optional): Check if the sequences are aligned and fix it if not. Should be True
+            lzone (None, optional): name of the file containing the zone
+                definition. If None the file will be calculated first.
+            method (str, optional): Method to align the fragments,
+                'svd' or 'quaternion'.
+            check (bool, optional): Check if the sequences are aligned
+                and fix it if not. Defaults to True.
 
         Returns:
             float: L-RMSD value of the conformation
@@ -67,8 +83,7 @@ class StructureSimilarity(object):
         if lzone is None:
             resData = self.compute_lzone(save_file=False)
         elif not os.path.isfile(lzone):
-            self.compute_lzone(save_file=True, filename=lzone)
-            resData = self.read_zone(lzone)
+            resData = self.compute_lzone(save_file=True, filename=lzone)
         else:
             resData = self.read_zone(lzone)
 
@@ -81,6 +96,14 @@ class StructureSimilarity(object):
         ##################################################
         if check:
 
+            # Note:
+            # 1. read_data_zone returns in_zone and not_in_zone
+            # which means the in_zone only defines the zone for fitting
+            # but not for rmsd calculation.
+            # 2. the decoy and ref pdb must have consitent residue
+            # numbering, otherwise e.g. shifted numbering can also give
+            # results which is totally wrong, because the code here does
+            # not do sequence alignment.
             data_decoy_long, data_decoy_short = self.read_data_zone(
                 self.decoy, resData, return_not_in_zone=True)
             data_ref_long, data_ref_short = self.read_data_zone(
@@ -97,7 +120,8 @@ class StructureSimilarity(object):
                     xyz_decoy_long.append(data_decoy_long[ind_decoy][3:])
                     xyz_ref_long.append(data_ref_long[ind_ref][3:])
                 except ValueError:
-                    pass
+                    warnings.warn(
+                        f'Decoy atom {at} not found in reference pdb')
 
             atom_decoy_short = [data[:3] for data in data_decoy_short]
             atom_ref_short = [data[:3] for data in data_ref_short]
@@ -109,11 +133,15 @@ class StructureSimilarity(object):
                     xyz_decoy_short.append(data_decoy_short[ind_decoy][3:])
                     xyz_ref_short.append(data_ref_short[ind_ref][3:])
                 except ValueError:
-                    pass
+                    warnings.warn(
+                        f'Decoy atom {at} not found in reference pdb')
 
         # extract the xyz
         else:
-            print('WARNING : The atom order have not been checked. Switch to check=True or continue at your own risk')
+            warnings.warn(
+                f'WARNING: The atom order have not been checked.'
+                f'Switch to check=True or continue at your own risk'
+            )
             xyz_decoy_long, xyz_decoy_short = self.read_xyz_zone(
                 self.decoy, resData, return_not_in_zone=True)
             xyz_ref_long, xyz_ref_short = self.read_xyz_zone(
@@ -146,12 +174,17 @@ class StructureSimilarity(object):
     def compute_lzone(self, save_file=True, filename=None):
         """Compute the zone for L-RMSD calculation.
 
+        Note:
+            It only provides the zone of long chain(s) which is used for
+            fitting. The zone used for calculating RMSD is defined in
+            the function `compute_lrmsd_fast`.
+
         Args:
             save_file (bool, optional): save the zone file
             filename (str, optional): name of the file
 
         Returns:
-            dict: definition of the zone
+            dict: definition of the zone.
         """
         sql_ref = pdb2sql(self.ref)
         nA = len(sql_ref.get('x,y,z', chainID='A'))
@@ -163,10 +196,9 @@ class StructureSimilarity(object):
             long_chain = 'B'
 
         # extract data about the residue
-        data_test = [
-            tuple(data) for data in sql_ref.get(
-                'chainID,resSeq',
-                chainID=long_chain)]
+        data_test = [tuple(data) for data in sql_ref.get(
+            'chainID,resSeq',
+            chainID=long_chain)]
         data_test = sorted(set(data_test))
 
         # close the sql
@@ -182,18 +214,17 @@ class StructureSimilarity(object):
                 num = res[1]
                 f.write('zone %s%d-%s%d\n' % (chain, num, chain, num))
             f.close()
-            return
 
-        else:
-            resData = {}
-            for res in data_test:
-                chain = res[0]
-                num = res[1]
+        resData = {}
+        for res in data_test:
+            chain = res[0]
+            num = res[1]
 
-                if chain not in resData.keys():
-                    resData[chain] = []
-                resData[chain].append(num)
-            return resData
+            if chain not in resData.keys():
+                resData[chain] = []
+            resData[chain].append(num)
+
+        return resData
 
     def compute_irmsd_fast(
             self,
@@ -203,22 +234,22 @@ class StructureSimilarity(object):
             check=True):
         """Fast method to compute the i-rmsd.
 
-        Require the precalculation of the izone
-        A dedicated routine is implemented to comoute the izone
-        if izone is not given in argument the routine will compute them automatically
-
-        i-RMSD is computed selecting the back bone of the contact residue with a cutoff of 10A
-        in the decoy. Align these as best as possible with their coutner part in the ref
-        and and compute the RMSD
-
-        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models
-              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879
+        i-RMSD is computed by selecting the backbone atoms of reference
+        interface that is defined as any pair of heavy atoms from two
+        chains within 10Å of each other.
+        Align these backbone atoms as best as possible with their
+        coutner part in the decoy and compute the RMSD. See reference:
+            DockQ: A Quality Measure for Protein-Protein Docking Models
+            https://doi.org/10.1371/journal.pone.0161879
 
         Args:
-            izone (None, optional): file name of the zone. if None the zones will be calculated first
-            method (str, optional): Method to align the fragments ('svd','quaternion')
+            izone (None, optional): file name of the zone.
+                if None the zones will be calculated automatically.
+            method (str, optional): Method to align the fragments,
+                'svd' or 'quaternion'.
             cutoff (float, optional): cutoff for the contact atoms
-            check (bool, optional): Check if the sequences are aligned and fix it if not. Should be True
+            check (bool, optional): Check if the sequences are aligned
+                and fix it if not. Should be True.
 
         Returns:
             float: i-RMSD value of the conformation
@@ -228,8 +259,8 @@ class StructureSimilarity(object):
         if izone is None:
             resData = self.compute_izone(cutoff, save_file=False)
         elif not os.path.isfile(izone):
-            self.compute_izone(cutoff, save_file=True, filename=izone)
-            resData = self.read_zone(izone)
+            resData = self.compute_izone(cutoff, save_file=True,
+                                         filename=izone)
         else:
             resData = self.read_zone(izone)
 
@@ -256,11 +287,15 @@ class StructureSimilarity(object):
                     xyz_contact_decoy.append(data_decoy[ind_decoy][3:])
                     xyz_contact_ref.append(data_ref[ind_ref][3:])
                 except ValueError:
-                    pass
+                    warnings.warn(
+                        f'Decoy atom {at} not found in reference pdb')
 
         # extract the xyz
         else:
-            print('WARNING : The atom order have not been checked. Switch to check=True or continue at your own risk')
+            warnings.warn(
+                f'WARNING: The atom order have not been checked.'
+                f'Switch to check=True or continue at your own risk'
+            )
             xyz_contact_decoy = self.read_xyz_zone(self.decoy, resData)
             xyz_contact_ref = self.read_xyz_zone(self.ref, resData)
 
@@ -287,7 +322,7 @@ class StructureSimilarity(object):
         return self.get_rmsd(xyz_contact_decoy, xyz_contact_ref)
 
     def compute_izone(self, cutoff=5.0, save_file=True, filename=None):
-        """Compute the zones  for i-rmsd calculationss.
+        """Compute the zones for i-rmsd calculationss.
 
         Args:
             cutoff (float, optional): cutoff for the contact atoms
@@ -317,7 +352,6 @@ class StructureSimilarity(object):
         sql_ref.close()
 
         if save_file:
-
             if filename is None:
                 f = open(self.ref.split('.')[0] + '.izone', 'w')
             else:
@@ -328,21 +362,24 @@ class StructureSimilarity(object):
                 num = res[1]
                 f.write('zone %s%d-%s%d\n' % (chain, num, chain, num))
             f.close()
-            return
 
-        else:
-            resData = {}
-            for res in data_test:
-                chain = res[0]
-                num = res[1]
+        resData = {}
+        for res in data_test:
+            chain = res[0]
+            num = res[1]
 
-                if chain not in resData.keys():
-                    resData[chain] = []
-                resData[chain].append(num)
-            return resData
+            if chain not in resData.keys():
+                resData[chain] = []
+            resData[chain].append(num)
 
-    def compute_Fnat_fast(self, ref_pairs=None, cutoff=5):
+        return resData
+
+    def compute_fnat_fast(self, ref_pairs=None, cutoff=5):
         """Compute the FNAT of the conformation.
+
+        Fnat is the fraction of reference interface contacts preserved
+        in the interface of decoy. The interface is defined as any pair
+        of heavy atoms from two chains within 5Å of each other.
 
         Args:
             ref_pairs (str, optional): file name describing the pairs
@@ -354,23 +391,19 @@ class StructureSimilarity(object):
         Raises:
             ValueError: if the decoy file is not found
         """
-        # read the izone file
+        # read the ref_pairs file
         if ref_pairs is None:
             residue_pairs_ref = self.compute_residue_pairs_ref(
                 cutoff, save_file=False)
-
         elif not os.path.isfile(ref_pairs):
-            self.compute_residue_pairs_ref(
+            residue_pairs_ref = self.compute_residue_pairs_ref(
                 cutoff, save_file=True, filename=ref_pairs)
-            f = open(ref_pairs, 'rb')
-            residue_pairs_ref = pickle.load(f)
-            f.close()
         else:
             f = open(ref_pairs, 'rb')
             residue_pairs_ref = pickle.load(f)
             f.close()
 
-        # create a dict of the ecoy data
+        # create a dict of the decoy data
         if isinstance(self.decoy, str) and os.path.isfile(self.decoy):
             with open(self.decoy, 'r') as f:
                 data_decoy = f.readlines()
@@ -379,10 +412,9 @@ class StructureSimilarity(object):
             data_decoy = [l.decode('utf-8') for l in self.decoy]
             decoy_name = 'decoy'
         else:
-            raise ValueError('Decoy not found')
+            raise ValueError('Decoy not found in FNAT calculation.')
 
         # read the decoy data
-        atom_decoy, xyz_decoy = [], []
         residue_xyz = {}
         residue_name = {}
 
@@ -429,13 +461,14 @@ class StructureSimilarity(object):
                     if resB in residue_xyz.keys():
                         xyzB = residue_xyz[resB]
                         dist_min = np.min(np.array(
-                            [np.sqrt(np.sum((np.array(p1) - np.array(p2))**2)) for p1 in xyzA for p2 in xyzB]))
+                            [np.sqrt(np.sum((np.array(p1) - np.array(p2)) ** 2))
+                             for p1 in xyzA for p2 in xyzB]))
                         if dist_min <= cutoff:
                             nCommon += 1
                     nTotal += 1
             else:
-                msg = '\t FNAT Warning could not find residue: ', resA, ' in: ', decoy_name
-                _printif(msg, self.verbose)
+                msg = f'\t FNAT: not find residue: {resA} in {decoy_name}'
+                warnings.warn(msg)
 
         # normalize
         return nCommon / nTotal
@@ -449,7 +482,8 @@ class StructureSimilarity(object):
 
         Args:
             cutoff (float, optional): cutoff for the contact atoms
-            save_file (bool, optional): save the file containing the residue pairs
+            save_file (bool, optional): save the file containing the
+                residue pairs
             filename (None, optional): filename
 
         Returns:
@@ -462,33 +496,33 @@ class StructureSimilarity(object):
 
         if save_file:
             if filename is None:
-                f = open(
-                    self.ref.split('.')[0] +
-                    'residue_contact_pairs.pckl',
-                    'wb')
+                f = open(self.ref.split('.')[0] + 'residue_contact_pairs.pckl',
+                         'wb')
             else:
                 f = open(filename, 'wb')
 
             # save as pickle
             pickle.dump(residue_pairs_ref, f)
             f.close()
-            return
-        else:
-            return residue_pairs_ref
+
+        return residue_pairs_ref
 
     def compute_lrmsd_pdb2sql(self, exportpath=None, method='svd'):
         """Slow routine to compute the L-RMSD.
 
         This routine parse the PDB directly using pdb2sql.
-        L-RMSD is computed by aligning the longest chain of the decoy to the one of the reference
-        and computing the RMSD of the shortest chain between decoy and reference.
 
-        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models
-              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879
+        L-RMSD is computed by aligning the longest chain of the decoy to
+        the one of the reference and computing the RMSD of the shortest
+        chain between decoy and reference. See reference:
+            DockQ: A Quality Measure for Protein-Protein Docking Models
+            https://doi.org/10.1371/journal.pone.0161879
 
         Args:
-            exportpath (str, optional): file name where the aligned pdbs are exported
-            method (str, optional): Method to align the fragments ('svd','quaternion')
+            exportpath (str, optional): file name where the aligned pdbs
+                are exported.
+            method (str, optional): Method to align the fragments,
+            'svd' or 'quaternion'.
 
         Returns:
             float: L-RMSD value of the conformation
@@ -623,21 +657,22 @@ class StructureSimilarity(object):
             exportpath=None):
         """Slow method to compute the i-rmsd.
 
-        Require the precalculation of the izone. A dedicated routine is implemented to comoute the izone
-        if izone is not given in argument the routine will compute them automatically
-
-        i-RMSD is computed selecting the back bone of the contact residue with a cutoff of 10A
-        in the decoy. Align these as best as possible with their coutner part in the ref
-        and and compute the RMSD
-
-        Ref : DockQ: A Quality Measure for Protein-Protein Docking Models
-              http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0161879
+        i-RMSD is computed by selecting the backbone atoms of reference
+        interface that is defined as any pair of heavy atoms from two
+        chains within 10Å of each other.
+        Align these backbone atoms as best as possible with their
+        coutner part in the decoy and compute the RMSD. See reference:
+            DockQ: A Quality Measure for Protein-Protein Docking Models
+            https://doi.org/10.1371/journal.pone.0161879
 
         Args:
-            izone (None, optional): file name of the zone. if None the zones will be calculated first
-            method (str, optional): Method to align the fragments ('svd','quaternion')
+            izone (None, optional): file name of the zone.
+                if None the zones will be calculated first.
+            method (str, optional): Method to align the fragments,
+                'svd' or 'quaternion'.
             cutoff (float, optional): cutoff for the contact atoms
-            exportpath (str, optional): file name where the aligned pdbs are exported
+            exportpath (str, optional): file name where the aligned pdbs
+                are exported.
 
         Returns:
             float: i-RMSD value of the conformation
@@ -650,7 +685,9 @@ class StructureSimilarity(object):
         # get the contact atoms
         if izone is None:
             contact_ref = sql_ref.get_contact_atoms(
-                cutoff=cutoff, extend_to_residue=True, return_only_backbone_atoms=False)
+                cutoff=cutoff,
+                extend_to_residue=True,
+                return_only_backbone_atoms=False)
             index_contact_ref = contact_ref[0] + contact_ref[1]
         else:
             index_contact_ref = self.get_izone_rowID(
@@ -749,7 +786,8 @@ class StructureSimilarity(object):
         Args:
             sql (pdb2sql): database of the conformation
             izone (str): filename to store the zone
-            return_only_backbone_atoms (bool, optional): Returns only the backbone atoms
+            return_only_backbone_atoms (bool, optional): Returns only
+                the backbone atoms
 
         Returns:
             lis(int): index of the atoms in the zone
@@ -784,10 +822,7 @@ class StructureSimilarity(object):
                 index_contact += sql.get('rowID',
                                          chainID=chainID,
                                          resSeq=resSeq,
-                                         name=['C',
-                                               'CA',
-                                               'N',
-                                               'O'])
+                                         name=['C', 'CA', 'N', 'O'])
             else:
                 index_contact += sql.get('rowID',
                                          chainID=chainID, resSeq=resSeq)
@@ -836,11 +871,11 @@ class StructureSimilarity(object):
 
         return Fnat
 
-    ##########################################################################
+    ####################################################################
     #
     #   HELPER ROUTINES TO HANDLE THE ZONE FILES
     #
-    ##########################################################################
+    ####################################################################
 
     @staticmethod
     def read_xyz_zone(pdb_file, resData, return_not_in_zone=False):
@@ -849,7 +884,8 @@ class StructureSimilarity(object):
         Args:
             pdb_file (str): filename containing the pdb of the molecule
             resData (dict): information about the residues
-            return_not_in_zone (bool, optional): Do we return the atoms not in the zone
+            return_not_in_zone (bool, optional): Do we return the atoms
+                not in the zone
 
         Returns:
             list(float): XYZ of the atoms in the zone
@@ -883,7 +919,8 @@ class StructureSimilarity(object):
                             'C', 'CA', 'N', 'O']:
                         xyz_in_zone.append([x, y, z])
 
-                    elif resSeq not in resData[chainID] and name in ['C', 'CA', 'N', 'O']:
+                    elif resSeq not in resData[chainID] and name in [
+                            'C', 'CA', 'N', 'O']:
                         xyz_not_in_zone.append([x, y, z])
 
                 else:
@@ -903,7 +940,8 @@ class StructureSimilarity(object):
         Args:
             pdb_file (str): filename containing the pdb of the molecule
             resData (dict): information about the residues
-            return_not_in_zone (bool, optional): Do we return the atoms not in the zone
+            return_not_in_zone (bool, optional): Do we return the atoms
+                not in the zone
 
         Returns:
             list(float): data of the atoms in the zone
@@ -940,7 +978,8 @@ class StructureSimilarity(object):
                             'C', 'CA', 'N', 'O']:
                         data_in_zone.append([chainID, resSeq, name, x, y, z])
 
-                    elif resSeq not in resData[chainID] and name in ['C', 'CA', 'N', 'O']:
+                    elif resSeq not in resData[chainID] and name in [
+                            'C', 'CA', 'N', 'O']:
                         data_not_in_zone.append(
                             [chainID, resSeq, name, x, y, z])
 
@@ -951,7 +990,6 @@ class StructureSimilarity(object):
 
         if return_not_in_zone:
             return data_in_zone, data_not_in_zone
-
         else:
             return data_in_zone
 
@@ -963,12 +1001,13 @@ class StructureSimilarity(object):
             zone_file (str): name of the file
 
         Returns:
-            dict: Info aboyt the residues in the zone
+            dict: Info about the residues in the zone
 
         Raises:
             FileNotFoundError: if the zone file is not found
         """
-        # read the izone file
+
+        # read the zone file
         if not os.path.isfile(zone_file):
             raise FileNotFoundError('zone file not found', zone_file)
 
@@ -1018,8 +1057,13 @@ class StructureSimilarity(object):
             Fnat (float): Fnat value
             lrmsd (float): lrmsd value
             irmsd (float): irmsd value
-            d1 (float, optional): first coefficient for the DockQ calculations
-            d2 (float, optional): second coefficient for the DockQ calculations
+            d1 (float, optional): first coefficient for the DockQ
+                calculations
+            d2 (float, optional): second coefficient for the DockQ
+                calculations
+
+        Returns:
+            float: dockQ value
         """
         def scale_rms(rms, d):
             return(1. / (1 + (rms / d)**2))
@@ -1031,8 +1075,10 @@ class StructureSimilarity(object):
         """compute the RMSD.
 
         Args:
-            P (np.array(nx3)): position of the points in the first molecule
-            Q (np.array(nx3)): position of the points in the second molecule
+            P (np.array(nx3)): position of the points in the first
+                molecule
+            Q (np.array(nx3)): position of the points in the second
+                molecule
 
         Returns:
             float: RMSD value
@@ -1058,16 +1104,18 @@ class StructureSimilarity(object):
 
         # get the matrix with Kabsh method
         if method.lower() == 'svd':
-            return self.get_rotation_matrix_Kabsh(P, Q)
+            mat = self.get_rotation_matrix_Kabsh(P, Q)
 
         # or with the quaternion method
         elif method.lower() == 'quaternion':
-            return self.get_rotation_matrix_quaternion(P, Q)
+            mat = self.get_rotation_matrix_quaternion(P, Q)
 
         else:
             raise ValueError(
-                '%s is not a valid method for rmsd alignement.\n Options are svd or quaternions' %
-                method)
+                f'{method} is not a valid method for rmsd alignement. '
+                f'Options are svd or quaternions')
+
+        return mat
 
     @staticmethod
     def get_rotation_matrix_Kabsh(P, Q):
@@ -1278,7 +1326,7 @@ class StructureSimilarity(object):
         # rotation matrices
         rx = np.array([[1, 0, 0], [0, ca, -sa], [0, sa, ca]])
         ry = np.array([[cb, 0, sb], [0, 1, 0], [-sb, 0, cb]])
-        rz = np.array([[cg, -sg, 0], [sg, cs, 0], [0, 0, 1]])
+        rz = np.array([[cg, -sg, 0], [sg, cg, 0], [0, 0, 1]])
 
         rot_mat = np.dot(rx, np.dot(ry, rz))
 
@@ -1299,9 +1347,11 @@ class StructureSimilarity(object):
         """
         if center:
             xyz0 = np.mean(xyz)
-            return np.dot(rot_mat, (xyz - xyz0).T).T + xyz0
+            mat = np.dot(rot_mat, (xyz - xyz0).T).T + xyz0
         else:
-            return np.dot(rot_mat, (xyz).T).T
+            mat = np.dot(rot_mat, (xyz).T).T
+
+        return mat
 
 
 # if __name__ == '__main__':
@@ -1345,7 +1395,7 @@ class StructureSimilarity(object):
 
 
 #     t0 = time.time()
-#     Fnat_fast = sim.compute_Fnat_fast(ref_pairs='1AK4.ref_pairs')
+#     Fnat_fast = sim.compute_fnat_fast(ref_pairs='1AK4.ref_pairs')
 #     t1 = time.time()-t0
 #     print('LRMSD TIME FAST %f in %f sec' %(Fnat_fast,t1))
 

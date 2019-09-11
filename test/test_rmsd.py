@@ -63,7 +63,7 @@ class TestStructureSimilarity(unittest.TestCase):
             sim = StructureSimilarity(decoy, ref)
             lrmsd = sim.compute_lrmsd_fast(method='svd', lzone='1AK4.lzone')
             irmsd = sim.compute_irmsd_fast(method='svd', izone='1AK4.izone')
-            fnat = sim.compute_Fnat_fast(ref_pairs='1AK4.refpairs')
+            fnat = sim.compute_fnat_fast(ref_pairs='1AK4.refpairs')
 
             mol_name = decoy.split('/')[-1].split('.')[0]
             deep_data[mol_name] = [fnat, lrmsd, irmsd]

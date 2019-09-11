@@ -11,8 +11,9 @@ class FLANgrid(object):
 
         Args:
             sparse (bool, optional): Sparse or Not
-            index (list(int), optional): single index of each non-zero elements
-            value (list(float), optional): values of the non-zero elements
+            index (list(int), optional): single index of each non-zero
+                element
+            value (list(float), optional): values of non-zero elements
             shape (3x3 array, optional): Shape of the matrix
         """
         self.sparse = sparse
@@ -25,7 +26,8 @@ class FLANgrid(object):
 
         Args:
             data (np.array): Dense matrix
-            beta (float, optional): threshold to determine if a sparse rep is valuable
+            beta (float, optional): threshold to determine if a sparse
+                rep is valuable
             debug (bool, optional): print debug information
         """
         if beta is not None:

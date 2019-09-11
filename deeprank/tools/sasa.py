@@ -10,7 +10,8 @@ class SASA(object):
 
         The method follows some of the approaches presented in :
 
-        Solvent accessible surface area approximations for rapid and accurate protein structure prediction
+        Solvent accessible surface area approximations for rapid and
+        accurate protein structure prediction
         https://link.springer.com/article/10.1007%2Fs00894-009-0454-9
 
         Example:
@@ -27,15 +28,12 @@ class SASA(object):
     def get_center(self, chainA='A', chainB='B', center='cb'):
         """Get the center of the resiudes.
 
-        center = cb --> the center is located on the carbon beta of each residue
-        center = 'center' --> average position of all atoms of the residue
-
         Args:
             chainA (str, optional): Name of the first chain
             chainB (str, optional): Name of the second chain
             center (str, optional): Specify the center.
-                center = 'cb' --> the center is located on the carbon beta of each residue
-                center = 'center' --> average position of all atoms of the residue
+                'cb': the center locates on carbon beta of each residue
+                'center': average position of all atoms of the residue
         Raises:
             ValueError: If the center is not recpgnized
         """
@@ -65,8 +63,6 @@ class SASA(object):
         resSeqB = np.unique(resB[:, 0].astype(np.int))
 
         self.xyz = {}
-        #self.xyz[chainA] = [ np.mean( resA[np.argwhere(resA[:,0].astype(np.int)==r),2:],0 ).astype(np.float).tolist()[0] for r in resSeqA ]
-        #self.xyz[chainB] = [ np.mean( resB[np.argwhere(resB[:,0].astype(np.int)==r),2:],0 ).astype(np.float).tolist()[0] for r in resSeqB ]
 
         self.xyz[chainA] = []
         for r in resSeqA:
@@ -133,14 +129,16 @@ class SASA(object):
             center='cb'):
         """Compute teh SASA folowing the neighbour vector approach.
 
-        The method is based on Eq on page 1097 of https://link.springer.com/article/10.1007%2Fs00894-009-0454-9
+        The method is based on Eq on page 1097 of
+        https://link.springer.com/article/10.1007%2Fs00894-009-0454-9
 
         Args:
             lbound (float, optional): lower boubd
             ubound (float, optional): upper bound
             chainA (str, optional): name of the first chain
             chainB (str, optional): name of the second chain
-            center (str, optional): specify the center (see get_residue_center)
+            center (str, optional): specify the center
+                (see get_residue_center)
 
         Returns:
             dict: neighbouring vectors
@@ -186,14 +184,16 @@ class SASA(object):
             center='cb'):
         """Compute the neighbourhood count of each residue.
 
-        The method is based on Eq on page 1097 of https://link.springer.com/article/10.1007%2Fs00894-009-0454-9
+        The method is based on Eq on page 1097 of
+        https://link.springer.com/article/10.1007%2Fs00894-009-0454-9
 
         Args:
             lbound (float, optional): lower boubd
             ubound (float, optional): upper bound
             chainA (str, optional): name of the first chain
             chainB (str, optional): name of the second chain
-            center (str, optional): specify the center (see get_residue_center)
+            center (str, optional): specify the center
+            (see get_residue_center)
 
         Returns:
             dict: Neighborhood count

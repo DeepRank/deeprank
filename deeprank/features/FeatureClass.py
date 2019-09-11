@@ -1,41 +1,49 @@
-import os
-
 import numpy as np
 
 
 class FeatureClass(object):
 
     def __init__(self, feature_type):
-        ''' Master class fron which all the other Feature classes should be derived."""
+        """Master class from which all the other feature classes should be
+        derived.
 
-        Each subclass must compute :
+            Each subclass must compute:
 
-        - self.feature_data : dictionary of features in human readable format
-           e.g : {'coulomb':data_dict_clb[(atom info):value]
-                  'vdwaals':data_dict_vdw[(atom info):value]  }
+            - self.feature_data: dictionary of features in
+                human readable format, e.g.
 
-        - self.feature_data_xyz : dictionary of feature in xyz-val format
-           e.g : {'coulomb':data_dict_clb[(chainID atom xyz):value]
-                  'vdwaals':data_dict_vdw[(chainID atom xyz):value]  }
+                for atomic features:
+                {'coulomb': data_dict_clb, 'vdwaals': data_dict_vdw}
+                    data_dict_clb = {atom_info: [values]}
+                        atom_info = (chainID, resSeq, resName, name)
+
+                for residue features:
+                {'PSSM_ALA': data_dict_pssmALA, ...}
+                    data_dict_pssmALA = {residue_info: [values]}
+                        residue_info = (chainID, resSeq, resName, name)
+
+            - self.feature_data_xyz: dictionary of features in
+                xyz-val format, e.g.
+
+                {'coulomb': data_dict_clb, 'vdwaals': data_dict_vdw}
+                    data_dict_clb = {xyz_info: [values]}
+                        xyz_info = (chainNum, x, y, z)
 
         Args:
-            feature_type (str): 'Atomic' or 'Residue'
-
-        '''
-
+            feature_type(str): 'Atomic' or 'Residue'
+        """
         self.type = feature_type
         self.feature_data = {}
         self.feature_data_xyz = {}
-        self.export_directories = {}
-        self.error = False
 
     def export_data_hdf5(self, featgrp):
-        """Export the data in human readable format in an HDF5 file group.
+        """Export the data in human readable format to HDF5's group.
 
-        - For **atomic features**, the format of the data must be : chainID  resSeq resNum name [values]
-        - For **residue features**, the format must be : chainID  resSeq resNum [values]
+        - For atomic features, the format of the data must be:
+            {(chainID, resSeq, resName, name): [values]}
+        - For residue features, the format must be:
+            {(chainID, resSeq, resName): [values]}
         """
-
         # loop through the datadict and name
         for name, data in self.feature_data.items():
 
@@ -56,16 +64,12 @@ class FeatureClass(object):
                         key[0], key[1], key[2], key[3])
 
                 # values
+                # note that feature_raw values have low precision
                 for v in value:
                     feat += '    {: 1.6E}'.format(v)
 
                 # append
                 ds.append(feat)
-
-            # put in the hdf5 file
-            if len(ds) == 0:
-                self.error = True
-                return
 
             ds = np.array(ds).astype('|S' + str(len(ds[0])))
 
@@ -80,10 +84,6 @@ class FeatureClass(object):
     #
     # export the data in an HDF5 file group
     # the format of the data is here
-    #
-    # for atomic and residue features
-    # x y z [values]
-    #
     # PRO : fast when mapping
     # CON : only usefull for deeprank
     #
@@ -92,7 +92,8 @@ class FeatureClass(object):
     def export_dataxyz_hdf5(self, featgrp):
         """Export the data in xyz-val format in an HDF5 file group.
 
-        For **atomic** and **residue** the format of the data must be :  x y z [values]
+        For atomic and residue the format of the data must be:
+        {(chainNum(0 or 1), x, y, z): [values]}
         """
 
         # loop through the datadict and name
