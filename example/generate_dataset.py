@@ -48,7 +48,7 @@ database.create_database(prog_bar=True)
 # grid_info = {
 #   'number_of_points' : [30,30,30],
 #   'resolution' : [1.,1.,1.],
-#   'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
+#   'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
 # }
 
 # generate the grid

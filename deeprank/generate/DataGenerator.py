@@ -803,7 +803,7 @@ class DataGenerator(object):
         >>> grid_info = {
         >>>     'number_of_points' : [30,30,30],
         >>>     'resolution' : [1.,1.,1.],
-        >>>     'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
+        >>>     'atomic_densities' : {'C':1.7, 'N':1.55, 'O':1.52, 'S':1.8},
         >>> }
         >>>
         >>> database.map_features(grid_info,try_sparse=True,time=False,prog_bar=True)
