@@ -1,5 +1,6 @@
 import os
 import unittest
+import numpy as np
 from time import time
 
 from deeprank.generate import *
@@ -15,6 +16,9 @@ Some requirement of the naming of the files:
 
 class TestGenerateData(unittest.TestCase):
     """Test the data generation process."""
+
+    # set random seed to make results repeatable
+    np.random.seed(2019)
 
     h5file = ['./1ak4.hdf5', 'native.hdf5']
     pdb_source = ['./1AK4/decoys/', './1AK4/native/']
@@ -65,9 +69,9 @@ class TestGenerateData(unittest.TestCase):
 
             # map the features
             grid_info = {
-                'number_of_points': [30, 30, 30],
-                'resolution': [1., 1., 1.],
-                'atomic_densities': {'CA': 3.5, 'N': 3.5, 'O': 3.5, 'C': 3.5},
+                'number_of_points': [10, 10, 10],
+                'resolution': [3., 3., 3.],
+                'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
             }
 
             t0 = time()
@@ -85,6 +89,44 @@ class TestGenerateData(unittest.TestCase):
             norm = NormalizeData(h5)
             norm.get()
             print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
+
+    def test_1_generate_mapfly(self):
+        """Generate the database."""
+
+        # clean old files
+        files = [
+            '1ak4_mapfly.hdf5',
+            '1ak4_mapfly.pckl'
+            ]
+        for f in files:
+            if os.path.isfile(f):
+                os.remove(f)
+
+        h5 = "./1ak4_mapfly.hdf5"
+        src = self.pdb_source[0]
+
+        # init the data assembler
+
+        database = DataGenerator(
+            pdb_source=src,
+            pdb_native=self.pdb_native,
+            pssm_source='./1AK4/pssm_new/',
+            # data_augmentation=1,
+            compute_targets=[
+                'deeprank.targets.dockQ',
+                'deeprank.targets.binary_class'],
+            compute_features=[
+                'deeprank.features.AtomicFeature',
+                'deeprank.features.FullPSSM',
+                'deeprank.features.PSSM_IC',
+                'deeprank.features.BSA',
+                'deeprank.features.ResidueDensity'],
+            hdf5=h5)
+
+        # create new files
+        print('{:25s}'.format('Create new database') + database.hdf5)
+        database.create_database(prog_bar=True)
+    
 
     def test_2_add_target(self):
         """Add a target (e.g., class labels) to the database."""
@@ -145,4 +187,10 @@ class TestGenerateData(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # unittest.main()
+
+    inst = TestGenerateData()
+    inst.test_1_generate()
+    inst.test_1_generate_mapfly()
+    inst.test_3_add_unique_target()
+    inst.test_4_add_feature()
