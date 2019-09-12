@@ -10,6 +10,7 @@ import h5py
 import numpy as np
 from tqdm import tqdm
 
+from deeprank import config
 from deeprank.config import logger
 from deeprank.generate import MinMaxParam, NormalizeData, NormParam
 from deeprank.tools import pdb2sql, sparse
@@ -65,8 +66,7 @@ class DataSet():
                     Select the features used in the learning.
                     if mapfly is True:
                         {'AtomDensities': 'all', 'Features': 'all'}
-                        {'AtomicDensities': {
-                            'CA': 1.7, 'C': 1.7, 'N': 1.55, 'O': 1.52},
+                        {'AtomicDensities': config.atom_vdw_radius_noH,
                             'Features': ['PSSM_*', 'pssm_ic_*']}
                     if mapfly is False:
                         {'AtomDensities_ind': 'all', 
@@ -310,6 +310,7 @@ class DataSet():
         """
 
         fname, mol, angle, axis = self.index_complexes[index]
+        print(fname, mol)
 
         if self.mapfly:
             feature, target = self.map_one_molecule(fname, mol, angle, axis)
@@ -632,8 +633,7 @@ class DataSet():
             class parameter self.select_feature examples:
             - 'all'
             - {'AtomicDensities': 'all', 'Features':all}
-            - {'AtomicDensities': {
-                'CA': 1.7, 'C': 1.7, 'N': 1.55, 'O': 1.52},
+            - {'AtomicDensities': config.atom_vaw_radius_noH,
                'Features': ['PSSM_*', 'pssm_ic_*']}
 
             Feature type must be: 'AtomicDensities' or 'Features'.
@@ -650,8 +650,7 @@ class DataSet():
         # if we select all the features
         if self.select_feature == "all":
             self.select_feature = {}
-            self.select_feature['AtomicDensities'] = {
-                'CA': 1.7, 'C': 1.7, 'N': 1.55, 'O': 1.52}
+            self.select_feature['AtomicDensities'] = config.atom_vdw_radius_noH
             self.select_feature['Features'] = [
                 name for name in raw_data.keys()]
 
@@ -663,8 +662,8 @@ class DataSet():
                 # if for a given type we need all the feature
                 if feat_names == 'all':
                     if feat_type == 'AtomicDensities':
-                        self.select_feature['AtomicDensities'] = {
-                            'CA': 1.7, 'C': 1.7, 'N': 1.55, 'O': 1.52}
+                        self.select_feature['AtomicDensities'] = \
+                            config.atom_vdw_radius_noH
                     elif feat_type == 'Features':
                         self.select_feature[feat_type] = list(raw_data.keys())
                     else:
@@ -683,7 +682,7 @@ class DataSet():
                                 match = name.split('*')[0]
                                 possible_names = list(raw_data.keys())
                                 match_names = [
-                                    n for n in possible_names
+                                    n for n in possible_nasdfsfasdfasdfmes
                                     if n.startswith(match)]
                                 self.select_feature[feat_type] += match_names
                             else:
@@ -1271,7 +1270,7 @@ class DataSet():
         """Map atomic densities.
         
         Args:
-            feat_names(dict): Atom type and vdw radius
+            feat_names(dict): Element type and vdw radius
             mol_data(h5 group): HDF5 molecule group
             grid(tuple): mesh grid of x,y,z
             npts(tuple): number of points on axis x,y,z
@@ -1289,16 +1288,21 @@ class DataSet():
             center = [np.mean(g) for g in grid]
 
         densities = []
-        for atomtype, vdw_rad in feat_names.items():
+        for elementtype, vdw_rad in feat_names.items():
 
             # get pos of the contact atoms of correct type
-            xyzA = np.array(sql.get('x,y,z', rowID=index[0], name=atomtype))
-            xyzB = np.array(sql.get('x,y,z', rowID=index[1], name=atomtype))
+            xyzA = np.array(sql.get(
+                'x,y,z', rowID=index[0], element=elementtype))
+            xyzB = np.array(sql.get(
+                'x,y,z', rowID=index[1], element=elementtype))
 
             # rotate if necessary
             if angle is not None:
-                xyzA = self._rotate_coord(xyzA, center, angle, axis)
-                xyzB = self._rotate_coord(xyzB, center, angle, axis)
+                if xyzA != np.array([]):
+                    xyzA = self._rotate_coord(xyzA, center, angle, axis)
+
+                if xyzB != np.array([]):
+                    xyzB = self._rotate_coord(xyzB, center, angle, axis)
 
             # init the grid
             atdensA = np.zeros(npts)
