@@ -682,7 +682,7 @@ class DataSet():
                                 match = name.split('*')[0]
                                 possible_names = list(raw_data.keys())
                                 match_names = [
-                                    n for n in possible_nasdfsfasdfasdfmes
+                                    n for n in possible_names
                                     if n.startswith(match)]
                                 self.select_feature[feat_type] += match_names
                             else:
