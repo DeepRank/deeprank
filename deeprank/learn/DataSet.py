@@ -897,7 +897,7 @@ class DataSet():
 
             # if the file doesn't exist we create it
             if not os.path.isfile(fdata):
-                logger.info("      Computing norm for ", f5)
+                logger.info(f"      Computing norm for {f5}")
                 norm = NormalizeData(f5, shape=self.grid_shape)
                 norm.get()
 
