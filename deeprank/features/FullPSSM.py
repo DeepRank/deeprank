@@ -238,7 +238,7 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw, out_type='pssmvalue'):
                     f"check 'config.PATH_PSSM_SOURCE'")
     else:
         path = config.PATH_PSSM_SOURCE
- 
+
     mol_name = os.path.split(featgrp.name)[0]
     mol_name = mol_name.lstrip('/')
 

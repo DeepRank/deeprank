@@ -38,19 +38,19 @@ class NeuralNet():
         """Train a Convolutional Neural Network for DeepRank.
 
         Args:
-            data_set (deeprank.DataSet or str): Data set used for 
+            data_set (deeprank.DataSet or str): Data set used for
                 training or testing.
                 - deeprank.DataSet for training;
-                - str (e.g. 'xxx.hdf5') for testing when pretrained 
+                - str (e.g. 'xxx.hdf5') for testing when pretrained
                     model is loaded.
 
-            model (nn.Module): Definition of the NN to use. 
+            model (nn.Module): Definition of the NN to use.
                 Must subclass nn.Module.
                 See examples in model2d.py and model3d.py
 
-            model_type (srt): Type of model we want to use. 
+            model_type (srt): Type of model we want to use.
                 Must be '2d' or '3d'.
-                If we specify a 2d model, the data set is automatically 
+                If we specify a 2d model, the data set is automatically
                 converted to the correct format.
 
             task (str 'ref' or 'class'): Task to perform.
@@ -59,16 +59,16 @@ class NeuralNet():
                 The loss function, the target datatype and plot functions
                 will be autmatically adjusted depending on the task.
 
-            pretrained_model (str): Saved model to be used for further 
+            pretrained_model (str): Saved model to be used for further
                 training or testing.
 
             cuda (bool): Use CUDA.
 
-            ngpu (int): number of GPU to be used. 
+            ngpu (int): number of GPU to be used.
 
             plot (bool): Plot the prediction results.
 
-            save_hitrate (bool): Save and plot hit rate. 
+            save_hitrate (bool): Save and plot hit rate.
 
             save_classmetrics (bool): Save and plot classification metrics.
                 Classification metrics include:
@@ -82,12 +82,12 @@ class NeuralNet():
 
         Examples:
             >>> # create the network
-            >>> model = NeuralNet(data_set, cnn, 
+            >>> model = NeuralNet(data_set, cnn,
             ...                   model_type='3d', task='reg',
             ...                   plot=True, save_hitrate=True,
             ...                   outdir='./out/')
             >>> # start the training
-            >>> model.train(nepoch = 50, divide_trainset=0.8, 
+            >>> model.train(nepoch = 50, divide_trainset=0.8,
             ...             train_batch_size = 5, num_workers=0)
         """
 
@@ -212,7 +212,7 @@ class NeuralNet():
 
         # load parameters of pretrained model if provided
         if self.pretrained_model:
-            # a prefix 'module.' is added to parameter names if 
+            # a prefix 'module.' is added to parameter names if
             # torch.nn.DataParallel was used
             # https://pytorch.org/docs/stable/nn.html#torch.nn.DataParallel
             if self.state['cuda']:
@@ -282,12 +282,12 @@ class NeuralNet():
               num_workers=1,
               save_model='best',
               save_epoch='intermediate'):
-        """Perform a simple training of the model. 
+        """Perform a simple training of the model.
 
         Args:
-            nepoch (int, optional): number of iterations 
+            nepoch (int, optional): number of iterations
 
-            divide_trainset (list, optional): the percentage assign to 
+            divide_trainset (list, optional): the percentage assign to
                 the training, validation and test set.
                 Examples: [0.7, 0.2, 0.1], [0.8, 0.2], None
 
@@ -295,21 +295,21 @@ class NeuralNet():
 
             train_batch_size (int, optional): size of the batch
 
-            preshuffle (bool, optional): preshuffle the dataset before 
+            preshuffle (bool, optional): preshuffle the dataset before
                 dividing it.
 
             preshuffle_seed (int, optional): set random seed for preshuffle
 
-            export_intermediate (bool, optional): export data at 
+            export_intermediate (bool, optional): export data at
                 intermediate epochs.
 
             num_workers (int, optional): number of workers to be used to
                 prepare the batch data
 
-            save_model (str, optional): 'best' or 'all', save only the 
+            save_model (str, optional): 'best' or 'all', save only the
                 best model or all models.
 
-            save_epoch (str, optional): 'intermediate' or 'all', 
+            save_epoch (str, optional): 'intermediate' or 'all',
                 save the epochs data to HDF5.
 
         """
@@ -371,7 +371,7 @@ class NeuralNet():
 
         Args:
             hdf5 (str, optional): hdf5 file to store the test results
-    
+
         Examples:
             >>> # adress of the database
             >>> database = '1ak4.hdf5'
@@ -484,18 +484,18 @@ class NeuralNet():
         self.data_set.grid_info = self.state['grid_info']
 
     def _divide_dataset(self, divide_set, preshuffle, preshuffle_seed):
-        """Divide the data set into training, validation and test 
+        """Divide the data set into training, validation and test
         according to the percentage in divide_set.
 
         Args:
-            divide_set (list(float)): percentage used for 
+            divide_set (list(float)): percentage used for
                 training/validation/test.
                 Example: [0.8, 0.1, 0.1], [0.8, 0.2]
             preshuffle (bool): shuffle the dataset before dividing it
             preshuffle_seed (int, optional): set random seed
 
         Returns:
-            list(int),list(int),list(int): Indices of the 
+            list(int),list(int),list(int): Indices of the
                 training/validation/test set.
         """
         # if user only provided one number
@@ -507,7 +507,7 @@ class NeuralNet():
         if len(divide_set) == 3 and self.data_set.test_database is not None:
             divide_set = [divide_set[0], 1. - divide_set[0]]
             logger.info(f'   : test data set AND test in training set detected\n'
-                        f'   : Divide training set as ' 
+                        f'   : Divide training set as '
                         f'{divide_set[0]} train {divide_set[1]} valid.\n'
                         f'   : Keep test set for testing')
 
@@ -548,9 +548,9 @@ class NeuralNet():
             nepoch (int, optional): numbr of epoch
             train_batch_size (int, optional): size of the batch
             export_intermediate (bool, optional):export itnermediate data
-            num_workers (int, optional): number of workers pytorch 
+            num_workers (int, optional): number of workers pytorch
                 uses to create the batch size
-            save_epoch (str,optional): 'intermediate' or 'all' 
+            save_epoch (str,optional): 'intermediate' or 'all'
             save_model (str, optional): 'all' or 'best'
 
         Returns:
@@ -1024,7 +1024,7 @@ class NeuralNet():
         """Plot the hit rate of the different training/valid/test sets.
 
         The hit rate is defined as:
-            The percentage of positive(near-native) decoys that are 
+            The percentage of positive(near-native) decoys that are
             included among the top m decoys.
 
         Args:
@@ -1176,7 +1176,7 @@ class NeuralNet():
         """Export the epoch data to the hdf5 file.
 
         Export the data of a given epoch in train/valid/test group.
-        In each group are stored the predcited values (outputs), 
+        In each group are stored the predcited values (outputs),
         ground truth (targets) and molecule name (mol).
 
         Args:

@@ -114,7 +114,7 @@ class pdb2sql(object):
                     'z': 'REAL',
                     'occ': 'REAL',
                     'temp': 'REAL',
-                    'element': 'TEXT' 
+                    'element': 'TEXT'
                     }
 
         # delimtier of the column format
@@ -234,7 +234,7 @@ class pdb2sql(object):
                     data_col = float(data_col)
 
                 # get element if it does not exist
-                if colname == "element" and not data_col: 
+                if colname == "element" and not data_col:
                     data_col = pdb2sql._get_element(line)
 
                 # append keep the comma !!
@@ -250,20 +250,20 @@ class pdb2sql(object):
     @staticmethod
     def _get_element(pdb_line):
         """Get element type from the atom type of a pdb line
-        
+
         Notes:
             Atom type occupies 13-16th columns of a PDB line.
             http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM
             Four situations exist:
                 13 14 15 16
                    C  A      The element is C
-                C  A         The element is Ca   
+                C  A         The element is Ca
                 1  H  G      The element is H
                 H  E  2  1   The element is H
 
         Args:
             pdb_line(str): one PDB ATOM line
-        
+
         Returns:
             [str]: element name
         """
@@ -277,7 +277,7 @@ class pdb2sql(object):
                 elem = "H"
             else:
                 elem = pdb_line[12:14]
-            
+
         else:
             elem = pdb_line[13]
         return elem

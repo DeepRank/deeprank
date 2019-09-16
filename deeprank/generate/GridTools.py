@@ -36,7 +36,7 @@ class GridTools(object):
                 each direction of the grid.
             resolution(float, optional): distance(in Angs) between two points.
             atomic_densities(dict, optional): dictionary of element types with
-                their vdw radius, see deeprank.config.atom_vdw_radius_noH 
+                their vdw radius, see deeprank.config.atom_vdw_radius_noH
             atomic_densities_mode(str, optional): Mode for mapping
                 (deprecated must be 'ind').
             feature(None, optional): Name of the features to be mapped.
