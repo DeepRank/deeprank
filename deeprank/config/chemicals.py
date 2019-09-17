@@ -74,7 +74,9 @@ AA_properties = {
 
 
 # atom vdw radius
-# https://en.wikipedia.org/wiki/Van_der_Waals_radius
+# William M Haynes. CRC Handbook of Chemistry and Physics. 
+# ISBN 9781482208689. 
+# URL: https://books.google.no/books?id=bNDMBQAAQBAJ.
 
 atom_vdw_radius_noH = {
     "C": 1.7,
