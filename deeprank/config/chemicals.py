@@ -74,8 +74,8 @@ AA_properties = {
 
 
 # atom vdw radius
-# William M Haynes. CRC Handbook of Chemistry and Physics. 
-# ISBN 9781482208689. 
+# William M Haynes. CRC Handbook of Chemistry and Physics.
+# ISBN 9781482208689.
 # URL: https://books.google.no/books?id=bNDMBQAAQBAJ.
 
 atom_vdw_radius_noH = {
