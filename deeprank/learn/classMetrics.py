@@ -21,7 +21,8 @@ def sensitivity(yp, yt):
     if p == 0:
         tpr = float('inf')
         warnings.warn(
-            'Number of positive cases is 0, TPR or sensitivity is assigned as inf')
+            f'Number of positive cases is 0, '
+            f'TPR or sensitivity is assigned as inf')
     else:
         tpr = tp / p
     return tpr
@@ -41,7 +42,8 @@ def specificity(yp, yt):
     n = negative(yt)
     if n == 0:
         warnings.warn(
-            'Number of negative cases is 0, TNR or sepcificity is assigned as inf')
+            f'Number of negative cases is 0, '
+            f'TNR or sepcificity is assigned as inf')
         tnr = float('inf')
     else:
         tnr = tn / n
@@ -62,7 +64,8 @@ def precision(yp, yt):
     fp = false_positive(yp, yt)
     if tp + fp == 0:
         warnings.warn(
-            'Total number of true positive and false positive cases is 0, PPV or precision is assigned as inf')
+            f'Total number of true positive and false positive cases is 0, '
+            f'PPV or precision is assigned as inf')
         ppv = float('inf')
     else:
         ppv = tp / (tp + fp)

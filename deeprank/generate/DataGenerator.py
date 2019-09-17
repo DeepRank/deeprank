@@ -111,10 +111,11 @@ class DataGenerator(object):
         # handle pssm source
         pssm_features = ('deeprank.features.FullPSSM',
                         'deeprank.features.PSSM_IC')
-        if config.PATH_PSSM_SOURCE is None and \
+        if self.compute_features and \
             set.intersection(set(pssm_features), set(self.compute_features)):
-            raise ValueError(
-                'You must provide "pssm_source" to compaute PSSM features.')
+            if config.PATH_PSSM_SOURCE is None:
+                raise ValueError(
+                    'You must provide "pssm_source" to compaute PSSM features.')
 
 
         # get all the conformation path
@@ -186,7 +187,7 @@ class DataGenerator(object):
         >>> database.create_database(prog_bar=True)
         """
         # check decoy pdb files
-        if len(self.pdb_path) == 0:
+        if not self.pdb_path:
             raise ValueError(f"Decoy pdb files not found. Check class "
                              f"parameters 'pdb_source' and 'pdb_select'.")
 

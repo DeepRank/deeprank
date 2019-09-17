@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import pdb
 import sys
 import time
 
@@ -9,18 +8,17 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
-from torchsummary import summary
+import warnings
 
 import torch
-# cuda
 import torch.cuda
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils.data as data_utils
-# classification metrics
-# ranking metrics
-# dataset
+from torchsummary import summary
+
+from deeprank.config import logger
 from deeprank.learn import DataSet, classMetrics, rankingMetrics
 from torch.autograd import Variable
 
@@ -39,52 +37,65 @@ class NeuralNet():
                  outdir='./'):
         """Train a Convolutional Neural Network for DeepRank.
 
-        Example:
+        Args:
+            data_set (deeprank.DataSet or list(str)): Data set used for
+                training or testing.
+                - deeprank.DataSet for training;
+                - str or list(str), e.g. 'x.hdf5', ['x1.hdf5', 'x2.hdf5'],
+                    for testing when pretrained model is loaded.
 
-        >>> # create the network
-        >>> model = NeuralNet(data_set,cnn,model_type='3d',task='reg',
-        >>>                   cuda=False,plot=True,save_hitrate=True,outdir='./out/')
-        >>>
-        >>> # start the training
-        >>> model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
+            model (nn.Module): Definition of the NN to use.
+                Must subclass nn.Module.
+                See examples in model2d.py and model3d.py
 
-        Attributes:
+            model_type (srt): Type of model we want to use.
+                Must be '2d' or '3d'.
+                If we specify a 2d model, the data set is automatically
+                converted to the correct format.
 
-            data_set (deeprank.dataset or str):  Data set used for training or testing
+            task (str 'ref' or 'class'): Task to perform.
+                - 'reg' for regression
+                - 'class' for classification.
+                The loss function, the target datatype and plot functions
+                will be autmatically adjusted depending on the task.
 
-                data_set = DeepRankDataSet( ... ) for training
+            pretrained_model (str): Saved model to be used for further
+                training or testing.
 
-                data_set = 'xxx.hdf5' when pretrained model is loaded
+            cuda (bool): Use CUDA.
 
-            model (nn.Module): Definition of the NN to use. Must subclass nn.Module.
-                See examples in model2D.py and model3d.py
+            ngpu (int): number of GPU to be used.
 
-            model_type (srt): Type of model we want to use. Must be '2d' or '3d'.
-                If we specify a 2d model, the data set is automatically converted
-                to the correct format.
+            plot (bool): Plot the prediction results.
 
-            task (str 'ref' or 'class'): Task to perform:
-                reg' for regression, 'class' for classification
-                The loss function, the datatype of the targets and plot functions
-                will be autmatically adjusted depending on the task
+            save_hitrate (bool): Save and plot hit rate.
 
-            plot (bool): Plot the prediction results
+            save_classmetrics (bool): Save and plot classification metrics.
+                Classification metrics include:
+                    accuracy(ACC), sensitivity(TPR) and specificity(TNR)
 
-            save_hitrate (bool): Save and plot hit rate
+            outdir (str): output directory
 
-            save_classmetrics (bool): Save and plot classification metrics:
-                accuracy(ACC), sensitivity(TPR) and specificity(TNR)
+        Raises:
+            ValueError: if dataset format is not recognized
+            ValueError: if task is not recognized
 
-            outdir (str): output directory where all the files will be written
+        Examples:
+            Train models:
+            >>> data_set = Dataset(...)
+            >>> model = NeuralNet(data_set, cnn,
+            ...                   model_type='3d', task='reg',
+            ...                   plot=True, save_hitrate=True,
+            ...                   outdir='./out/')
+            >>> model.train(nepoch = 50, divide_trainset=0.8,
+            ...             train_batch_size = 5, num_workers=0)
 
-            pretrained_model (str): Saved model to be used for further training or testing
-
-            cuda (bool): Use CUDA
-
-            ngpu (int): number of GPU to be used
-
-            Raises:
-                ValueError: if dataset format is not recognized
+            Test a model on new data:
+            >>> data_set = ['test01.hdf5', 'test02.hdf5']
+            >>> model = NeuralNet(data_set, cnn,
+            ...                   pretrained_model = './model.pth.tar',
+            ...                   outdir='./out/')
+            >>> model.test()
         """
 
         # ------------------------------------------
@@ -97,7 +108,7 @@ class NeuralNet():
         # pretrained model
         self.pretrained_model = pretrained_model
 
-        if isinstance(data_set, (str, list)) and pretrained_model is None:
+        if isinstance(self.data_set, (str, list)) and pretrained_model is None:
             raise ValueError(
                 'Argument data_set must be a DeepRankDataSet object\
                               when no pretrained model is loaded')
@@ -106,18 +117,14 @@ class NeuralNet():
         if self.pretrained_model is not None:
 
             if not cuda:
-                self.state = torch.load(
-                    self.pretrained_model, map_location='cpu')
+                self.state = torch.load(self.pretrained_model,
+                                        map_location='cpu')
             else:
                 self.state = torch.load(self.pretrained_model)
 
             # create the dataset if required
             # but don't process it yet
-            if isinstance(
-                    self.data_set,
-                    str) or isinstance(
-                    self.data_set,
-                    list):
+            if isinstance(self.data_set, (str, list)):
                 self.data_set = DataSet(self.data_set, process=False)
 
             # load the model and
@@ -168,9 +175,8 @@ class NeuralNet():
 
         else:
             raise ValueError(
-                "Task " +
-                self.task +
-                "not recognized.\nOptions are \n\t 'reg': regression \n\t 'class': classifiation\n\n")
+                f"Task {self.task} not recognized. Options are:\n\t "
+                f"reg': regression \n\t 'class': classifiation\n")
 
         # ------------------------------------------
         # Output
@@ -206,20 +212,21 @@ class NeuralNet():
             device = torch.device("cuda")  # PyTorch v0.4.0
         else:
             device = torch.device("cpu")
-        summary(
-            self.net.to(device),
-            self.data_set.input_shape,
-            device=device.type)
+        summary(self.net.to(device),
+                self.data_set.input_shape,
+                device=device.type)
         sys.stdout.flush()
 
         # load parameters of pretrained model if provided
         if self.pretrained_model:
-            # a prefix 'module.' is added to parameter names if torch.nn.DataParallel was used
+            # a prefix 'module.' is added to parameter names if
+            # torch.nn.DataParallel was used
             # https://pytorch.org/docs/stable/nn.html#torch.nn.DataParallel
             if self.state['cuda']:
                 for paramname in list(self.state['state_dict'].keys()):
                     paramname_new = paramname.lstrip('module.')
-                    self.state['state_dict'][paramname_new] = self.state['state_dict'][paramname]
+                    self.state['state_dict'][paramname_new] = \
+                        self.state['state_dict'][paramname]
                     del self.state['state_dict'][paramname]
             self.load_model_params()
 
@@ -232,11 +239,10 @@ class NeuralNet():
             self.net = self.net.cuda()
 
         # set the optimizer
-        self.optimizer = optim.SGD(
-            self.net.parameters(),
-            lr=0.005,
-            momentum=0.9,
-            weight_decay=0.001)
+        self.optimizer = optim.SGD(self.net.parameters(),
+                                   lr=0.005,
+                                   momentum=0.9,
+                                   weight_decay=0.001)
         if self.pretrained_model:
             self.load_optimizer_params()
 
@@ -244,98 +250,82 @@ class NeuralNet():
         # print
         # ------------------------------------------
 
-        print('\n')
-        print('=' * 40)
-        print('=\t Convolution Neural Network')
-        print('=\t model     : %s' % model_type)
-        print('=\t CNN       : %s' % model.__name__)
+        logger.info('\n')
+        logger.info('=' * 40)
+        logger.info('=\t Convolution Neural Network')
+        logger.info(f'=\t model    : {model_type}')
+        logger.info(f'=\t CNN       : {model.__name__}')
 
         for feat_type, feat_names in self.data_set.select_feature.items():
-            print('=\t features  : %s' % (feat_type))
+            logger.info(f'=\t features  : {feat_type}')
             for name in feat_names:
-                print('=\t\t     %s' % (name))
+                logger.info(f'=\t\t     {name}')
         if self.data_set.pair_chain_feature is not None:
-            print(
-                '=\t Pair      : %s' %
-                self.data_set.pair_chain_feature.__name__)
-        print('=\t targets   : %s' % self.data_set.select_target)
-        print('=\t CUDA      : %s' % str(self.cuda))
+            logger.info(f'=\t Pair      : '
+                        f'{self.data_set.pair_chain_feature.__name__}')
+        logger.info(f'=\t targets   : {self.data_set.select_target}')
+        logger.info(f'=\t CUDA      : {str(self.cuda)}')
         if self.cuda:
-            print('=\t nGPU      : %d' % self.ngpu)
-        print('=' * 40, '\n')
+            logger.info(f'=\t nGPU      : {self.ngpu}')
+        logger.info('=' * 40 + '\n')
 
         # check if CUDA works
         if self.cuda and not torch.cuda.is_available():
-            print(
-                ' --> CUDA not deteceted : Make sure that CUDA is installed and that you are running on GPUs')
-            print(' --> To turn CUDA of set cuda=False in NeuralNet')
-            print(' --> Aborting the experiment \n\n')
+            logger.error(
+                f' --> CUDA not deteceted : Make sure that CUDA is installed '
+                f'and that you are running on GPUs.\n'
+                f' --> To turn CUDA of set cuda=False in NeuralNet.\n'
+                f' --> Aborting the experiment \n\n')
             sys.exit()
 
-    def train(
-            self,
-            nepoch=50,
-            divide_trainset=None,
-            hdf5='epoch_data.hdf5',
-            train_batch_size=10,
-            preshuffle=True,
-            preshuffle_seed=None,
-            export_intermediate=True,
-            num_workers=1,
-            save_model='best',
-            save_epoch='intermediate'):
-        """Perform a simple training of the model. The data set is divided in
-        training/validation sets.
+    def train(self,
+              nepoch=50,
+              divide_trainset=None,
+              hdf5='epoch_data.hdf5',
+              train_batch_size=10,
+              preshuffle=True,
+              preshuffle_seed=None,
+              export_intermediate=True,
+              num_workers=1,
+              save_model='best',
+              save_epoch='intermediate'):
+        """Perform a simple training of the model.
 
         Args:
+            nepoch (int, optional): number of iterations
 
-            nepoch (int, optional): number of iterations to go through the training
-
-            divide_trainset (None, optional): the percentage assign to the training, validation and test set
+            divide_trainset (list, optional): the percentage assign to
+                the training, validation and test set.
+                Examples: [0.7, 0.2, 0.1], [0.8, 0.2], None
 
             hdf5 (str, optional): file to store the training results
 
             train_batch_size (int, optional): size of the batch
 
-            preshuffle (bool, optional): preshuffle the dataset before dividing it
+            preshuffle (bool, optional): preshuffle the dataset before
+                dividing it.
 
             preshuffle_seed (int, optional): set random seed for preshuffle
 
-            export_intermediate (bool, optional): export data at interediate epoch
+            export_intermediate (bool, optional): export data at
+                intermediate epochs.
 
-            num_workers (int, optional): number of workers to be used to prep the batch data
+            num_workers (int, optional): number of workers to be used to
+                prepare the batch data
 
-            save_model (str, optional): 'best' or 'all' save only the best model or all the model
+            save_model (str, optional): 'best' or 'all', save only the
+                best model or all models.
 
-            save_epoch (str, optional): 'intermediate' or 'all' save the epochs data to HDF5
+            save_epoch (str, optional): 'intermediate' or 'all',
+                save the epochs data to HDF5.
 
-        Example :
-
-        >>> # declare the dataset instance
-        >>> data_set = DataSet(database,
-        >>>                           test_database = None,
-        >>>                           grid_shape=(30,30,30),
-        >>>                           select_feature={'AtomicDensities_ind' : 'all',
-        >>>                                           'Feature_ind' : ['coulomb','vdwaals','charge','pssm'] },
-        >>>                           select_target='IRMSD',tqdm=True,
-        >>>                           normalize_features = True, normalize_targets=True,clip_features=True)
-        >>>                           #pair_chain_feature=np.add,
-        >>>                           #dict_filter={'IRMSD':'<4. or >10.'})
-        >>> # create the network
-        >>> model = NeuralNet(data_set,cnn,model_type='3d',task='reg',
-        >>>                   cuda=False,plot=True,outdir='./out/')
-        >>> # start the training
-        >>> model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
-        >>> # save the model
-        >>> model.save_model()
         """
-
-        print('\n: Batch Size : %d' % train_batch_size)
+        logger.info(f'\n: Batch Size : {train_batch_size}')
         if self.cuda:
-            print(': NGPU       : %d' % self.ngpu)
+            logger.info(f': NGPU       : {self.ngpu}')
 
         # hdf5 support
-        fname = self.outdir + '/' + hdf5
+        fname = os.path.join(self.outdir, hdf5)
         self.f5 = h5py.File(fname, 'w')
 
         # divide the set in train+ valid and test
@@ -348,9 +338,9 @@ class NeuralNet():
             index_valid = self.data_set.index_valid
             index_test = self.data_set.index_test
 
-        print(': %d confs. for training' % len(index_train))
-        print(': %d confs. for validation' % len(index_valid))
-        print(': %d confs. for testing' % len(index_test))
+        logger.info(f': {len(index_train)} confs. for training')
+        logger.info(f': {len(index_valid)} confs. for validation')
+        logger.info(f': {len(index_test)} confs. for testing')
 
         # train the model
         t0 = time.time()
@@ -361,11 +351,10 @@ class NeuralNet():
                     num_workers=num_workers,
                     save_epoch=save_epoch,
                     save_model=save_model)
+
         self.f5.close()
-        print(
-            ' --> Training done in ',
-            self.convertSeconds2Days(
-                time.time() - t0))
+        logger.info(
+            f' --> Training done in {self.convertSeconds2Days(time.time()-t0)}')
 
         # save the model
         self.save_model(filename='last_model.pth.tar')
@@ -387,19 +376,21 @@ class NeuralNet():
     def test(self, hdf5='test_data.hdf5'):
         """Test a predefined model on a new dataset.
 
-        Example:
+        Args:
+            hdf5 (str, optional): hdf5 file to store the test results
+
+        Examples:
             >>> # adress of the database
             >>> database = '1ak4.hdf5'
             >>> # Load the model in a new network instance
-            >>> model = NeuralNet(database,cnn,pretrained_model='./out/model.pth.tar',outdir='./test/')
+            >>> model = NeuralNet(database, cnn,
+            ...                   pretrained_model='./model/model.pth.tar',
+            ...                   outdir='./test/')
             >>> # test the model
             >>> model.test()
-
-        Args:
-            hdf5 (str, optional): hdf5 file to store the test results
         """
         # output
-        fname = self.outdir + '/' + hdf5
+        fname = os.path.join(self.outdir, hdf5)
         self.f5 = h5py.File(fname, 'w')
 
         # load pretrained model to get task and criterion
@@ -414,8 +405,8 @@ class NeuralNet():
         self.data = {}
         _, self.data['test'] = self._epoch(loader, train_model=False)
         if self.task == 'reg':
-            self._plot_scatter_reg(self.outdir + '/prediction.png')
-            self.plot_hit_rate(self.outdir + '/hitrate.png')
+            self._plot_scatter_reg(os.path.join(self.outdir, 'prediction.png'))
+            self.plot_hit_rate(os.path.join(self.outdir + 'hitrate.png'))
 
         self._export_epoch_hdf5(0, self.data)
         self.f5.close()
@@ -426,7 +417,7 @@ class NeuralNet():
         Args:
             filename (str, optional): name of the file
         """
-        filename = self.outdir + '/' + filename
+        filename = os.path.join(self.outdir, filename)
 
         state = {'state_dict': self.net.state_dict(),
                  'optimizer': self.optimizer.state_dict(),
@@ -500,16 +491,19 @@ class NeuralNet():
         self.data_set.grid_info = self.state['grid_info']
 
     def _divide_dataset(self, divide_set, preshuffle, preshuffle_seed):
-        """Divide the data set in a training validation and test according to
-        the percentage in divide_set.
+        """Divide the data set into training, validation and test
+        according to the percentage in divide_set.
 
         Args:
-            divide_set (list(float)): percentage used for training/validation/test
+            divide_set (list(float)): percentage used for
+                training/validation/test.
+                Example: [0.8, 0.1, 0.1], [0.8, 0.2]
             preshuffle (bool): shuffle the dataset before dividing it
-            preshuffle_seed (int, optional): set random seed for preshuffle
+            preshuffle_seed (int, optional): set random seed
 
         Returns:
-            list(int),list(int),list(int): Indices of the training/validation/test set
+            list(int),list(int),list(int): Indices of the
+                training/validation/test set.
         """
         # if user only provided one number
         # we assume it's the training percentage
@@ -519,11 +513,10 @@ class NeuralNet():
         # if user provided 3 number and testset
         if len(divide_set) == 3 and self.data_set.test_database is not None:
             divide_set = [divide_set[0], 1. - divide_set[0]]
-            print('   : test data set AND test in training set detected')
-            print(
-                '   : Divide training set as %f train %f valid' %
-                (divide_set[0], divide_set[1]))
-            print('   : Keep test set for testing')
+            logger.info(f'   : test data set AND test in training set detected\n'
+                        f'   : Divide training set as '
+                        f'{divide_set[0]} train {divide_set[1]} valid.\n'
+                        f'   : Keep test set for testing')
 
         # preshuffle
         if preshuffle:
@@ -562,9 +555,10 @@ class NeuralNet():
             nepoch (int, optional): numbr of epoch
             train_batch_size (int, optional): size of the batch
             export_intermediate (bool, optional):export itnermediate data
-            num_workers (int, optional): number of workers pytorch uses to create the batch size
-            save_epoch (str,optional): 'intermediate' or 'all' save the epoch data to hdf5
-            save_model (str, optional): 'all' or 'best' save all the models or only the best
+            num_workers (int, optional): number of workers pytorch
+                uses to create the batch size
+            save_epoch (str,optional): 'intermediate' or 'all'
+            save_model (str, optional): 'all' or 'best'
 
         Returns:
             torch.tensor: Parameters of the network after training
@@ -572,9 +566,6 @@ class NeuralNet():
 
         # printing options
         nprint = np.max([1, int(nepoch / 10)])
-
-        # store the length of the training set
-        ntrain = len(index_train)
 
         # pin memory for cuda
         pin = False
@@ -645,18 +636,18 @@ class NeuralNet():
         self.data = {}
         for epoch in range(nepoch):
 
-            print('\n: epoch %03d / %03d ' % (epoch, nepoch) + '-' * 45)
+            logger.info(f'\n: epoch {epoch:03d} / {nepoch:03d} {"-"*45}')
             t0 = time.time()
 
             # validate the model
             if _valid_:
 
                 sys.stdout.flush()
-                print(f"\n\t=> validate the model\n")
+                logger.info(f"\n\t=> validate the model\n")
 
-                self.valid_loss, self.data['valid'] = self._epoch(
+                valid_loss, self.data['valid'] = self._epoch(
                     valid_loader, train_model=False)
-                self.losses['valid'].append(self.valid_loss)
+                self.losses['valid'].append(valid_loss)
                 if self.save_classmetrics:
                     for i in self.metricnames:
                         self.classmetrics[i]['valid'].append(
@@ -665,7 +656,7 @@ class NeuralNet():
             # test the model
             if _test_:
                 sys.stdout.flush()
-                print(f"\n\t=> test the model\n")
+                logger.info(f"\n\t=> test the model\n")
 
                 test_loss, self.data['test'] = self._epoch(
                     test_loader, train_model=False)
@@ -677,34 +668,32 @@ class NeuralNet():
 
             # train the model
             sys.stdout.flush()
-            print(f"\n\t=> train the model\n")
-            self.train_loss, self.data['train'] = self._epoch(
+            logger.info(f"\n\t=> train the model\n")
+            train_loss, self.data['train'] = self._epoch(
                 train_loader, train_model=True)
-            self.losses['train'].append(self.train_loss)
+            self.losses['train'].append(train_loss)
             if self.save_classmetrics:
                 for i in self.metricnames:
                     self.classmetrics[i]['train'].append(self.data['train'][i])
 
             # talk a bit about losse
-            print('  train loss       : %1.3e' % (self.train_loss))
+            logger.info(f'\n  train loss       : {train_loss:1.3e}')
             if _valid_:
-                print('  valid loss       : %1.3e' % (self.valid_loss))
+                logger.info(f'  valid loss       : {valid_loss:1.3e}')
             if _test_:
-                print('  test loss        : %1.3e' % (test_loss))
+                logger.info(f'  test loss        : {test_loss:1.3e}')
 
             # timer
             elapsed = time.time() - t0
-            print('  epoch done in    :', self.convertSeconds2Days(elapsed))
+            logger.info(
+                f'  epoch done in    : {self.convertSeconds2Days(elapsed)}')
 
             # remaining time
             av_time += elapsed
             nremain = nepoch - (epoch + 1)
             remaining_time = av_time / (epoch + 1) * nremain
-            print(
-                '  remaining time   :',
-                time.strftime(
-                    '%H:%M:%S',
-                    time.gmtime(remaining_time)))
+            logger.info(f"  remaining time   : "
+                f"{time.strftime('%H:%M:%S', time.gmtime(remaining_time))}")
 
             # save the best model
             for mode in ['train', 'valid', 'test']:
@@ -720,16 +709,17 @@ class NeuralNet():
                 self.save_model(filename="model_epoch_%04d.pth.tar" % epoch)
 
             # plot and save epoch
-            if (export_intermediate and epoch %
-                    nprint == nprint - 1) or epoch == 0 or epoch == nepoch - 1:
+            if (export_intermediate and epoch % nprint == nprint - 1) or \
+                epoch == 0 or epoch == nepoch - 1:
 
                 if self.plot:
-
-                    figname = self.outdir + "/prediction_%04d.png" % epoch
+                    figname = os.path.join(self.outdir,
+                        f"prediction_{epoch:04d}.png")
                     self._plot_scatter(figname)
 
                 if self.save_hitrate:
-                    figname = self.outdir + "/hitrate_%04d.png" % epoch
+                    figname = os.path.join(self.outdir,
+                        f"hitrate_{epoch:04d}.png")
                     self.plot_hit_rate(figname)
 
                 self._export_epoch_hdf5(epoch, self.data)
@@ -741,7 +731,7 @@ class NeuralNet():
             sys.stdout.flush()
 
         # plot the losses
-        self._export_losses(self.outdir + '/' + 'losses.png')
+        self._export_losses(os.path.join(self.outdir, 'losses.png'))
 
         # plot classification metrics
         if self.save_classmetrics:
@@ -785,7 +775,7 @@ class NeuralNet():
         for d in data_loader:
             mini_batch = mini_batch + 1
 
-            print(f"  -> mini-batch: {mini_batch} ")
+            logger.info(f"\t\t-> mini-batch: {mini_batch} ")
 
             # get the data
             inputs = d['feature']
@@ -854,7 +844,7 @@ class NeuralNet():
         if n != 0:
             running_loss /= n
         else:
-            print('Warning : empty input')
+            warnings.warn(f'Empty input in data_loader {data_loader}.')
 
         return running_loss, data
 
@@ -895,18 +885,16 @@ class NeuralNet():
             figname (str): name of the file where to export the figure
         """
 
-        print('\n --> Loss Plot')
+        logger.info('\n --> Loss Plot')
 
         color_plot = ['red', 'blue', 'green']
         labels = ['Train', 'Valid', 'Test']
 
         fig, ax = plt.subplots()
         for ik, name in enumerate(self.losses):
-            plt.plot(
-                np.array(
-                    self.losses[name]),
-                c=color_plot[ik],
-                label=labels[ik])
+            plt.plot(np.array(self.losses[name]),
+                     c = color_plot[ik],
+                     label = labels[ik])
 
         legend = ax.legend(loc='upper left')
         ax.set_xlabel('Epoch')
@@ -922,7 +910,7 @@ class NeuralNet():
 
     def _export_metrics(self, metricname):
 
-        print('\n --> %s Plot' % (metricname.upper()))
+        logger.info(f'\n --> {metricname.upper()} Plot')
 
         color_plot = ['red', 'blue', 'green']
         labels = ['Train', 'Valid', 'Test']
@@ -958,7 +946,7 @@ class NeuralNet():
         if self.plot is False:
             return
 
-        print('\n --> Scatter Plot : ', figname, '\n')
+        logger.info(f'\n  --> Scatter Plot : {figname}')
 
         color_plot = {'train': 'red', 'valid': 'blue', 'test': 'green'}
         labels = ['train', 'valid', 'test']
@@ -993,9 +981,9 @@ class NeuralNet():
         plt.close()
 
     def _plot_boxplot_class(self, figname):
-        """Plot a boxplot of predictions VS targets useful ' to visualize the
-        performance of the training algorithm This is only usefull in
-        classification tasks.
+        """Plot a boxplot of predictions VS targets.
+
+        It is only usefull in classification tasks.
 
         Args:
             figname (str): filename
@@ -1005,7 +993,7 @@ class NeuralNet():
         if not self.plot:
             return
 
-        print('\n --> Box Plot : ', figname, '\n')
+        logger.info(f'\n  --> Box Plot : {figname}')
 
         color_plot = {'train': 'red', 'valid': 'blue', 'test': 'green'}
         labels = ['train', 'valid', 'test']
@@ -1043,26 +1031,21 @@ class NeuralNet():
         """Plot the hit rate of the different training/valid/test sets.
 
         The hit rate is defined as:
-            the percentage of positive decoys that are included among the top m decoys.
-            a positive decoy is a native-like one with a i-rmsd < 4A
+            The percentage of positive(near-native) decoys that are
+            included among the top m decoys.
 
         Args:
             figname (str): filename for the plot
             irmsd_thr (float, optional): threshold for 'good' models
         """
-
         if self.plot is False:
             return
 
-        print('\n --> Hit Rate :', figname, '\n')
+        logger.info(f'\n  --> Hitrate plot: {figname}\n')
 
         color_plot = {'train': 'red', 'valid': 'blue', 'test': 'green'}
         labels = ['train', 'valid', 'test']
 
-        # compute the hitrate
-        # self._compute_hitrate(irmsd_thr=irmsd_thr)
-
-        # plot
         fig, ax = plt.subplots()
         for l in labels:
             if l in self.data:
@@ -1070,13 +1053,7 @@ class NeuralNet():
                     hitrate = rankingMetrics.hitrate(self.data[l]['hit'])
                     m = len(hitrate)
                     x = np.linspace(0, 100, m)
-                    plt.plot(
-                        x,
-                        hitrate,
-                        c=color_plot[l],
-                        label=l +
-                        ' M=%d' %
-                        m)
+                    plt.plot(x, hitrate, c=color_plot[l], label=f"{l} M={m}")
         legend = ax.legend(loc='upper left')
         ax.set_xlabel('Top M (%)')
         ax.set_ylabel('Hit Rate')
@@ -1115,8 +1092,8 @@ class NeuralNet():
 
                 # sort the data
                 if self.task == 'class':
-                    out = F.softmax(torch.FloatTensor(
-                        out), dim=1).data.numpy()[:, 1]
+                    out = F.softmax(torch.FloatTensor(out),
+                                    dim=1).data.numpy()[:, 1]
                 ind_sort = np.argsort(out)
 
                 if not inverse:
@@ -1132,9 +1109,8 @@ class NeuralNet():
                 npos = np.sum(binary_recomendation)
                 if npos == 0:
                     npos = len(irmsd)
-                    print(
-                        'Warning : Non positive decoys found in %s for hitrate plot' %
-                        l)
+                    warnings.warn(
+                        f'Non positive decoys found in {l} for hitrate plot')
 
                 # get the hitrate
                 self.data[l]['hitrate'] = rankingMetrics.hitrate(
@@ -1207,7 +1183,8 @@ class NeuralNet():
         """Export the epoch data to the hdf5 file.
 
         Export the data of a given epoch in train/valid/test group.
-        In each group are stored the predcited values (outputs), ground truth (targets) and molecule name (mol)
+        In each group are stored the predcited values (outputs),
+        ground truth (targets) and molecule name (mol).
 
         Args:
             epoch (int): index of the epoch
@@ -1246,4 +1223,4 @@ class NeuralNet():
                         sg.create_dataset(data_name, data=data_value)
 
             except TypeError:
-                print('Epoch Error export')
+                logger.exception("Error in export epoch to hdf5")
