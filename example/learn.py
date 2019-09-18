@@ -34,7 +34,7 @@ data_set = DataSet(database,
                            10, 10, 10], 'resolution': [
                            3, 3, 3]},
 
-                   select_feature={'AtomicDensities': {'CA': 1.7, 'C': 1.7, 'N': 1.55, 'O': 1.52},
+                   select_feature={'AtomicDensities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
                                    'Features': ['coulomb', 'vdwaals', 'charge', 'PSSM_*']},
 
                    # select_target='DOCKQ',  # regression

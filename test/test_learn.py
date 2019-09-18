@@ -43,33 +43,18 @@ class TestLearn(unittest.TestCase):
             mapfly=True,
             use_rotation=1,
             grid_info={
-                'number_of_points': (
-                    10,
-                    10,
-                    10),
-                'resolution': (
-                    3,
-                    3,
-                    3)},
+                'number_of_points': (10, 10, 10),
+                'resolution': (3, 3, 3)},
             select_feature={
-                'AtomicDensities': {
-                    'CA': 1.7,
-                    'C': 1.7,
-                    'N': 1.55,
-                    'O': 1.52},
-                'Features': [
-                    'coulomb',
-                    'vdwaals',
-                    'charge',
-                    'PSSM_*']},
+                'AtomicDensities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
+                'Features': ['coulomb', 'vdwaals', 'charge', 'PSSM_*']},
             select_target='DOCKQ',
             tqdm=True,
             normalize_features=False,
             normalize_targets=False,
             clip_features=False,
             pair_chain_feature=np.add,
-            dict_filter={
-                'DOCKQ': '<1'})
+            dict_filter={'DOCKQ': '<1'})
         # dict_filter={'IRMSD':'<4. or >10.'})
 
         # create the networkt
@@ -81,6 +66,7 @@ class TestLearn(unittest.TestCase):
             nepoch=5,
             divide_trainset=0.8,
             train_batch_size=5,
+            preshuffle_seed=2019,
             num_workers=0)
 
     @unittest.skipIf(skip, "torch fails on Travis")
@@ -109,25 +95,17 @@ class TestLearn(unittest.TestCase):
             test_database=None,
             mapfly=False,
             use_rotation=2,
-            grid_shape=(
-                30,
-                30,
-                30),
+            grid_shape=(30, 30, 30),
             select_feature={
                 'AtomicDensities_ind': 'all',
-                'Feature_ind': [
-                    'coulomb',
-                    'vdwaals',
-                    'charge',
-                    'PSSM_*']},
+                'Feature_ind': [ 'coulomb', 'vdwaals', 'charge', 'PSSM_*']},
             select_target='DOCKQ',
             tqdm=True,
             normalize_features=True,
             normalize_targets=True,
             clip_features=False,
             pair_chain_feature=np.add,
-            dict_filter={
-                'DOCKQ': '<1.'})
+            dict_filter={ 'DOCKQ': '<1.'})
         # dict_filter={'IRMSD':'<4. or >10.'})
 
         # create the networkt
@@ -140,6 +118,7 @@ class TestLearn(unittest.TestCase):
             divide_trainset=0.8,
             train_batch_size=5,
             num_workers=0,
+            preshuffle_seed=2019,
             save_model='all')
 
     @unittest.skipIf(skip, "Torch fails on Travis")
@@ -163,17 +142,10 @@ class TestLearn(unittest.TestCase):
             valid_database=None,
             test_database=None,
             mapfly=False,
-            grid_shape=(
-                30,
-                30,
-                30),
+            grid_shape=( 30, 30, 30),
             select_feature={
                 'AtomicDensities_ind': 'all',
-                'Feature_ind': [
-                    'coulomb',
-                    'vdwaals',
-                    'charge',
-                    'PSSM_*']},
+                'Feature_ind': [ 'coulomb', 'vdwaals', 'charge', 'PSSM_*']},
             select_target='BIN_CLASS',
             tqdm=True,
             normalize_features=True,
@@ -220,11 +192,7 @@ class TestLearn(unittest.TestCase):
             mapfly=False,
             select_feature={
                 'AtomicDensities_ind': 'all',
-                'Feature_ind': [
-                    'coulomb',
-                    'vdwaals',
-                    'charge',
-                    'PSSM_*']},
+                'Feature_ind': [ 'coulomb', 'vdwaals', 'charge', 'PSSM_*']},
             select_target='DOCKQ',
             tqdm=True,
             normalize_features=True,

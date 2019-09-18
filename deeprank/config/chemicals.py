@@ -71,3 +71,18 @@ AA_properties = {
     'TRP': 'polar',
     'TYR': 'polar'
     }
+
+
+# atom vdw radius
+# William M Haynes. CRC Handbook of Chemistry and Physics.
+# ISBN 9781482208689.
+# URL: https://books.google.no/books?id=bNDMBQAAQBAJ.
+
+atom_vdw_radius_noH = {
+    "C": 1.7,
+    "N": 1.55,
+    "O": 1.52,
+    "S": 1.8,
+    }
+
+atom_vdw_radius = {**atom_vdw_radius_noH, "H": 1.1}

@@ -59,12 +59,7 @@ def generate(LIST_NAME, clean=False):
                 1.,
                 1.,
                 1.],
-            'atomic_densities': {
-                'CA': 3.5,
-                'CB': 3.5,
-                'N': 3.5,
-                'O': 3.5,
-                'C': 3.5},
+            'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
             'atomic_densities_mode': 'diff',
             'feature_mode': 'sum'}
 

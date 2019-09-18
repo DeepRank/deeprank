@@ -4,7 +4,7 @@ Here are located all the generic tools used during one or across multiple steps 
 
 ## PDB2SQL
 
-The file pdb2sql.py contains a class named pdb2sql that allows using sqlite3 to manipulate PDB files. The use of SQL queries makes it very easy to extract information from the PDB file using only one line of code. 
+The file pdb2sql.py contains a class named pdb2sql that allows using sqlite3 to manipulate PDB files. The use of SQL queries makes it very easy to extract information from the PDB file using only one line of code.
 
 ### Create a SQl data base
 
@@ -27,11 +27,11 @@ After its creation the database contains 13 columns and one line for each atom i
   * resName : the name of the residue the atom belongs to
   * chaiID  : the ID of the chain the atom belongs to
   * resSeq  : the residue number the atom belongs to
-  * iCode   : Code for insertion of residue 
+  * iCode   : Code for insertion of residue
   * x       : x coordinate of the atom
   * y       : y coordinate of the atom
   * z       : z coordinate of the atom
-  * occ     : occupancy 
+  * occ     : occupancy
   * temp    : temperature factor
 
 
@@ -138,19 +138,19 @@ sqldb.close(rmdb=False)
 
 ## FeatureClass
 
-The file FeatureClass.py contain a super class that all feature calculations should subclass. So far the super class only contains one method **FatureClass.export_data()** that is used to export the data of the feature to a file. This ensure that we keep the same syntax for all the features. The class has 3 attributes 
+The file FeatureClass.py contain a super class that all feature calculations should subclass. So far the super class only contains one method **FatureClass.export_data()** that is used to export the data of the feature to a file. This ensure that we keep the same syntax for all the features. The class has 3 attributes
 
 
   * self.type         : "Atomic" or "Residue"
   * self.feature_data : dictionary {feature_name : feature_dict}
 
     feature_name is the name of the feature e.g. 'coulomb' or 'vdwaals'
-    
+
     feature_dict is a dictionary. The format of the key depends on the type of feature
-    
+
     residue-based feature
     {(chainID, residue_name(3-letter), residue_number) : [values1, values2, ....]}
-    
+
     atomic-based feature
     {(chainID, residue_name(3-letter), residue_number, atom_name) : [values1, values2, ....]}
 
@@ -191,11 +191,11 @@ The file atomic_feature.py contains a class named atomicFeature that allows comp
   * a file containing the vdw parameters
   * evantually a patch file for the force field parameters
 
-An example of use is provided in ./example/grid/atomicfeature.py. 
+An example of use is provided in ./example/grid/atomicfeature.py.
 
-```python 
+```python
 from deeprank.tools import atomicFeature
-  
+
 PDB = 'complex.pdb'
 FF = './forcefield/'
 
@@ -225,4 +225,4 @@ atfeat.sqldb.close()
 ```
 
 
-In this example we compute the pair interactions and the atomic charges of the complex given in the example folder and using the force field parameters also located there. The pair interactions are outputed on the screen. For the charges, the contact atom list is extended to all the residues that contains at least one contact atom. 
+In this example we compute the pair interactions and the atomic charges of the complex given in the example folder and using the force field parameters also located there. The pair interactions are outputed on the screen. For the charges, the contact atom list is extended to all the residues that contains at least one contact atom.
