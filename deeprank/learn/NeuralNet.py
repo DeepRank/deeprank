@@ -38,11 +38,11 @@ class NeuralNet():
         """Train a Convolutional Neural Network for DeepRank.
 
         Args:
-            data_set (deeprank.DataSet or str): Data set used for
+            data_set (deeprank.DataSet or list(str)): Data set used for
                 training or testing.
                 - deeprank.DataSet for training;
-                - str (e.g. 'xxx.hdf5') for testing when pretrained
-                    model is loaded.
+                - str or list(str), e.g. 'x.hdf5', ['x1.hdf5', 'x2.hdf5'],
+                    for testing when pretrained model is loaded.
 
             model (nn.Module): Definition of the NN to use.
                 Must subclass nn.Module.
@@ -81,14 +81,21 @@ class NeuralNet():
             ValueError: if task is not recognized
 
         Examples:
-            >>> # create the network
+            Train models:
+            >>> data_set = Dataset(...)
             >>> model = NeuralNet(data_set, cnn,
             ...                   model_type='3d', task='reg',
             ...                   plot=True, save_hitrate=True,
             ...                   outdir='./out/')
-            >>> # start the training
             >>> model.train(nepoch = 50, divide_trainset=0.8,
             ...             train_batch_size = 5, num_workers=0)
+
+            Test a model on new data:
+            >>> data_set = ['test01.hdf5', 'test02.hdf5']
+            >>> model = NeuralNet(data_set, cnn,
+            ...                   pretrained_model = './model.pth.tar',
+            ...                   outdir='./out/')
+            >>> model.test()
         """
 
         # ------------------------------------------

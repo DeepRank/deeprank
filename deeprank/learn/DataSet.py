@@ -501,7 +501,6 @@ class DataSet():
 
         Args:
             molgrp (str): group name of the molecule in the hdf5 file
-
         Returns:
             bool: True if we keep the complex False otherwise
 
@@ -637,7 +636,6 @@ class DataSet():
                'Features': ['PSSM_*', 'pssm_ic_*']}
 
             Feature type must be: 'AtomicDensities' or 'Features'.
-
         Raises:
             KeyError: Wrong feature type.
             KeyError: Wrong feature type.
