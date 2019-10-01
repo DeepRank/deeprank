@@ -48,12 +48,13 @@ class FullPSSM(FeatureClass):
         self.mol_name = mol_name
         self.pdb_file = pdb_file
         self.pssm_path = pssm_path
-        self.ref_mol_name = self.get_ref_mol_name(mol_name)
         self.pssm_format = pssm_format
         self.out_type = out_type.lower()
 
         if isinstance(pdb_file, str) and mol_name is None:
-            self.mol_name = os.path.splitext(pdb_file)[0]
+            self.mol_name = os.path.basename(pdb_file).split('.')[0]
+
+        self.ref_mol_name = self.get_ref_mol_name(self.mol_name)
 
         if self.out_type == 'pssmic' and not self.pssm_format == 'new':
             raise ValueError(f"You must provide 'new' format PSSM files"
@@ -74,6 +75,7 @@ class FullPSSM(FeatureClass):
             self.feature_data[name] = {}
             self.feature_data_xyz[name] = {}
 
+
     @staticmethod
     def get_ref_mol_name(mol_name):
         """Get the bared mol name."""
@@ -83,7 +85,10 @@ class FullPSSM(FeatureClass):
         """Read the PSSM data into a dictionary."""
 
         names = os.listdir(self.pssm_path)
-        fnames = list(filter(lambda x: self.ref_mol_name in x, names))
+        fnames = list(filter(lambda x: self.mol_name in x, names))
+        # if decoy pssm files not exist, use reference pssm files
+        if not fnames:
+            fnames = list(filter(lambda x: self.ref_mol_name in x, names))
         num_pssm_files = len(fnames)
 
         if num_pssm_files == 0:
@@ -113,7 +118,7 @@ class FullPSSM(FeatureClass):
                                 for r in self.pssm_res_id]
             self.pssm_data = np.array(raw_data)[:, 3:].astype(np.float)
 
-        # new format with 2 files (each chain has one file)
+        # new format with ≥2 files (each chain has one file)
         # and aligned mapping and IC (i.e. the iScore format)
         elif self.pssm_format == 'new':
 
@@ -123,6 +128,7 @@ class FullPSSM(FeatureClass):
                     f'{self.mol_name} in {self.pssm_path}')
 
             # get chain name
+            print(fnames)
             fnames.sort()
             chain_names = [n.split('.')[1] for n in fnames]
 
@@ -267,19 +273,20 @@ if __name__ == '__main__':
     t0 = time()
     base_path = os.path.dirname(os.path.dirname(os.path.dirname(
         os.path.realpath(__file__))))
-    pdb_file = os.path.join(base_path, "test/1AK4/native/1AK4.pdb")
+    # pdb_file = os.path.join(base_path, "test/1AK4/native/1AK4.pdb")
+    pdb_file = os.path.join(base_path, "test/1AK4/decoys/1AK4_cm-itw_238w.pdb")
     path = os.path.join(base_path, "test/1AK4/pssm_new")
 
     # pssm = FullPSSM(mol_name='1AK4', pdb_file=pdb_file, pssm_path=path,
     #                 pssm_format='new', out_type='pssmic')
-    pssm = FullPSSM(mol_name='1AK4', pdb_file=pdb_file, pssm_path=path,
+    pssm = FullPSSM(pdb_file=pdb_file, pssm_path=path,
                     pssm_format='new', out_type='pssmvalue')
 
     # get the pssm smoothed sum score
     pssm.read_PSSM_data()
     pssm.get_feature_value()
 
-    pprint(pssm.feature_data)
+    # pprint(pssm.feature_data)
     print()
-    pprint(pssm.feature_data_xyz)
+    # pprint(pssm.feature_data_xyz)
     print(' Time %f ms' % ((time() - t0) * 1000))
