@@ -128,7 +128,6 @@ class FullPSSM(FeatureClass):
                     f'{self.mol_name} in {self.pssm_path}')
 
             # get chain name
-            print(fnames)
             fnames.sort()
             chain_names = [n.split('.')[1] for n in fnames]
 
