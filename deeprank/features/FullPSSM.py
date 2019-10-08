@@ -1,5 +1,4 @@
 import os
-import sys
 import warnings
 
 import numpy as np
@@ -287,7 +286,7 @@ if __name__ == '__main__':
     pssm.read_PSSM_data()
     pssm.get_feature_value()
 
-    # pprint(pssm.feature_data)
+    pprint(pssm.feature_data)
     print()
-    # pprint(pssm.feature_data_xyz)
+    pprint(pssm.feature_data_xyz)
     print(' Time %f ms' % ((time() - t0) * 1000))
