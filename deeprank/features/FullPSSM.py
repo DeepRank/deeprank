@@ -1,4 +1,5 @@
 import os
+import sys
 import warnings
 
 import numpy as np
@@ -58,7 +59,7 @@ class FullPSSM(FeatureClass):
 
         if self.out_type == 'pssmic' and not self.pssm_format == 'new':
             raise ValueError(f"You must provide 'new' format PSSM files"
-                             f" to generate PSSM IC features.")
+                             f" to generate PSSM IC features for {self.mol_name}")
 
         if self.out_type == 'pssmvalue':
             # the residue order in res_names must be consistent with
@@ -187,28 +188,29 @@ class FullPSSM(FeatureClass):
         total_res = len(ctc_res)
         if total_res == 0:
             raise ValueError(
-                f"No interface residue found with the cutoff {cutoff}Å."
-                f" Failed to calculate the features of FullPSSM/PSSM_IC")
+                f"{self.mol_name}: No interface residue found with the "
+                f"cutoff {cutoff}Å."
+                f" Failed to calculate the features of FullPSSM/PSSM_IC.")
         elif total_res < 5:  # this is an empirical value
             warnings.warn(
-                f"Only {total_res} interface residues found with "
-                f"cutoff {cutoff}Å. Be careful with using the features "
-                f" FullPSSM/PSSM_IC")
+                f"{self.mol_name}: Only {total_res} interface residues found"
+                f" with cutoff {cutoff}Å. Be careful with"
+                f" using the features FullPSSM/PSSM_IC")
 
         # check if interface residues have pssm values
         ctc_res_set = set(ctc_res)
         pssm_res_set = set(self.pssm.keys())
         if len(ctc_res_set.intersection(pssm_res_set)) == 0:
             raise ValueError(
-                f"All interface residues have no pssm values."
-                f"Check residue chainID/ID/name consistency "
+                f"{self.mol_name}: All interface residues have no pssm values."
+                f" Check residue chainID/ID/name consistency "
                 f"between PDB and PSSM files"
             )
         elif len(ctc_res_set.difference(pssm_res_set)) > 0:
             ctc_res_wo_pssm = ctc_res_set.difference(pssm_res_set)
             ctc_res_with_pssm = ctc_res_set - ctc_res_wo_pssm
             warnings.warn(
-                f"The following interface residues have "
+                f"{self.mol_name}: The following interface residues have "
                 f" no pssm value:\n {ctc_res_wo_pssm}"
             )
         else:
