@@ -630,6 +630,8 @@ class AtomicFeature(FeatureClass):
 
             # store in matrix form so that
             # we don't have to recalculate for B
+            # here assumes that the chainID order is A,B...
+            # otherwise rowID will be different with the matrix index
             indb_matrix = [i - natA for i in indsB]
             matrix_elec[iA, indb_matrix] = ec
             matrix_vdw[iA, indb_matrix] = evdw
