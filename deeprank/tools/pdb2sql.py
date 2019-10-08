@@ -655,7 +655,7 @@ class pdb2sql(object):
 
         # if no atoms were found
         if len(index_contact_1) == 0:
-            raise ValueError(f"No contact atoms found with cutoff {cutoff}Å")
+            warnings.warn(f"No contact atoms found with cutoff {cutoff}Å")
 
         # extend the list to entire residue
         if extend_to_residue:
