@@ -102,7 +102,4 @@ class TestStructureSimilarity(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # unittest.main()
-    inst = TestStructureSimilarity()
-    inst.test_rmsd()
-    inst.test_slow()
+    unittest.main()
