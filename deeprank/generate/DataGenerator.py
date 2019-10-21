@@ -417,7 +417,7 @@ class DataGenerator(object):
 
                     # grid center
                     molgrp.require_group('grid_points')
-                    center = pdb2sql.transform._rotation_around_axis(
+                    center = pdb2sql.transform.rot_xyz_around_axis(
                         self.f5[mol_name + '/grid_points/center'],
                         axis, angle, mol_center)
 
@@ -1389,7 +1389,7 @@ class DataGenerator(object):
             xyz = data[:, 1:4]
 
             # get rotated xyz
-            xyz_rot = pdb2sql.transform._rotation_around_axis(xyz, axis, angle, center)
+            xyz_rot = pdb2sql.transform.rot_xyz_around_axis(xyz, axis, angle, center)
 
             # put back the data
             molgrp['features/' + fn][:, 1:4] = xyz_rot
