@@ -18,7 +18,8 @@ setup(
         'matplotlib',
         'torchsummary',
         'freesasa',
-        'torch'
+        'torch',
+        'pdb2sql'
         ],
 
     extras_require={
