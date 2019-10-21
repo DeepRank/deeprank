@@ -17,9 +17,6 @@ Some requirement of the naming of the files:
 class TestGenerateData(unittest.TestCase):
     """Test the data generation process."""
 
-    # set random seed to make results repeatable
-    np.random.seed(2019)
-
     h5file = ['./1ak4.hdf5', 'native.hdf5']
     pdb_source = ['./1AK4/decoys/', './1AK4/native/']
     # pdb_native is only used to calculate i-RMSD, dockQ and so on. The native
@@ -62,7 +59,7 @@ class TestGenerateData(unittest.TestCase):
             if not os.path.isfile(database.hdf5):
                 t0 = time()
                 print('{:25s}'.format('Create new database') + database.hdf5)
-                database.create_database(prog_bar=True)
+                database.create_database(prog_bar=True, random_seed=2019)
                 print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
             else:
                 print('{:25s}'.format('Use existing database') + database.hdf5)
