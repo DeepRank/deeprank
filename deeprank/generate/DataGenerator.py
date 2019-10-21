@@ -400,7 +400,7 @@ class DataGenerator(object):
                         self._add_pdb(molgrp, ref, 'native')
 
                     # get the rotation axis and angle
-                    axis, angle = self._get_aug_rot()
+                    axis, angle = pdb2sql.transform.get_rot_axis_angle()
 
                     # create the new pdb and get molecule center
                     mol_center = self._add_aug_pdb(
@@ -1391,26 +1391,3 @@ class DataGenerator(object):
 
             # put back the data
             molgrp['features/' + fn][:, 1:4] = xyz_rot
-
-    # get rotation axis and angle
-    @staticmethod
-    def _get_aug_rot():
-        """Get the rotation angle/axis.
-
-        Returns:
-            list(float): axis of rotation
-            float: angle of rotation
-        """
-        # define the axis
-        # uniform distribution on a sphere
-        # http://mathworld.wolfram.com/SpherePointPicking.html
-        u1, u2 = np.random.rand(), np.random.rand()
-        teta, phi = np.arccos(2 * u1 - 1), 2 * np.pi * u2
-        axis = [np.sin(teta) * np.cos(phi),
-                np.sin(teta) * np.sin(phi),
-                np.cos(teta)]
-
-        # and the rotation angle
-        angle = -np.pi + np.pi * np.random.rand()
-
-        return axis, angle
