@@ -155,7 +155,8 @@ class DataGenerator(object):
             verbose=False,
             remove_error=True,
             prog_bar=False,
-            contact_distance=8.5):
+            contact_distance=8.5,
+            random_seed=None):
         """Create the hdf5 file architecture and compute the features/targets.
 
         Args:
@@ -163,6 +164,7 @@ class DataGenerator(object):
             remove_error (bool, optional): remove the groups that errored
             prog_bar (bool, optional): use tqdm
             contact_distance (float): contact distance cutoff, defaults to 8.5Å
+            random_seed (int): random seed for getting rotation axis and angle
 
         Raises:
             ValueError: If creation of the group errored.
@@ -400,7 +402,7 @@ class DataGenerator(object):
                         self._add_pdb(molgrp, ref, 'native')
 
                     # get the rotation axis and angle
-                    axis, angle = pdb2sql.transform.get_rot_axis_angle()
+                    axis, angle = pdb2sql.transform.get_rot_axis_angle(random_seed)
 
                     # create the new pdb and get molecule center
                     mol_center = self._add_aug_pdb(
