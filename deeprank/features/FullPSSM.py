@@ -2,10 +2,10 @@ import os
 import warnings
 
 import numpy as np
+import pdb2sql
 
 from deeprank import config
 from deeprank.features import FeatureClass
-from deeprank.tools import pdb2sql
 
 ########################################################################
 #
@@ -163,7 +163,7 @@ class FullPSSM(FeatureClass):
     def get_feature_value(self, cutoff=5.5):
         """get the feature value."""
 
-        sql = pdb2sql(self.pdb_file)
+        sql = pdb2sql.interface(self.pdb_file)
 
         # set achors for all residues and get their xyz
         xyz_info = sql.get('chainID,resSeq,resName', name='CB')
@@ -178,10 +178,10 @@ class FullPSSM(FeatureClass):
             xyz_dict[tuple(info)] = pos
 
         # get interface contact residues
-        # ctc_res = ([chain 1 residues], [chain2 residues])
-        ctc_res = sql.get_contact_residue(cutoff=cutoff)
+        # ctc_res = {"A":[chain 1 residues], "B": [chain2 residues]}
+        ctc_res = sql.get_contact_residues(cutoff=cutoff)
         sql.close()
-        ctc_res = ctc_res[0] + ctc_res[1]
+        ctc_res = ctc_res["A"] + ctc_res["B"]
 
         # handle with small interface or no interface
         total_res = len(ctc_res)

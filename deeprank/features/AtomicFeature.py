@@ -2,9 +2,9 @@ import os
 import warnings
 
 import numpy as np
+import pdb2sql
 
 from deeprank.features import FeatureClass
-from deeprank.tools import pdb2sql
 
 
 class AtomicFeature(FeatureClass):
@@ -81,7 +81,7 @@ class AtomicFeature(FeatureClass):
         self.atom_key = 'chainID, resSeq, resName, name'
 
         # read the pdb as an sql
-        self.sqldb = pdb2sql(self.pdbfile)
+        self.sqldb = pdb2sql.pdb2sql(self.pdbfile)
 
         # read the force field
         self.read_charge_file()
