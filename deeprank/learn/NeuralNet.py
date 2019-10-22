@@ -639,12 +639,18 @@ class NeuralNet():
             logger.info(f'\n: epoch {epoch:03d} / {nepoch:03d} {"-"*45}')
             t0 = time.time()
 
+            # train the model
+            logger.info(f"\n\t=> train the model\n")
+            train_loss, self.data['train'] = self._epoch(
+                train_loader, train_model=True)
+            self.losses['train'].append(train_loss)
+            if self.save_classmetrics:
+                for i in self.metricnames:
+                    self.classmetrics[i]['train'].append(self.data['train'][i])
+
             # validate the model
             if _valid_:
-
-                sys.stdout.flush()
                 logger.info(f"\n\t=> validate the model\n")
-
                 valid_loss, self.data['valid'] = self._epoch(
                     valid_loader, train_model=False)
                 self.losses['valid'].append(valid_loss)
@@ -655,9 +661,7 @@ class NeuralNet():
 
             # test the model
             if _test_:
-                sys.stdout.flush()
                 logger.info(f"\n\t=> test the model\n")
-
                 test_loss, self.data['test'] = self._epoch(
                     test_loader, train_model=False)
                 self.losses['test'].append(test_loss)
@@ -665,16 +669,6 @@ class NeuralNet():
                     for i in self.metricnames:
                         self.classmetrics[i]['test'].append(
                             self.data['test'][i])
-
-            # train the model
-            sys.stdout.flush()
-            logger.info(f"\n\t=> train the model\n")
-            train_loss, self.data['train'] = self._epoch(
-                train_loader, train_model=True)
-            self.losses['train'].append(train_loss)
-            if self.save_classmetrics:
-                for i in self.metricnames:
-                    self.classmetrics[i]['train'].append(self.data['train'][i])
 
             # talk a bit about losse
             logger.info(f'\n  train loss       : {train_loss:1.3e}')
