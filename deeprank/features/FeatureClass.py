@@ -71,7 +71,11 @@ class FeatureClass(object):
                 # append
                 ds.append(feat)
 
-            ds = np.array(ds).astype('|S' + str(len(ds[0])))
+            if ds:
+                ds = np.array(ds).astype('|S' + str(len(ds[0])))
+            else:
+                ds = np.array(ds)
+
 
             # create the dataset
             if name + '_raw' in featgrp:
