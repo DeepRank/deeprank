@@ -1306,10 +1306,10 @@ class DataSet():
             # rotate if necessary
             if angle is not None:
                 if xyzA != np.array([]):
-                    xyzA = pdb2sql.transform.rot_xzy_around_axis(xyzA, axis, angle, center)
+                    xyzA = pdb2sql.transform.rot_xyz_around_axis(xyzA, axis, angle, center)
 
                 if xyzB != np.array([]):
-                    xyzB = pdb2sql.transform.rot_xzy_around_axis(xyzB, axis, angle, center)
+                    xyzB = pdb2sql.transform.rot_xyz_around_axis(xyzB, axis, angle, center)
 
             # init the grid
             atdensA = np.zeros(npts)
@@ -1382,7 +1382,7 @@ class DataSet():
             feat_value = data[:, 4]
 
             if angle is not None:
-                pos = self._rotate_coord(pos, center, angle, axis)
+                pos = pdb2sql.transform.rot_xyz_around_axis(pos, axis, angle, center)
 
             if __vectorize__ or __vectorize__ == 'both':
 
