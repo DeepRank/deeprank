@@ -19,7 +19,7 @@ before_install:
  # pytest
   - conda install -c anaconda pytest
   - conda install -c conda-forge pytest-cov
-  - conda install python=3.6
+  - conda install python=3.7
 
   # codacy-coverage
   - pip install -q --upgrade pip
