@@ -21,9 +21,8 @@ example/*.hdf5
 example/*.pdb
 
 # some test file
-test/out_2d
-test/out_3d
-test/out_3d_class
+test/out_2d*
+test/out_3d*
 test/out_test
 test/*.pckl
 test/*.hdf5
