@@ -17,6 +17,7 @@ from cal_hitrate_successrate import add_rank, ave_evaluate, evaluate
 from rpy2.rinterface import RRuntimeWarning
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.lib.ggplot2 import *
+import pdb
 
 warnings.filterwarnings("ignore", category=RRuntimeWarning)
 
@@ -441,6 +442,35 @@ def get_HS(modelIDs, haddockS):
             idx_keep.append(idx)
     return HS, idx_keep
 
+def filter_models(df, label = 'Test', scenario = 'ranair'):
+    '''
+    Keep a subset of models for the ploting, e.g, ab-initio models in the Test set.
+
+    INPUT (pd.dataframe):
+    df:
+       label               modelID  target        DR                                          sourceFL
+       Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+       Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+
+    OUTPUT (pd.dataframe):
+    df:
+       label               modelID  target        DR                                          sourceFL
+       Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+
+    '''
+
+    idx1 = df.label == label
+    idx2 = df.modelID.str.contains( scenario )
+    throw = idx1 & ~idx2
+    pdb.set_trace()
+    df = df[~throw]
+    pdb.set_trace()
+
+
+
+
+
+
 
 def add_irmsd(df):
     '''
@@ -466,7 +496,7 @@ def add_irmsd(df):
     return df
 
 
-def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
+def prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario):
     '''
     OUTPUT: a data frame:
 
@@ -485,6 +515,10 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
     1  Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     2  Test  1AVX_ranair-it0_6223       0  0.511688  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     '''
+
+    #-- keep subset of models
+    DR_df = filter_models(DR_df, label = 'Valid', scenario= scenario )
+    DR_df = filter_models(DR_df, label = 'Test', scenario= scenario )
 
     # -- add iRMSD column to DR_df
     DR_df = add_irmsd(DR_df)
@@ -565,17 +599,18 @@ def get_caseID(modelID):
 
 
 def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'):
-    if len(sys.argv) != 4:
-        print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch fig_name")
+    if len(sys.argv) != 5:
+        print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch scenario[cm, ranair, refb, ti5, ti] fig_name" )
         sys.exit()
     # the output h5 file from deeprank: 'epoch_data.hdf5'
     deeprank_h5FL = sys.argv[1]
     epoch = int(sys.argv[2])  # 9
-    figname = sys.argv[3]
+    scenario = sys.argv[3] # cm, ranair, refb, ti5, ti
+    figname = sys.argv[4]
 
     pandas2ri.activate()
 
-    df = prepare_df(deeprank_h5FL, HS_h5FL, epoch)
+    df = prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario)
 
     #-- plot
     plot_HS_iRMSD(df, figname=figname + '.epo' + str(epoch) + '.irsmd_HS.png')
