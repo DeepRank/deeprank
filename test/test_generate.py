@@ -1,6 +1,5 @@
 import os
 import unittest
-import numpy as np
 from time import time
 
 from deeprank.generate import *
