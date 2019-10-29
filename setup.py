@@ -17,7 +17,6 @@ setup(
         'pandas',
         'matplotlib',
         'torchsummary',
-        'freesasa',
         'torch',
         'pdb2sql'
         ],
