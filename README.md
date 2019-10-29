@@ -16,19 +16,19 @@ http://deeprank.readthedocs.io/en/latest/
 
 Minimal information to install the module
 
-* clone the repository `git clone https://github.com/DeepRank/deeprank.git`
-* go there             `cd deeprank`
-* install the module   `pip install -e ./`
-* install freesasa     `https://github.com/freesasa/freesasa-python`
-* go int the test dir `cd test`
-* run the test suite `pytest`
+  * clone the repository `git clone https://github.com/DeepRank/deeprank.git`
+  * go there             `cd deeprank`
+  * install the module   `pip install -e ./`
+  * install freesasa     `https://github.com/freesasa/freesasa-python`
+  * go int the test dir `cd test`
+  * run the test suite `pytest`
 
 
 ## 2 . Tutorial
 
 We give here the tutorial like introduction to the DeepRank machinery. More informatoin can be found in the documentation http://deeprank.readthedocs.io/en/latest/.  We quickly illsutrate here the two main steps of Deeprank :
-* the generation of the data
-* running deep leaning experiments.
+  * the generation of the data
+  * running deep leaning experiments.
 
 ### A . Generate the data set (using MPI)
 
@@ -89,17 +89,17 @@ In  the first part of the script we define the path where to find the PDBs of th
 
 We then initialize the `DataGenerator` object. This object (defined in `deeprank/generate/DataGenerator.py`) needs a few input parameters:
 
-* pdb_source : where to find the pdb to include in the dataset
-* pdb_native : where to find the corresponding native conformations
-* compute_targets : list of modules used to compute the targets
-* compute_features : list of modules used to compute the features
-* hdf5 : Name of the HDF5 file to store the data set
+  * pdb_source : where to find the pdb to include in the dataset
+  * pdb_native : where to find the corresponding native conformations
+  * compute_targets : list of modules used to compute the targets
+  * compute_features : list of modules used to compute the features
+  * hdf5 : Name of the HDF5 file to store the data set
 
 We then create the data base with the command `database.create_database()`. This function autmatically create an HDF5 files where each pdb has its own group. In each group we can find the pdb of the complex and its native form, the calculated features and the calculated targets. We can now mapped the features to a grid. This is done via the command `database.map_features()`. As you can see this method requires a dictionary as input. The dictionary contains the instruction to map the data.
 
-* number_of_points: the number of points in each direction
-* resolution : the resolution in Angs
-* atomic_densities : {'atom_name' : vvdw_radius} the atomic densities required
+  * number_of_points: the number of points in each direction
+  * resolution : the resolution in Angs
+  * atomic_densities : {'atom_name' : vvdw_radius} the atomic densities required
 
 The atomic densities are mapped following the [protein-ligand paper](https://arxiv.org/abs/1612.02751). The other features are mapped to the grid points using a Gaussian function (other modes are possible but somehow hard coded)
 
