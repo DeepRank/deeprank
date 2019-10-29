@@ -1339,8 +1339,6 @@ class DataGenerator(object):
         # create tthe sqldb and extract positions
         sqldb = pdb2sql.pdb2sql(pdbfile)
 
-        xyz0 = sqldb.get('x,y,z')
-
         # rotate the positions
         pdb2sql.transform.rot_axis(sqldb, axis, angle)
 
