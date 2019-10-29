@@ -1340,7 +1340,6 @@ class DataGenerator(object):
         sqldb = pdb2sql.pdb2sql(pdbfile)
 
         xyz0 = sqldb.get('x,y,z')
-        center0 = np.mean(xyz0, 0)
 
         # rotate the positions
         pdb2sql.transform.rot_axis(sqldb, axis, angle)
@@ -1383,7 +1382,6 @@ class DataGenerator(object):
 
             # extract the data
             data = molgrp['features/' + fn][()]
-            t0 = molgrp['features/' + fn][()]
 
             # xyz
             xyz = data[:, 1:4]
