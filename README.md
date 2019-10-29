@@ -19,6 +19,7 @@ Minimal information to install the module
   * clone the repository `git clone https://github.com/DeepRank/deeprank.git`
   * go there             `cd deeprank`
   * install the module   `pip install -e ./`
+  * install freesasa     `https://github.com/freesasa/freesasa-python`
   * go int the test dir `cd test`
   * run the test suite `pytest`
 
@@ -31,7 +32,7 @@ We give here the tutorial like introduction to the DeepRank machinery. More info
 
 ### A . Generate the data set (using MPI)
 
-The generation of the data require only require PDBs files of decoys and their native and the PSSM if needed. All the features/targets and mapped features onto grid points will be auomatically calculated and store in a HDF5 file. 
+The generation of the data require only require PDBs files of decoys and their native and the PSSM if needed. All the features/targets and mapped features onto grid points will be auomatically calculated and store in a HDF5 file.
 
 ```python
 from deeprank.generate import *
@@ -150,4 +151,3 @@ model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
 In the first part of the script we create a Torch database from the HDF5 file. We can specify one or several HDF5 files and even select some conformations using the `dict_filter` argument. Other options of `DataSet` can be used to specify the features/targets the normalization, etc ...
 
 We then create a `NeuralNet` instance that takes the dataset as input argument. Several options are available to specify the task to do, the GPU use, etc ... We then have simply to train the model. Simple !
-
