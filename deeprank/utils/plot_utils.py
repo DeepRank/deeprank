@@ -17,6 +17,7 @@ from cal_hitrate_successrate import add_rank, ave_evaluate, evaluate
 from rpy2.rinterface import RRuntimeWarning
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.lib.ggplot2 import *
+import pdb
 
 warnings.filterwarnings("ignore", category=RRuntimeWarning)
 
@@ -85,6 +86,7 @@ def read_epoch_data(DR_h5FL, epoch):
     0  Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     1  Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     """
+    print (f"-> Read epoch data from {DR_h5FL} into df")
 
     # -- 1. read deeprank output data for the specific epoch
     h5 = h5py.File(DR_h5FL, 'r')
@@ -165,6 +167,8 @@ def merge_HS_DR(DR_df, haddockS):
         Train 1ACB     1ACB_9w     1       14.535         -19.2127
     """
 
+    print ("-> Merge HS with DR into one df")
+
     # -- merge HS with DR predictions, model IDs and class IDs
     modelIDs = DR_df['modelID']
     HS, idx_keep = get_HS(modelIDs, haddockS)
@@ -184,7 +188,7 @@ def merge_HS_DR(DR_df, haddockS):
 
 def read_haddockScoreFL(HS_h5FL):
 
-    print(f"Reading haddock score files: {HS_h5FL} ...")
+    print(f"-> Reading haddock score files: {HS_h5FL} ...")
     data = pd.read_hdf(HS_h5FL)
 
     stats = {}
@@ -441,6 +445,29 @@ def get_HS(modelIDs, haddockS):
             idx_keep.append(idx)
     return HS, idx_keep
 
+def filter_models(df, label = 'Test', scenario = 'ranair'):
+    '''
+    Keep a subset of models for the ploting, e.g, ab-initio models in the Test set.
+
+    INPUT (pd.dataframe):
+    df:
+       label               modelID  target        DR                                          sourceFL
+       Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+       Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+
+    OUTPUT (pd.dataframe):
+    df:
+       label               modelID  target        DR                                          sourceFL
+       Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+
+    '''
+
+    print (f"-> Keep models for {scenario} in the {label} set")
+    idx1 = df.label == label
+    idx2 = df.modelID.str.contains( scenario )
+    throw = idx1 & ~idx2
+    df = df[~throw]
+    return df
 
 def add_irmsd(df):
     '''
@@ -459,6 +486,8 @@ def add_irmsd(df):
         test      1ACB     1ACB_89w    2.4     1       17.535         -11.2127
     '''
 
+    print ("-> Add i-RMSD to df")
+
     modelIDs = df['modelID']
     source_hdf5FLs = df['sourceFL']
     irmsd = np.array(get_irmsd(source_hdf5FLs, modelIDs))
@@ -466,7 +495,7 @@ def add_irmsd(df):
     return df
 
 
-def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
+def prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario):
     '''
     OUTPUT: a data frame:
 
@@ -474,6 +503,8 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
         Test   1AVX  1AVX_ranair-it0_5286      0  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.503823  25.189108   6.980802
         Test   1AVX     1AVX_ti5-itw_354w      1  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.502845   3.668682 -95.158100
     '''
+
+    print ("Prepare the df...")
     # -- read deeprank_h5FL epoch data into pd.DataFrame (DR_df)
     DR_df = read_epoch_data(deeprank_h5FL, epoch)
 
@@ -485,6 +516,10 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
     1  Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     2  Test  1AVX_ranair-it0_6223       0  0.511688  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     '''
+
+    #-- keep subset of models
+    DR_df = filter_models(DR_df, label = 'Valid', scenario= scenario )
+    DR_df = filter_models(DR_df, label = 'Test', scenario= scenario )
 
     # -- add iRMSD column to DR_df
     DR_df = add_irmsd(DR_df)
@@ -505,6 +540,8 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch):
         train 1ZHI     1ZHI_294w  /home/lixue/DBs/BM5-haddock24/hdf5/000_1ZHI.hdf5        0       9.758          -19.3448
         test  1ACB     1ACB_89w   /home/lixue/DBs/BM5-haddock24/hdf5/000_1ACB.hdf5        1       17.535         -11.2127
     '''
+
+    print ("df preparation done.\n")
 
     return DR_HS_df
 
@@ -565,35 +602,30 @@ def get_caseID(modelID):
 
 
 def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'):
-    if len(sys.argv) != 4:
-        print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch fig_name")
+    if len(sys.argv) != 5:
+        print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch scenario[cm, ranair, refb, ti5, ti] fig_name" )
         sys.exit()
     # the output h5 file from deeprank: 'epoch_data.hdf5'
     deeprank_h5FL = sys.argv[1]
     epoch = int(sys.argv[2])  # 9
-    figname = sys.argv[3]
+    scenario = sys.argv[3] # cm, ranair, refb, ti5, ti
+    figname = sys.argv[4]
 
     pandas2ri.activate()
 
-    df = prepare_df(deeprank_h5FL, HS_h5FL, epoch)
+    df = prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario)
 
     #-- plot
-    plot_HS_iRMSD(df, figname=figname + '.epo' + str(epoch) + '.irsmd_HS.png')
-    plot_DR_iRMSD(df, figname=figname + '.epo' + str(epoch) + '.irsmd_DR.png')
-    plot_boxplot(
-        df,
-        figname=figname +
-        '.epo' +
-        str(epoch) +
-        '.boxplot.png',
-        inverse=False)
+    plot_HS_iRMSD(df, figname=f"{figname}.epo{epoch}.{scenario}.irsmd_HS.png")
+    plot_DR_iRMSD(df, figname=f"{figname}.epo{epoch}.{scenario}.irsmd_HS.png")
+    plot_boxplot(df, figname=f"{figname}.epo{epoch}.{scenario}.boxplot.png", inverse = False)
     plot_successRate_hitRate(df[['label',
                                  'caseID',
                                  'modelID',
                                  'target',
                                  'DR',
                                  'HS']].copy(),
-                             figname=figname + '.epo' + str(epoch),
+                             figname=f"{figname}.epo{epoch}.{scenario}",
                              inverse=False)
 
 
