@@ -78,8 +78,10 @@ grid_info = {
 
 This script can be exectuted using for example 4 MPI processes with the command:
 
+```
     NP=4
     mpiexec -n $NP python generate.py
+```
 
 In  the first part of the script we define the path where to find the PDBs of the decoys and natives that we want to have in the dataset. All the .pdb files present in _pdb_source_ will be used in the dataset. We need to specify where to find the native conformations to be able to compute RMSD and the dockQ score. For each pdb file detected in _pdb_source_, the code will try to find a native conformation in _pdb_native_.
 
