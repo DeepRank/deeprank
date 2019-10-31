@@ -19,6 +19,8 @@ setup(
         'torchsummary',
         'torch',
         'pdb2sql'
+        'freesasa==2.0.3.post7;platform_system=="Linux"',
+        'freesasa==2.0.3.post6;platform_system=="Darwin"'
         ],
 
     extras_require={

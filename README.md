@@ -19,7 +19,6 @@ Minimal information to install the module
 -   clone the repository `git clone https://github.com/DeepRank/deeprank.git`
 -   go there             `cd deeprank`
 -   install the module   `pip install -e ./`
--   install freesasa     `https://github.com/freesasa/freesasa-python`
 -   go int the test dir `cd test`
 -   run the test suite `pytest`
 
