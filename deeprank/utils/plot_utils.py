@@ -189,6 +189,7 @@ def merge_HS_DR(DR_df, haddockS):
 def read_haddockScoreFL(HS_h5FL):
 
     print(f"-> Reading haddock score files: {HS_h5FL} ...")
+
     data = pd.read_hdf(HS_h5FL)
 
     stats = {}
@@ -429,6 +430,8 @@ def get_irmsd(source_hdf5, modelIDs):
     irmsd = []
     for h5FL, modelID in zip_equal(source_hdf5, modelIDs):
         # h5FL = '/home/lixue/DBs/BM5-haddock24/hdf5/000_1AY7.hdf5'
+
+        print(modelID)
         f = h5py.File(h5FL, 'r')
         irmsd.append(f[modelID]['targets/IRMSD'][()])
         f.close()
@@ -522,7 +525,7 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario):
     DR_df = filter_models(DR_df, label = 'Test', scenario= scenario )
 
     # -- add iRMSD column to DR_df
-    DR_df = add_irmsd(DR_df)
+#    DR_df = add_irmsd(DR_df)
 
     # -- report the number of hits for train/valid/test
     hit_statistics(DR_df)
@@ -559,15 +562,16 @@ def hit_statistics(df):
     labels = ['Train', 'Valid', 'Test']
     grouped = df.groupby('label')
 
-    # -- 1. count num_hit based on i-rmsd
-    num_hits = grouped['irmsd'].apply(lambda x: len(x[x <= 4]))
-    num_models = grouped.apply(len)
+#    # -- 1. count num_hit based on i-rmsd
+#    num_hits = grouped['irmsd'].apply(lambda x: len(x[x <= 4]))
+#    num_models = grouped.apply(len)
+#
+#    for label in labels:
+#        print(
+#            f"According to 'i-RMSD' -> num of hits for {label}: {num_hits[label]} out of {num_models[label]} models")
+#
+#    print("")
 
-    for label in labels:
-        print(
-            f"According to 'i-RMSD' -> num of hits for {label}: {num_hits[label]} out of {num_models[label]} models")
-
-    print("")
     # -- 2. count num_hit based on the 'target' column
     num_hits = grouped['target'].apply(lambda x: len(x[x == '1']))
     num_models = grouped.apply(len)
@@ -601,7 +605,7 @@ def get_caseID(modelID):
     return caseID
 
 
-def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'):
+def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'):
     if len(sys.argv) != 5:
         print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch scenario[cm, ranair, refb, ti5, ti] fig_name" )
         sys.exit()
@@ -616,8 +620,8 @@ def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'):
     df = prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario)
 
     #-- plot
-    plot_HS_iRMSD(df, figname=f"{figname}.epo{epoch}.{scenario}.irsmd_HS.png")
-    plot_DR_iRMSD(df, figname=f"{figname}.epo{epoch}.{scenario}.irsmd_HS.png")
+#    plot_HS_iRMSD(df, figname=f"{figname}.epo{epoch}.{scenario}.irsmd_HS.png")
+#    plot_DR_iRMSD(df, figname=f"{figname}.epo{epoch}.{scenario}.irsmd_HS.png")
     plot_boxplot(df, figname=f"{figname}.epo{epoch}.{scenario}.boxplot.png", inverse = False)
     plot_successRate_hitRate(df[['label',
                                  'caseID',
