@@ -229,12 +229,12 @@ class DataSet():
         for f in self.train_database:
             logger.info(f'=\t -> {f}')
         logger.info('=')
-        if not self.valid_database:
+        if self.valid_database:
             logger.info('=\t Validation data')
             for f in self.valid_database:
                 logger.info(f'=\t -> {f}')
         logger.info('=')
-        if not self.test_database:
+        if self.test_database:
             logger.info('=\t Test data')
             for f in self.test_database:
                 logger.info(f'=\t -> {f}')
@@ -245,10 +245,10 @@ class DataSet():
         # check if the files are ok
         self.check_hdf5_files(self.train_database)
 
-        if not self.valid_database:
+        if self.valid_database:
             self.valid_database = self.check_hdf5_files(self.valid_database)
 
-        if not self.test_database:
+        if self.test_database:
             self.test_database = self.check_hdf5_files(self.test_database)
 
         # create the indexing system
@@ -407,7 +407,7 @@ class DataSet():
             raise ValueError('No avaiable training data after filtering')
 
         # Validation dataset
-        if not self.valid_database:
+        if self.valid_database:
 
             desc = '{:25s}'.format('   Validation dataset')
             if self.tqdm:
@@ -436,7 +436,7 @@ class DataSet():
         self.nvalid = self.ntot - self.ntrain
 
         # Test dataset
-        if not self.test_database:
+        if self.test_database:
 
             desc = '{:25s}'.format('   Test dataset')
             if self.tqdm:
