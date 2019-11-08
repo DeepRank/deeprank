@@ -521,8 +521,9 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario):
     '''
 
     #-- keep subset of models
-    DR_df = filter_models(DR_df, label = 'Valid', scenario= scenario )
-    DR_df = filter_models(DR_df, label = 'Test', scenario= scenario )
+    if scenario != 'all':
+        DR_df = filter_models(DR_df, label = 'Valid', scenario= scenario )
+        DR_df = filter_models(DR_df, label = 'Test', scenario= scenario )
 
     # -- add iRMSD column to DR_df
 #    DR_df = add_irmsd(DR_df)
@@ -559,7 +560,7 @@ def hit_statistics(df):
         Test     1AVX_ti5-itw_354w      1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5   3.668682
     """
 
-    labels = ['Train', 'Valid', 'Test']
+    labels = df.label.unique() # ['Train', 'Valid', 'Test']
     grouped = df.groupby('label')
 
 #    # -- 1. count num_hit based on i-rmsd
@@ -581,14 +582,18 @@ def hit_statistics(df):
             f"According to 'targets' -> num of hits for {label}: {num_hits[label]} out of {num_models[label]} models")
 
     print("")
-    # -- 3. report num_cases_wo_hit
-    df_tmp = df.copy()
+
+    # -- 3. report num of cases without hits
+    df_tmp = df.loc[:,['label','modelID', 'target']]
     df_tmp['caseID'] = df['modelID'].apply(get_caseID)
+    df_tmp.to_csv('df_tmp.csv', sep='\t', index=False)
     grouped = df_tmp.groupby(['label', 'caseID'])
-    num_hits = grouped['target'].apply(lambda x: len(x[x == 1]))
+
+    num_hits = grouped['target'].apply(lambda x: sum(x.astype(int))) # the number of hits for each case
+    num_hits.to_csv('num_hits.csv', sep = '\t')
     grp = num_hits.groupby('label')
     num_cases_total = grp.apply(lambda x: len(x))
-    num_cases_wo_hit = grp.apply(lambda x: len(x == 0))
+    num_cases_wo_hit = grp.apply(lambda x: len(x[x == 0]))
 
     for label in labels:
         print(
@@ -605,9 +610,10 @@ def get_caseID(modelID):
     return caseID
 
 
-def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'):
+#def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'): # on cartesius
+def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'): # on alembick
     if len(sys.argv) != 5:
-        print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch scenario[cm, ranair, refb, ti5, ti] fig_name" )
+        print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch scenario[all, cm, ranair, refb, ti5, ti] fig_name" )
         sys.exit()
     # the output h5 file from deeprank: 'epoch_data.hdf5'
     deeprank_h5FL = sys.argv[1]
@@ -615,11 +621,10 @@ def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'):
     scenario = sys.argv[3] # cm, ranair, refb, ti5, ti
     figname = sys.argv[4]
 
-    pandas2ri.activate()
-
     df = prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario)
 
     #-- plot
+    pandas2ri.activate()
 #    plot_HS_iRMSD(df, figname=f"{figname}.epo{epoch}.{scenario}.irsmd_HS.png")
 #    plot_DR_iRMSD(df, figname=f"{figname}.epo{epoch}.{scenario}.irsmd_HS.png")
     plot_boxplot(df, figname=f"{figname}.epo{epoch}.{scenario}.boxplot.png", inverse = False)
