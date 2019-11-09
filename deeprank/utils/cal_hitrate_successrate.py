@@ -24,7 +24,7 @@ def evaluate(data):
              train  1ZHI     1            0.1          0            0.01
              train  1ZHI     1            0.2          1            0.3
 
-        where success =[0, 0, 1, 1, 1,...]: starting from rank 3 this case is a success
+        where success =[0, 0, 1, 1, 1,...] means: starting from rank 3 this case is a success
     """
 
     out_df = pd.DataFrame()
@@ -37,7 +37,7 @@ def evaluate(data):
 
         df = data.loc[data.label == l].copy()
         methods = df.columns
-        methods = methods[4:]
+        methods = methods[4:] # ['DR', 'HS']
         df_grped = df.groupby('caseID')
 
         for M in methods:
@@ -89,24 +89,27 @@ def ave_evaluate(data):
 
     OUTPUT:
     new_data =
-        label      caseID success_HS hitRate_HS success_DR hitRate_DR
+         label  success_DR  hitRate_DR  success_HS  hitRate_HS
+         Test         0.0         0.0         0.0         0.0
+         Test         0.0         0.0         0.0         0.0
+         Test         1.0         0.1         0.0         0.0
+         Test         1.0         0.4         1.0         0.3
 
-        train      1AVX   0.0      0.0      0.0      0.0
-        train      1AVX   1.0      1.0      1.0      1.0
+        Train         1.0         0.1         1.0         0.1
+        Train         1.0         0.3         1.0         0.2
+        Train         1.0         0.4         1.0         0.3
+        Train         1.0         0.9         1.0         0.5
 
-        train      2ACB   0.0      0.0      0.0      0.0
-        train      2ACB   1.0      1.0      1.0      1.0
+        Valid         0.0         0.2         1.0         0.1
+        Valid         1.0         0.4         1.0         0.3
+        Valid         1.0         0.7         1.0         0.5
+        Valid         1.0         0.9         1.0         0.7
 
-        test       7CEI   0.0      0.0      0.0      0.0
-        test       7CEI   1.0      1.0      1.0      1.0
-
-        test       5ACD   0.0      0.0      0.0      0.0
-        test       5ACD   1.0      1.0      1.0      1.0
     """
 
     new_data = pd.DataFrame()
     for l, perf_per_case in data.groupby('label'):
-        # l = 'train', 'test' or 'valid'
+        # l = 'Train', 'Test' or 'Valid'
 
         # count the model number for each case
         grouped = perf_per_case.groupby('caseID')
@@ -132,14 +135,15 @@ def ave_evaluate(data):
 
     return new_data
 
-
 def add_rank(df):
-    """INPUT (a data frame): label   success_DR  hitRate_DR  success_HS
-    hitRate_HS Test          0.0    0.000000         0.0    0.000000 Test
-    0.0    0.000000         1.0    0.012821.
+    """
+    INPUT (a data frame):
+        label   success_DR  hitRate_DR  success_HS  hitRate_HS
+        Test          0.0    0.000000         0.0    0.000000
+        Test          0.0    0.000000         1.0    0.012821
 
-         Train         0.0    0.000000         1.0    0.012821
-         Train         0.0    0.000000         1.0    0.025641
+        Train         0.0    0.000000         1.0    0.012821
+        Train         0.0    0.000000         1.0    0.025641
 
     OUTPUT:
          label   success_DR  hitRate_DR  success_HS  hitRate_HS      rank
@@ -152,13 +156,50 @@ def add_rank(df):
 
     # -- add the 'rank' column to df
     rank = []
+    perc = []
     for _, df_per_label in df.groupby('label'):
         num_mol = len(df_per_label)
         rank_raw = np.array(range(num_mol)) + 1
-        rank.extend(rank_raw / num_mol)
-    df['rank'] = rank
+        rank.extend(rank_raw )
+        perc.extend(rank_raw / num_mol)
 
-    df['label'] = pd.Categorical(df['label'], categories=[
-                                 'Train', 'Valid', 'Test'])
+    df['rank'] = rank
+    df['perc'] = perc
+
+    return df
+
+def add_rank_v1(df):
+    """
+    Add rank (and percentage) to models for each case.
+
+    INPUT (a data frame):
+        caseID  success_DR  hitRate_DR  success_HS  hitRate_HS
+          2UUY           0         0.0           0         0.0
+          2UUY           0         0.0           0         0.0
+
+          2SNI           0         0.0           0         0.0
+          2SNI           0         0.0           0         0.0
+          2SNI           0         0.0           0         0.0
+
+    OUTPUT:
+        caseID  success_DR  hitRate_DR  success_HS  hitRate_HS  rank  perc
+          2UUY           0         0.0           0         0.0     1  0.25
+          2UUY           0         0.0           0         0.0     2  0.50
+
+          2SNI           0         0.0           0         0.0     1  0.25
+          2SNI           0         0.0           0         0.0     2  0.50
+          2SNI           0         0.0           0         0.0     3  0.75
+    """
+
+    # -- add the 'rank' column to df
+    rank = []
+    perc = []
+    for _, df_per_case in df.groupby('caseID'):
+        num_mol = len(df_per_case)
+        rank_raw = np.array(range(num_mol)) + 1
+        rank.extend(rank_raw)
+        perc.extend(rank_raw / num_mol)
+    df['rank'] = rank
+    df['perc'] = perc
 
     return df
