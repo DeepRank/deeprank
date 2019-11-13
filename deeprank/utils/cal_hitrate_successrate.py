@@ -130,7 +130,6 @@ def ave_evaluate(data):
 
         new_data = pd.concat([new_data, perf_ave])
 
-    new_data.to_csv('xue.csv', sep='\t')
     return new_data
 
 def count(df):

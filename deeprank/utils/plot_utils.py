@@ -639,11 +639,9 @@ def hit_statistics(df):
     # -- 3. report num of cases without hits
     df_tmp = df.loc[:,['label','modelID', 'target']]
     df_tmp['caseID'] = df['modelID'].apply(get_caseID)
-    df_tmp.to_csv('df_tmp.csv', sep='\t', index=False)
     grp1 = df_tmp.groupby(['label', 'caseID'])
 
     num_hits = grp1['target'].apply(lambda x: sum(x.astype(int))) # the number of hits for each case
-    num_hits.to_csv('num_hits.csv', sep = '\t')
     grp2 = num_hits.groupby('label')
     num_cases_total = grp2.apply(len)
     num_cases_wo_hit = grp2.apply(lambda x: len(x[x == 0]))
