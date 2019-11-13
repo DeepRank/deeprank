@@ -661,8 +661,8 @@ def get_caseID(modelID):
     return caseID
 
 
-def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'): # on cartesius
 # def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'): # on alembick
+def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'): # on cartesius
     if len(sys.argv) != 5:
         print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch scenario[all, cm, ranair, refb, ti5, ti] fig_name" )
         sys.exit()
