@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import pdb
 
 from deeprank.learn import rankingMetrics
 
@@ -189,7 +188,6 @@ def add_rank(df):
     # -- add the 'rank' column to df
     frames = [] # dfs for train/valid/test, respectively
     rank = []
-    perc = []
     for _, df_per_label in df.groupby('label'):
         num_mol = len(df_per_label)
         rank_raw = np.array(range(num_mol)) + 1

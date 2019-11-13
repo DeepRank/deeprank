@@ -382,7 +382,8 @@ def hit_rate_plot(df, sep = True):
                  'axis.text.x': element_text(size=font_size),
                  'axis.text.y': element_text(size=font_size)}) +\
         labs(**{'colour': "Sets"}) #change legend title to 'Sets'
-        #scale_x_continuous(**{'breaks': breaks, 'labels': xlabels}) +\
+
+    # scale_x_continuous(**{'breaks': breaks, 'labels': xlabels})
 
     return p
 
@@ -644,7 +645,7 @@ def hit_statistics(df):
     num_hits = grp1['target'].apply(lambda x: sum(x.astype(int))) # the number of hits for each case
     num_hits.to_csv('num_hits.csv', sep = '\t')
     grp2 = num_hits.groupby('label')
-    num_cases_total = grp2.apply(lambda x: len(x))
+    num_cases_total = grp2.apply(len)
     num_cases_wo_hit = grp2.apply(lambda x: len(x[x == 0]))
 
     for label, _ in grouped:
@@ -663,7 +664,7 @@ def get_caseID(modelID):
 
 
 def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'): # on cartesius
-#def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'): # on alembick
+# def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'): # on alembick
     if len(sys.argv) != 5:
         print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch scenario[all, cm, ranair, refb, ti5, ti] fig_name" )
         sys.exit()
