@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
+import pdb
 
 from deeprank.learn import rankingMetrics
 
 
 def evaluate(data):
-    """Calculate success rate and hit rate.
+    """Calculate hit rate and success.
 
     <INPUT>
     data: a data frame.
@@ -54,9 +55,7 @@ def evaluate(data):
                     df_sorted['target'].astype(np.int)))
                 caseIDs.extend([caseID] * len(df_one_case))
 
-            # hitrate = df_sorted['target'].apply(rankingMetrics.hitrate) # df_sorted['target']: class IDs for each model
-            # success = hitrate.apply(rankingMetrics.success) # success =[0, 0,
-            # 1, 1, 1,...]: starting from rank 3 this case is a success
+            # success =[0, 0, 1, 1, 1,...]: starting from rank 3 this case is a success
 
             out_df_tmp['label'] = [l] * len(df)  # train, valid or test
             out_df_tmp['caseID'] = caseIDs
@@ -64,9 +63,9 @@ def evaluate(data):
             out_df_tmp[f'hitRate_{M}'] = hitrate
 
         out_df = pd.concat([out_df, out_df_tmp])
+    out_df.label = pd.Categorical(out_df.label, categories=['Train', 'Valid', 'Test'])
 
     return out_df
-
 
 def ave_evaluate(data):
     """Calculate the average of each column over all cases.
@@ -89,10 +88,10 @@ def ave_evaluate(data):
 
     OUTPUT:
     new_data =
-         label  success_DR  hitRate_DR  success_HS  hitRate_HS
+         label  successRate_DR  hitRate_DR  successRate_HS  hitRate_HS
          Test         0.0         0.0         0.0         0.0
          Test         0.0         0.0         0.0         0.0
-         Test         1.0         0.1         0.0         0.0
+         Test         0.2         0.1         0.3         0.0
          Test         1.0         0.4         1.0         0.3
 
         Train         1.0         0.1         1.0         0.1
@@ -107,33 +106,66 @@ def ave_evaluate(data):
 
     """
 
+    num_cases, num_models = count(data)
+
     new_data = pd.DataFrame()
-    for l, perf_per_case in data.groupby('label'):
+    for l, perf in data.groupby('label'):
         # l = 'Train', 'Test' or 'Valid'
 
-        # count the model number for each case
-        grouped = perf_per_case.groupby('caseID')
-        num_models = grouped.apply(len)
-        num_cases = len(grouped)
+        top_N = min(num_models[l])
+        print(f"Calculate hitrate/successrate over {num_cases[l]} cases on top 1-{top_N} models.")
 
-        # --
-        top_N = min(num_models)
         perf_ave = pd.DataFrame()
         perf_ave['label'] = [l] * top_N
 
-        for col in perf_per_case.columns[2:]:
-            # perf_per_case.columns = ['label', 'caseID', 'success_HS', 'hitRate_HS', 'success_DR', 'hitRate_DR']
+        for col in perf.columns[perf.columns.str.contains('^(hitRate_|success)')]:
+            # col = 'success_HS', 'hitRate_HS', 'success_DR', 'hitRate_DR'
             perf_ave[col] = np.zeros(top_N)
 
-            for _, perf_case in grouped:
-                perf_ave[col] = perf_ave[col][0:top_N] + \
-                    np.array(perf_case[col][0:top_N])
+            for _, perf_case in perf.groupby('caseID'):
+                perf_case = perf_case.reset_index()
+                perf_ave[col] = perf_ave[col] + \
+                    np.array(perf_case.loc[0:top_N-1, col])
 
-            perf_ave[col] = perf_ave[col] / num_cases
+            perf_ave[col] = perf_ave[col] / num_cases[l]
 
         new_data = pd.concat([new_data, perf_ave])
 
+    new_data.to_csv('xue.csv', sep='\t')
     return new_data
+
+def count(df):
+    '''Count the number of cases and the number of models per case
+
+    INPUT:
+    df =
+        label      caseID success_HS hitRate_HS success_DR hitRate_DR
+
+        train      1AVX   0.0      0.0      0.0      0.0
+        train      1AVX   1.0      1.0      1.0      1.0
+
+    OUTPUT (a pd series):
+
+    num_cases =
+        label
+        Train    114
+        Valid     14
+        Test      14
+
+    num_models =
+        label   caseID
+        Train   1AK4      1054
+                1ATN       870
+
+    '''
+
+    grp = df.groupby(['label', 'caseID'])
+    num_models = grp.apply(len)
+
+    grp = num_models.groupby(['label'])
+    num_cases = grp.apply(len)
+
+    return num_cases, num_models
 
 def add_rank(df):
     """
@@ -155,51 +187,18 @@ def add_rank(df):
     """
 
     # -- add the 'rank' column to df
+    frames = [] # dfs for train/valid/test, respectively
     rank = []
     perc = []
     for _, df_per_label in df.groupby('label'):
         num_mol = len(df_per_label)
         rank_raw = np.array(range(num_mol)) + 1
-        rank.extend(rank_raw )
-        perc.extend(rank_raw / num_mol)
+        tmp_df = df_per_label.copy()
+        tmp_df['rank'] = rank_raw
+        tmp_df['perc'] = rank_raw/num_mol
+        frames.append(tmp_df)
 
-    df['rank'] = rank
-    df['perc'] = perc
+    new_df = pd.concat(frames)
 
-    return df
+    return new_df
 
-def add_rank_v1(df):
-    """
-    Add rank (and percentage) to models for each case.
-
-    INPUT (a data frame):
-        caseID  success_DR  hitRate_DR  success_HS  hitRate_HS
-          2UUY           0         0.0           0         0.0
-          2UUY           0         0.0           0         0.0
-
-          2SNI           0         0.0           0         0.0
-          2SNI           0         0.0           0         0.0
-          2SNI           0         0.0           0         0.0
-
-    OUTPUT:
-        caseID  success_DR  hitRate_DR  success_HS  hitRate_HS  rank  perc
-          2UUY           0         0.0           0         0.0     1  0.25
-          2UUY           0         0.0           0         0.0     2  0.50
-
-          2SNI           0         0.0           0         0.0     1  0.25
-          2SNI           0         0.0           0         0.0     2  0.50
-          2SNI           0         0.0           0         0.0     3  0.75
-    """
-
-    # -- add the 'rank' column to df
-    rank = []
-    perc = []
-    for _, df_per_case in df.groupby('caseID'):
-        num_mol = len(df_per_case)
-        rank_raw = np.array(range(num_mol)) + 1
-        rank.extend(rank_raw)
-        perc.extend(rank_raw / num_mol)
-    df['rank'] = rank
-    df['perc'] = perc
-
-    return df

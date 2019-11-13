@@ -152,10 +152,10 @@ def read_epoch_data(DR_h5FL, epoch):
 def merge_HS_DR(DR_df, haddockS):
     """INPUT 1 (DR_df: a data frame):
 
-    label               modelID  target        DR                                          sourceFL
-    0  Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
-    1  Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
-    2  Test  1AVX_ranair-it0_6223       0  0.511688  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+    label    caseID           modelID  target        DR                                          sourceFL
+    0  Test  1AVX   1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+    1  Test  1AVX   1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+    2  Test  1AVX   1AVX_ranair-it0_6223       0  0.511688  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
 
     INPUT 2: haddockS[modelID] = score
 
@@ -175,7 +175,6 @@ def merge_HS_DR(DR_df, haddockS):
 
     data = DR_df.iloc[idx_keep, :].copy()
     data['HS'] = HS
-    data['caseID'] = [re.split('_', x)[0] for x in data['modelID']]
 
     # -- reorder columns
     col_ori = data.columns
@@ -331,14 +330,14 @@ def plot_evaluation(df, figname):
     figname1 = figname + '.hitRate.png'
     print(f'\n --> Hit Rate plot:', figname1, '\n')
     hit_rate_plot(df)
-    ggplot2.ggsave(figname1, height=7, width=7 * 1.2, dpi=100)
+    ggplot2.ggsave(figname1, height=7*3, width=7 * 1.2*3, dpi=50)
 
     # ---------- success rate plot -------
     figname2 = figname + '.successRate.png'
     print(f'\n --> Success Rate plot:', figname2, '\n')
 
     success_rate_plot(df)
-    ggplot2.ggsave(figname2, height=7, width=7 * 1.2, dpi=100)
+    ggplot2.ggsave(figname2, height=7*3, width=7 * 1.2*3, dpi=50)
 
 
 def hit_rate_plot(df, sep = True):
@@ -365,14 +364,14 @@ def hit_rate_plot(df, sep = True):
     df_tmp.loc[:, 'Methods'] = [
         re.sub('hitRate_', '', x) for x in tmp]  # success_DR -> DR
 
-    font_size = 20
+    font_size = 40
     breaks = pd.to_numeric(np.arange(0, 1.01, 0.25))
     #xlabels = list(map(lambda x: str('%d' % (x * 100)) +' % ', np.arange(0, 1.01, 0.25)))
     text_style = element_text(size=font_size, family="Tahoma", face="bold")
 
     p = ggplot(df_tmp) + \
         aes_string(x='rank', y='hit_rate', color='label', linetype='Methods') + \
-        facet_grid(ro.Formula('.~label')) +\
+        facet_grid(ro.Formula('label ~.')) +\
         geom_line(size=1) + \
         labs(**{'x': 'Top N models', 'y': 'Hit Rate'}) + \
         theme_bw() + \
@@ -410,7 +409,7 @@ def success_rate_plot(df):
     df_tmp.loc[:, 'Methods'] = [
         re.sub('success_', '', x) for x in tmp]  # success_DR -> DR
 
-    font_size = 20
+    font_size = 40
 #    breaks = pd.to_numeric(np.arange(0, 1.01, 0.25))
 #    xlabels = list(map(lambda x: str('%d' % (x * 100)) +
 #                       ' % ', np.arange(0, 1.01, 0.25)))
@@ -418,7 +417,7 @@ def success_rate_plot(df):
 
     p = ggplot(df_tmp) + \
         aes_string(x='rank', y='success_rate', color='label', linetype='Methods') + \
-        facet_grid(ro.Formula('.~label')) +\
+        facet_grid(ro.Formula('label ~.')) +\
         geom_line(size=1) + \
         labs(**{'x': 'Top N models', 'y': 'Success Rate'}) + \
         theme_bw() + \
@@ -506,6 +505,45 @@ def add_irmsd(df):
     df['irmsd'] = irmsd
     return df
 
+def add_caseID(df):
+
+    ''' add the caseID column.
+
+    INPUT (a data frame):
+
+    label               modelID  target        DR                                          sourceFL
+    0  Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+    1  Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+    '''
+
+    df['caseID'] = [re.split('_', x)[0] for x in df['modelID']]
+    return df
+
+
+def remove_failedCases(df):
+
+    '''
+    Remove cases with any hits.
+
+    INPUT (a data frame):
+
+    label   caseID             modelID  target        DR                                          sourceFL
+    0  Test 1AVX  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+    1  Test 1AVX     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+    2  Test 1AVX  1AVX_ranair-it0_6223       0  0.511688  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
+    '''
+
+    grp = df.groupby('caseID')
+    for caseID, df_ in grp:
+
+
+        num_hits = sum(df_.target.astype('int'))
+        if num_hits ==0:
+            print(f"case {caseID} does not have any hits and is removed.")
+            idx = list(df_.index)
+            df.drop(idx, axis = 0)
+
+    return df
 
 def prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario):
     '''
@@ -516,7 +554,7 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario):
         Test   1AVX     1AVX_ti5-itw_354w      1  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.502845   3.668682 -95.158100
     '''
 
-    print ("Prepare the df...")
+    print ("=== Prepare the df ===")
     # -- read deeprank_h5FL epoch data into pd.DataFrame (DR_df)
     DR_df = read_epoch_data(deeprank_h5FL, epoch)
 
@@ -533,6 +571,10 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario):
     if scenario != 'all':
         DR_df = filter_models(DR_df, label = 'Valid', scenario= scenario )
         DR_df = filter_models(DR_df, label = 'Test', scenario= scenario )
+
+    # -- remove cases with any hits
+    DR_df = add_caseID(DR_df)
+    DR_df = remove_failedCases(DR_df)
 
     # -- add iRMSD column to DR_df
 #    DR_df = add_irmsd(DR_df)
@@ -557,7 +599,7 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario):
     DR_HS_df['label'] = pd.Categorical(DR_HS_df['label'], categories=[
                                  'Train', 'Valid', 'Test'])
 
-    print ("df preparation done.\n")
+    print ("\n === df preparation done. === \n")
 
     return DR_HS_df
 
@@ -607,7 +649,7 @@ def hit_statistics(df):
 
     for label, _ in grouped:
         print(
-            f"According to 'targets' -> {num_cases_wo_hit[label]} out of {num_cases_total[label]} cases do not have any hits for {label}")
+                f"According to 'targets' -> num of cases w/o hits for {label}: {num_cases_wo_hit[label]} out of {num_cases_total[label]} cases")
     print("")
 
 
@@ -620,8 +662,8 @@ def get_caseID(modelID):
     return caseID
 
 
-#def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'): # on cartesius
-def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'): # on alembick
+def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'): # on cartesius
+#def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'): # on alembick
     if len(sys.argv) != 5:
         print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch scenario[all, cm, ranair, refb, ti5, ti] fig_name" )
         sys.exit()
@@ -635,8 +677,11 @@ def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'): # on alembick
 
     #-- plot
     pandas2ri.activate()
+#--
+#Note: plot_HS_iRMSD and plot_DR_iRMSD disabled due to the long running time.
 #    plot_HS_iRMSD(df, figname=f"{figname}.epo{epoch}.{scenario}.irsmd_HS.png")
 #    plot_DR_iRMSD(df, figname=f"{figname}.epo{epoch}.{scenario}.irsmd_HS.png")
+#--
     plot_boxplot(df, figname=f"{figname}.epo{epoch}.{scenario}.boxplot.png", inverse = False)
     plot_successRate_hitRate(df[['label',
                                  'caseID',
