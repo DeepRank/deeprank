@@ -24,7 +24,7 @@ class TestLearn(unittest.TestCase):
         """Use a 3D CNN for regularization."""
 
         # adress of the database
-        database = '1ak4.hdf5'
+        database = '1ak4_mapfly.hdf5'
         if not os.path.isfile(database):
             raise FileNotFoundError(
                 'Database %s not found. Make sure to run test_generate before')
