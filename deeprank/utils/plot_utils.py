@@ -646,6 +646,8 @@ def hit_statistics(df):
     num_cases_total = grp2.apply(len)
     num_cases_wo_hit = grp2.apply(lambda x: len(x[x == 0]))
 
+    #num_hits.loc['Train', num_hits==0]
+
     for label, _ in grouped:
         print(
                 f"According to 'targets' -> num of cases w/o hits for {label}: {num_cases_wo_hit[label]} out of {num_cases_total[label]} cases")
