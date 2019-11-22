@@ -1,6 +1,13 @@
-# 1. plot prediction scores for class 0 and 1 using two-panel box plots
-# 2. hit rate plot
-# 3. success rate plot
+'''
+ 1. plot prediction scores for class 0 and 1 using two-panel box plots
+ 2. hit rate plot
+ 3. success rate plot
+
+ Usage: python {0} epoch_data.hdf5 epoch scenario[all, cm, ranair, refb, ti5, ti] fig_name
+
+'''
+
+
 import re
 import sys
 import warnings
@@ -20,6 +27,7 @@ from rpy2.robjects.lib.ggplot2 import *
 import pdb
 
 warnings.filterwarnings("ignore", category=RRuntimeWarning)
+USAGE = __doc__.format(sys.argv[0])
 
 
 def zip_equal(*iterables):
@@ -666,8 +674,7 @@ def get_caseID(modelID):
 # def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'): # on alembick
 def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'): # on cartesius
     if len(sys.argv) != 5:
-        print(f"Usage: python {sys.argv[0]} epoch_data.hdf5 epoch scenario[all, cm, ranair, refb, ti5, ti] fig_name" )
-        sys.exit()
+        sys.exit(USAGE)
     # the output h5 file from deeprank: 'epoch_data.hdf5'
     deeprank_h5FL = sys.argv[1]
     epoch = int(sys.argv[2])  # 9
