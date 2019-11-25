@@ -413,7 +413,7 @@ class DataGenerator(object):
                     self.f5.copy(mol_name + '/features/', molgrp)
 
                     # rotate the feature
-                    DataGenerator._rotate_feature(molgrp, axis, angle, mol_center)
+                    self._rotate_feature(molgrp, axis, angle, mol_center)
 
                     # grid center
                     molgrp.require_group('grid_points')
@@ -579,7 +579,7 @@ class DataGenerator(object):
                     aug_molgrp.create_dataset("features/" + k, data=data)
 
                     # rotate
-                    DataGenerator._rotate_feature(
+                    self._rotate_feature(
                         aug_molgrp, axis, angle, center, feat_name=[k])
 
         # find errored augmented molecules
