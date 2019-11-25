@@ -2,8 +2,7 @@ import os
 import warnings
 
 import numpy as np
-
-from deeprank.tools.StructureSimilarity import StructureSimilarity
+from pdb2sql import StructureSimilarity
 
 
 def __compute_target__(decoy, targrp, tarname, save_file=False):

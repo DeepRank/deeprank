@@ -2,8 +2,7 @@ import os
 import unittest
 
 import numpy as np
-
-from deeprank.tools import StructureSimilarity
+from pdb2sql import StructureSimilarity
 
 
 class TestStructureSimilarity(unittest.TestCase):
@@ -90,7 +89,7 @@ class TestStructureSimilarity(unittest.TestCase):
         sim = StructureSimilarity(decoy, ref)
         trash = sim.compute_lrmsd_pdb2sql(method='svd')
         trash = sim.compute_irmsd_pdb2sql(method='svd')
-        trash = sim.compute_Fnat_pdb2sql()
+        trash = sim.compute_fnat_pdb2sql()
         print(trash)
 
     def setUp(self):

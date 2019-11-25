@@ -5,8 +5,9 @@ import subprocess as sp
 
 import h5py
 import numpy as np
+import pdb2sql
 
-from deeprank.tools import pdb2sql, sparse
+from deeprank.tools import sparse
 
 
 def visualize3Ddata(hdf5=None, mol_name=None, out=None):
@@ -54,7 +55,7 @@ def visualize3Ddata(hdf5=None, mol_name=None, out=None):
         raise LookupError('Molecule %s not found in %s' % (mol_name, hdf5))
 
     # create the pdb file
-    sqldb = pdb2sql(molgrp['complex'][:])
+    sqldb = pdb2sql.pdb2sql(molgrp['complex'][:])
     sqldb.exportpdb(outdir + '/complex.pdb')
     sqldb.close()
 

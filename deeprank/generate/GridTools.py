@@ -5,9 +5,10 @@ from time import time
 
 import numpy as np
 from scipy.signal import bspline
+import pdb2sql
 
 from deeprank.config import logger
-from deeprank.tools import pdb2sql, sparse
+from deeprank.tools import sparse
 
 try:
     from tqdm import tqdm
@@ -205,7 +206,7 @@ class GridTools(object):
     def read_pdb(self):
         """Create a sql databse for the pdb."""
 
-        self.sqldb = pdb2sql(self.molgrp['complex'][()])
+        self.sqldb = pdb2sql.interface(self.molgrp['complex'][()])
 
     # get the contact atoms and interface center
     def get_contact_center(self):
@@ -214,12 +215,14 @@ class GridTools(object):
         contact_atoms = self.sqldb.get_contact_atoms(
             cutoff=self.contact_distance)
 
-        # create a set of unique indexes
-        self.contact_atoms = list(set(contact_atoms[0] + contact_atoms[1]))
+        tmp = []
+        for i in contact_atoms.values():
+            tmp.extend(i)
+        contact_atoms = list(set(tmp))
 
         # get interface center
         self.center_contact = np.mean(
-            np.array(self.sqldb.get('x,y,z', rowID=self.contact_atoms)), 0)
+            np.array(self.sqldb.get('x,y,z', rowID=contact_atoms)), 0)
 
     ################################################################
     # shortcut to add all the feature a
@@ -332,8 +335,8 @@ class GridTools(object):
         if only_contact:
             index = self.sqldb.get_contact_atoms(cutoff=self.contact_distance)
         else:
-            index = (self.sqldb.get('rowID', chainID='A'),
-                     self.sqldb.get('rowID', chainID='B'))
+            index = {"A": self.sqldb.get('rowID', chainID='A'),
+                     "B": self.sqldb.get('rowID', chainID='B')}
 
         # loop over all the data we want
         for elementtype, vdw_rad in self.local_tqdm(
@@ -342,9 +345,9 @@ class GridTools(object):
             t0 = time()
 
             xyzA = np.array(self.sqldb.get(
-                'x,y,z', rowID=index[0], element=elementtype))
+                'x,y,z', rowID=index["A"], element=elementtype))
             xyzB = np.array(self.sqldb.get(
-                'x,y,z', rowID=index[1], element=elementtype))
+                'x,y,z', rowID=index["B"], element=elementtype))
 
             tprocess = time() - t0
 

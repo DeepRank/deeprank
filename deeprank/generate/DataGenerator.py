@@ -11,7 +11,7 @@ import numpy as np
 from deeprank import config
 from deeprank.config import logger
 from deeprank.generate import GridTools as gt
-from deeprank.tools import pdb2sql
+import pdb2sql
 
 try:
     from tqdm import tqdm
@@ -155,7 +155,8 @@ class DataGenerator(object):
             verbose=False,
             remove_error=True,
             prog_bar=False,
-            contact_distance=8.5):
+            contact_distance=8.5,
+            random_seed=None):
         """Create the hdf5 file architecture and compute the features/targets.
 
         Args:
@@ -163,6 +164,7 @@ class DataGenerator(object):
             remove_error (bool, optional): remove the groups that errored
             prog_bar (bool, optional): use tqdm
             contact_distance (float): contact distance cutoff, defaults to 8.5Å
+            random_seed (int): random seed for getting rotation axis and angle
 
         Raises:
             ValueError: If creation of the group errored.
@@ -400,7 +402,7 @@ class DataGenerator(object):
                         self._add_pdb(molgrp, ref, 'native')
 
                     # get the rotation axis and angle
-                    axis, angle = self._get_aug_rot()
+                    axis, angle = pdb2sql.transform.get_rot_axis_angle(random_seed)
 
                     # create the new pdb and get molecule center
                     mol_center = self._add_aug_pdb(
@@ -415,7 +417,7 @@ class DataGenerator(object):
 
                     # grid center
                     molgrp.require_group('grid_points')
-                    center = DataGenerator._rotate_xyz(
+                    center = pdb2sql.transform.rot_xyz_around_axis(
                         self.f5[mol_name + '/grid_points/center'],
                         axis, angle, mol_center)
 
@@ -713,10 +715,15 @@ class DataGenerator(object):
     @staticmethod
     def _get_grid_center(pdb, contact_distance):
 
-        sqldb = pdb2sql(pdb)
+        sqldb = pdb2sql.interface(pdb)
 
         contact_atoms = sqldb.get_contact_atoms(cutoff=contact_distance)
-        contact_atoms = list(set(contact_atoms[0] + contact_atoms[1]))
+
+        tmp = []
+        for i in contact_atoms.values():
+            tmp.extend(i)
+        contact_atoms = list(set(tmp))
+
         center_contact = np.mean(
             np.array(sqldb.get('x,y,z', rowID=contact_atoms)), 0)
 
@@ -1330,47 +1337,22 @@ class DataGenerator(object):
             list(float): center of the molecule
         """
         # create tthe sqldb and extract positions
-        sqldb = pdb2sql(pdbfile)
+        sqldb = pdb2sql.pdb2sql(pdbfile)
 
-        # rotate the positions and get molecule center
-        center = sqldb.rotation_around_axis(axis, angle)
+        # rotate the positions
+        pdb2sql.transform.rot_axis(sqldb, axis, angle)
 
-        # get the data
-        sqldata = sqldb.get('*')
+        # get molecule center
+        xyz = sqldb.get('x,y,z')
+        center = np.mean(xyz, 0)
+
+        # get the pdb-format data
+        data = sqldb.sql2pdb()
+        data = np.array(data).astype('|S78')
+        molgrp.create_dataset(name, data=data)
 
         # close the db
         sqldb.close()
-
-        # TODO the output does not obey PDB format
-        # TODO should not strip them!
-        # export the data to h5
-        data = []
-        for d in sqldata:
-            line = 'ATOM  '
-            line += '{:>5}'.format(d[0])    # serial
-            line += ' '
-            line += '{:^4}'.format(d[1])    # name
-            line += '{:>1}'.format(d[2])    # altLoc
-            line += '{:>3}'.format(d[3])  # resname
-            line += ' '
-            line += '{:>1}'.format(d[4])    # chainID
-            line += '{:>4}'.format(d[5])    # resSeq
-            line += '{:>1}'.format(d[6])    # iCODE
-            line += '   '
-            line += '{: 8.3f}'.format(d[7])  # x
-            line += '{: 8.3f}'.format(d[8])  # y
-            line += '{: 8.3f}'.format(d[9])  # z
-            # TODO add the element
-            try:
-                line += '{: 6.2f}'.format(d[10])    # occ
-                line += '{: 6.2f}'.format(d[11])    # temp
-            except BaseException:
-                line += '{: 6.2f}'.format(0)    # occ
-                line += '{: 6.2f}'.format(0)    # temp
-            data.append(line)
-
-        data = np.array(data).astype('|S78')
-        molgrp.create_dataset(name, data=data)
 
         return center
 
@@ -1403,68 +1385,7 @@ class DataGenerator(object):
             xyz = data[:, 1:4]
 
             # get rotated xyz
-            xyz_rot = DataGenerator._rotate_xyz(xyz, axis, angle, center)
+            xyz_rot = pdb2sql.transform.rot_xyz_around_axis(xyz, axis, angle, center)
 
             # put back the data
-            data[:, 1:4] = xyz_rot
-
-    # rotate xyz
-
-    @staticmethod
-    def _rotate_xyz(xyz, axis, angle, center):
-        """Get the rotated xyz.
-
-        Args:
-            xyz(np.array): original xyz coordinates
-            axis (list(float)): axis of rotation
-            angle (float): angle of rotation
-            center (list(float)): center of rotation
-
-        Returns:
-            np.array: rotated xyz coordinates
-        """
-
-        # get the data
-        ct, st = np.cos(angle), np.sin(angle)
-        ux, uy, uz = axis
-
-        # definition of the rotation matrix
-        # see https://en.wikipedia.org/wiki/Rotation_matrix
-        rot_mat = np.array([[ct + ux ** 2 * (1 - ct),
-                             ux * uy * (1 - ct) - uz * st,
-                             ux * uz * (1 - ct) + uy * st],
-                            [uy * ux * (1 - ct) + uz * st,
-                             ct + uy ** 2 * (1 - ct),
-                             uy * uz * (1 - ct) - ux * st],
-                            [uz * ux * (1 - ct) - uy * st,
-                             uz * uy * (1 - ct) + ux * st,
-                             ct + uz ** 2 * (1 - ct)]])
-
-        # apply the rotation
-        xyz_rot = np.dot(rot_mat, (xyz - center).T).T + center
-
-        return xyz_rot
-
-    # get rotation axis and angle
-
-    @staticmethod
-    def _get_aug_rot():
-        """Get the rotation angle/axis.
-
-        Returns:
-            list(float): axis of rotation
-            float: angle of rotation
-        """
-        # define the axis
-        # uniform distribution on a sphere
-        # http://mathworld.wolfram.com/SpherePointPicking.html
-        u1, u2 = np.random.rand(), np.random.rand()
-        teta, phi = np.arccos(2 * u1 - 1), 2 * np.pi * u2
-        axis = [np.sin(teta) * np.cos(phi),
-                np.sin(teta) * np.sin(phi),
-                np.cos(teta)]
-
-        # and the rotation angle
-        angle = -np.pi + np.pi * np.random.rand()
-
-        return axis, angle
+            molgrp['features/' + fn][:, 1:4] = xyz_rot
