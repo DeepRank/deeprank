@@ -1,6 +1,5 @@
 import numpy as np
-
-from deeprank.tools import pdb2sql
+import pdb2sql
 
 
 class SASA(object):
@@ -55,7 +54,7 @@ class SASA(object):
             chainB (str, optional): Name of the second chain
         """
 
-        sql = pdb2sql(self.pdbfile)
+        sql = pdb2sql.pdb2sql(self.pdbfile)
         resA = np.array(sql.get('resSeq,resName', chainID=chainA))
         resB = np.array(sql.get('resSeq,resName', chainID=chainB))
 
@@ -94,7 +93,7 @@ class SASA(object):
             chainB (str, optional): Name of the second chain
         """
 
-        sql = pdb2sql(self.pdbfile)
+        sql = pdb2sql.pdb2sql(self.pdbfile)
         resA = np.array(
             sql.get(
                 'resSeq,resName,x,y,z',

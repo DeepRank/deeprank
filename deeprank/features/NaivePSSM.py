@@ -2,9 +2,10 @@ import os
 from time import time
 
 import numpy as np
+import pdb2sql
 
 from deeprank.features import FeatureClass
-from deeprank.tools import SASA, pdb2sql
+from deeprank.tools import SASA
 
 
 def printif(string, cond): return print(string) if cond else None
@@ -148,7 +149,7 @@ class NaivePSSM(FeatureClass):
     def get_feature_value(self, contact_only=True):
         """get the feature value."""
 
-        sql = pdb2sql(self.pdbfile)
+        sql = pdb2sql.interface(self.pdbfile)
         xyz_info = sql.get('chainID,resSeq,resName', name='CB')
         xyz = sql.get('x,y,z', name='CB')
 
@@ -157,7 +158,7 @@ class NaivePSSM(FeatureClass):
             xyz_dict[tuple(info)] = pos
 
         contact_residue = sql.get_contact_residue(cutoff=5.5)
-        contact_residue = contact_residue[0] + contact_residue[1]
+        contact_residue = contact_residue["A"] + contact_residue["B"]
         sql.close()
 
         pssm_data_xyz = {}

@@ -1,9 +1,9 @@
 import warnings
 
 import numpy as np
+from pdb2sql import StructureSimilarity
 
 from deeprank.targets import rmsd_fnat
-from deeprank.tools.StructureSimilarity import StructureSimilarity
 
 
 def __compute_target__(decoy, targrp):

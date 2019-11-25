@@ -1,8 +1,8 @@
 import itertools
 import warnings
+import pdb2sql
 
 from deeprank.features import FeatureClass
-from deeprank.tools import pdb2sql
 from deeprank import config
 
 
@@ -23,7 +23,7 @@ class ResidueDensity(FeatureClass):
         """
 
         self.pdb_data = pdb_data
-        self.sql = pdb2sql(pdb_data)
+        self.sql = pdb2sql.interface(pdb_data)
         self.chains_label = [chainA, chainB]
 
         self.feature_data = {}
@@ -40,7 +40,7 @@ class ResidueDensity(FeatureClass):
         # res = {('chainA,resSeq,resName'): set(
         #                               ('chainB,res1Seq,res1Name),
         #                               ('chainB,res2Seq,res2Name'))}
-        res = self.sql.get_contact_residue(chain1=self.chains_label[0],
+        res = self.sql.get_contact_residues(chain1=self.chains_label[0],
                                            chain2=self.chains_label[1],
                                            cutoff=cutoff,
                                            return_contact_pairs=True)

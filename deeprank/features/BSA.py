@@ -1,7 +1,8 @@
 import warnings
 
+import pdb2sql
+
 from deeprank.features import FeatureClass
-from deeprank.tools import pdb2sql
 
 try:
     import freesasa
@@ -33,7 +34,7 @@ class BSA(FeatureClass):
         >>> bsa.sql.close()
         """
         self.pdb_data = pdb_data
-        self.sql = pdb2sql(pdb_data)
+        self.sql = pdb2sql.interface(pdb_data)
         self.chains_label = [chainA, chainB]
 
         self.feature_data = {}
@@ -83,9 +84,8 @@ class BSA(FeatureClass):
         self.bsa_data = {}
         self.bsa_data_xyz = {}
 
-        # res = ([chain1 residues], [chain2 residues])
-        ctc_res = self.sql.get_contact_residue(cutoff=cutoff)
-        ctc_res = ctc_res[0] + ctc_res[1]
+        ctc_res = self.sql.get_contact_residues(cutoff=cutoff)
+        ctc_res = ctc_res["A"] + ctc_res["B"]
 
         # handle with small interface or no interface
         total_res = len(ctc_res)
