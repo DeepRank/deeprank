@@ -122,7 +122,7 @@ def read_epoch_data(DR_h5FL, epoch):
     for l in labels:
         # l = train, valid or test
         source_hdf5FLs = data[l]['mol'][:, 0]
-        modelIDs = list(data[l]['mol'][:, 1])
+        modelIDs = list(data[l]['mol'][:, 1].astype('str'))
         DR_rawOut = data[l]['outputs']
         DR = F.softmax(torch.FloatTensor(DR_rawOut), dim=1)
         DR = np.array(DR[:, 0])  # the probability of a model being negative
@@ -671,8 +671,8 @@ def get_caseID(modelID):
     return caseID
 
 
-# def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'): # on alembick
-def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'): # on cartesius
+def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'): # on alembick
+#def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'): # on cartesius
     if len(sys.argv) != 5:
         sys.exit(USAGE)
     # the output h5 file from deeprank: 'epoch_data.hdf5'
