@@ -588,8 +588,6 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario):
     # -- add iRMSD column to DR_df
 #    DR_df = add_irmsd(DR_df)
 
-    # -- report the number of hits for train/valid/test
-    hit_statistics(DR_df)
 
     # -- add HS to DR_df (note: bound complexes do not have HS)
     stats = read_haddockScoreFL(HS_h5FL)
@@ -654,13 +652,30 @@ def hit_statistics(df):
     num_cases_total = grp2.apply(len)
     num_cases_wo_hit = grp2.apply(lambda x: len(x[x == 0]))
 
-    #num_hits.loc['Train', num_hits==0]
-
     for label, _ in grouped:
         print(
                 f"According to 'targets' -> num of cases w/o hits for {label}: {num_cases_wo_hit[label]} out of {num_cases_total[label]} cases")
     print("")
 
+    #-- 4. report num of hits for each label
+    grp = df.groupby('label')
+    hit_stats = grp['target'].agg([numHits, numModels])
+    print(hit_stats)
+
+    grp = df.groupby(['label', 'caseID'])
+    hit_stats2 = grp['target'].agg([numHits, numModels])
+    hit_stats2.to_csv('hit_stats.tsv', sep = '\t')
+    print('hit_stats.tsv generated\n')
+
+def numHits(target):
+    # target = [0, 0, 1, 0,... ]
+    num_hits = sum(target.astype(int))
+    return num_hits
+
+def numModels(target):
+    # target = [0, 0, 1, 0,... ]
+    num_models = len(target)
+    return num_models
 
 def get_caseID(modelID):
     # modelID = 1AVX_ranair-it0_5286
@@ -682,6 +697,9 @@ def main(HS_h5FL='/home/lixue/DBs/BM5-haddock24/stats/stats.h5'): # on alembick
     figname = sys.argv[4]
 
     df = prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario)
+
+    # -- report the number of hits for train/valid/test
+    hit_statistics(df)
 
     #-- plot
     pandas2ri.activate()
