@@ -409,7 +409,8 @@ class DataGenerator(object):
                         molgrp, cplx, 'complex', axis, angle)
 
                     # copy the targets/features
-                    self.f5.copy(mol_name + '/targets/', molgrp)
+                    if 'targets' in mol_name:
+                        self.f5.copy(mol_name + '/targets/', molgrp)
                     self.f5.copy(mol_name + '/features/', molgrp)
 
                     # rotate the feature
