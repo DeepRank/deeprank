@@ -45,7 +45,8 @@ class TestGenerateData(unittest.TestCase):
                 data_augmentation=1,
                 compute_targets=[
                     'deeprank.targets.dockQ',
-                    'deeprank.targets.binary_class'],
+                    'deeprank.targets.binary_class',
+                    'deeprank.targets.capri_class'],
                 compute_features=[
                     'deeprank.features.AtomicFeature',
                     'deeprank.features.FullPSSM',
@@ -110,7 +111,8 @@ class TestGenerateData(unittest.TestCase):
             # data_augmentation=1,
             compute_targets=[
                 'deeprank.targets.dockQ',
-                'deeprank.targets.binary_class'],
+                'deeprank.targets.binary_class',
+                'deeprank.targets.capri_class'],
             compute_features=[
                 'deeprank.features.AtomicFeature',
                 'deeprank.features.FullPSSM',
@@ -122,7 +124,6 @@ class TestGenerateData(unittest.TestCase):
         # create new files
         print('{:25s}'.format('Create new database') + database.hdf5)
         database.create_database(prog_bar=True)
-
 
     def test_2_add_target(self):
         """Add a target (e.g., class labels) to the database."""

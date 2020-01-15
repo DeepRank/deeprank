@@ -34,18 +34,20 @@ def __compute_target__(decoy, targrp):
         warnings.warn(f"Removed old {tarname} from {molname}")
 
     # process target element
+    # if target element exist, then use its value; otherwise calculate it
     if tarelem not in targrp:
         _ = rmsd_fnat.__compute_target__(decoy, targrp, tarelem)
     # empty dataset
     elif targrp[tarelem][()].shape is None:
-        del targrp[tarelem]
-        warnings.warn(f"Removed old {tarname} from {molname}")
         _ = rmsd_fnat.__compute_target__(decoy, targrp, tarelem)
 
+    # get irmsd value
+    irmsd = targrp[tarelem][()]
+
     # get target value
-    if targrp[tarelem][()] <= cutoff:
+    if  irmsd <= cutoff:
         classID = 1
-        msg = f"{molname} is a hit with {tarelem}: {targrp[tarelem][()]} <= {cutoff}Å"
+        msg = f"{molname} is a hit with {tarelem}: {irmsd} <= {cutoff}Å"
         logger.info(msg)
     else:
         classID = 0

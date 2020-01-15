@@ -95,11 +95,7 @@ def __compute_target__(decoy, targrp, tarname, save_file=False):
             target = sim.compute_lrmsd_fast(method='svd', lzone=lzone)
 
         elif tarname == "FNAT":
-            if save_file:
-                ref_pairs = ZONE + molname + '.ref_pairs'
-            else:
-                ref_pairs = None
-            target = sim.compute_fnat_fast(ref_pairs=ref_pairs)
+            target = sim.compute_fnat_fast()
 
         targrp.create_dataset(tarname, data=np.array(target))
 
