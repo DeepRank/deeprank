@@ -409,7 +409,7 @@ class DataGenerator(object):
                         molgrp, cplx, 'complex', axis, angle)
 
                     # copy the targets/features
-                    if 'targets' in mol_name:
+                    if 'targets' in self.f5[mol_name]:
                         self.f5.copy(mol_name + '/targets/', molgrp)
                     self.f5.copy(mol_name + '/features/', molgrp)
 
