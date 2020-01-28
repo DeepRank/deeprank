@@ -606,7 +606,7 @@ class NeuralNet():
             pin_memory=pin,
             num_workers=num_workers,
             shuffle=False,
-            drop_last=False)
+            drop_last=True)
         if _valid_:
             valid_loader = data_utils.DataLoader(
                 self.data_set,
@@ -615,7 +615,7 @@ class NeuralNet():
                 pin_memory=pin,
                 num_workers=num_workers,
                 shuffle=False,
-                drop_last=False)
+                drop_last=True)
         if _test_:
             test_loader = data_utils.DataLoader(
                 self.data_set,
@@ -624,7 +624,7 @@ class NeuralNet():
                 pin_memory=pin,
                 num_workers=num_workers,
                 shuffle=False,
-                drop_last=False)
+                drop_last=True)
 
         # min error to kee ptrack of the best model.
         min_error = {'train': float('Inf'),
