@@ -65,7 +65,7 @@ class TestLearn(unittest.TestCase):
         model.train(
             nepoch=5,
             divide_trainset=0.8,
-            train_batch_size=5,
+            train_batch_size=2,
             preshuffle_seed=2019,
             num_workers=0)
 
@@ -116,7 +116,7 @@ class TestLearn(unittest.TestCase):
         model.train(
             nepoch=5,
             divide_trainset=0.8,
-            train_batch_size=5,
+            train_batch_size=2,
             num_workers=0,
             preshuffle_seed=2019,
             save_model='all')
@@ -161,7 +161,7 @@ class TestLearn(unittest.TestCase):
         model.train(
             nepoch=5,
             divide_trainset=0.8,
-            train_batch_size=5,
+            train_batch_size=2,
             num_workers=0,
             save_epoch='all')
 
@@ -210,7 +210,7 @@ class TestLearn(unittest.TestCase):
         model.train(
             nepoch=5,
             divide_trainset=0.8,
-            train_batch_size=5,
+            train_batch_size=2,
             num_workers=0)
 
     @unittest.skipIf(skip, "torch fails on Travis")

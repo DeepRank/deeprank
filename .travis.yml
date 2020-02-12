@@ -1,5 +1,5 @@
 sudo: false
-distr : "trusty"
+distr : "bionic"
 
 language: generic
 

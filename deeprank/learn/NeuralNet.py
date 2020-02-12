@@ -29,6 +29,7 @@ class NeuralNet():
 
     def __init__(self, data_set, model,
                  model_type='3d', proj2d=0, task='reg',
+                 class_weights = None,
                  pretrained_model=None,
                  cuda=False, ngpu=0,
                  plot=True,
@@ -58,6 +59,10 @@ class NeuralNet():
                 - 'class' for classification.
                 The loss function, the target datatype and plot functions
                 will be autmatically adjusted depending on the task.
+
+            class_weights (Tensor): a manual rescaling weight given to
+                each class. If given, has to be a Tensor of size #classes.
+                Only applicable on 'class' task.
 
             pretrained_model (str): Saved model to be used for further
                 training or testing.
@@ -107,6 +112,8 @@ class NeuralNet():
 
         # pretrained model
         self.pretrained_model = pretrained_model
+
+        self.class_weights = class_weights
 
         if isinstance(self.data_set, (str, list)) and pretrained_model is None:
             raise ValueError(
@@ -169,7 +176,7 @@ class NeuralNet():
             self._plot_scatter = self._plot_scatter_reg
 
         elif self.task == 'class':
-            self.criterion = nn.CrossEntropyLoss(reduction='sum')
+            self.criterion = nn.CrossEntropyLoss(weight = self.class_weights, reduction='mean')
             self._plot_scatter = self._plot_boxplot_class
             self.data_set.normalize_targets = False
 
