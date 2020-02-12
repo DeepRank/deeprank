@@ -17,7 +17,7 @@ setup(
         'pandas',
         'matplotlib',
         'torchsummary',
-        'torch',
+        'torch < 1.4.0',
         'pdb2sql >= 0.2.1',
         'freesasa==2.0.3.post7;platform_system=="Linux"',
         'freesasa==2.0.3.post6;platform_system=="Darwin"'
