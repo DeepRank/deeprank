@@ -54,7 +54,7 @@ class NeuralNet():
                 If we specify a 2d model, the data set is automatically
                 converted to the correct format.
 
-            task (str 'ref' or 'class'): Task to perform.
+            task (str 'reg' or 'class'): Task to perform.
                 - 'reg' for regression
                 - 'class' for classification.
                 The loss function, the target datatype and plot functions
@@ -413,7 +413,10 @@ class NeuralNet():
         _, self.data['test'] = self._epoch(loader, train_model=False)
         if self.task == 'reg':
             self._plot_scatter_reg(os.path.join(self.outdir, 'prediction.png'))
-            self.plot_hit_rate(os.path.join(self.outdir + 'hitrate.png'))
+        else:
+            self._plot_boxplot_class(os.path.join(self.outdir, 'prediction.png'))
+
+        self.plot_hit_rate(os.path.join(self.outdir + 'hitrate.png'))
 
         self._export_epoch_hdf5(0, self.data)
         self.f5.close()
