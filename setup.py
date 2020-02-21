@@ -44,6 +44,7 @@ setup(
         'h5py',
         'tqdm',
         'pandas',
+        'mpi4py',
         'matplotlib',
         'torchsummary',
         'torch < 1.4.0',
@@ -55,5 +56,6 @@ setup(
         'test': ['nose', 'coverage', 'pytest', 'pytest-cov',
             'codacy-coverage', 'coveralls'],
         'dev':  ['prospector[with_pyroma]', 'autopep8', 'isort', 'sphinx'],
+        'cuda': ['pycuda'],
     }
 )
