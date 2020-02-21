@@ -1,2 +1,7 @@
 include LICENSE
 include README.md
+include deeprank/features/forcefield/*
+graft test/1AK4
+prune deeprank/utils
+include deeprank/utils/logger_helper.py
+exclude test/test_hitrate_successrate.py
