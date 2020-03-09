@@ -41,7 +41,7 @@ class TestLearn(unittest.TestCase):
             database,
             test_database=None,
             mapfly=True,
-            use_rotation=1,
+            use_rotation=2,
             grid_info={
                 'number_of_points': (10, 10, 10),
                 'resolution': (3, 3, 3)},
