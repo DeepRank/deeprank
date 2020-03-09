@@ -405,6 +405,7 @@ class DataGenerator(object):
                     axis, angle = pdb2sql.transform.get_rot_axis_angle(random_seed)
 
                     # create the new pdb and get molecule center
+                    # molecule center is the origin of rotation
                     mol_center = self._add_aug_pdb(
                         molgrp, cplx, 'complex', axis, angle)
 
@@ -416,7 +417,7 @@ class DataGenerator(object):
                     # rotate the feature
                     self._rotate_feature(molgrp, axis, angle, mol_center)
 
-                    # grid center
+                    # grid center used to create grid box
                     molgrp.require_group('grid_points')
                     center = pdb2sql.transform.rot_xyz_around_axis(
                         self.f5[mol_name + '/grid_points/center'],
