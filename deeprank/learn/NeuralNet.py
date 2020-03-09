@@ -773,6 +773,7 @@ class NeuralNet():
 
         # set train/eval mode
         self.net.train(mode=train_model)
+        torch.set_grad_enabled(train_model)
 
         mini_batch = 0
 
@@ -789,7 +790,7 @@ class NeuralNet():
             # transform the data
             inputs, targets = self._get_variables(inputs, targets)
 
-            # zero gradient
+            # starting time
             tlearn0 = time.time()
 
             # forward
