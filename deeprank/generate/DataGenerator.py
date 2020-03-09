@@ -8,6 +8,7 @@ from collections import OrderedDict
 import h5py
 import numpy as np
 
+import deeprank
 from deeprank import config
 from deeprank.config import logger
 from deeprank.generate import GridTools as gt
@@ -218,6 +219,9 @@ class DataGenerator(object):
 
         # open the file
         self.f5 = h5py.File(self.hdf5, 'w')
+
+        # set metadata to hdf5 file
+        self.f5.attrs['DeepRank_version'] = deeprank.__version__
 
         ##################################################
         # Start generating HDF5 database
