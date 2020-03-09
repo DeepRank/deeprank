@@ -55,7 +55,8 @@ setup(
     extras_require={
         'test': ['nose', 'coverage', 'pytest', 'pytest-cov',
             'codacy-coverage', 'coveralls'],
-        'dev':  ['prospector[with_pyroma]', 'autopep8', 'isort', 'sphinx'],
+        'dev': ['prospector[with_pyroma]', 'autopep8', 'isort'],
+        'doc':['sphinx'],
         'cuda': ['pycuda'],
     }
 )
