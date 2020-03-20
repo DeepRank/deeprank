@@ -20,7 +20,7 @@ before_install:
   - conda install python=3.7
 
 install:
-  - pip install -eq .[test]
+  - pip install -qe .[test]
 
 script:
   - cd test/
