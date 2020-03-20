@@ -16,8 +16,11 @@ before_install:
   # Useful for debugging any issues with conda
   - conda info -a
 
- # pytest
+ # python
   - conda install python=3.7
+
+  # install openmpi for mpi4py
+  - sudo apt-get install libopenmpi-dev openmpi-bin
 
 install:
   - pip install -qe .[test]
