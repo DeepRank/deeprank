@@ -17,19 +17,10 @@ before_install:
   - conda info -a
 
  # pytest
-  - conda install -c anaconda pytest
-  - conda install -c conda-forge pytest-cov
   - conda install python=3.7
 
-  # codacy-coverage
-  - pip install -q --upgrade pip
-  - pip install -q coverage
-  - pip install -q codacy-coverage
-  - pip install -q coveralls
-
-
 install:
-  - pip install -qe .[test]
+  - pip install -e .[test]
 
 script:
   - cd test/
