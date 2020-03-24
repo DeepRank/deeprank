@@ -83,7 +83,7 @@ class SASA(object):
         for r in resB[:, :2]:
             if tuple(r) not in self.resinfo[chainB]:
                 self.resinfo[chainB].append(tuple(r))
-        sql.close()
+        sql._close()
 
     def get_residue_carbon_beta(self, chainA='A', chainB='B'):
         """Extract the position of the carbon beta of each residue.
@@ -104,7 +104,7 @@ class SASA(object):
                 'resSeq,resName,x,y,z',
                 name='CB',
                 chainID=chainB))
-        sql.close()
+        sql._close()
 
         assert len(resA[:, 0].astype(np.int).tolist()) == len(
             np.unique(resA[:, 0].astype(np.int)).tolist())
