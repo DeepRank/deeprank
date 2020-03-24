@@ -13,6 +13,8 @@ from deeprank import config
 from deeprank.config import logger
 from deeprank.generate import GridTools as gt
 import pdb2sql
+from pdb2sql.align import align as align_along_axis
+from pdb2sql.align import align_interface
 
 try:
     from tqdm import tqdm
@@ -1329,14 +1331,19 @@ class DataGenerator(object):
         elif isinstance(dict_align, dict):
             
             if dict_align['selection'] == 'interface':
-                sqldb = pdb2sql.align.align_interface(pdbfile, 
-                                                      plane=dict_align['plane'], 
-                                                      export=False)
+                if np.all([k in dict_align for k in ['chain1','chain2']]):
+                    chains = {'chain1':dict_align['chain1'],
+                              'chain2':dict_align['chain2']}
+                else:
+                    chains = {}
+                sqldb = align_interface(pdbfile, 
+                                        plane=dict_align['plane'], 
+                                        export=False, **chains)
 
             else:
-                sqldb = pdb2sq.align.align(pdbfile, axis=dict_align['axis'], 
-                                          export=False,
-                                          **dict_align['selection'])
+                sqldb = align_along_axis(pdbfile, axis=dict_align['axis'], 
+                                         export=False,
+                                         **dict_align['selection'])
             data = sqldb.sql2pdb()
 
         data = np.array(data).astype('|S78')
