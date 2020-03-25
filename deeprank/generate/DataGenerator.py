@@ -1332,19 +1332,28 @@ class DataGenerator(object):
         # some alignement
         elif isinstance(dict_align, dict):
             
+            if 'selection' not in dict_align.keys():
+                dict_align['selection'] = {}
+
+            if 'export' not in dict_align.keys():
+                dict_align['export'] = False
+
             if dict_align['selection'] == 'interface':
+
                 if np.all([k in dict_align for k in ['chain1','chain2']]):
                     chains = {'chain1':dict_align['chain1'],
                               'chain2':dict_align['chain2']}
                 else:
                     chains = {}
-                sqldb = align_interface(pdbfile, 
-                                        plane=dict_align['plane'], 
-                                        export=False, **chains)
+                
+                sqldb = align_interface(pdbfile, plane=dict_align['plane'], 
+                                        export = dict_align['export'],
+                                        **chains)
 
             else:
+
                 sqldb = align_along_axis(pdbfile, axis=dict_align['axis'], 
-                                         export=False,
+                                        export = dict_align['export'],
                                          **dict_align['selection'])
             data = sqldb.sql2pdb()
 

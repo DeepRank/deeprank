@@ -24,7 +24,7 @@ database = DataGenerator(
     pdb_source=pdb_source,
     pdb_native=pdb_native,
     pssm_source=pssm_source,
-    align={"selection":'interface', "plane":'xy'},
+    align={"axis":'z'},
     data_augmentation=0,
     compute_targets=[
         'deeprank.targets.dockQ',
