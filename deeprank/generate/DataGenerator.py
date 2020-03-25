@@ -289,9 +289,9 @@ class DataGenerator(object):
                 molgrp.attrs['type'] = 'molecule'
 
                 # add the ref and the complex
-                self._add_pdb(molgrp, cplx, 'complex', self.align)
+                self._add_pdb(molgrp, cplx, 'complex')
                 if ref is not None:
-                    self._add_pdb(molgrp, ref, 'native', self.align)
+                    self._add_pdb(molgrp, ref, 'native')
 
                 if verbose:
                     self.logger.info(
@@ -399,7 +399,7 @@ class DataGenerator(object):
                         f' with {self.data_augmentation} times...')
 
                 # loop over the complexes
-                for _, mol_aug_name in enumerate(mol_aug_name_list):
+                for mol_aug_name in mol_aug_name_list:
 
                     # crete a subgroup for the molecule
                     molgrp = self.f5.require_group(mol_aug_name)
@@ -407,7 +407,7 @@ class DataGenerator(object):
 
                     # copy the ref into it
                     if ref is not None:
-                        self._add_pdb(molgrp, ref, 'native', self.align)
+                        self._add_pdb(molgrp, ref, 'native')
 
                     # get the rotation axis and angle
                     if self.align is None:
@@ -417,7 +417,7 @@ class DataGenerator(object):
                                                                             self.align)
 
                     # create the new pdb and get molecule center
-                    # molecule center is the origin of rotation
+                    # molecule center is the origin of rotation)
                     mol_center = self._add_aug_pdb(
                         molgrp, cplx, 'complex', axis, angle)
 
@@ -1309,9 +1309,8 @@ class DataGenerator(object):
 #       ADD PDB FILE
 #
 # ====================================================================================
-
-    @staticmethod
-    def _add_pdb(molgrp, pdbfile, name, dict_align):
+    
+    def _add_pdb(self, molgrp, pdbfile, name):
         """Add a pdb to a molgrp.
 
         Args:
@@ -1321,7 +1320,7 @@ class DataGenerator(object):
         """
 
         # no alignement
-        if dict_align is None:
+        if self.align is None:
             # read the pdb and extract the ATOM lines
             with open(pdbfile, 'r') as fi:
                 data = [line.split('\n')[0]
@@ -1330,36 +1329,47 @@ class DataGenerator(object):
             #  http://www.wwpdb.org/documentation/file-format
             
         # some alignement
-        elif isinstance(dict_align, dict):
+        elif isinstance(self.align, dict):
             
-            if 'selection' not in dict_align.keys():
-                dict_align['selection'] = {}
-
-            if 'export' not in dict_align.keys():
-                dict_align['export'] = False
-
-            if dict_align['selection'] == 'interface':
-
-                if np.all([k in dict_align for k in ['chain1','chain2']]):
-                    chains = {'chain1':dict_align['chain1'],
-                              'chain2':dict_align['chain2']}
-                else:
-                    chains = {}
-                
-                sqldb = align_interface(pdbfile, plane=dict_align['plane'], 
-                                        export = dict_align['export'],
-                                        **chains)
-
-            else:
-
-                sqldb = align_along_axis(pdbfile, axis=dict_align['axis'], 
-                                        export = dict_align['export'],
-                                         **dict_align['selection'])
+            sqldb = self._get_aligned_sqldb(pdbfile, self.align)
             data = sqldb.sql2pdb()
 
         data = np.array(data).astype('|S78')
         molgrp.create_dataset(name, data=data)
 
+    @staticmethod
+    def _get_aligned_sqldb(pdbfile, dict_align):
+        """return a sqldb of the pdb that is aligned as specified in the dict
+        
+        Arguments:
+            pdbfile {str} -- path ot the pdb
+            dict_align {dict} -- dictionanry of options to align the pdb
+        """
+        if 'selection' not in dict_align.keys():
+                dict_align['selection'] = {}
+
+        if 'export' not in dict_align.keys():
+            dict_align['export'] = False
+
+        if dict_align['selection'] == 'interface':
+
+            if np.all([k in dict_align for k in ['chain1','chain2']]):
+                chains = {'chain1':dict_align['chain1'],
+                            'chain2':dict_align['chain2']}
+            else:
+                chains = {}
+            
+            sqldb = align_interface(pdbfile, plane=dict_align['plane'], 
+                                    export = dict_align['export'],
+                                    **chains)
+
+        else:
+
+            sqldb = align_along_axis(pdbfile, axis=dict_align['axis'], 
+                                    export = dict_align['export'],
+                                        **dict_align['selection'])
+
+        return sqldb
 
 # ====================================================================================
 #
@@ -1381,8 +1391,8 @@ class DataGenerator(object):
             float: angle of rotation
         """
 
-        if seed is not None:
-            np.random.seed(seed)
+        if random_seed is not None:
+            np.random.seed(random_seed)
 
         angle = 2 * np.pi * np.random.rand()
 
@@ -1411,8 +1421,7 @@ class DataGenerator(object):
         return axis, angle
 
     # add a rotated pdb structure to the database
-    @staticmethod
-    def _add_aug_pdb(molgrp, pdbfile, name, axis, angle):
+    def _add_aug_pdb(self, molgrp, pdbfile, name, axis, angle):
         """Add augmented pdbs to the dataset.
 
         Args:
@@ -1421,12 +1430,16 @@ class DataGenerator(object):
             name (str): name of the dataset
             axis (list(float)): axis of rotation
             angle (float): angle of rotation
+            dict_align (dict) : dict for alignement of the original pdb
 
         Returns:
             list(float): center of the molecule
         """
         # create the sqldb and extract positions
-        sqldb = pdb2sql.pdb2sql(pdbfile)
+        if self.align is None:
+            sqldb = pdb2sql.pdb2sql(pdbfile)
+        else:
+            sqldb = self._get_aligned_sqldb(pdbfile, self.align)
 
         # rotate the positions
         pdb2sql.transform.rot_axis(sqldb, axis, angle)
