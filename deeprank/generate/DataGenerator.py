@@ -116,7 +116,7 @@ class DataGenerator(object):
             set.intersection(set(pssm_features), set(self.compute_features)):
             if config.PATH_PSSM_SOURCE is None:
                 raise ValueError(
-                    'You must provide "pssm_source" to compaute PSSM features.')
+                    'You must provide "pssm_source" to compute PSSM features.')
 
 
         # get all the conformation path
