@@ -16,7 +16,7 @@ before_install:
   # Useful for debugging any issues with conda
   - conda info -a
 
- # python
+  # python
   - conda install python=3.7
 
   # install openmpi for mpi4py

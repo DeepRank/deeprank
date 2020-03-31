@@ -159,7 +159,7 @@ class NaivePSSM(FeatureClass):
 
         contact_residue = sql.get_contact_residue(cutoff=5.5)
         contact_residue = contact_residue["A"] + contact_residue["B"]
-        sql.close()
+        sql._close()
 
         pssm_data_xyz = {}
         pssm_data = {}

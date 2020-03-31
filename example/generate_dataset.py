@@ -24,7 +24,8 @@ database = DataGenerator(
     pdb_source=pdb_source,
     pdb_native=pdb_native,
     pssm_source=pssm_source,
-    data_augmentation=0,
+    align={"axis":'z'},
+    data_augmentation=2,
     compute_targets=[
         'deeprank.targets.dockQ',
         'deeprank.targets.binary_class'],
