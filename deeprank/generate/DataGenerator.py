@@ -79,7 +79,7 @@ class DataGenerator(object):
         self.pdb_select = pdb_select or []
         self.pdb_source = pdb_source or []
         self.pdb_native = pdb_native or []
-        self.align = align or None
+        self.align = align 
 
         if pssm_source is not None:
             config.PATH_PSSM_SOURCE = pssm_source
@@ -1325,8 +1325,6 @@ class DataGenerator(object):
             with open(pdbfile, 'r') as fi:
                 data = [line.split('\n')[0]
                         for line in fi if line.startswith('ATOM')]
-            #  PDB default line length is 80
-            #  http://www.wwpdb.org/documentation/file-format
             
         # some alignement
         elif isinstance(self.align, dict):
@@ -1334,6 +1332,8 @@ class DataGenerator(object):
             sqldb = self._get_aligned_sqldb(pdbfile, self.align)
             data = sqldb.sql2pdb()
 
+        #  PDB default line length is 80
+        #  http://www.wwpdb.org/documentation/file-format
         data = np.array(data).astype('|S78')
         molgrp.create_dataset(name, data=data)
 
@@ -1353,14 +1353,14 @@ class DataGenerator(object):
 
         if dict_align['selection'] == 'interface':
 
-            if np.all([k in dict_align for k in ['chain1','chain2']]):
-                chains = {'chain1':dict_align['chain1'],
-                            'chain2':dict_align['chain2']}
+            if np.all([k in dict_align for k in ['chain1', 'chain2']]):
+                chains = {'chain1' : dict_align['chain1'],
+                            'chain2' : dict_align['chain2']}
             else:
                 chains = {}
             
             sqldb = align_interface(pdbfile, plane=dict_align['plane'], 
-                                    export = dict_align['export'],
+                                    export=dict_align['export'],
                                     **chains)
 
         else:
