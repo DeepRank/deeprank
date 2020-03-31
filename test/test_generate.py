@@ -254,3 +254,5 @@ if __name__ == "__main__":
     inst.test_1_generate_mapfly()
     inst.test_3_add_unique_target()
     inst.test_4_add_feature()
+    inst.test_5_align()
+    inst.test_6_align_interface()
