@@ -22,13 +22,6 @@ before_install:
   # install openmpi for mpi4py
   - sudo apt-get install libopenmpi-dev openmpi-bin
 
-  # pdb2sql align branch
-  # to be removed when align is merged
-  - git clone -b align --single-branch https://github.com/DeepRank/pdb2sql.git
-  - cd pdb2sql
-  - pip install -e ./
-  - cd ../
-
 install:
   - pip install -qe .[test]
 
