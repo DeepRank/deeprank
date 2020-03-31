@@ -18,7 +18,8 @@ setup(
     version=version['__version__'],
     description='Rank Protein-Protein Interactions using Deep Learning',
     long_description=readme + '\n\n',
-    author='Nicolas Renaud et al.',
+    long_description_content_type='text/markdown',
+    author='Nicolas Renaud, CunLiang Geng Sonja Georgrievska, Li Xue',
     url='https://github.com/DeepRank/deeprank',
     project_urls={
         'Source Code': 'https://github.com/DeepRank/deeprank',
@@ -32,8 +33,6 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',
-        'Intended Audience :: Education',
-        'Intended Audience:: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3.7',
