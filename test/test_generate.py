@@ -183,9 +183,72 @@ class TestGenerateData(unittest.TestCase):
             print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
 
 
-if __name__ == "__main__":
-    # unittest.main()
+    def test_5_align(self):
+        """create a database where all the complex are aligned in the z direction."""
 
+        # clean old files
+        files = [
+            '1ak4_aligned.hdf5',
+            '1ak4_aligned_norm.pckl']
+
+        for f in files:
+            if os.path.isfile(f):
+                os.remove(f)
+
+        database = DataGenerator(
+            pdb_source='./1AK4/decoys/',
+            pdb_native=self.pdb_native,
+            pssm_source='./1AK4/pssm_new/',
+            align={"axis":'z'},
+            data_augmentation=1,
+            compute_targets=['deeprank.targets.dockQ'],
+            compute_features=['deeprank.features.AtomicFeature'],
+            hdf5='./1ak4_aligned.hdf5')
+
+        # create the database
+        if not os.path.isfile(database.hdf5):
+            t0 = time()
+            print('{:25s}'.format('Create new database') + database.hdf5)
+            database.create_database(prog_bar=True, random_seed=2019)
+            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
+        else:
+            print('{:25s}'.format('Use existing database') + database.hdf5)
+
+    def test_6_align_interface(self):
+        """create a database where all the interface are aligned in the xy plane."""
+
+        # clean old files
+        files = [
+            '1ak4_aligned_interface.hdf5',
+            '1ak4_aligned_interface_norm.pckl']
+
+        for f in files:
+            if os.path.isfile(f):
+                os.remove(f)
+
+        database = DataGenerator(
+            pdb_source='./1AK4/decoys/',
+            pdb_native=self.pdb_native,
+            pssm_source='./1AK4/pssm_new/',
+            align={"plane":'xy', "selection":'interface'},
+            data_augmentation=1,
+            compute_targets=['deeprank.targets.dockQ'],
+            compute_features=['deeprank.features.AtomicFeature],
+            hdf5='./1ak4_aligned_interface.hdf5')
+
+        # create the database
+        if not os.path.isfile(database.hdf5):
+            t0 = time()
+            print('{:25s}'.format('Create new database') + database.hdf5)
+            database.create_database(prog_bar=True, random_seed=2019)
+            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
+        else:
+            print('{:25s}'.format('Use existing database') + database.hdf5)
+
+
+if __name__ == "__main__":
+
+    # unittest.main()
     inst = TestGenerateData()
     inst.test_1_generate()
     inst.test_1_generate_mapfly()
