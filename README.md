@@ -16,11 +16,13 @@ The documentation of the module can be found on readthedocs :
 
 Minimal information to install the module
 
+
 -   clone the repository `git clone https://github.com/DeepRank/deeprank.git`
 -   go there             `cd deeprank`
 -   install the module   `pip install -e ./`
 -   go int the test dir `cd test`
 -   run the test suite `pytest`
+
 
 ## 2 . Tutorial
 
