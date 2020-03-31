@@ -1,48 +1,59 @@
-import os
 import glob
+import os
+
 import numpy as np
 
 from deeprank.learn import *
-from deeprank.learn.model3d import cnn as cnn3d
+# -- for classification
+from deeprank.learn.model3d import cnn_class as cnn3d
 
-#adress of the database
-train_database = './data/1AVX.hdf5'
-valid_database = './data/1BVN.hdf5'
-test_database = './data/1DFJ.hdf5'
+# -- for regression
+#from deeprank.learn.model3d import cnn_reg as cnn3d
 
 
-# make sure the databse is there
-
-for database in [train_database, valid_database, test_database]:
-    if not os.path.isfile(database):
-        raise FileNotFoundError('Database %s not found. Make sure to run test_generate before')
+database = './hdf5/*1ak4.hdf5'
+out = './out'
 
 # clean the output dir
 out = './out_3d'
 if os.path.isdir(out):
-  for f in glob.glob(out+'/*'):
-    os.remove(f)
-  os.removedirs(out)
+    for f in glob.glob(out + '/*'):
+        os.remove(f)
+    os.removedirs(out)
 
 
 # declare the dataset instance
-data_set = DataSet(train_database = train_database,
-            valid_database=valid_database,
-            test_database = test_database,
-            grid_shape=(30,30,30),
-            select_feature={'AtomicDensities_ind' : 'all',
-                            'Feature_ind' : ['coulomb','vdwaals','charge','PSSM_*'] },
-            select_target='DOCKQ',
-            tqdm=True,
-            normalize_features = True,
-            normalize_targets=True,
-            clip_features=False,
-            pair_chain_feature=np.add,
-            dict_filter={'DOCKQ':'<1.'})
+
+data_set = DataSet(database,
+                   valid_database=None,
+                   test_database=None,
+                   mapfly=True,
+                   use_rotation=5,
+                   grid_info={
+                       'number_of_points': [
+                           10, 10, 10], 'resolution': [
+                           3, 3, 3]},
+
+                   select_feature={'AtomicDensities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
+                                   'Features': ['coulomb', 'vdwaals', 'charge', 'PSSM_*']},
+
+                   # select_target='DOCKQ',  # regression
+                   select_target='BIN_CLASS',  # classification
+                   tqdm=True,
+                   normalize_features=False,
+                   normalize_targets=False,
+                   clip_features=False,
+                   pair_chain_feature=np.add,
+                   dict_filter={'DOCKQ': '<1.'})
 
 # create the network
-model = NeuralNet(data_set,cnn3d,model_type='3d',task='reg',
-                  cuda=False,plot=True,outdir=out)
+model = NeuralNet(data_set, cnn3d, model_type='3d', task='class',
+                  cuda=False, plot=True, outdir=out)
 
 # start the training
-model.train(nepoch = 5, divide_trainset = None, train_batch_size = 5, num_workers=0, save_model='all')
+model.train(
+    nepoch=3,
+    divide_trainset=None,
+    train_batch_size=5,
+    num_workers=0,
+    save_model='all')

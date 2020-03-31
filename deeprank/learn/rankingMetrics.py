@@ -1,4 +1,4 @@
-"""Information Retrieval metrics
+"""Information Retrieval metrics.
 
 Useful Resources:
 http://www.cs.utexas.edu/~mooney/ir-course/slides/Evaluation.ppt
@@ -11,13 +11,13 @@ import numpy as np
 
 
 def hitrate(rs):
-    """Hit rate Basically equivalent to the recall@k
-    First element is rank 1, Relevance is binray
+    """Hit rate Basically equivalent to the recall@k First element is rank 1,
+    Relevance is binray.
 
     Example:
 
-    >>> r = [0,1,1]
-    >>> hit_rate(r,nr)
+    >>> rs = [0,1,1]
+    >>> hitrate(r)
 
 
     Attributes:
@@ -27,16 +27,35 @@ def hitrate(rs):
     Returns:
         hirate (array): [recall@1,recall@2,...]
     """
-    nr = np.max((1,np.sum(rs)))
+    nr = np.max((1, np.sum(rs)))
     return np.cumsum(rs) / nr
 
 
-def avprec(rs):
-    return [average_precision(rs[:i]) for i in range(1,len(rs))]
+def success(rs):
+    """Success for positions ≤ k.
 
-def recall(rs,nr):
-    """recall rate
-    First element is rank 1, Relevance is binray
+    Example:
+    >>> rs = [0, 0, 1, 0, 1, 0]
+    >>> success(rs)
+    [0, 0, 1, 1, 1, 1]
+
+    Args:
+        rs (array): binary relevance array
+
+    Returns:
+        success (array): [success@≤1, success@≤2,...]
+    """
+    success = np.cumsum(rs) > 0
+
+    return success.astype(np.int)
+
+
+def avprec(rs):
+    return [average_precision(rs[:i]) for i in range(1, len(rs))]
+
+
+def recall(rs, nr):
+    """recall rate First element is rank 1, Relevance is binray.
 
     Example:
 
@@ -54,10 +73,11 @@ def recall(rs,nr):
         recall (int): recall value
     """
 
-    return np.sum(rs)/nr
+    return np.sum(rs) / nr
+
 
 def mean_reciprocal_rank(rs):
-    """Score is reciprocal of the rank of the first relevant item
+    """Score is reciprocal of the rank of the first relevant item.
 
     First element is 'rank 1'.  Relevance is binary (nonzero is relevant).
 
@@ -84,7 +104,7 @@ def mean_reciprocal_rank(rs):
 
 
 def r_precision(r):
-    """Score is precision after all relevant documents have been retrieved
+    """Score is precision after all relevant documents have been retrieved.
 
     Relevance is binary (nonzero is relevant).
 
@@ -174,7 +194,7 @@ def average_precision(r):
 
 
 def mean_average_precision(rs):
-    """Score is mean average precision
+    """Score is mean average precision.
 
     Relevance is binary (nonzero is relevant).
 

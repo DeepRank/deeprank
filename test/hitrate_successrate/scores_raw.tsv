@@ -1,0 +1,19 @@
+label	caseID	modelID	target	DR	HS
+Train	1ACB	1ACB_cm-it0_1000	1	0.5	-90
+Train	1ACB	1ACB_cm-it0_1001	0	0.4	-20
+Train	1ACB	1ACB_cm-it0_1002	0	0.0	-30
+Train	1ACB	1ACB_cm-it0_1003	0	0.1	-40
+Train	1ACB	1ACB_cm-it0_1004	0	0.2	-50
+
+Test	2Z0E	2Z0E_cm-it0_1000	0	0.4	-90
+Test	2Z0E	2Z0E_cm-it0_1001	1	0.5	-60
+Test	2Z0E	2Z0E_cm-it0_1002	1	0.0	-10
+Test	2Z0E	2Z0E_cm-it0_1003	0	0.1	-20
+Test	2Z0E	2Z0E_cm-it0_1004	0	0.2	-30
+
+Valid	1UUL	1UUL_cm-it0_1000	1	0.4	-90
+Valid	1UUL	1UUL_cm-it0_1001	1	0.5	-60
+Valid	1UUL	1UUL_cm-it0_1002	1	0.0	-10
+Valid	1UUL	1UUL_cm-it0_1003	0	0.1	-20
+Valid	1UUL	1UUL_cm-it0_1004	0	0.2	-30
+

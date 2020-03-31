@@ -5,15 +5,32 @@ Byte-compiled / optimized
 deeprank.egg-info
 database*
 
+# specific architure files
+deeprank/learn/arch_*
+
 # some example file
 example/grid/ELEC
 example/grid/VDW
 example/grid/data_viz
 example/grid/input
 example/workflow/test_out
+example/hdf5
+example/out_3d
+example/*.pckl
+example/*.hdf5
+example/*.pdb
+
+# some test file
+test/out_2d*
+test/out_3d*
+test/out_test
+test/*.pckl
+test/*.hdf5
+test/*.pdb
+
 
 # datafile
-*.pdb
+#*.pdb
 *.CHARGE
 *.db
 *.COULOMB
@@ -27,5 +44,15 @@ example/workflow/test_out
 #docs/_static
 #docs/_templates
 
+
+# vscode setting
+.vscode
+
+.DS_Store
+test/1AK4/atomic_features/test_1AK4_100w.dat
+test/2OUL/atomic_features/test_2OUL_1.dat
+test/atomic_pair_interaction.dat
+
 # Mac OSX files
 .DS_Store
+

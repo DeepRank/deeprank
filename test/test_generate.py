@@ -1,7 +1,8 @@
-import unittest
-from deeprank.generate import *
 import os
+import unittest
 from time import time
+
+from deeprank.generate import *
 
 
 """
@@ -11,115 +12,247 @@ Some requirement of the naming of the files:
     3. pssm file name should have this format: 2w83-AB.A.pssm (caseID.chainID.pssm or caseID.chainID.pdb.pssm)
 """
 
+
 class TestGenerateData(unittest.TestCase):
     """Test the data generation process."""
 
-    h5file = ['./1ak4.hdf5','native.hdf5']
-    pdb_source     = ['./1AK4/decoys/','./1AK4/native/']
-    pdb_native     = ['./1AK4/native/'] # pdb_native is only used to calculate i-RMSD, dockQ and so on. The native pdb files will not be saved in the hdf5 file
+    h5file = ['./1ak4.hdf5', 'native.hdf5']
+    pdb_source = ['./1AK4/decoys/', './1AK4/native/']
+    # pdb_native is only used to calculate i-RMSD, dockQ and so on. The native
+    # pdb files will not be saved in the hdf5 file
+    pdb_native = ['./1AK4/native/']
 
     def test_1_generate(self):
         """Generate the database."""
 
         # clean old files
-        files = ['1ak4.hdf5','1ak4_norm.pckl','native.hdf5','native_norm.pckl']
+        files = [
+            '1ak4.hdf5',
+            '1ak4_norm.pckl',
+            'native.hdf5',
+            'native_norm.pckl']
         for f in files:
             if os.path.isfile(f):
                 os.remove(f)
 
-        #init the data assembler
-        for h5,src in zip(self.h5file,self.pdb_source):
+        # init the data assembler
+        for h5, src in zip(self.h5file, self.pdb_source):
 
-            database = DataGenerator(pdb_source=src,
-                                     pdb_native=self.pdb_native,
-                                     pssm_source='./1AK4/pssm_new/',
-                                     data_augmentation = 1,
-                                     compute_targets  = ['deeprank.targets.dockQ','deeprank.targets.binary_class'],
-                                     compute_features = ['deeprank.features.AtomicFeature',
-                                                         'deeprank.features.FullPSSM',
-                                                         'deeprank.features.PSSM_IC',
-                                                         'deeprank.features.BSA',
-                                                         'deeprank.features.ResidueDensity'],
-                                     hdf5=h5)
+            database = DataGenerator(
+                pdb_source=src,
+                pdb_native=self.pdb_native,
+                pssm_source='./1AK4/pssm_new/',
+                data_augmentation=1,
+                compute_targets=[
+                    'deeprank.targets.dockQ',
+                    'deeprank.targets.binary_class',
+                    'deeprank.targets.capri_class'],
+                compute_features=[
+                    'deeprank.features.AtomicFeature',
+                    'deeprank.features.FullPSSM',
+                    'deeprank.features.PSSM_IC',
+                    'deeprank.features.BSA',
+                    'deeprank.features.ResidueDensity'],
+                hdf5=h5)
 
-            #create new files
+            # create new files
             if not os.path.isfile(database.hdf5):
                 t0 = time()
                 print('{:25s}'.format('Create new database') + database.hdf5)
-                database.create_database(prog_bar=True)
-                print(' '*25 + '--> Done in %f s.' %(time()-t0))
+                database.create_database(prog_bar=True, random_seed=2019)
+                print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
             else:
                 print('{:25s}'.format('Use existing database') + database.hdf5)
 
             # map the features
             grid_info = {
-                'number_of_points' : [30,30,30],
-                'resolution' : [1.,1.,1.],
-                'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
+                'number_of_points': [10, 10, 10],
+                'resolution': [3., 3., 3.],
+                'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
             }
 
             t0 = time()
             print('{:25s}'.format('Map features in database') + database.hdf5)
-            database.map_features(grid_info,try_sparse=True, time=False, prog_bar=True)
-            print(' '*25 + '--> Done in %f s.' %(time()-t0))
+            database.map_features(
+                grid_info,
+                try_sparse=True,
+                time=False,
+                prog_bar=True)
+            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
 
             # get the normalization
             t0 = time()
             print('{:25s}'.format('Normalization') + database.hdf5)
             norm = NormalizeData(h5)
             norm.get()
-            print(' '*25 + '--> Done in %f s.' %(time()-t0))
+            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
 
+    def test_1_generate_mapfly(self):
+        """Generate the database."""
+
+        # clean old files
+        files = [
+            '1ak4_mapfly.hdf5',
+            '1ak4_mapfly.pckl'
+            ]
+        for f in files:
+            if os.path.isfile(f):
+                os.remove(f)
+
+        h5 = "./1ak4_mapfly.hdf5"
+        src = self.pdb_source[0]
+
+        # init the data assembler
+
+        database = DataGenerator(
+            pdb_source=src,
+            pdb_native=self.pdb_native,
+            pssm_source='./1AK4/pssm_new/',
+            # data_augmentation=1,
+            compute_targets=[
+                'deeprank.targets.dockQ',
+                'deeprank.targets.binary_class',
+                'deeprank.targets.capri_class'],
+            compute_features=[
+                'deeprank.features.AtomicFeature',
+                'deeprank.features.FullPSSM',
+                'deeprank.features.PSSM_IC',
+                'deeprank.features.BSA',
+                'deeprank.features.ResidueDensity'],
+            hdf5=h5)
+
+        # create new files
+        print('{:25s}'.format('Create new database') + database.hdf5)
+        database.create_database(prog_bar=True)
 
     def test_2_add_target(self):
         """Add a target (e.g., class labels) to the database."""
 
         for h5 in self.h5file:
 
-            #init the data assembler
-            database = DataGenerator(compute_targets  = ['deeprank.targets.binary_class'],
-                                     hdf5=h5)
+            # init the data assembler
+            database = DataGenerator(
+                compute_targets=['deeprank.targets.binary_class'], hdf5=h5)
 
             t0 = time()
-            print('{:25s}'.format('Add new target in database') + database.hdf5)
+            print(
+                '{:25s}'.format('Add new target in database') +
+                database.hdf5)
             database.add_target(prog_bar=True)
-            print(' '*25 + '--> Done in %f s.' %(time()-t0))
-
+            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
 
     def test_3_add_unique_target(self):
         """"Add a unique target to all the confs."""
         for h5 in self.h5file:
             database = DataGenerator(hdf5=h5)
-            database.add_unique_target({'XX':1.0})
+            database.add_unique_target({'XX': 1.0})
 
     def test_4_add_feature(self):
         """Add a feature to the database."""
 
         for h5 in self.h5file:
 
-            #init the data assembler
-            database = DataGenerator(pdb_source=None,pdb_native=None,data_augmentation=None,
-                                     pssm_source='./1AK4/pssm_new/',
-                                     compute_features  = ['deeprank.features.FullPSSM'], hdf5=h5)
+            # init the data assembler
+            database = DataGenerator(
+                pdb_source=None,
+                pdb_native=None,
+                data_augmentation=None,
+                pssm_source='./1AK4/pssm_new/',
+                compute_features=['deeprank.features.FullPSSM'],
+                hdf5=h5)
 
             t0 = time()
-            print('{:25s}'.format('Add new feature in database') + database.hdf5)
+            print(
+                '{:25s}'.format('Add new feature in database') +
+                database.hdf5)
             database.add_feature(prog_bar=True)
-            print(' '*25 + '--> Done in %f s.' %(time()-t0))
+            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
 
             t0 = time()
-            print('{:25s}'.format('Map new feature in database') + database.hdf5)
-            database.map_features(try_sparse=True,time=False,prog_bar=True)
-            print(' '*25 + '--> Done in %f s.' %(time()-t0))
+            print(
+                '{:25s}'.format('Map new feature in database') +
+                database.hdf5)
+            database.map_features(try_sparse=True, time=False, prog_bar=True)
+            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
 
             # get the normalization
             t0 = time()
             print('{:25s}'.format('Normalization') + database.hdf5)
             norm = NormalizeData(h5)
             norm.get()
-            print(' '*25 + '--> Done in %f s.' %(time()-t0))
+            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
+
+
+    def test_5_align(self):
+        """create a database where all the complex are aligned in the z direction."""
+
+        # clean old files
+        files = [
+            '1ak4_aligned.hdf5',
+            '1ak4_aligned_norm.pckl']
+
+        for f in files:
+            if os.path.isfile(f):
+                os.remove(f)
+
+        database = DataGenerator(
+            pdb_source='./1AK4/decoys/',
+            pdb_native=self.pdb_native,
+            pssm_source='./1AK4/pssm_new/',
+            align={"axis":'z'},
+            data_augmentation=1,
+            compute_targets=['deeprank.targets.dockQ'],
+            compute_features=['deeprank.features.AtomicFeature'],
+            hdf5='./1ak4_aligned.hdf5')
+
+        # create the database
+        if not os.path.isfile(database.hdf5):
+            t0 = time()
+            print('{:25s}'.format('Create new database') + database.hdf5)
+            database.create_database(prog_bar=True, random_seed=2019)
+            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
+        else:
+            print('{:25s}'.format('Use existing database') + database.hdf5)
+
+    def test_6_align_interface(self):
+        """create a database where all the interface are aligned in the xy plane."""
+
+        # clean old files
+        files = [
+            '1ak4_aligned_interface.hdf5',
+            '1ak4_aligned_interface_norm.pckl']
+
+        for f in files:
+            if os.path.isfile(f):
+                os.remove(f)
+
+        database = DataGenerator(
+            pdb_source='./1AK4/decoys/',
+            pdb_native=self.pdb_native,
+            pssm_source='./1AK4/pssm_new/',
+            align={"plane":'xy', "selection":'interface'},
+            data_augmentation=1,
+            compute_targets=['deeprank.targets.dockQ'],
+            compute_features=['deeprank.features.AtomicFeature'],
+            hdf5='./1ak4_aligned_interface.hdf5')
+
+        # create the database
+        if not os.path.isfile(database.hdf5):
+            t0 = time()
+            print('{:25s}'.format('Create new database') + database.hdf5)
+            database.create_database(prog_bar=True, random_seed=2019)
+            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
+        else:
+            print('{:25s}'.format('Use existing database') + database.hdf5)
+
 
 if __name__ == "__main__":
-    unittest.main()
 
-
+    # unittest.main()
+    inst = TestGenerateData()
+    inst.test_1_generate()
+    inst.test_1_generate_mapfly()
+    inst.test_3_add_unique_target()
+    inst.test_4_add_feature()
+    inst.test_5_align()
+    inst.test_6_align_interface()
