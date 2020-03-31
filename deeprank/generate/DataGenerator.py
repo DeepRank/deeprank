@@ -48,6 +48,7 @@ class DataGenerator(object):
             pssm_source (list(str), optional): List of folders where to find the PSSM files
             align (dict, optional): Dicitionary to align the compexes, 
                                     e.g. align = {"selection":{"chainID":["A","B"]},"axis":"z"}}
+                                    e.g. align = {"selection":"interface","plane":"xy"}
                                     if "selection" is not specified the entire complex is used for alignement
             compute_targets (list(str), optional): List of python files computing the targets,
                 "pdb_native" must be set if having targets to compute.
