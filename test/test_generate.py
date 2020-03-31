@@ -233,7 +233,7 @@ class TestGenerateData(unittest.TestCase):
             align={"plane":'xy', "selection":'interface'},
             data_augmentation=1,
             compute_targets=['deeprank.targets.dockQ'],
-            compute_features=['deeprank.features.AtomicFeature],
+            compute_features=['deeprank.features.AtomicFeature'],
             hdf5='./1ak4_aligned_interface.hdf5')
 
         # create the database
