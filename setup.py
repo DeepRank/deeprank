@@ -46,7 +46,7 @@ setup(
         'mpi4py',
         'matplotlib',
         'torchsummary',
-        'torch < 1.4.0',
+        'torch',
         'pdb2sql >= 0.3.0',
         'freesasa==2.0.3.post7;platform_system=="Linux"',
         'freesasa==2.0.5;platform_system=="Darwin"'
