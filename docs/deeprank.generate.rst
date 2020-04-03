@@ -40,7 +40,6 @@ Example:
 >>> database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
 >>>                          compute_targets  = ['deeprank.targets.dockQ'],
 >>>                          compute_features = ['deeprank.features.AtomicFeature',
->>>                                              'deeprank.features.NaivePSSM',
 >>>                                              'deeprank.features.PSSM_IC',
 >>>                                              'deeprank.features.BSA'],
 >>>                          hdf5=h5file)

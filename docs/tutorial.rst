@@ -39,7 +39,6 @@ We are now ready to initialize the ``DataGenerator`` class included in DeepRank
 >>> database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,
 >>> 	                     compute_targets  = ['deeprank.targets.dockQ'],
 >>> 	                     compute_features = ['deeprank.features.AtomicFeature',
->>> 	                                         'deeprank.features.NaivePSSM',
 >>> 	                                         'deeprank.features.PSSM_IC',
 >>> 	                                         'deeprank.features.BSA'],
 >>> 	                     hdf5=h5file)
