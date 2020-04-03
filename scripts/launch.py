@@ -41,7 +41,6 @@ def generate(LIST_NAME, clean=False):
                 'deeprank.targets.binary_class'],
             compute_features=[
                 'deeprank.features.AtomicFeature',
-                'deeprank.features.NaivePSSM',
                 'deeprank.features.FullPSSM',
                 'deeprank.features.PSSM_IC',
                 'deeprank.features.BSA',

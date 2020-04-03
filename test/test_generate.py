@@ -245,6 +245,12 @@ class TestGenerateData(unittest.TestCase):
         else:
             print('{:25s}'.format('Use existing database') + database.hdf5)
 
+    def test_7_realign(self):
+        '''Realign existing pdbs.'''
+        database = DataGenerator(hdf5='./1ak4.hdf5')
+        database.realign_complexes(align={'axis':'z'})
+
+
 
 if __name__ == "__main__":
 
@@ -256,3 +262,4 @@ if __name__ == "__main__":
     inst.test_4_add_feature()
     inst.test_5_align()
     inst.test_6_align_interface()
+    inst.test_7_realign()

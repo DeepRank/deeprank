@@ -74,7 +74,6 @@ class DataGenerator(object):
         >>>                          data_augmentation=None,
         >>>                          compute_targets=['deeprank.targets.dockQ'],
         >>>                          compute_features=['deeprank.features.AtomicFeature',
-        >>>                                            'deeprank.features.NaivePSSM',
         >>>                                            'deeprank.features.PSSM_IC',
         >>>                                            'deeprank.features.BSA'],
         >>>                          hdf5=h5file)
@@ -83,10 +82,11 @@ class DataGenerator(object):
         self.pdb_select = pdb_select or []
         self.pdb_source = pdb_source or []
         self.pdb_native = pdb_native or []
+        self.pssm_source = pssm_source
         self.align = align 
 
-        if pssm_source is not None:
-            config.PATH_PSSM_SOURCE = pssm_source
+        if self.pssm_source is not None:
+            config.PATH_PSSM_SOURCE = self.pssm_source
 
         self.compute_targets = compute_targets
         self.compute_features = compute_features
@@ -123,7 +123,7 @@ class DataGenerator(object):
             set.intersection(set(pssm_features), set(self.compute_features)):
             if config.PATH_PSSM_SOURCE is None:
                 raise ValueError(
-                    'You must provide "pssm_source" to compaute PSSM features.')
+                    'You must provide "pssm_source" to compute PSSM features.')
 
 
         # get all the conformation path
@@ -165,6 +165,7 @@ class DataGenerator(object):
             prog_bar=False,
             contact_distance=8.5,
             random_seed=None):
+
         """Create the hdf5 file architecture and compute the features/targets.
 
         Args:
@@ -188,7 +189,6 @@ class DataGenerator(object):
         >>> database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
         >>>                          compute_targets  = ['deeprank.targets.dockQ'],
         >>>                          compute_features = ['deeprank.features.AtomicFeature',
-        >>>                                              'deeprank.features.NaivePSSM',
         >>>                                              'deeprank.features.PSSM_IC',
         >>>                                              'deeprank.features.BSA'],
         >>>                          hdf5=h5file)
@@ -229,7 +229,12 @@ class DataGenerator(object):
 
         # set metadata to hdf5 file
         self.f5.attrs['DeepRank_version'] = deeprank.__version__
-
+        self.f5.attrs['pdb_source'] = [os.path.abspath(f) for f in self.pdb_source]
+        self.f5.attrs['pdb_native'] = [os.path.abspath(f) for f in self.pdb_native]
+        self.f5.attrs['pssm_source'] = os.path.abspath(self.pssm_source)
+        self.f5.attrs['features'] = self.compute_features
+        self.f5.attrs['targets'] = self.compute_targets
+        
         ##################################################
         # Start generating HDF5 database
         ##################################################
@@ -559,6 +564,7 @@ class DataGenerator(object):
 
             error_flag = False
             if self.compute_features is not None:
+
                 # the internal features
                 molgrp.require_group('features')
                 molgrp.require_group('features_raw')
@@ -722,6 +728,89 @@ class DataGenerator(object):
         # close the file
         f5.close()
 
+    def realign_complexes(self, align, compute_features=None, pssm_source=None):
+        """Align all the complexes already present in the HDF5.
+        
+        Arguments:
+            align {dict} -- alignement dictionary (see __init__)
+        
+        Keyword Arguments:
+            compute_features {list} -- list of features to be computed
+                                       if None computes the features specified in
+                                       the attrs['features'] of the file (if present)
+             pssm_source {str} -- path of the pssm files. If None the source specfied in
+                                  the attrs['pssm_source'] will be used (if present) (default: {None})
+        
+        Raises:
+            ValueError: If no PSSM detected
+
+        Example :
+
+        >>> database = DataGenerator(hdf5='1ak4.hdf5')
+        >>> # if comute_features and pssm_source are not specified
+        >>> # the values in hdf5.attrs['features'] and hdf5.attrs['pssm_source'] will be used
+        >>> database.realign_complex(align={'axis':'x'}, 
+        >>>                          compute_features['deeprank.features.X'], 
+        >>>                           pssm_source='./1ak4_pssm/')
+        """
+
+        f5 = h5py.File(self.hdf5,'a')
+        
+        mol_names = f5.keys()
+        self.logger.info(f'\n# Start aligning the HDF5 database: {self.hdf5}')
+
+        # deal with the features
+        if self.compute_features is None:
+            if compute_features is None:
+                if 'features' in f5.attrs:
+                    self.compute_features = list(f5.attrs['features'])
+            else:
+                self.compute_features = compute_features
+
+        # deal with the pssm source
+        if self.pssm_source is not None:
+            config.PATH_PSSM_SOURCE = self.pssm_source
+
+        elif pssm_source is not None:
+            config.PATH_PSSM_SOURCE = pssm_source
+        
+        elif 'pssm_source' in f5.attrs:
+            config.PATH_PSSM_SOURCE = f5.attrs['pssm_source']
+        else :
+            raise ValueError('No pssm source detected')
+
+        # loop over the complexes
+        desc = '{:25s}'.format('Add features')
+        for mol in tqdm(mol_names, desc=desc, ncols=100):
+
+            # align the pdb
+            molgrp = f5[mol]
+            pdb = molgrp['complex'][()]
+
+            sqldb = self._get_aligned_sqldb(pdb, align)
+            data = sqldb.sql2pdb()
+
+            data = np.array(data).astype('|S78')
+            molgrp['complex'][...] = data
+
+            # remove prexisting features
+            old_dir = ['features', 'features_raw', 'mapped_features']
+            for od in old_dir:
+                if od in molgrp:
+                    del molgrp[od]
+            
+            # the internal features
+            molgrp.require_group('features')
+            molgrp.require_group('features_raw')
+
+            # compute features
+            error_flag = self._compute_features(self.compute_features,
+                                                molgrp['complex'][()],
+                                                molgrp['features'],
+                                                molgrp['features_raw'],
+                                                self.logger)
+
+        f5.close()
 
 # ====================================================================================
 #
@@ -1009,6 +1098,7 @@ class DataGenerator(object):
 
             if feature and 'features' in mol_grp:
                 del mol_grp['features']
+                del mol_grp['features_raw']
             if pdb and 'complex' in mol_grp and 'native' in mol_grp:
                 del mol_grp['complex']
                 del mol_grp['native']

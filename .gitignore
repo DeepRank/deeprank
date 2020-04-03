@@ -1,9 +1,13 @@
 Byte-compiled / optimized
 *__pycache__*
 
+
+
 # distribution
 deeprank.egg-info
 database*
+dist
+build 
 
 # specific architure files
 deeprank/learn/arch_*
