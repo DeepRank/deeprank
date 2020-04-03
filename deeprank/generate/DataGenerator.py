@@ -729,8 +729,7 @@ class DataGenerator(object):
         f5.close()
 
     def realign_complexes(self, align, compute_features=None, pssm_source=None):
-        """align all the complexes already present in the HDF5
-
+        """Align all the complexes already present in the HDF5.
         
         Arguments:
             align {dict} -- alignement dictionary (see __init__)
@@ -744,12 +743,21 @@ class DataGenerator(object):
         
         Raises:
             ValueError: If no PSSM detected
+
+        Example :
+
+        >>> database = DataGenerator(hdf5='1ak4.hdf5')
+        >>> # if comute_features and pssm_source are not specified
+        >>> # the values in hdf5.attrs['features'] and hdf5.attrs['pssm_source'] will be used
+        >>> database.realign_complex(align={'axis':'x'}, 
+        >>>                          compute_features['deeprank.features.X'], 
+        >>>                           pssm_source='./1ak4_pssm/')
         """
 
         f5 = h5py.File(self.hdf5,'a')
         
         mol_names = f5.keys()
-        self.logger.info(f'\n# Start re creating HDF5 database: {self.hdf5}')
+        self.logger.info(f'\n# Start aligning the HDF5 database: {self.hdf5}')
 
         # deal with the features
         if self.compute_features is None:
@@ -771,6 +779,7 @@ class DataGenerator(object):
         else :
             raise ValueError('No pssm source detected')
 
+        # loop over the complexes
         desc = '{:25s}'.format('Add features')
         for mol in tqdm(mol_names, desc=desc, ncols=100):
 
