@@ -794,11 +794,11 @@ class DataGenerator(object):
             molgrp['complex'][...] = data
 
             # remove prexisting features
-            if 'features' in molgrp:
-                del molgrp['features']
-            if 'features_raw' in molgrp:
-                del molgrp['features_raw']
-
+            old_dir = ['features', 'features_raw', 'mapped_features']
+            for od in old_dir:
+                if od in molgrp:
+                    del molgrp[od]
+            
             # the internal features
             molgrp.require_group('features')
             molgrp.require_group('features_raw')
