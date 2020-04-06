@@ -129,9 +129,13 @@ class ResidueDensity(FeatureClass):
                 atcenter = 'CA'
 
             # get the xyz of the center atom
-            xyz = self.sql.get(
-                'x,y,z', resSeq=key[1], chainID=key[0], name=atcenter)[0]
-            #xyz = np.mean(self.sql.get('x,y,z',resSeq=key[1],chainID=key[0]),0).tolist()
+            try:
+                xyz = self.sql.get(
+                    'x,y,z', resSeq=key[1], chainID=key[0], name=atcenter)[0]
+            except IndexError :
+                warnings .warn('Atom ', atcenter, ' not found for residue ', key[1], \
+                               '. Use residue center as feature center')
+                xyz = np.mean(self.sql.get('x,y,z',resSeq=key[1],chainID=key[0]),0).tolist()
 
             xyz_key = tuple([{'A': 0, 'B': 1}[key[0]]] + xyz)
             self.feature_data_xyz['RCD_total'][xyz_key] = [

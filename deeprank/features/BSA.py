@@ -120,9 +120,15 @@ class BSA(FeatureClass):
             atcenter = 'CB'
             if res[2] == 'GLY':
                 atcenter = 'CA'
-            xyz = self.sql.get(
-                'x,y,z', resSeq=res[1], chainID=res[0], name=atcenter)[0]
-            # xyz = np.mean(self.sql.get('x,y,z',resSeq=r[1],chainID=r[0]),0)
+                
+            try :
+                xyz = self.sql.get(
+                    'x,y,z', resSeq=res[1], chainID=res[0], name=atcenter)[0]
+            except IndexError :
+                warnings .warn('Atom ', atcenter, ' not found for residue ', key[1], \
+                               '. Use residue center as feature center')            
+                xyz = np.mean(self.sql.get('x,y,z',resSeq=r[1],chainID=r[0]),0)
+
             xyzkey = tuple([chain] + xyz)
 
             # put the data in dict
