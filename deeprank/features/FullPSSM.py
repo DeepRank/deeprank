@@ -218,7 +218,7 @@ class FullPSSM(FeatureClass):
             ctc_res_with_pssm = pssm_res_set.intersection(ctc_res_set)
             warnings.warn(
                 f"{self.mol_name}: The following interface residues have "
-                f" no pssm value:\n {pssm_res_wo_ctc}"
+                f" a CA or CB missing :\n {pssm_res_wo_ctc}"
             )
         else:
             ctc_res_with_pssm = ctc_res
