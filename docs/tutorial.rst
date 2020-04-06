@@ -30,21 +30,24 @@ Most target values require the comparison of the decoy structure with those of t
 
 The code will look for PDB in that folder and use the one whose name correspond to the decoy. For example if the decoy is named 1AK4_100w.pdb, the code will use the native 1AK4.pdb.
 
+Then, if you want to compute pssm-related features like PSSM_IC, you must specify the path to the pssm files. The code will look for one .pssm file for each chain in the pdb files provided. The Pssm file must be named as <PDB_ID>.<Chain_ID>.pssm .
+
+>>> pssm_source = './1AK4/pssm_raw'
+
 Finally we must specify the name of the HDF5 file where to store the data:
 
 >>> hdf5 = '1ak4.hdf5'
 
 We are now ready to initialize the ``DataGenerator`` class included in DeepRank
 
->>> database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,
+>>> database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,pssm_source=pssm_source,
 >>> 	                     compute_targets  = ['deeprank.targets.dockQ'],
 >>> 	                     compute_features = ['deeprank.features.AtomicFeature',
->>> 	                                         'deeprank.features.NaivePSSM',
 >>> 	                                         'deeprank.features.PSSM_IC',
 >>> 	                                         'deeprank.features.BSA'],
 >>> 	                     hdf5=h5file)
 
-As you can see we specify here the ``pdb_source`` and ``pdb_native`` argument of the ``DataGenerator``. We also must specify which feature and which target values must be computed for each complex. This is done by providing a list of file names that are in charge of these calculations. A detail of these files can be found here and a example on how to create and call your own feature/target module here.
+As you can see we specify here the ``pdb_source`` and ``pdb_native`` argument of the ``DataGenerator``. We also must specify which feature and which target values must be computed for each complex. This is done by providing a list of file names that are in charge of these calculations. A detail of these files can be found here and an example on how to create and call your own feature/target module here.
 
 The above statement initalize the calss instance but do not compute anything. To actually perform the calculation, we must use the ``create_database()`` method of the class:
 
@@ -64,18 +67,17 @@ The next step consists in mapping the features calculated above to a grid of poi
 >>> 	'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
 >>> }
 
-Here we specify that we want 30 points in each direction with distance of 1 Angs between each points. We must also here sepcify the atomic densities we want. While atomic densities are really a feature of the conformation, they do not require any precalculation unlike, the other features calculated above. Hence they can be directly specified in the ``grid_info``. We will see how to create a feature calculator that does the same job below to illustrate the creation of new features.
-
+Here we specify that we want 30 points in each direction with a distance of 1 Angs between each point. We must also here specify the atomic densities we want. While atomic densities are actually a feature of the conformation, they do not require any precalculation, unlike the other features calculated above. Hence they can be directly specified in the ``grid_info``. We will see how to create a feature calculator that does the same job below to illustrate the creation of new features.
 We are now able to map all the features we have calculated on the grid. This is simply done with the method call:
 
 >>> database.map_features(grid_info,try_sparse=True)
 
-By setting ``try_sparse`` to True the code will try to store the 3D maps as a built-in sparse format. This can seriously reduce the disck space required by the datase. As a result you must have now a file called ``1ak4.hdf5`` that contains all the data of the 10 decoys located in ``1AK4/decoys/``. You can easily explore this file and visualized the data using the DeepXplorer interface (https://github.com/DeepRank/DeepXplorer).
+By setting ``try_sparse`` to True the code will try to store the 3D maps as a built-in sparse format. This can seriously reduce the disk space required by the dataset. As a result you must have now a file called ``1ak4.hdf5`` that contains all the data of the 10 decoys located in ``1AK4/decoys/``. You can easily explore this file and visualized the data using the DeepXplorer interface (https://github.com/DeepRank/DeepXplorer).
 
 Adding Features/Targets
 -------------------------
 
-Suppose you've finised creating a huge database and you jusr realize you forgot to compute a specific feature or target. Do you have to recompute everything ? Well that would be silly. You can add features and targets to an existing database very simply:
+Suppose you've finised creating a huge database and you just realize you forgot to compute a specific feature or target. Do you have to recompute everything? Well that would be silly. You can add features and targets to an existing database in a very simple way:
 
 >>> h5file = '1ak4.hdf5'
 >>> database = DataGenerator(compute_targets  = ['deeprank.targets.binary_class'],
@@ -91,7 +93,7 @@ Suppose you've finised creating a huge database and you jusr realize you forgot 
 >>> # map features
 >>> database.map_features()
 
-Voila ! Here we simply sepcify the name of an existing hdf5 file containing the database and new features/targets to add to this database. The methods ``add_target`` and ``add_feature`` are then simply called to add data to the file. Don't forget to map the new features afterwards. Note that you don't have to provide any information for the mapping. The code will detect the grid used for the mapping of the other features and will only map teh features newly added to the database.
+Voilà! Here we simply sepcify the name of an existing hdf5 file containing the database and new features/targets to add to this database. The methods ``add_target`` and ``add_feature`` are then simply called to add data to the file. Don't forget to map the new features afterwards. Note that you don't have to provide any information for the mapping. The code will detect the grid used for the mapping of the other features and will only map the features newly added to the database.
 
 
 
