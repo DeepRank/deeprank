@@ -3,6 +3,7 @@ import warnings
 
 import numpy as np
 import pdb2sql
+import pdb
 
 from deeprank import config
 from deeprank.features import FeatureClass
@@ -218,6 +219,10 @@ class FullPSSM(FeatureClass):
         # get feature values
         for res in ctc_res_with_pssm:
             chain = {'A': 0, 'B': 1}[res[0]]
+            print(res)
+            if res == ('B', 47, 'THR'):
+                print(res)
+                pdb.set_trace()
             key = tuple([chain] + xyz_dict[res])
             for name, value in zip(self.feature_names, self.pssm[res]):
                 # Make sure the feature_names and pssm[res] have

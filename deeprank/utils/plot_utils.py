@@ -463,6 +463,7 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario):
         label caseID               modelID target                                          sourceFL        DR      irmsd         HS
         Test   1AVX  1AVX_ranair-it0_5286      0  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.503823  25.189108   6.980802
         Test   1AVX     1AVX_ti5-itw_354w      1  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.502845   3.668682 -95.158100
+
     '''
 
     print ("=== Prepare the df ===")
@@ -761,6 +762,9 @@ def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'): # on cartes
     rawdataFL=f'{scenario}.rawdata.tsv'
     df.to_csv(rawdataFL, sep = '\t', index = False, float_format = '%.5f')
     print(f'{rawdataFL} generated.\n')
+
+    #rawdataFL=f'{scenario}.rawdata.tsv'
+    #df = pd.read_csv(rawdataFL, sep='\t')
 
     # -- report the number of hits for train/valid/test
     hit_statistics(df)
