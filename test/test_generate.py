@@ -257,8 +257,6 @@ class TestGenerateData(unittest.TestCase):
         database = DataGenerator(hdf5=copy_name)
         database.realign_complexes(align={'axis':'z'})
 
-
-
 if __name__ == "__main__":
 
     # unittest.main()
