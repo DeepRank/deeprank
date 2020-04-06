@@ -1,7 +1,7 @@
 import os
 import unittest
 from time import time
-
+import shutil
 from deeprank.generate import *
 
 
@@ -247,7 +247,14 @@ class TestGenerateData(unittest.TestCase):
 
     def test_7_realign(self):
         '''Realign existing pdbs.'''
-        database = DataGenerator(hdf5='./1ak4.hdf5')
+
+        src_name = './1ak4.hdf5'
+        copy_name = './1ak4_aligned.hdf5'
+
+        os.remove(copy_name)
+        shutil.copy(src_name,copy_name)
+
+        database = DataGenerator(hdf5=copy_name)
         database.realign_complexes(align={'axis':'z'})
 
 
