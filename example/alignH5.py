@@ -9,42 +9,12 @@ from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
 
-# name of the hdf5 to generate
+# name of the hdf5 to align
 h5file = './hdf5/1ak4.hdf5'
-
-# for each hdf5 file where to find the pdbs
-# pdb_source = '../test/1AK4/decoys/'
-#
-# # where to find the native conformations
-# # pdb_native is only used to calculate i-RMSD, dockQ and so on.
-# # The native pdb files will not be saved in the hdf5 file
-# pdb_native = '../test/1AK4/native/'
 
 # where to find the pssm
 pssm_source = '../test/1AK4/pssm_new/'
 
-# initialize the database
-# database = DataGenerator(
-#     pdb_source=pdb_source,
-#     pdb_native=pdb_native,
-#     pssm_source=pssm_source,
-#     data_augmentation=2,
-#     compute_targets=[
-#         'deeprank.targets.dockQ',
-#         'deeprank.targets.binary_class'],
-#     compute_features=[
-#         'deeprank.features.AtomicFeature',
-#         'deeprank.features.FullPSSM',
-#         'deeprank.features.PSSM_IC',
-#         'deeprank.features.BSA',
-#         'deeprank.features.ResidueDensity'],
-#     hdf5=h5file,
-#     mpi_comm=comm)
-#
-
-# compute features/targets for all complexes and write to a hdf5 file
-# print('{:25s}'.format('Create new database') + database.hdf5)
-# database.create_database(prog_bar=True)
 
 # align the principle component 1 of complexes to axis z
 newdb = DataGenerator(hdf5=h5file)
