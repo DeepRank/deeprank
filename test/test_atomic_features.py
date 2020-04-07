@@ -103,7 +103,7 @@ class TestAtomicFeature(unittest.TestCase):
         atfeat.compute_vdw_interchain_only(contact_only=False)
 
         # close the db
-        atfeat.sqldb.close()
+        atfeat.sqldb._close()
 
     # @staticmethod
     # def test_atomic_zdock():
@@ -142,7 +142,7 @@ class TestAtomicFeature(unittest.TestCase):
     #     atfeat.compute_vdw_interchain_only(contact_only=False)
 
     #     # close the db
-    #     atfeat.sqldb.close()
+    #     atfeat.sqldb._close()
 
 
 if __name__ == '__main__':

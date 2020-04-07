@@ -18,30 +18,32 @@ pdb_native = '../test/1AK4/native/'
 # where to find the pssm
 pssm_source = '../test/1AK4/pssm_new/'
 
+# # initialize the database
+# database = DataGenerator(
+#     pdb_source=pdb_source,
+#     pdb_native=pdb_native,
+#     pssm_source=pssm_source,
+#     data_augmentation=2,
+#     compute_targets=[
+#         'deeprank.targets.dockQ',
+#         'deeprank.targets.binary_class'],
+#     compute_features=[
+#         'deeprank.features.AtomicFeature',
+#         'deeprank.features.FullPSSM',
+#         'deeprank.features.PSSM_IC',
+#         'deeprank.features.BSA',
+#         'deeprank.features.ResidueDensity'],
+#     hdf5=h5file,
+#     mpi_comm=comm)
 
-# initialize the database
-database = DataGenerator(
-    pdb_source=pdb_source,
-    pdb_native=pdb_native,
-    pssm_source=pssm_source,
-    data_augmentation=0,
-    compute_targets=[
-        'deeprank.targets.dockQ',
-        'deeprank.targets.binary_class'],
-    compute_features=[
-        'deeprank.features.AtomicFeature',
-        'deeprank.features.FullPSSM',
-        'deeprank.features.PSSM_IC',
-        'deeprank.features.BSA',
-        'deeprank.features.ResidueDensity'],
-    hdf5=h5file,
-    mpi_comm=comm)
 
+# # create the database
+# # compute features/targets for all complexes
+# print('{:25s}'.format('Create new database') + database.hdf5)
+# database.create_database(prog_bar=True)
 
-# create the database
-# compute features/targets for all complexes
-print('{:25s}'.format('Create new database') + database.hdf5)
-database.create_database(prog_bar=True)
+newdb = DataGenerator(hdf5=h5file)
+newdb.realign_complexes(align={'axis':'z'})
 
 
 # define the 3D grid

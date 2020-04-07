@@ -40,7 +40,6 @@ Example:
 >>> database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
 >>>                          compute_targets  = ['deeprank.targets.dockQ'],
 >>>                          compute_features = ['deeprank.features.AtomicFeature',
->>>                                              'deeprank.features.NaivePSSM',
 >>>                                              'deeprank.features.PSSM_IC',
 >>>                                              'deeprank.features.BSA'],
 >>>                          hdf5=h5file)
@@ -65,6 +64,37 @@ Example:
 >>> norm.get()
 
 The details of the different submodule are listed here. The only module that really needs to be used is ``DataGenerator`` and ``NormalizeData``. The ``GridTools`` class should not be directly used by inexperienced users.
+
+
+Structure Alignement
+----------------------------------------
+
+All the complexes contained in the dataset can be aligned similarly to facilitate and improve the training of the model. This can easily be done using the `align` option of the `DataGenerator` for example to align all the complexe along the 'z' direction one can use:
+
+>>> database = DataGenerator(pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
+>>>                          align={"axis":'z'}, data_augmentation=2,
+>>>                          compute_targets=[ ... ], compute_features=[ ... ], ... )
+
+
+Other options are possbile, for example if you would like to have the alignement done only using a subpart of the complex, say the chains A and B you can use :
+
+>>> database = DataGenerator(pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
+>>>                          align={"axis":'z', "selection": {"chainID":["A","B"]} }, data_augmentation=2,
+>>>                          compute_targets=[ ... ], compute_features=[ ... ], ... )
+
+All the selection offered by `pdb2sql` can be used in the `align` dictionnary e.g. : "resId":[1,2,3], "resName":['VAL','LEU'], ... Only the atoms selected will be aligned in the give direction.
+
+You can also try to align the interface between two chains in a given plane. This can be done using :
+
+>>> database = DataGenerator(pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
+>>>                          align={"plane":'xy', "selection":"interface"}, data_augmentation=2,
+>>>                          compute_targets=[ ... ], compute_features=[ ... ], ... )
+
+which by default will use the interface between the first two chains. If you have more than two chains in the complex and want to specify wich chains are forming the interface to be aligned you can use :
+
+>>> database = DataGenerator(pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
+>>>                          align={"plane":'xy', "selection":"interface", "chain1":'A', "chain2":'C'}, data_augmentation=2,
+>>>                          compute_targets=[ ... ], compute_features=[ ... ], ... )
 
 DataGenerator
 ----------------------------------------

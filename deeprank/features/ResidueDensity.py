@@ -86,7 +86,7 @@ class ResidueDensity(FeatureClass):
         # handle with small interface or no interface
         if total_ctc == 0:
             # first close the sql
-            self.sql.close()
+            self.sql._close()
 
             raise ValueError(
                 f"No residue contact found with the cutoff {cutoff}Å. "
@@ -179,7 +179,7 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw):
     resdens.export_data_hdf5(featgrp_raw)
 
     # close sql
-    resdens.sql.close()
+    resdens.sql._close()
 
 ########################################################################
 #
@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
     resdens.get()
     resdens.extract_features()
-    resdens.sql.close()
+    resdens.sql._close()
 
     pprint(resdens.feature_data)
     print()

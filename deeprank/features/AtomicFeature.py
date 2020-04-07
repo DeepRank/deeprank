@@ -61,7 +61,7 @@ class AtomicFeature(FeatureClass):
         >>> atfeat.evaluate_pair_interaction(save_interactions=test_name)
         >>>
         >>> # close the db
-        >>> atfeat.sqldb.close()
+        >>> atfeat.sqldb._close()
         """
 
         super().__init__("Atomic")
@@ -939,7 +939,7 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw):
     atfeat.export_data_hdf5(featgrp_raw)
 
     # close
-    atfeat.sqldb.close()
+    atfeat.sqldb._close()
 
 
 ########################################################################

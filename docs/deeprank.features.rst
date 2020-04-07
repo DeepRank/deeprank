@@ -8,7 +8,6 @@ Feature
 This module contains all the tools to compute feature values for molecular structure. Each submodule must be subclass ``deeprank.features.FeatureClass`` to inherit the export function. At the moment a few features have already been implemented. These are:
     - ``AtomicFeatures``:Coulomb, van der Waals interactions and atomic charges
     - ``BSA`` : Burried Surface area
-    - ``NaivePSSM`` : A very simple approach for PSSM data
     - ``PSSM_IC`` : Information content of the PSSM
     - ``ResidueDensity`` : The residue density for polar/apolar/charged pairs
 
@@ -29,14 +28,6 @@ Burried Surface Area
 ------------------------------
 
 .. automodule:: deeprank.features.BSA
-    :members:
-    :undoc-members:
-
-
-NaivePSSM
-------------------------------------
-
-.. automodule:: deeprank.features.NaivePSSM
     :members:
     :undoc-members:
 

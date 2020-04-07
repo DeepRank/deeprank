@@ -180,7 +180,7 @@ class FullPSSM(FeatureClass):
         # get interface contact residues
         # ctc_res = {"A":[chain 1 residues], "B": [chain2 residues]}
         ctc_res = sql.get_contact_residues(cutoff=cutoff)
-        sql.close()
+        sql._close()
         ctc_res = ctc_res["A"] + ctc_res["B"]
 
         # handle with small interface or no interface
