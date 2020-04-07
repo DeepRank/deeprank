@@ -54,7 +54,9 @@ grid_info = {
 print('{:25s}'.format('Map features in database') + database.hdf5)
 database.map_features(grid_info,try_sparse=True, time=False, prog_bar=True)
 
-# # get the normalization of the features
+# get the normalization of the features.
+# This step can also be done the DataSet class (see learn.py)
+#
 # print('{:25s}'.format('Normalization') + database.hdf5)
 # norm = NormalizeData(database.hdf5)
 # norm.get()
