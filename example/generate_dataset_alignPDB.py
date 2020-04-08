@@ -1,3 +1,8 @@
+# generate a hdf5 file
+# 1. calculate features/targets
+# 2. align pdb
+# 3. map features to 3D grids
+# 4. write to a hdf5 file
 from deeprank.generate import *
 from mpi4py import MPI
 
