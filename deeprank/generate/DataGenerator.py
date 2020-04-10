@@ -1572,15 +1572,18 @@ class DataGenerator(object):
                 feat = list(feat)
 
         for fn in feat:
-
+            
             # extract the data
             data = molgrp['features/' + fn][()]
+            
+            # if data not empty
+            if data.shape[0] != 0:
 
-            # xyz
-            xyz = data[:, 1:4]
+                # xyz
+                xyz = data[:, 1:4]
 
-            # get rotated xyz
-            xyz_rot = pdb2sql.transform.rot_xyz_around_axis(xyz, axis, angle, center)
+                # get rotated xyz
+                xyz_rot = pdb2sql.transform.rot_xyz_around_axis(xyz, axis, angle, center)
 
-            # put back the data
-            molgrp['features/' + fn][:, 1:4] = xyz_rot
+                # put back the data
+                molgrp['features/' + fn][:, 1:4] = xyz_rot
