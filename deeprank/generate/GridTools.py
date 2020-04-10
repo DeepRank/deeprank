@@ -515,36 +515,28 @@ class GridTools(object):
             # xyz : 4 (chain x y z)
             # byte - residue : 3 (chain resSeq resName)
             # byte - atomic  : 4 (chain resSeq resName name)
-            # non xyz format deprecated?
-            if not isinstance(data[0], bytes):
-                feature_type = 'xyz'
-                ntext = 4
-            else:
-                try:
-                    float(data[0].split()[3])
-                    feature_type = 'residue'
-                    ntext = 3
-                except BaseException:
-                    feature_type = 'atomic'
-                    ntext = 4
 
+            # all the format are now xyz
+            feature_type = 'xyz'
+            ntext = 4
+            
             # test if the transform is callable
             # and test it on the first line of the data
             # get the data on the first line
-            if feature_type != 'xyz':
-                data_test = data[0].split()
-                data_test = list(map(float, data_test[ntext:]))
-            else:
+            if data.shape[0] != 0:
+
                 data_test = data[0, ntext:]
 
-            # define the length of the output
-            if transform is None:
-                nFeat = len(data_test)
-            elif callable(transform):
-                nFeat = len(transform(data_test))
+                # define the length of the output
+                if transform is None:
+                    nFeat = len(data_test)
+                elif callable(transform):
+                    nFeat = len(transform(data_test))
+                else:
+                    print('Error transform in map_feature must be callable')
+                    return None
             else:
-                print('Error transform in map_feature must be callable')
-                return None
+                nFeat = 1
 
             # declare the dict
             # that will in fine holds all the data
@@ -554,7 +546,7 @@ class GridTools(object):
                     dict_data[feature_name + '_chainB'] = np.zeros(self.npts)
                 else:
                     dict_data[feature_name] = np.zeros(self.npts)
-            else:
+            else: # do we need that ?!
                 for iF in range(nFeat):
                     if self.feature_mode == 'ind':
                         dict_data[feature_name + '_chainA_%03d' %
@@ -564,6 +556,10 @@ class GridTools(object):
                     else:
                         dict_data[feature_name + '_%03d' %
                                   iF] = np.zeros(self.npts)
+
+            # skip empty features
+            if data.shape[0] == 0:
+                continue
 
             # rest the grid and get the x y z values
             if self.cuda:  # pragma: no cover
