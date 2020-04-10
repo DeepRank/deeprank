@@ -166,12 +166,6 @@ class FullPSSM(FeatureClass):
         sql = pdb2sql.interface(self.pdb_file)
 
         # set achors for all residues and get their xyz
-        # xyz_info = sql.get('chainID,resSeq,resName', name='CB')
-        # xyz_info += sql.get('chainID,resSeq,resName', name='CA',
-        #                     resName='GLY')
-        # xyz = sql.get('x,y,z', name='CB')
-        # xyz += sql.get('x,y,z', name='CA', resName='GLY')
-
         xyz_info, xyz = self.get_residue_center(sql)
 
         xyz_dict = {}
@@ -213,15 +207,6 @@ class FullPSSM(FeatureClass):
                 f"{self.mol_name}: The following interface residues have "
                 f" no pssm value:\n {ctc_res_wo_pssm}"
             )
-
-        # elif len(pssm_res_set.difference(ctc_res_set)) > 0:
-        #     # can happen if CA/CB is missing in the res
-        #     pssm_res_wo_ctc = pssm_res_set.difference(ctc_res_set)
-        #     ctc_res_with_pssm = pssm_res_set.intersection(ctc_res_set)
-        #     warnings.warn(
-        #         f"{self.mol_name}: The following interface residues have "
-        #         f" a CA or CB missing :\n {pssm_res_wo_ctc}"
-        #     )
 
         else:
             ctc_res_with_pssm = ctc_res

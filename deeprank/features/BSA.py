@@ -117,19 +117,7 @@ class BSA(FeatureClass):
             # define the xyz key : (chain,x,y,z)
             chain = {'A': 0, 'B': 1}[res[0]]
 
-            # atcenter = 'CB'
-            # if res[2] == 'GLY':
-            #     atcenter = 'CA'
-                
-            # try :
-            #     xyz = self.sql.get(
-            #         'x,y,z', resSeq=res[1], chainID=res[0], name=atcenter)[0]
-            # except IndexError :
-            #     warnings.warn('Atom ', atcenter, ' not found for residue ', key[1], \
-            #                    '. Use residue center as feature center')            
-            #     xyz = np.mean(self.sql.get('x,y,z',resSeq=res[1],chainID=res[0]),0)
-            # xyzkey = tuple([chain] + xyz)
-            
+            # get the center            
             _, xyz = self.get_residue_center(self.sql, res=res)
             xyzkey = tuple([chain] + xyz[0])
 
