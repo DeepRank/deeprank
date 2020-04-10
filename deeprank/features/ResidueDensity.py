@@ -123,17 +123,10 @@ class ResidueDensity(FeatureClass):
             # total density in raw format
             self.feature_data['RCD_total'][key] = [res.density['total']]
 
-            # get the type of the center
-            atcenter = 'CB'
-            if key[2] == 'GLY':
-                atcenter = 'CA'
+            # get the center
+            _, xyz = self.get_residue_center(self.sql, res=key)
+            xyz_key = tuple([{'A': 0, 'B': 1}[key[0]]] + xyz[0])
 
-            # get the xyz of the center atom
-            xyz = self.sql.get(
-                'x,y,z', resSeq=key[1], chainID=key[0], name=atcenter)[0]
-            #xyz = np.mean(self.sql.get('x,y,z',resSeq=key[1],chainID=key[0]),0).tolist()
-
-            xyz_key = tuple([{'A': 0, 'B': 1}[key[0]]] + xyz)
             self.feature_data_xyz['RCD_total'][xyz_key] = [
                 res.density['total']]
 
