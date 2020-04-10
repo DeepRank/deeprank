@@ -251,7 +251,7 @@ class DataGenerator(object):
 
             # names of the molecule
             mol_name = os.path.splitext(os.path.basename(cplx))[0]
-            mol_name = mol_name.replace('-', '_')
+            #mol_name = mol_name.replace('-', '_')
             mol_aug_name_list = []
 
             try:
