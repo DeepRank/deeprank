@@ -1,3 +1,7 @@
+# generate a hdf5 file
+# 1. calculate features/targets
+# 2. map features to 3D grids
+# 3. write to a hdf5 file
 from deeprank.generate import *
 from mpi4py import MPI
 
@@ -23,7 +27,7 @@ database = DataGenerator(
     pdb_source=pdb_source,
     pdb_native=pdb_native,
     pssm_source=pssm_source,
-    data_augmentation=2,
+    data_augmentation=None,
     compute_targets=[
         'deeprank.targets.dockQ',
         'deeprank.targets.binary_class'],
