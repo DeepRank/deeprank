@@ -19,12 +19,12 @@ To get onboard, first ask project manager to get access to the DeepRank repo (sh
 1. Create an issue in [the repo Issues](https://github.com/DeepRank/deeprank/issues) for any idea, bug, feature, improvement, etc.
 2. Comment and mention (i.e. @) someone in the issue for discussion if necessary.
 3. Assign the issue to yourself or someone after asking
-4. Create a new branch from the `dev` branch for this issue, and name it in a format of `issue{ID}_*`, e.g. `issue7_format_docstring`.
+4. Create a new branch from the `development` branch for this issue, and name it in a format of `issue{ID}_*`, e.g. `issue7_format_docstring`.
 5. Work in this issue branch to solve the issue. Check this [guide](https://google.github.io/eng-practices/review/developer/) to see how to make good commits.
-6. Pull request to merge this issue branch to the `dev` branch when last step is completed.
+6. Create a Pull Request to merge this issue branch to the `development` branch when last step is completed.
 7. Assign someone but not yourself to review the pull request. For reviewers, check this [guide](https://google.github.io/eng-practices/review/reviewer/) to see how to do a code review.
 8. Follow reviewer's comments to fix the code until reviewer approve you to merge. Check this [guide](https://google.github.io/eng-practices/review/developer/handling-comments.html) to see how to handle reviewer comments.
-9. Merge the issue branch to `dev` branch and delete the issue branch.
+9. Merge the issue branch to `development` branch and delete the issue branch.
 10. Close the issue after leavning a comment of the related pull request ID.
 
 Repeat the 1-10 steps for next issue.
