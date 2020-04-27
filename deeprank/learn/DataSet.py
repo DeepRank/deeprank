@@ -1104,6 +1104,12 @@ class DataSet():
         # get the mol
         mol_data = fh5.get(mol)
 
+        # xue:
+        if 'mapped_features' not in mol_data.keys():
+            logger.error(f"xue: Error: mol: {mol} in {fname} does not have mapped_features ")
+            fh5.close()
+            sys.exit()
+
         # get the features
         feature = []
         for feat_type, feat_names in self.select_feature.items():
