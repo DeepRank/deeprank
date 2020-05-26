@@ -359,10 +359,16 @@ def get_HS(modelIDs, haddockS):
     HS = []
     idx_keep = []
 
+    # -- remove r000 from modelID
+    modelIDs = [re.sub("_r\d+$",'', modelID) for modelID in modelIDs ]
+
+    # -- retrieve HS
     for idx, modelID in enumerate(modelIDs):
         if modelID in haddockS:
             HS.append(haddockS[modelID])
             idx_keep.append(idx)
+        else:
+            print(f"Warning: model ID {modelID} does not have HS.")
     return HS, idx_keep
 
 def filter_models(df, label = 'Test', scenario = 'ranair'):
