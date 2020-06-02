@@ -992,6 +992,10 @@ class DataGenerator(object):
                      remove_error=True):
         """Map the feature on a grid of points centered at the interface.
 
+        If features to map are not given, they will be are automatically
+        determined for each molecule. Otherwise, given features will be mapped
+        for all molecules (i.e. existing mapped features will be recalculated).
+
         Args:
             grid_info (dict): Informaton for the grid.
                 See deeprank.generate.GridTools.py for details.
@@ -1047,37 +1051,11 @@ class DataGenerator(object):
         # Check grid_info
         ################################################################
         # fills in the grid data if not provided : default = NONE
+        grid_info_ref = dict(grid_info)  # deep copy
         grinfo = ['number_of_points', 'resolution']
         for gr in grinfo:
             if gr not in grid_info:
                 grid_info[gr] = None
-
-        # Dtermine which feature to map
-        if 'feature' not in grid_info:
-
-            # get the mol group
-            mol = list(f5.keys())[0]
-
-            # if we havent mapped anything yet or if we reset
-            if 'mapped_features' not in list(f5[mol].keys()) or reset:
-                grid_info['feature'] = list(f5[mol + '/features'].keys())
-
-            # if we have already mapped stuff
-            elif 'mapped_features' in list(f5[mol].keys()):
-
-                # feature name
-                all_feat = list(f5[mol + '/features'].keys())
-
-                # feature already mapped
-                mapped_feat = list(
-                    f5[mol + '/mapped_features/Feature_ind'].keys())
-
-                # we select only the feture that were not mapped yet
-                grid_info['feature'] = []
-                for feat_name in all_feat:
-                    if not any(map(lambda x: x.startswith(feat_name + '_'),
-                                   mapped_feat)):
-                        grid_info['feature'].append(feat_name)
 
         # by default we do not map atomic densities
         if 'atomic_densities' not in grid_info:
@@ -1088,7 +1066,7 @@ class DataGenerator(object):
         for m in modes:
             if m not in grid_info:
                 grid_info[m] = 'ind'
-                
+
         ################################################################
         #
         ################################################################
@@ -1124,6 +1102,30 @@ class DataGenerator(object):
         # loop over the data files
         for mol in mol_tqdm:
             mol_tqdm.set_postfix(mol=mol)
+
+            # Determine which feature to map
+            # if feature not given, then determine it for each molecule
+            if 'feature' not in grid_info_ref:
+                # if we havent mapped anything yet or if we reset
+                if 'mapped_features' not in list(f5[mol].keys()) or reset:
+                    grid_info['feature'] = list(f5[mol + '/features'].keys())
+
+                # if we have already mapped stuff
+                elif 'mapped_features' in list(f5[mol].keys()):
+
+                    # feature name
+                    all_feat = list(f5[mol + '/features'].keys())
+
+                    # feature already mapped
+                    mapped_feat = list(
+                        f5[mol + '/mapped_features/Feature_ind'].keys())
+
+                    # we select only the feture that were not mapped yet
+                    grid_info['feature'] = []
+                    for feat_name in all_feat:
+                        if not any(map(lambda x: x.startswith(feat_name + '_'),
+                                    mapped_feat)):
+                            grid_info['feature'].append(feat_name)
 
             try:
                 # compute the data we want on the grid
@@ -1162,7 +1164,6 @@ class DataGenerator(object):
 
         # close he hdf5 file
         f5.close()
-
 
 # ====================================================================================
 #
