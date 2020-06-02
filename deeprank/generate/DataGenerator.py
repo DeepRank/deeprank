@@ -515,7 +515,12 @@ class DataGenerator(object):
         Examples:
             >>> database = DataGenerator(h5='database.h5')
             >>> database.aug_data(augmentation=3, append=True)
-            >>> database.map_features()
+            >>> grid_info = {
+            >>>     'number_of_points' : [30,30,30],
+            >>>     'resolution' : [1.,1.,1.],
+            >>>     'atomic_densities' : {'C':1.7, 'N':1.55, 'O':1.52, 'S':1.8},
+            >>>     }
+            >>> database.map_features(grid_info)
         """
 
         # check if file exists
@@ -544,7 +549,7 @@ class DataGenerator(object):
                 del f5[i]
 
         self.logger.info(
-            f'{"":2s}Start augmenting data'
+            f'{"":s}\n# Start augmenting data'
             f' with {augmentation} times...')
 
         # GET ALL THE NAMES
@@ -598,6 +603,7 @@ class DataGenerator(object):
                 molgrp.attrs['angle'] = angle
                 molgrp.attrs['center'] = mol_center
         f5.close()
+        self.logger.info(f'\n# Successfully augmented data in {self.hdf5}')
 
 # ====================================================================================
 #
