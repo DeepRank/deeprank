@@ -504,6 +504,100 @@ class DataGenerator(object):
         self.f5.close()
         self.logger.info(f'\n# Successfully created database: {self.hdf5}\n')
 
+    def aug_data(self, augmentation, keep_existing_aug=True, random_seed=None):
+        """Augment exiting original PDB data and features.
+
+        Args:
+            augmentation(int): Times of augmentation
+            keep_existing_aug (bool, optional): Keep existing augmentated data.
+                If False, existing aug will be removed. Defaults to True.
+
+        Examples:
+            >>> database = DataGenerator(h5='database.h5')
+            >>> database.aug_data(augmentation=3, append=True)
+            >>> database.map_features()
+        """
+
+        # check if file exists
+        if not os.path.isfile(self.hdf5):
+            raise FileNotFoundError('File %s does not exists' % self.hdf5)
+
+        # get the folder names
+        f5 = h5py.File(self.hdf5, 'a')
+        fnames = f5.keys()
+
+        # get the non rotated ones
+        fnames_original = list(
+            filter(lambda x: not re.search(r'_r\d+$', x), fnames))
+
+        # get the rotated ones
+        fnames_augmented = list(
+            filter(lambda x: re.search(r'_r\d+$', x), fnames))
+
+        aug_id_start = 0
+        if keep_existing_aug:
+            exiting_augs = list(
+                filter(lambda x: re.search(fnames_original[0]+ r'_r\d+$', x), fnames_augmented))
+            aug_id_start += len(exiting_augs)
+        else:
+            for i in fnames_augmented:
+                del f5[i]
+
+        self.logger.info(
+            f'{"":2s}Start augmenting data'
+            f' with {augmentation} times...')
+
+        # GET ALL THE NAMES
+        for mol_name in fnames_original:
+            mol_aug_name_list = [
+                mol_name + '_r%03d' % (idir + 1) for idir in
+                range(aug_id_start, aug_id_start + augmentation)]
+
+            # loop over the complexes
+            for mol_aug_name in mol_aug_name_list:
+
+                # crete a subgroup for the molecule
+                molgrp = f5.require_group(mol_aug_name)
+                molgrp.attrs['type'] = 'molecule'
+
+                # copy the ref into it
+                if 'native' in f5[mol_name]:
+                    f5.copy(mol_name + '/native', molgrp)
+
+                # get the rotation axis and angle
+                if self.align is None:
+                    axis, angle = pdb2sql.transform.get_rot_axis_angle(random_seed)
+                else:
+                    axis, angle = self._get_aligned_rotation_axis_angle(random_seed,
+                                                                        self.align)
+
+                # create the new pdb and get molecule center
+                # molecule center is the origin of rotation)
+                mol_center = self._add_aug_pdb(
+                    molgrp, f5[mol_name + '/complex'][()], 'complex', axis, angle)
+
+                # copy the targets/features
+                if 'targets' in f5[mol_name]:
+                    f5.copy(mol_name + '/targets/', molgrp)
+                f5.copy(mol_name + '/features/', molgrp)
+
+                # rotate the feature
+                self._rotate_feature(molgrp, axis, angle, mol_center)
+
+                # grid center used to create grid box
+                molgrp.require_group('grid_points')
+                center = pdb2sql.transform.rot_xyz_around_axis(
+                    f5[mol_name + '/grid_points/center'],
+                    axis, angle, mol_center)
+
+                molgrp['grid_points'].create_dataset('center', data=center)
+
+                # store the rotation axis/angl/center as attriutes
+                # in case we need them later
+                molgrp.attrs['axis'] = axis
+                molgrp.attrs['angle'] = angle
+                molgrp.attrs['center'] = mol_center
+        f5.close()
 
 # ====================================================================================
 #
