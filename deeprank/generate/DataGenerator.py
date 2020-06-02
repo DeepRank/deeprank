@@ -1,4 +1,5 @@
 import importlib
+import copy
 import os
 import re
 import sys
@@ -1051,7 +1052,7 @@ class DataGenerator(object):
         # Check grid_info
         ################################################################
         # fills in the grid data if not provided : default = NONE
-        grid_info_ref = dict(grid_info)  # deep copy
+        grid_info_ref = copy.deepcopy(grid_info)
         grinfo = ['number_of_points', 'resolution']
         for gr in grinfo:
             if gr not in grid_info:
