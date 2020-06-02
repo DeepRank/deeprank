@@ -257,6 +257,28 @@ class TestGenerateData(unittest.TestCase):
         database = DataGenerator(hdf5=copy_name)
         database.realign_complexes(align={'axis':'z'})
 
+    def test_8_aug_data(self):
+
+        src_name = './1ak4.hdf5'
+        copy_name = './1ak4_aug.hdf5'
+
+        shutil.copy(src_name, copy_name)
+
+        database = DataGenerator(hdf5=copy_name)
+        database.aug_data(augmentation=2, keep_existing_aug=True)
+        grid_info = {
+            'number_of_points': [10, 10, 10],
+            'resolution': [3., 3., 3.],
+            'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
+            'feature': ['PSSM_ALA','RCD_total', 'bsa', 'charge',],
+        }
+        database.map_features(
+            grid_info,
+            try_sparse=True,
+            time=False,
+            prog_bar=False,
+        )
+
 if __name__ == "__main__":
 
     # unittest.main()
@@ -268,3 +290,4 @@ if __name__ == "__main__":
     inst.test_5_align()
     inst.test_6_align_interface()
     inst.test_7_realign()
+    inst.test_8_aug_data()
