@@ -44,6 +44,7 @@ test/*.pdb
 #docs/_static
 #docs/_templates
 
+
 # vscode setting
 .vscode
 
@@ -51,3 +52,7 @@ test/*.pdb
 test/1AK4/atomic_features/test_1AK4_100w.dat
 test/2OUL/atomic_features/test_2OUL_1.dat
 test/atomic_pair_interaction.dat
+
+# Mac OSX files
+.DS_Store
+

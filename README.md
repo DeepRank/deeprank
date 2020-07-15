@@ -5,7 +5,7 @@
 [![Build Status](https://secure.travis-ci.org/DeepRank/deeprank.svg?branch=master)](https://travis-ci.org/DeepRank/deeprank)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/9252e59633cf46a7ada0c3c614c175ea)](https://www.codacy.com/app/NicoRenaud/deeprank?utm_source=github.com&utm_medium=referral&utm_content=DeepRank/deeprank&utm_campaign=Badge_Grade)
 [![Coverage Status](https://coveralls.io/repos/github/DeepRank/deeprank/badge.svg?branch=master)](https://coveralls.io/github/DeepRank/deeprank?branch=master)
-[![Documentation Status](https://readthedocs.org/projects/deeprank/badge/?version=latest)](http://deeprank.readthedocs.io/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/deeprank/badge/?version=latest)](http://deeprank.readthedocs.io/?badge=latest) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3735042.svg)](https://doi.org/10.5281/zenodo.3735042)
 
 The documentation of the module can be found on readthedocs :
 <http://deeprank.readthedocs.io/en/latest/>
@@ -16,11 +16,13 @@ The documentation of the module can be found on readthedocs :
 
 Minimal information to install the module
 
+
 -   clone the repository `git clone https://github.com/DeepRank/deeprank.git`
 -   go there             `cd deeprank`
 -   install the module   `pip install -e ./`
 -   go int the test dir `cd test`
 -   run the test suite `pytest`
+
 
 ## 2 . Tutorial
 

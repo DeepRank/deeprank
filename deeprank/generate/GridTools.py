@@ -168,7 +168,7 @@ class GridTools(object):
         self.add_all_atomic_densities()
 
         # cloe the db file
-        self.sqldb.close()
+        self.sqldb._close()
 
     ################################################################
 
@@ -199,7 +199,7 @@ class GridTools(object):
         self.add_all_atomic_densities()
 
         # cloe the db file
-        self.sqldb.close()
+        self.sqldb._close()
 
     ################################################################
 

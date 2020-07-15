@@ -57,7 +57,7 @@ def visualize3Ddata(hdf5=None, mol_name=None, out=None):
     # create the pdb file
     sqldb = pdb2sql.pdb2sql(molgrp['complex'][:])
     sqldb.exportpdb(outdir + '/complex.pdb')
-    sqldb.close()
+    sqldb._close()
 
     # get the grid
     grid = {}

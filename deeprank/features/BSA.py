@@ -31,7 +31,7 @@ class BSA(FeatureClass):
         >>> bsa = BSA('1AK4.pdb')
         >>> bsa.get_structure()
         >>> bsa.get_contact_residue_sasa()
-        >>> bsa.sql.close()
+        >>> bsa.sql._close()
         """
         self.pdb_data = pdb_data
         self.sql = pdb2sql.interface(pdb_data)
@@ -156,7 +156,7 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw):
     bsa.export_data_hdf5(featgrp_raw)
 
     # close the file
-    bsa.sql.close()
+    bsa.sql._close()
 
 
 ########################################################################
@@ -177,7 +177,7 @@ if __name__ == '__main__':
     bsa = BSA(pdb_file)
     bsa.get_structure()
     bsa.get_contact_residue_sasa()
-    bsa.sql.close()
+    bsa.sql._close()
 
     pprint(bsa.feature_data)
     print()

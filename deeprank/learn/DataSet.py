@@ -1325,7 +1325,7 @@ class DataSet():
 
             densities += [atdensA, atdensB]
 
-        sql.close()
+        sql._close()
 
         return densities
 
