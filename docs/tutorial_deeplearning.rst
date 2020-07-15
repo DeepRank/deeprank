@@ -26,6 +26,9 @@ This is the file we have generated above. Note that more than one file can be sp
 will use all the data contained in both of these files to train the network. We can now create an instance of deeprank.DataSet
 
 >>> data_set = DataSet(database,
+>>>                    grid_info={
+>>>                    'number_of_points': (10, 10, 10),
+>>>                    'resolution': (3, 3, 3)},
 >>>                    select_feature={
 >>>                     'AtomicDensities_ind' : 'all',
 >>>                     'Feature_ind' : ['coulomb','vdwaals','charge','pssm']},
