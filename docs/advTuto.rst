@@ -9,9 +9,9 @@ This page gives a introduction of advanced possibilities with DeepRank
 Create your own features
 --------------------------
 
-To create your own feature you simply have to create a feature class that must subclass the ``FeatureClass`` contained in ``features/FeatureClass.py``. As an example we will create here a new feature that maps the carbon alpha of the contact residue. The first thing we need to do is to import the pdb2sql tool and the FeatureClass superclass
+To create your own feature you simply have to create a feature class that must subclass the ``FeatureClass`` contained in ``features/FeatureClass.py``. As an example we will create here a new feature that maps the carbon alpha of the contact residue. The first thing we need to do is to import pdb2sql and the FeatureClass superclass
 
->>> from deeprank.tools import pdb2sql
+>>> import pdb2sql
 >>> from deeprank.features import FeatureClass
 
 We then have to define the class and its initialization. Here we will simply initialize the class with the pdb information of the molecule we want to process. This is therefore given by
@@ -103,6 +103,8 @@ Create your own targets
 
 The creation of new target is similar to those of new features but simpler. The targets don't need to be mapped on a grid and therefore don't need any fancy formatting. We simply need to create a new dataset in the target group of the molecule concerned. For example let's say we want to associate a random number to each conformation. To do that we can use the following code:
 
+>>> import numpy as np
+>>> 
 >>> def get_random_number():
 >>> 	return np.random.rand()
 >>> 
@@ -118,4 +120,4 @@ As for the features, the new target must be called in a function with a very pre
 If as before we assume that the file containing this function is in the local folder and is called ``random.py`` we can compute the target by calling the ``DataGenerator`` with:
 
 >>> database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,
->>> 	                     compute_targets = ['random',....]
+>>> 	                     compute_targets = ['random',....])
