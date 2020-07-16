@@ -6,7 +6,7 @@ Generate Data
 This module contains all the tools to compute the features and targets and to map the features onto a grid of points. The main class used for the data generation is ``deeprank.generate.DataGenerator``. Through this class you can specify the molecules you want to consider, the features and the targets that need to be computed and the way to map the features on the grid. The data is stored in a single HDF5 file. In this file, each conformation has its own group that contains all the information related to the conformation. This includes, the pdb data, the value of the feature (in human readable format and xyz-val format), the value of the targe values, the grid points and the mapped features on the grid.
 
 
-At the moment a number of features are already implemented. This inculde:
+At the moment a number of features are already implemented. This include:
 
     - Atomic densities
     - Coulomb & vd Waals interactions

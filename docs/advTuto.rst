@@ -9,12 +9,12 @@ This page gives a introduction of advanced possibilities with DeepRank
 Create your own features
 --------------------------
 
-To create your own feature yo[u simply have to create a feature class that must subclass the ``FeatureClass`` contained in ``features/FeatureClass.py``. As an example we will create here a new feature that maps the carbon alpha of the contact residue. The first thing we need to do is to import the pdb2sql tool and the FeatureClass superclass
+To create your own feature you simply have to create a feature class that must subclass the ``FeatureClass`` contained in ``features/FeatureClass.py``. As an example we will create here a new feature that maps the carbon alpha of the contact residue. The first thing we need to do is to import the pdb2sql tool and the FeatureClass superclass
 
 >>> from deeprank.tools import pdb2sql
 >>> from deeprank.features import FeatureClass
 
-We then have to define the class ant its initialization. Here we will simply initialize the class with the pdb information of the molecule we want to process. This is therefore given by
+We then have to define the class and its initialization. Here we will simply initialize the class with the pdb information of the molecule we want to process. This is therefore given by
 
 >>> # a new class based on the FeatureClass
 >>> class CarbonAlphaFeature(FeatureClass):
@@ -56,7 +56,7 @@ We then have to define the class ant its initialization. Here we will simply ini
 >>>			self.feature_data_xyz['CA'] = xyzval
 
 
-As you can see we must initialize the superclass. We use here the argument 'Atomic' the feature is an atomic based feature. If we would creaet a residue based feature (e.g. PSSM, RC, ... ) we would have used here the argument 'Residue'. This argument specify the printing format of the feature in a human readable format and doesn't affect the mapping. From the super class the new class inherit two methods
+As you can see we must initialize the superclass. Since we use here the argument 'Atomic' the feature is an atomic based feature. If we would create a residue based feature (e.g. PSSM, RC, ... ) we would have used here the argument 'Residue'. This argument specifies the printing format of the feature in a human readable format and doesn't affect the mapping. From the super class the new class inherit two methods
 
 
 >>> export_data_hdf5(self,featgrp)
@@ -92,7 +92,7 @@ Several example can be found in the feature already included in DeepRank. The lo
 >>>		cafeat.db.close()
 
 
-Finally to compute this feature we must call it during the data generation process. Let's assume that the file containing the ``__compute_feature__`` function is in the local folder and is called 1``CAfeature.py``. To use this new feature in the generation we can simply pass the name of this file in the DataGenerator as
+Finally to compute this feature we must call it during the data generation process. Let's assume that the file containing the ``__compute_feature__`` function is in the local folder and is called ``CAfeature.py``. To use this new feature in the generation we can simply pass the name of this file in the DataGenerator as
 
 >>> database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,
 >>> 	                     compute_features = ['CAFeature',....]
@@ -101,7 +101,7 @@ Finally to compute this feature we must call it during the data generation proce
 Create your own targets
 --------------------------
 
-The creation of new target is similar to those of new features but simpler. The targets don't need to be mapped on a grid and therefore don't need any fancy formating. We simply need to create a new dataset in the target group of the molecule concerned. For example let's say we want to associate a random number to each conformation. To do that we can use the following code:
+The creation of new target is similar to those of new features but simpler. The targets don't need to be mapped on a grid and therefore don't need any fancy formatting. We simply need to create a new dataset in the target group of the molecule concerned. For example let's say we want to associate a random number to each conformation. To do that we can use the following code:
 
 >>> def get_random_number():
 >>> 	return np.random.rand()
