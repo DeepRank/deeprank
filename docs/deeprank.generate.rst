@@ -3,7 +3,7 @@ Generate Data
 
 .. automodule:: deeprank.generate
 
-This module contains all the tools to compute the features and targets and to map the features onto a grid of points. The main class used for the data generation is ``deeprank.generate.DataGenerator``. Through this class you can specify the molecules you want to consider, the features and the targets that need to be computed and the way to map the features on the grid. The data is stored in a single HDF5 file. In this file, each conformation has its own group that contains all the information related to the conformation. This includes, the pdb data, the value of the feature (in human readable format and xyz-val format), the value of the targe values, the grid points and the mapped features on the grid.
+This module contains all the tools to compute the features and targets and to map the features onto a grid of points. The main class used for the data generation is ``deeprank.generate.DataGenerator``. Through this class you can specify the molecules you want to consider, the features and the targets that need to be computed and the way to map the features on the grid. The data is stored in a single HDF5 file. In this file, each conformation has its own group that contains all the information related to the conformation. This includes the pdb data, the value of the feature (in human readable format and xyz-val format), the value of the targe values, the grid points and the mapped features on the grid.
 
 
 At the moment a number of features are already implemented. This include:
@@ -32,19 +32,24 @@ Normalization of the data can be time consuming as the dataset becomes large. As
 Example:
 
 >>> from deeprank.generate import *
+>>> from time import time
+>>>
 >>> pdb_source     = ['./1AK4/decoys/']
 >>> pdb_native     = ['./1AK4/native/']
+>>> pssm_source    = './1AK4/pssm_new/'
 >>> h5file = '1ak4.hdf5'
 >>>
 >>> #init the data assembler
->>> database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,data_augmentation=None,
+>>> database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,pssm_source=pssm_source,
+>>>                          data_augmentation=None,
 >>>                          compute_targets  = ['deeprank.targets.dockQ'],
 >>>                          compute_features = ['deeprank.features.AtomicFeature',
->>>                                              'deeprank.features.NaivePSSM',
+>>>                                              'deeprank.features.FullPSSM',
 >>>                                              'deeprank.features.PSSM_IC',
 >>>                                              'deeprank.features.BSA'],
 >>>                          hdf5=h5file)
 >>>
+>>> t0 = time()
 >>> #create new files
 >>> database.create_database(prog_bar=True)
 >>>
@@ -70,7 +75,7 @@ The details of the different submodule are listed here. The only module that rea
 Structure Alignement
 ----------------------------------------
 
-All the complexes contained in the dataset can be aligned similarly to facilitate and improve the training of the model. This can easily be done using the `align` option of the `DataGenerator` for example to align all the complexe along the 'z' direction one can use:
+All the complexes contained in the dataset can be aligned similarly to facilitate and improve the training of the model. This can easily be done using the `align` option of the `DataGenerator` for example to align all the complexes along the 'z' direction one can use:
 
 >>> database = DataGenerator(pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
 >>>                          align={"axis":'z'}, data_augmentation=2,
@@ -91,7 +96,7 @@ You can also try to align the interface between two chains in a given plane. Thi
 >>>                          align={"plane":'xy', "selection":"interface"}, data_augmentation=2,
 >>>                          compute_targets=[ ... ], compute_features=[ ... ], ... )
 
-which by default will use the interface between the first two chains. If you have more than two chains in the complex and want to specify wich chains are forming the interface to be aligned you can use :
+which by default will use the interface between the first two chains. If you have more than two chains in the complex and want to specify which chains are forming the interface to be aligned you can use :
 
 >>> database = DataGenerator(pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
 >>>                          align={"plane":'xy', "selection":"interface", "chain1":'A', "chain2":'C'}, data_augmentation=2,
