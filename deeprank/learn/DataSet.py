@@ -291,11 +291,9 @@ class DataSet():
         logger.info('\n')
         logger.info("   Data Set Info:")
         logger.info(
+            f'   Augmentation        : {self.use_rotation} rotations')
+        logger.info(
             f'   Training set        : {self.ntrain} conformations')
-        if self.data_augmentation is not None:
-            logger.info(
-                f'   Augmentation        : {self.data_augmentation} rotations')
-
         logger.info(
             f'   Validation set      : {self.nvalid} conformations')
         logger.info(
@@ -498,9 +496,9 @@ class DataSet():
             list: list of selected complexes
         """
 
+        fnames_original = list(
+            filter(lambda x: not re.search(r'_r\d+$', x), mol_names))
         if self.use_rotation is not None:
-            fnames_original = list(
-                filter(lambda x: not re.search(r'_r\d+$', x), mol_names))
             fnames_augmented = []
             # TODO if there is no augmentation data in dataaset,
             # the fnames_augmented should be 0, should report it.
@@ -513,6 +511,10 @@ class DataSet():
                 selected_mol_names = fnames_original
         else:
             selected_mol_names = mol_names
+            sample_id = fnames_original[0]
+            num_rotations = len(list((filter(lambda x:
+                                re.search(sample_id + '_r', x), mol_names))))
+            self.use_rotation = num_rotations
 
         return selected_mol_names
 
