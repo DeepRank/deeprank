@@ -18,7 +18,7 @@ That imports all the submodules required to generate data.
 Create the database
 ---------------------
 
-The generation of the data also requires a series of PDB file for which we want to compute features and targets. To specify where these files are located you can simply provide the path of the directory where these files are stored. This is called here ``pdb_source``. In the test file we set:
+The generation of the data also requires a series of PDB files for which we want to compute features and targets. To specify where these files are located you can simply provide the path of the directory where these files are stored. This is called here ``pdb_source``. In the test file we set:
 
 >>> pdb_source = ['./1AK4/decoys']
 
