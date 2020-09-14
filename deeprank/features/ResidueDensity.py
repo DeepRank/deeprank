@@ -25,6 +25,8 @@ class ResidueDensity(FeatureClass):
         self.pdb_data = pdb_data
         self.sql = pdb2sql.interface(pdb_data)
         self.chains_label = [chain1, chain2]
+        self.chain1 = chain1
+        self.chain2 = chain2
 
         self.feature_data = {}
         self.feature_data_xyz = {}
@@ -125,7 +127,7 @@ class ResidueDensity(FeatureClass):
 
             # get the center
             _, xyz = self.get_residue_center(self.sql, res=key)
-            xyz_key = tuple([{'A': 0, 'B': 1}[key[0]]] + xyz[0])
+            xyz_key = tuple([{self.chain1: 0, self.chain2: 1}[key[0]]] + xyz[0])
 
             self.feature_data_xyz['RCD_total'][xyz_key] = [
                 res.density['total']]
@@ -156,10 +158,10 @@ class residue_pair(object):
 #
 ########################################################################
 
-def __compute_feature__(pdb_data, featgrp, featgrp_raw):
+def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2):
 
     # create instance
-    resdens = ResidueDensity(pdb_data)
+    resdens = ResidueDensity(pdb_data, chain1=chain1, chain2=chain2)
 
     # get the residue conacts
     resdens.get()
