@@ -26,7 +26,7 @@ class GridTools(object):
                  number_of_points=30, resolution=1.,
                  atomic_densities=None, atomic_densities_mode='ind',
                  feature=None, feature_mode='ind',
-                 contact_distance=8.5,
+                 contact_distance=8.5, chain1='A', chain2='B',
                  cuda=False, gpu_block=None, cuda_func=None, cuda_atomic=None,
                  prog_bar=False, time=False, try_sparse=True):
         """Map the feature of a complex on the grid.
@@ -89,6 +89,10 @@ class GridTools(object):
         # mapping mode
         self.feature_mode = feature_mode
         self.atomic_densities_mode = atomic_densities_mode
+
+        # chain IDs
+        self.chain1 = chain1
+        self.chain2 = chain2
 
         # cuda support
         self.cuda = cuda
@@ -213,7 +217,7 @@ class GridTools(object):
         """Get the center of conact atoms."""
 
         contact_atoms = self.sqldb.get_contact_atoms(
-            cutoff=self.contact_distance)
+            cutoff=self.contact_distance, chain1=self.chain1, chain2=self.chain2)
 
         tmp = []
         for i in contact_atoms.values():
@@ -333,10 +337,11 @@ class GridTools(object):
 
         # get the contact atoms
         if only_contact:
-            index = self.sqldb.get_contact_atoms(cutoff=self.contact_distance)
+            index = self.sqldb.get_contact_atoms(cutoff=self.contact_distance,
+                chain1=self.chain1, chain2=self.chain2)
         else:
-            index = {"A": self.sqldb.get('rowID', chainID='A'),
-                     "B": self.sqldb.get('rowID', chainID='B')}
+            index = {self.chain1: self.sqldb.get('rowID', chainID=self.chain1),
+                     self.chain2: self.sqldb.get('rowID', chainID=self.chain2)}
 
         # loop over all the data we want
         for elementtype, vdw_rad in self.local_tqdm(
@@ -345,9 +350,9 @@ class GridTools(object):
             t0 = time()
 
             xyzA = np.array(self.sqldb.get(
-                'x,y,z', rowID=index["A"], element=elementtype))
+                'x,y,z', rowID=index[self.chain1], element=elementtype))
             xyzB = np.array(self.sqldb.get(
-                'x,y,z', rowID=index["B"], element=elementtype))
+                'x,y,z', rowID=index[self.chain2], element=elementtype))
 
             tprocess = time() - t0
 
@@ -406,8 +411,8 @@ class GridTools(object):
 
             # create the final grid : A and B
             elif mode == 'ind':
-                self.atdens[elementtype + '_chainA'] = atdensA
-                self.atdens[elementtype + '_chainB'] = atdensB
+                self.atdens[elementtype + '_chain' + self.chain1] = atdensA
+                self.atdens[elementtype + '_chain' + self.chain2] = atdensB
             else:
                 raise ValueError(f'Atomic density mode {mode} not recognized')
 
@@ -519,7 +524,7 @@ class GridTools(object):
             # all the format are now xyz
             feature_type = 'xyz'
             ntext = 4
-            
+
             # test if the transform is callable
             # and test it on the first line of the data
             # get the data on the first line
@@ -542,17 +547,17 @@ class GridTools(object):
             # that will in fine holds all the data
             if nFeat == 1:
                 if self.feature_mode == 'ind':
-                    dict_data[feature_name + '_chainA'] = np.zeros(self.npts)
-                    dict_data[feature_name + '_chainB'] = np.zeros(self.npts)
+                    dict_data[feature_name + '_chain' + self.chain1] = np.zeros(self.npts)
+                    dict_data[feature_name + '_chain' + self.chain2] = np.zeros(self.npts)
                 else:
                     dict_data[feature_name] = np.zeros(self.npts)
             else: # do we need that ?!
                 for iF in range(nFeat):
                     if self.feature_mode == 'ind':
-                        dict_data[feature_name + '_chainA_%03d' %
-                                  iF] = np.zeros(self.npts)
-                        dict_data[feature_name + '_chainB_%03d' %
-                                  iF] = np.zeros(self.npts)
+                        dict_data[feature_name + '_chain%s_%03d' %
+                                  self.chain1, iF] = np.zeros(self.npts)
+                        dict_data[feature_name + '_chain%s_%03d' %
+                                  self.chain2, iF] = np.zeros(self.npts)
                     else:
                         dict_data[feature_name + '_%03d' %
                                   iF] = np.zeros(self.npts)
@@ -576,7 +581,7 @@ class GridTools(object):
                 # i.e chain x y z values
                 if feature_type == 'xyz':
 
-                    chain = ['A', 'B'][int(line[0])]
+                    chain = [self.chain1, self.chain2][int(line[0])]
                     pos = line[1:ntext]
                     feat_values = np.array(line[ntext:])
 
@@ -639,7 +644,7 @@ class GridTools(object):
                 # handle the mode
                 fname = feature_name
                 if self.feature_mode == "diff":
-                    coeff = {'A': 1, 'B': -1}[chain]
+                    coeff = {self.chain1: 1, self.chain2: -1}[chain]
                 else:
                     coeff = 1
                 if self.feature_mode == "ind":
