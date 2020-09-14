@@ -8,13 +8,13 @@ from deeprank import config
 
 class ResidueDensity(FeatureClass):
 
-    def __init__(self, pdb_data, chainA='A', chainB='B'):
+    def __init__(self, pdb_data, chain1='A', chain2='B'):
         """Compute the residue contacts between polar/apolar/charged residues.
 
         Args :
             pdb_data (list(byte) or str): pdb data or pdb filename
-            chainA (str, optional): name of the first chain
-            chainB (str, optional): name of the second chain
+            chain1 (str, optional): name of the first chain
+            chain2 (str, optional): name of the second chain
 
         Example :
         >>> rcd = ResidueDensity('1EWY_100w.pdb')
@@ -24,7 +24,7 @@ class ResidueDensity(FeatureClass):
 
         self.pdb_data = pdb_data
         self.sql = pdb2sql.interface(pdb_data)
-        self.chains_label = [chainA, chainB]
+        self.chains_label = [chain1, chain2]
 
         self.feature_data = {}
         self.feature_data_xyz = {}
@@ -37,9 +37,9 @@ class ResidueDensity(FeatureClass):
         Raises:
             ValueError: No residue contact found.
         """
-        # res = {('chainA,resSeq,resName'): set(
-        #                               ('chainB,res1Seq,res1Name),
-        #                               ('chainB,res2Seq,res2Name'))}
+        # res = {('chain1,resSeq,resName'): set(
+        #                               ('chain2,res1Seq,res1Name),
+        #                               ('chain2,res2Seq,res2Name'))}
         res = self.sql.get_contact_residues(chain1=self.chains_label[0],
                                            chain2=self.chains_label[1],
                                            cutoff=cutoff,

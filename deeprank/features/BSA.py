@@ -14,7 +14,7 @@ except ImportError:
 
 class BSA(FeatureClass):
 
-    def __init__(self, pdb_data, chainA='A', chainB='B'):
+    def __init__(self, pdb_data, chain1='A', chain2='B'):
         """Compute the burried surface area feature.
 
         Freesasa is required for this feature.
@@ -24,8 +24,8 @@ class BSA(FeatureClass):
 
         Args :
             pdb_data (list(byte) or str): pdb data or pdb filename
-            chainA (str, optional): name of the first chain
-            chainB (str, optional): name of the second chain
+            chain1 (str, optional): name of the first chain
+            chain2 (str, optional): name of the second chain
 
         Example :
         >>> bsa = BSA('1AK4.pdb')
@@ -35,7 +35,7 @@ class BSA(FeatureClass):
         """
         self.pdb_data = pdb_data
         self.sql = pdb2sql.interface(pdb_data)
-        self.chains_label = [chainA, chainB]
+        self.chains_label = [chain1, chain2]
 
         self.feature_data = {}
         self.feature_data_xyz = {}
@@ -117,7 +117,7 @@ class BSA(FeatureClass):
             # define the xyz key : (chain,x,y,z)
             chain = {'A': 0, 'B': 1}[res[0]]
 
-            # get the center            
+            # get the center
             _, xyz = self.get_residue_center(self.sql, res=res)
             xyzkey = tuple([chain] + xyz[0])
 
