@@ -37,7 +37,8 @@ class DataGenerator(object):
     def __init__(self, pdb_select=None, pdb_source=None,
                  pdb_native=None, pssm_source=None, align=None,
                  compute_targets=None, compute_features=None,
-                 data_augmentation=None, hdf5='database.h5', mpi_comm=None):
+                 data_augmentation=None, hdf5='database.h5',
+                 chain1 = 'A', chain2 = 'B', mpi_comm=None):
         """Generate the data (features/targets/maps) required for deeprank.
 
         Args:
@@ -46,7 +47,7 @@ class DataGenerator(object):
             pdb_native (list(str), optional): List of folders where to find the native comformations,
                 nust set it if having targets to compute in parameter "compute_targets".
             pssm_source (list(str), optional): List of folders where to find the PSSM files
-            align (dict, optional): Dicitionary to align the compexes, 
+            align (dict, optional): Dicitionary to align the compexes,
                                     e.g. align = {"selection":{"chainID":["A","B"]},"axis":"z"}}
                                     e.g. align = {"selection":"interface","plane":"xy"}
                                     if "selection" is not specified the entire complex is used for alignement
@@ -83,7 +84,7 @@ class DataGenerator(object):
         self.pdb_source = pdb_source or []
         self.pdb_native = pdb_native or []
         self.pssm_source = pssm_source
-        self.align = align 
+        self.align = align
 
         if self.pssm_source is not None:
             config.PATH_PSSM_SOURCE = self.pssm_source
@@ -94,6 +95,9 @@ class DataGenerator(object):
         self.data_augmentation = data_augmentation
 
         self.hdf5 = hdf5
+
+        self.chain1 = chain1
+        self.chain2 = chain2
 
         self.mpi_comm = mpi_comm
 
@@ -234,7 +238,7 @@ class DataGenerator(object):
         self.f5.attrs['pssm_source'] = os.path.abspath(self.pssm_source)
         self.f5.attrs['features'] = self.compute_features
         self.f5.attrs['targets'] = self.compute_targets
-        
+
         ##################################################
         # Start generating HDF5 database
         ##################################################
@@ -326,6 +330,8 @@ class DataGenerator(object):
                                                                 molgrp['complex'][()],
                                                                 molgrp['features'],
                                                                 molgrp['features_raw'],
+                                                                self.chain1,
+                                                                self.chain2,
                                                                 self.logger)
                     if feature_error_flag:
                         self.feature_error += [mol_name]
@@ -572,6 +578,8 @@ class DataGenerator(object):
                                                     molgrp['complex'][()],
                                                     molgrp['features'],
                                                     molgrp['features_raw'],
+                                                    self.chain1,
+                                                    self.chain2,
                                                     self.logger)
 
                 if error_flag:
@@ -729,17 +737,17 @@ class DataGenerator(object):
 
     def realign_complexes(self, align, compute_features=None, pssm_source=None):
         """Align all the complexes already present in the HDF5.
-        
+
         Arguments:
             align {dict} -- alignement dictionary (see __init__)
-        
+
         Keyword Arguments:
             compute_features {list} -- list of features to be computed
                                        if None computes the features specified in
                                        the attrs['features'] of the file (if present)
              pssm_source {str} -- path of the pssm files. If None the source specfied in
                                   the attrs['pssm_source'] will be used (if present) (default: {None})
-        
+
         Raises:
             ValueError: If no PSSM detected
 
@@ -748,13 +756,13 @@ class DataGenerator(object):
         >>> database = DataGenerator(hdf5='1ak4.hdf5')
         >>> # if comute_features and pssm_source are not specified
         >>> # the values in hdf5.attrs['features'] and hdf5.attrs['pssm_source'] will be used
-        >>> database.realign_complex(align={'axis':'x'}, 
-        >>>                          compute_features['deeprank.features.X'], 
+        >>> database.realign_complex(align={'axis':'x'},
+        >>>                          compute_features['deeprank.features.X'],
         >>>                           pssm_source='./1ak4_pssm/')
         """
 
         f5 = h5py.File(self.hdf5,'a')
-        
+
         mol_names = f5.keys()
         self.logger.info(f'\n# Start aligning the HDF5 database: {self.hdf5}')
 
@@ -772,7 +780,7 @@ class DataGenerator(object):
 
         elif pssm_source is not None:
             config.PATH_PSSM_SOURCE = pssm_source
-        
+
         elif 'pssm_source' in f5.attrs:
             config.PATH_PSSM_SOURCE = f5.attrs['pssm_source']
         else :
@@ -797,7 +805,7 @@ class DataGenerator(object):
             for od in old_dir:
                 if od in molgrp:
                     del molgrp[od]
-            
+
             # the internal features
             molgrp.require_group('features')
             molgrp.require_group('features_raw')
@@ -807,6 +815,8 @@ class DataGenerator(object):
                                                 molgrp['complex'][()],
                                                 molgrp['features'],
                                                 molgrp['features_raw'],
+                                                self.chain1,
+                                                self.chain2,
                                                 self.logger)
 
         f5.close()
@@ -818,12 +828,12 @@ class DataGenerator(object):
 # ====================================================================================
 
 
-    @staticmethod
-    def _get_grid_center(pdb, contact_distance):
+    def _get_grid_center(self, pdb, contact_distance):
 
         sqldb = pdb2sql.interface(pdb)
 
-        contact_atoms = sqldb.get_contact_atoms(cutoff=contact_distance)
+        contact_atoms = sqldb.get_contact_atoms(cutoff=contact_distance,
+            chain1=self.chain1, chain2=self.chain2)
 
         tmp = []
         for i in contact_atoms.values():
@@ -868,6 +878,8 @@ class DataGenerator(object):
                          number_of_points=grid_info['number_of_points'],
                          resolution=grid_info['resolution'],
                          contact_distance=contact_distance,
+                         chain1=self.chain1,
+                         chain2=self.chain2,
                          time=time,
                          prog_bar=prog_bar,
                          try_sparse=try_sparse)
@@ -988,7 +1000,7 @@ class DataGenerator(object):
         for m in modes:
             if m not in grid_info:
                 grid_info[m] = 'ind'
-                
+
         ################################################################
         #
         ################################################################
@@ -1035,6 +1047,8 @@ class DataGenerator(object):
                     atomic_densities_mode=grid_info['atomic_densities_mode'],
                     feature=grid_info['feature'],
                     feature_mode=grid_info['feature_mode'],
+                    chain1=self.chain1,
+                    chain2=self.chain2,
                     cuda=cuda,
                     gpu_block=gpu_block,
                     cuda_func=cuda_func,
@@ -1347,7 +1361,7 @@ class DataGenerator(object):
 
 
     @staticmethod
-    def _compute_features(feat_list, pdb_data, featgrp, featgrp_raw, logger):
+    def _compute_features(feat_list, pdb_data, featgrp, featgrp_raw, chain1, chain2, logger):
         """Compute the features.
 
         Args:
@@ -1366,7 +1380,8 @@ class DataGenerator(object):
         for feat in feat_list:
             try:
                 feat_module = importlib.import_module(feat, package=None)
-                feat_module.__compute_feature__(pdb_data, featgrp, featgrp_raw)
+                feat_module.__compute_feature__(pdb_data, featgrp, featgrp_raw,
+                    chain1, chain2)
 
             except Exception as ex:
                 logger.exception(ex)
@@ -1402,7 +1417,7 @@ class DataGenerator(object):
 #       ADD PDB FILE
 #
 # ====================================================================================
-    
+
     def _add_pdb(self, molgrp, pdbfile, name):
         """Add a pdb to a molgrp.
 
@@ -1418,10 +1433,10 @@ class DataGenerator(object):
             with open(pdbfile, 'r') as fi:
                 data = [line.split('\n')[0]
                         for line in fi if line.startswith('ATOM')]
-            
+
         # some alignement
         elif isinstance(self.align, dict):
-            
+
             sqldb = self._get_aligned_sqldb(pdbfile, self.align)
             data = sqldb.sql2pdb()
 
@@ -1430,10 +1445,10 @@ class DataGenerator(object):
         data = np.array(data).astype('|S78')
         molgrp.create_dataset(name, data=data)
 
-    @staticmethod
-    def _get_aligned_sqldb(pdbfile, dict_align):
+    # @staticmethod
+    def _get_aligned_sqldb(self, pdbfile, dict_align):
         """return a sqldb of the pdb that is aligned as specified in the dict
-        
+
         Arguments:
             pdbfile {str} -- path ot the pdb
             dict_align {dict} -- dictionanry of options to align the pdb
@@ -1446,19 +1461,13 @@ class DataGenerator(object):
 
         if dict_align['selection'] == 'interface':
 
-            if np.all([k in dict_align for k in ['chain1', 'chain2']]):
-                chains = {'chain1' : dict_align['chain1'],
-                            'chain2' : dict_align['chain2']}
-            else:
-                chains = {}
-            
-            sqldb = align_interface(pdbfile, plane=dict_align['plane'], 
+            sqldb = align_interface(pdbfile, plane=dict_align['plane'],
                                     export=dict_align['export'],
-                                    **chains)
+                                    chain1=self.chain1, chain2=self.chain2)
 
         else:
 
-            sqldb = align_along_axis(pdbfile, axis=dict_align['axis'], 
+            sqldb = align_along_axis(pdbfile, axis=dict_align['axis'],
                                     export = dict_align['export'],
                                         **dict_align['selection'])
 
@@ -1474,8 +1483,8 @@ class DataGenerator(object):
     def _get_aligned_rotation_axis_angle(random_seed, dict_align):
         """Returns the axis and angle of rotation for data
            augmentation with aligned complexes
-        
-        Arguments:  
+
+        Arguments:
             random_seed {int} -- random seed of rotation
             dict_align {dict} -- the dict describing the alignement
 
@@ -1498,7 +1507,7 @@ class DataGenerator(object):
                 axis = [1.,0.,0.]
             else:
                 raise ValueError("plane must be xy, xz or yz")
-        
+
         elif 'axis' in dict_align.keys():
             if dict_align['axis'] == 'x':
                 axis = [1.,0.,0.]
@@ -1572,10 +1581,10 @@ class DataGenerator(object):
                 feat = list(feat)
 
         for fn in feat:
-            
+
             # extract the data
             data = molgrp['features/' + fn][()]
-            
+
             # if data not empty
             if data.shape[0] != 0:
 
