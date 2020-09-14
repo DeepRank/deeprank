@@ -35,6 +35,8 @@ class BSA(FeatureClass):
         """
         self.pdb_data = pdb_data
         self.sql = pdb2sql.interface(pdb_data)
+        self.chain1 = chain1
+        self.chain2 = chain2
         self.chains_label = [chain1, chain2]
 
         self.feature_data = {}
@@ -84,8 +86,8 @@ class BSA(FeatureClass):
         self.bsa_data = {}
         self.bsa_data_xyz = {}
 
-        ctc_res = self.sql.get_contact_residues(cutoff=cutoff)
-        ctc_res = ctc_res["A"] + ctc_res["B"]
+        ctc_res = self.sql.get_contact_residues(cutoff=cutoff, chain1=self.chain1, chain2=self.chain2)
+        ctc_res = ctc_res[self.chain1] + ctc_res[self.chain2]
 
         # handle with small interface or no interface
         total_res = len(ctc_res)
@@ -115,7 +117,7 @@ class BSA(FeatureClass):
             bsa = asa_unbound - asa_complex
 
             # define the xyz key : (chain,x,y,z)
-            chain = {'A': 0, 'B': 1}[res[0]]
+            chain = {self.chain1: 0, self.chain2: 1}[res[0]]
 
             # get the center
             _, xyz = self.get_residue_center(self.sql, res=res)
@@ -136,10 +138,10 @@ class BSA(FeatureClass):
 ########################################################################
 
 
-def __compute_feature__(pdb_data, featgrp, featgrp_raw):
+def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2):
 
     # create the BSA instance
-    bsa = BSA(pdb_data)
+    bsa = BSA(pdb_data, chain1, chain2)
 
     # get the structure/calc
     bsa.get_structure()
