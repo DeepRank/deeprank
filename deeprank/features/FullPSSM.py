@@ -17,7 +17,7 @@ from deeprank.features import FeatureClass
 class FullPSSM(FeatureClass):
 
     def __init__(self, mol_name=None, pdb_file=None, pssm_path=None,
-                 pssm_format='new', out_type='pssmvalue'):
+                 pssm_format='new', out_type='pssmvalue', chain1='A', chain2='B'):
         """Compute all the PSSM data.
 
             Simply extracts all the PSSM information and
@@ -50,6 +50,8 @@ class FullPSSM(FeatureClass):
         self.pssm_path = pssm_path
         self.pssm_format = pssm_format
         self.out_type = out_type.lower()
+        self.chain1 = chain1
+        self.chain2 = chain2
 
         if isinstance(pdb_file, str) and mol_name is None:
             self.mol_name = os.path.basename(pdb_file).split('.')[0]
@@ -174,9 +176,9 @@ class FullPSSM(FeatureClass):
 
         # get interface contact residues
         # ctc_res = {"A":[chain 1 residues], "B": [chain2 residues]}
-        ctc_res = sql.get_contact_residues(cutoff=cutoff)
+        ctc_res = sql.get_contact_residues(cutoff=cutoff, chain1=self.chain1, chain2=self.chain2)
         sql._close()
-        ctc_res = ctc_res["A"] + ctc_res["B"]
+        ctc_res = ctc_res[self.chain1] + ctc_res[self.chain2]
 
         # handle with small interface or no interface
         total_res = len(ctc_res)
@@ -213,7 +215,7 @@ class FullPSSM(FeatureClass):
 
         # get feature values
         for res in ctc_res_with_pssm:
-            chain = {'A': 0, 'B': 1}[res[0]]
+            chain = {self.chain1: 0, self.chain2: 1}[res[0]]
             key = tuple([chain] + xyz_dict[res])
             for name, value in zip(self.feature_names, self.pssm[res]):
                 # Make sure the feature_names and pssm[res] have
@@ -233,7 +235,7 @@ class FullPSSM(FeatureClass):
 ########################################################################
 
 
-def __compute_feature__(pdb_data, featgrp, featgrp_raw, out_type='pssmvalue'):
+def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2, out_type='pssmvalue'):
 
     if config.PATH_PSSM_SOURCE is None:
         raise FileExistsError(f"No available PSSM source, "
@@ -244,7 +246,7 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw, out_type='pssmvalue'):
     mol_name = os.path.split(featgrp.name)[0]
     mol_name = mol_name.lstrip('/')
 
-    pssm = FullPSSM(mol_name, pdb_data, path, out_type=out_type)
+    pssm = FullPSSM(mol_name, pdb_data, path, out_type=out_type, chain1=chain1, chain2=chain2)
 
     # read the raw data
     pssm.read_PSSM_data()
