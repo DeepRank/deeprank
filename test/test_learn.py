@@ -245,6 +245,8 @@ class TestLearn(unittest.TestCase):
             database,
             cnn3d,
             pretrained_model=model_name,
+            chain1='C',
+            chain2='D',
             outdir=out)
         model.test()
 
