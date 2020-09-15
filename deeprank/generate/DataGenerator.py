@@ -880,11 +880,11 @@ class DataGenerator(object):
 
             # compute the data we want on the grid
             gt.GridTools(molgrp=f5[mol],
+                         chain1=self.chain1,
+                         chain2=self.chain2,
                          number_of_points=grid_info['number_of_points'],
                          resolution=grid_info['resolution'],
                          contact_distance=contact_distance,
-                         chain1=self.chain1,
-                         chain2=self.chain2,
                          time=time,
                          prog_bar=prog_bar,
                          try_sparse=try_sparse)
@@ -1046,14 +1046,14 @@ class DataGenerator(object):
                 # compute the data we want on the grid
                 gt.GridTools(
                     molgrp=f5[mol],
+                    chain1=self.chain1,
+                    chain2=self.chain2,
                     number_of_points=grid_info['number_of_points'],
                     resolution=grid_info['resolution'],
                     atomic_densities=grid_info['atomic_densities'],
                     atomic_densities_mode=grid_info['atomic_densities_mode'],
                     feature=grid_info['feature'],
                     feature_mode=grid_info['feature_mode'],
-                    chain1=self.chain1,
-                    chain2=self.chain2,
                     cuda=cuda,
                     gpu_block=gpu_block,
                     cuda_func=cuda_func,
