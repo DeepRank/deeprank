@@ -22,17 +22,19 @@ def logif(string, cond): return logger.info(string) if cond else None
 
 class GridTools(object):
 
-    def __init__(self, molgrp,
+    def __init__(self, molgrp, chain1, chain2,
                  number_of_points=30, resolution=1.,
                  atomic_densities=None, atomic_densities_mode='ind',
                  feature=None, feature_mode='ind',
-                 contact_distance=8.5, chain1='A', chain2='B',
+                 contact_distance=8.5,
                  cuda=False, gpu_block=None, cuda_func=None, cuda_atomic=None,
                  prog_bar=False, time=False, try_sparse=True):
         """Map the feature of a complex on the grid.
 
         Args:
             molgrp(str): name of the group of the molecule in the HDF5 file.
+            chain1 (str): First chain ID.
+            chain2 (str): Second chain ID.
             number_of_points(int, optional): number of points we want in
                 each direction of the grid.
             resolution(float, optional): distance(in Angs) between two points.
@@ -67,6 +69,10 @@ class GridTools(object):
         self.molgrp = molgrp
         self.mol_basename = molgrp.name
 
+        # chain IDs
+        self.chain1 = chain1
+        self.chain2 = chain2
+
         # hdf5 file to strore data
         self.hdf5 = self.molgrp.file
         self.try_sparse = try_sparse
@@ -89,10 +95,6 @@ class GridTools(object):
         # mapping mode
         self.feature_mode = feature_mode
         self.atomic_densities_mode = atomic_densities_mode
-
-        # chain IDs
-        self.chain1 = chain1
-        self.chain2 = chain2
 
         # cuda support
         self.cuda = cuda
