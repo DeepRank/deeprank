@@ -1376,6 +1376,8 @@ class DataGenerator(object):
             pdb_data (bytes): PDB translated in bytes
             featgrp (str): name of the group where to store the xyz feature
             featgrp_raw (str): name of the group where to store the raw feature
+            chain1 (str): First chain ID
+            chain2 (str): Second chain ID
             logger (logger): name of logger object
 
         Return:
