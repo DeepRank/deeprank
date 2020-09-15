@@ -431,6 +431,8 @@ class NeuralNet():
 
         state = {'state_dict': self.net.state_dict(),
                  'optimizer': self.optimizer.state_dict(),
+                 'chain1': self.data_set.chain1,
+                 'chain2': self.data_set.chain2,
                  'normalize_targets': self.data_set.normalize_targets,
                  'normalize_features': self.data_set.normalize_features,
                  'select_feature': self.data_set.select_feature,
@@ -475,6 +477,9 @@ class NeuralNet():
 
     def load_data_params(self):
         """Get dataset parameters from a saved model."""
+        self.data_set.chain1 = self.state['chain1']
+        self.data_set.chain2 = self.state['chain2']
+
         self.data_set.select_feature = self.state['select_feature']
         self.data_set.select_target = self.state['select_target']
 
