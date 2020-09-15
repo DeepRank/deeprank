@@ -928,8 +928,8 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2):
     FF = path + '/forcefield/'
 
     atfeat = AtomicFeature(pdb_data,
-                           chain1 = chain1,
-                           chain2 = chain2,
+                           chain1=chain1,
+                           chain2=chain2,
                            param_charge=FF + 'protein-allhdg5-4_new.top',
                            param_vdw=FF + 'protein-allhdg5-4_new.param',
                            patch_file=FF + 'patch.top')
