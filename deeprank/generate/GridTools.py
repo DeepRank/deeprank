@@ -413,8 +413,8 @@ class GridTools(object):
 
             # create the final grid : A and B
             elif mode == 'ind':
-                self.atdens[elementtype + '_chain' + self.chain1] = atdensA
-                self.atdens[elementtype + '_chain' + self.chain2] = atdensB
+                self.atdens[elementtype + '_chain1'] = atdensA
+                self.atdens[elementtype + '_chain2'] = atdensB
             else:
                 raise ValueError(f'Atomic density mode {mode} not recognized')
 
@@ -549,17 +549,17 @@ class GridTools(object):
             # that will in fine holds all the data
             if nFeat == 1:
                 if self.feature_mode == 'ind':
-                    dict_data[feature_name + '_chain' + self.chain1] = np.zeros(self.npts)
-                    dict_data[feature_name + '_chain' + self.chain2] = np.zeros(self.npts)
+                    dict_data[feature_name + '_chain1'] = np.zeros(self.npts)
+                    dict_data[feature_name + '_chain2'] = np.zeros(self.npts)
                 else:
                     dict_data[feature_name] = np.zeros(self.npts)
             else: # do we need that ?!
                 for iF in range(nFeat):
                     if self.feature_mode == 'ind':
-                        dict_data[feature_name + '_chain%s_%03d' %
-                                  self.chain1, iF] = np.zeros(self.npts)
-                        dict_data[feature_name + '_chain%s_%03d' %
-                                  self.chain2, iF] = np.zeros(self.npts)
+                        dict_data[feature_name + '_chain1_%03d' %
+                                  iF] = np.zeros(self.npts)
+                        dict_data[feature_name + '_chain2_%03d' %
+                                  iF] = np.zeros(self.npts)
                     else:
                         dict_data[feature_name + '_%03d' %
                                   iF] = np.zeros(self.npts)
@@ -650,7 +650,8 @@ class GridTools(object):
                 else:
                     coeff = 1
                 if self.feature_mode == "ind":
-                    fname = feature_name + "_chain" + chain
+                    chain_name = {self.chain1: '1', self.chain2: '2'}[chain]
+                    fname = feature_name + "_chain" + chain_name
                 tprocess += time() - t0
 
                 t0 = time()
