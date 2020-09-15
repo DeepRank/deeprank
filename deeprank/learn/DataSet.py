@@ -25,6 +25,7 @@ from deeprank.tools import sparse
 class DataSet():
 
     def __init__(self, train_database, valid_database=None, test_database=None,
+                 chain1='A', chain2='B',
                  mapfly=True, grid_info=None,
                  use_rotation=None,
                  select_feature='all', select_target='DOCKQ',
@@ -52,6 +53,9 @@ class DataSet():
             test_database (list(str)): names of the hdf5 files used for
                 the test.
                 Example : ['7CEI.hdf5']
+
+            chain1 (str): first chain ID, defaults to 'A'
+            chain2 (str): second chain ID, defaults to 'B'
 
             mapfly (bool): do we compute the map in the batch
                 preparation or read them
@@ -123,6 +127,8 @@ class DataSet():
             >>> data_set = DataSet(train_database,
             >>>                    valid_database = None,
             >>>                    test_database = None,
+            >>>                    chain1='C',
+            >>>                    chain2='D',
             >>>                    grid_shape=(30,30,30),
             >>>                    select_feature = {
             >>>                       'AtomicDensities': 'all',
@@ -145,6 +151,10 @@ class DataSet():
 
         # allow for multiple database
         self.test_database = self._get_database_name(test_database)
+
+        # chainIDs
+        self.chain1 = chain1
+        self.chain2 = chain2
 
         # pdb selection
         self.use_rotation = use_rotation
@@ -579,7 +589,7 @@ class DataSet():
         f5 = h5py.File(self.train_database[0], 'r')
         mol_name = list(f5.keys())[0]
         mapped_data = f5.get(mol_name + '/mapped_features/')
-        chain_tags = ['_chainA', '_chainB']
+        chain_tags = ['_chain'+self.chain1, '_chain'+self.chain2]
 
         # if we select all the features
         if self.select_feature == "all":
@@ -1336,7 +1346,7 @@ class DataSet():
         """
 
         sql = pdb2sql.interface(mol_data['complex'][()])
-        index = sql.get_contact_atoms()
+        index = sql.get_contact_atoms(chain1=self.chain1, chain2=self.chain2)
 
         if angle is not None:
             center = [np.mean(g) for g in grid]
@@ -1346,9 +1356,9 @@ class DataSet():
 
             # get pos of the contact atoms of correct type
             xyzA = np.array(sql.get(
-                'x,y,z', rowID=index['A'], element=elementtype))
+                'x,y,z', rowID=index[self.chain1], element=elementtype))
             xyzB = np.array(sql.get(
-                'x,y,z', rowID=index['B'], element=elementtype))
+                'x,y,z', rowID=index[self.chain2], element=elementtype))
 
             # rotate if necessary
             if angle is not None:
