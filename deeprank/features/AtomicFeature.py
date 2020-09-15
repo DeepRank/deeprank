@@ -18,6 +18,9 @@ class AtomicFeature(FeatureClass):
 
             pdbfile (str): pdb file of the molecule
 
+            chain1 (str): First chain ID, defaults to 'A'
+            chain2 (str): Second chain ID, defaults to 'B'
+
             param_charge (str): file name of the force field file
                 containing the charges e.g. protein-allhdg5.4_new.top.
                 Must be of the format:
@@ -918,6 +921,8 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2):
         pdb_data (list(bytes)): pdb information
         featgrp (str): name of the group where to save xyz-val data
         featgrp_raw (str): name of the group where to save human readable data
+        chain1 (str): First chain ID
+        chain2 (str): Second chain ID
     """
     path = os.path.dirname(os.path.realpath(__file__))
     FF = path + '/forcefield/'

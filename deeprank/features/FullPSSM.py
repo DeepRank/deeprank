@@ -26,6 +26,8 @@ class FullPSSM(FeatureClass):
         Args:
             mol_name (str): name of the molecule. Defaults to None.
             pdb_file (str): name of the pdb_file. Defaults to None.
+            chain1 (str): First chain ID. Defaults to 'A'
+            chain2 (str): Second chain ID. Defaults to 'B'
             pssm_path (str): path to the pssm data. Defaults to None.
             pssm_format (str): "old" or "new" pssm format.
                 Defaults to 'new'.
@@ -176,7 +178,8 @@ class FullPSSM(FeatureClass):
 
         # get interface contact residues
         # ctc_res = {"A":[chain 1 residues], "B": [chain2 residues]}
-        ctc_res = sql.get_contact_residues(cutoff=cutoff, chain1=self.chain1, chain2=self.chain2)
+        ctc_res = sql.get_contact_residues(cutoff=cutoff,
+                            chain1=self.chain1, chain2=self.chain2)
         sql._close()
         ctc_res = ctc_res[self.chain1] + ctc_res[self.chain2]
 
@@ -236,6 +239,16 @@ class FullPSSM(FeatureClass):
 
 
 def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2, out_type='pssmvalue'):
+    """Main function called in deeprank for the feature calculations.
+
+    Args:
+        pdb_data (list(bytes)): pdb information
+        featgrp (str): name of the group where to save xyz-val data
+        featgrp_raw (str): name of the group where to save human readable data
+        chain1 (str): First chain ID
+        chain2 (str): Second chain ID
+        out_type (str): which feature to generate, 'pssmvalue' or 'pssmic'.
+    """
 
     if config.PATH_PSSM_SOURCE is None:
         raise FileExistsError(f"No available PSSM source, "

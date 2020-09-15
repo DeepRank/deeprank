@@ -13,8 +13,8 @@ class ResidueDensity(FeatureClass):
 
         Args :
             pdb_data (list(byte) or str): pdb data or pdb filename
-            chain1 (str, optional): name of the first chain
-            chain2 (str, optional): name of the second chain
+            chain1 (str): First chain ID. Defaults to 'A'
+            chain2 (str): Second chain ID. Defaults to 'B'
 
         Example :
         >>> rcd = ResidueDensity('1EWY_100w.pdb')
@@ -159,6 +159,15 @@ class residue_pair(object):
 ########################################################################
 
 def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2):
+    """Main function called in deeprank for the feature calculations.
+
+    Args:
+        pdb_data (list(bytes)): pdb information
+        featgrp (str): name of the group where to save xyz-val data
+        featgrp_raw (str): name of the group where to save human readable data
+        chain1 (str): First chain ID
+        chain2 (str): Second chain ID
+    """
 
     # create instance
     resdens = ResidueDensity(pdb_data, chain1=chain1, chain2=chain2)
