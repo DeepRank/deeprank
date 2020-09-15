@@ -16,8 +16,8 @@ from deeprank.features import FeatureClass
 
 class FullPSSM(FeatureClass):
 
-    def __init__(self, mol_name=None, pdb_file=None, pssm_path=None,
-                 pssm_format='new', out_type='pssmvalue', chain1='A', chain2='B'):
+    def __init__(self, mol_name=None, pdb_file=None, chain1='A', chain2='B',
+                pssm_path=None, pssm_format='new', out_type='pssmvalue'):
         """Compute all the PSSM data.
 
             Simply extracts all the PSSM information and
@@ -259,7 +259,8 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2, out_type
     mol_name = os.path.split(featgrp.name)[0]
     mol_name = mol_name.lstrip('/')
 
-    pssm = FullPSSM(mol_name, pdb_data, path, out_type=out_type, chain1=chain1, chain2=chain2)
+    pssm = FullPSSM(mol_name, pdb_data, chain1=chain1, chain2=chain2,
+                    pssm_path=path, out_type=out_type)
 
     # read the raw data
     pssm.read_PSSM_data()
