@@ -34,14 +34,17 @@ def _printif(string, cond): return print(string) if cond else None
 
 class DataGenerator(object):
 
-    def __init__(self, pdb_select=None, pdb_source=None,
+    def __init__(self, chain1, chain2,
+                 pdb_select=None, pdb_source=None,
                  pdb_native=None, pssm_source=None, align=None,
                  compute_targets=None, compute_features=None,
                  data_augmentation=None, hdf5='database.h5',
-                 chain1 = 'A', chain2 = 'B', mpi_comm=None):
+                 mpi_comm=None):
         """Generate the data (features/targets/maps) required for deeprank.
 
         Args:
+            chain1 (str): First chain ID
+            chain2 (str): Second chain ID
             pdb_select (list(str), optional): List of individual conformation for mapping
             pdb_source (list(str), optional): List of folders where to find the pdbs for mapping
             pdb_native (list(str), optional): List of folders where to find the native comformations,
@@ -70,7 +73,9 @@ class DataGenerator(object):
         >>> h5file = '1ak4.hdf5'
         >>>
         >>> #init the data assembler
-        >>> database = DataGenerator(pdb_source=pdb_source,
+        >>> database = DataGenerator(chain1='A',
+        >>>                          chain2='B',
+        >>>                          pdb_source=pdb_source,
         >>>                          pdb_native=pdb_native,
         >>>                          data_augmentation=None,
         >>>                          compute_targets=['deeprank.targets.dockQ'],
@@ -79,6 +84,9 @@ class DataGenerator(object):
         >>>                                            'deeprank.features.BSA'],
         >>>                          hdf5=h5file)
         """
+
+        self.chain1 = chain1
+        self.chain2 = chain2
 
         self.pdb_select = pdb_select or []
         self.pdb_source = pdb_source or []
@@ -95,9 +103,6 @@ class DataGenerator(object):
         self.data_augmentation = data_augmentation
 
         self.hdf5 = hdf5
-
-        self.chain1 = chain1
-        self.chain2 = chain2
 
         self.mpi_comm = mpi_comm
 
