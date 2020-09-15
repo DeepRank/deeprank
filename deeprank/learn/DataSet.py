@@ -589,7 +589,7 @@ class DataSet():
         f5 = h5py.File(self.train_database[0], 'r')
         mol_name = list(f5.keys())[0]
         mapped_data = f5.get(mol_name + '/mapped_features/')
-        chain_tags = ['_chain'+self.chain1, '_chain'+self.chain2]
+        chain_tags = ['_chain1', '_chain2']
 
         # if we select all the features
         if self.select_feature == "all":
