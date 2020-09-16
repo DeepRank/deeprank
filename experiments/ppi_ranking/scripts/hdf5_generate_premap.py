@@ -4,6 +4,7 @@
 #
 # This script takes input PDB files and PSSM files and outputs hdf5 files.
 # Features (atomic and residue features) are calculated and mapped to 3D grids.
+# Proteins are aligned. 
 
 
 from deeprank.generate import *
