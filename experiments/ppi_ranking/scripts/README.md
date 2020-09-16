@@ -1,4 +1,4 @@
-## generate 3D feature grid files (hdf5 format) for training networks
+## Generations of 3D feature grid files (hdf5 format) for training networks
 Required input (these files are available on SBGrid): 
 1. PDB files
 2. pre-calculated pssm files (can be easily done using our PSSMGen package: https://github.com/DeepRank/PSSMGen)
