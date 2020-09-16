@@ -9,11 +9,11 @@ For small-scale generations, use `hdf5_generate_premap.py`.
 ## 10-fold cross-validation 
 To train using a slurm job scheduler with 10-fold cross validation one needs to use the command 
 
-  sbatch --array=1-10 kfold_train_001_3_2806-prealigned_rotated.slurm
+  ```sbatch --array=1-10 kfold_train_001_3_2806-prealigned_rotated.slurm```
 
 Alternatively, you can start the script `train_001_3_2806_prealigned_rotated.py` 10 times with 
 
-  python train_001_3_2806_prealigned_rotated.py n
+  ```python train_001_3_2806_prealigned_rotated.py n```
 
 where n runs through 1,2,...10.
 
