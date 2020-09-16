@@ -965,7 +965,7 @@ if __name__ == '__main__':
     atfeat.assign_parameters()
     atfeat.evaluate_pair_interaction()
     atfeat.evaluate_charges(extend_contact_to_residue=True)
-    atfeat.sqldb.close()
+    atfeat.sqldb._close()
 
     # export in the hdf5 file
     pprint(atfeat.feature_data)
