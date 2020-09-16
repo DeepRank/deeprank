@@ -19,8 +19,7 @@ Alternatively, you can start the script `train_001_3_2806_prealigned_rotated.py`
 
 where n runs through 1,2,...10.
 
-The training script assumes one GPU card.
-
-The script `model_280619.py` needs to be also in the same folder as `train_001_3_2806_prealigned_rotated.py`
-
-The output is uploaded at http://doi.org/10.5281/zenodo.3953965
+- DeepRank version: v0.1.0-49-g31daa40
+- The training script assumes one GPU card (configurable in the code)
+- The script `model_280619.py` needs to be also in the same folder as `train_001_3_2806_prealigned_rotated.py`
+- The output is uploaded at http://doi.org/10.5281/zenodo.3953965
