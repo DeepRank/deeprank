@@ -4,7 +4,7 @@ Required input (these files are available on SBGrid):
 2. pre-calculated pssm files (can be easily done using our PSSMGen package: https://github.com/DeepRank/PSSMGen)
 3. case ID files
 
-For large-scale generations of hdf5 files using slurm: Modify `hdf5_generate_premap_batch.py` so that it points to the location of the inputs. Then run `hdf5_generate_premap_batch.py` (which calls `hdf5_generate_premap.py`). 
+For large-scale generations of hdf5 files using slurm: Modify `hdf5_generate_premap_batch.py` so that it points to the location of the inputs. Then run `hdf5_generate_premap_batch.py`. 
 
 For small-scale generations, use `hdf5_generate_premap.py`. 
 
