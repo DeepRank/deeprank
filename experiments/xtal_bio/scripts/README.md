@@ -1,4 +1,4 @@
-# Generating data
+# Generating 3D feature grid data (hdf5 format)
 - run_generate.py: to generate HDF5 data.
 
 # Generating training/validation/test datasets
