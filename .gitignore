@@ -31,7 +31,6 @@ test/out_test
 test/*.pckl
 test/*.hdf5
 test/*.pdb
-Edesolv/
 
 
 # datafile
