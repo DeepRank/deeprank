@@ -274,7 +274,7 @@ class TestGenerateData(unittest.TestCase):
 
         shutil.copy(src_name, copy_name)
 
-        database = DataGenerator(hdf5=copy_name)
+        database = DataGenerator(hdf5=copy_name, chain1='C', chain2='D')
         database.aug_data(augmentation=2, keep_existing_aug=True)
         grid_info = {
             'number_of_points': [10, 10, 10],
