@@ -44,13 +44,50 @@ aas-journal: Astrophysical Journal <- The name of the AAS journal.
 
 
 
-# Statement of need
+# Software architecture
 
+`DeepRank` is a Python3 pacakge build that allows for end-to-end training of neural network models on PPI data. The overall architecture of the package is shown in Fig. \autoref{fig:arch}. The package consists of two main parts: 1 - the featurization of the PPI and their mapping on 3D grid. 2 - training of 3D CNN models based on this features.
 
-# Mathematics
+![Architecture of DeepRank.\label{fig:arch}](soft.png)
 
+# Featurization
+```python
+from deeprank.generate import *
+from mpi4py import MPI
 
+# Initialize the database
+database = DataGenerator( pdb_source='1AK4/decoys/', pdb_native='1AK4/native/', pssm_source='1AK4/pssm/',
+    align={"selection":"interface", "plane":"xy", 'export':True}, hdf5='1ak4.hdf5', mpi_comm=MPI.COMM_WORLD)
 
+# Compute the features and targets
+database.create_database(prog_bar=True)
+
+# Define the 3D grid
+grid_info = { 'number_of_points' : [30,30,30], 'resolution' : [1.,1.,1.],
+              'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8}}
+
+# Map the features
+database.map_features(grid_info)
+```
+![Example of Featre in DeepRank.\label{fig:arch}](interface.png)
+
+# Model Training
+
+```python
+from deeprank.learn import DataSet, NeuralNet
+from deeprank.learn.model3d import cnn_reg as cnn3d
+
+# Create data set
+data_set = DataSet('1ak4.hdf5', select_target='IRMSD')
+
+# create the network
+model = NeuralNet(data_set, cnn3d, task='reg')
+
+# start the training
+model.train(nepoch=50, divide_trainset=[0.7,0.2,0.1],
+            train_batch_size=5, save_model='all')
+ 
+```
 # Citations
 
 Citations to entries in paper.bib should be in
