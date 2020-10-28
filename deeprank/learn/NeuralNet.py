@@ -29,7 +29,7 @@ class NeuralNet():
 
     def __init__(self, data_set, model,
                  model_type='3d', proj2d=0, task='reg',
-                 class_weights = None,
+                 class_weights=None,
                  pretrained_model=None,
                  cuda=False, ngpu=0,
                  plot=True,
@@ -176,7 +176,8 @@ class NeuralNet():
             self._plot_scatter = self._plot_scatter_reg
 
         elif self.task == 'class':
-            self.criterion = nn.CrossEntropyLoss(weight = self.class_weights, reduction='mean')
+            self.criterion = nn.CrossEntropyLoss(
+                weight=self.class_weights, reduction='mean')
             self._plot_scatter = self._plot_boxplot_class
             self.data_set.normalize_targets = False
 
@@ -240,7 +241,8 @@ class NeuralNet():
         # multi-gpu
         if self.ngpu > 1:
             ids = [i for i in range(self.ngpu)]
-            self.net = nn.DataParallel(self.net, device_ids=ids).cuda()
+            self.net = nn.DataParallel(
+                self.net, device_ids=ids).cuda()
         # cuda compatible
         elif self.cuda:
             self.net = self.net.cuda()
@@ -284,6 +286,16 @@ class NeuralNet():
                 f' --> To turn CUDA of set cuda=False in NeuralNet.\n'
                 f' --> Aborting the experiment \n\n')
             sys.exit()
+
+    def set_optimizer(self, optimizer_func, **kwargs):
+        """Set the optimizer
+
+        Args:
+            optimizer (torch.optim): callable of the function
+            **kwargs: options of the optimizer
+        """
+        self.optimizer = optimizer_func(
+            self.net.parameters(), **kwargs)
 
     def train(self,
               nepoch=50,
@@ -412,9 +424,11 @@ class NeuralNet():
         self.data = {}
         _, self.data['test'] = self._epoch(loader, train_model=False)
         if self.task == 'reg':
-            self._plot_scatter_reg(os.path.join(self.outdir, 'prediction.png'))
+            self._plot_scatter_reg(os.path.join(
+                self.outdir, 'prediction.png'))
         else:
-            self._plot_boxplot_class(os.path.join(self.outdir, 'prediction.png'))
+            self._plot_boxplot_class(
+                os.path.join(self.outdir, 'prediction.png'))
 
         self.plot_hit_rate(os.path.join(self.outdir + 'hitrate.png'))
 
@@ -537,8 +551,10 @@ class NeuralNet():
             np.random.shuffle(self.data_set.index_train)
 
         # size of the subset for training
-        ntrain = int(np.ceil(float(self.data_set.ntrain) * divide_set[0]))
-        nvalid = int(np.floor(float(self.data_set.ntrain) * divide_set[1]))
+        ntrain = int(
+            np.ceil(float(self.data_set.ntrain) * divide_set[0]))
+        nvalid = int(
+            np.floor(float(self.data_set.ntrain) * divide_set[1]))
 
         # indexes train and valid
         index_train = self.data_set.index_train[:ntrain]
@@ -583,9 +599,12 @@ class NeuralNet():
             pin = True
 
         # create the sampler
-        train_sampler = data_utils.sampler.SubsetRandomSampler(index_train)
-        valid_sampler = data_utils.sampler.SubsetRandomSampler(index_valid)
-        test_sampler = data_utils.sampler.SubsetRandomSampler(index_test)
+        train_sampler = data_utils.sampler.SubsetRandomSampler(
+            index_train)
+        valid_sampler = data_utils.sampler.SubsetRandomSampler(
+            index_valid)
+        test_sampler = data_utils.sampler.SubsetRandomSampler(
+            index_test)
 
         # get if we test as well
         _valid_ = len(valid_sampler.indices) > 0
@@ -646,7 +665,8 @@ class NeuralNet():
         self.data = {}
         for epoch in range(nepoch):
 
-            logger.info(f'\n: epoch {epoch:03d} / {nepoch:03d} {"-"*45}')
+            logger.info(
+                f'\n: epoch {epoch:03d} / {nepoch:03d} {"-"*45}')
             t0 = time.time()
 
             # train the model
@@ -656,7 +676,8 @@ class NeuralNet():
             self.losses['train'].append(train_loss)
             if self.save_classmetrics:
                 for i in self.metricnames:
-                    self.classmetrics[i]['train'].append(self.data['train'][i])
+                    self.classmetrics[i]['train'].append(
+                        self.data['train'][i])
 
             # validate the model
             if _valid_:
@@ -697,7 +718,7 @@ class NeuralNet():
             nremain = nepoch - (epoch + 1)
             remaining_time = av_time / (epoch + 1) * nremain
             logger.info(f"  remaining time   : "
-                f"{time.strftime('%H:%M:%S', time.gmtime(remaining_time))}")
+                        f"{time.strftime('%H:%M:%S', time.gmtime(remaining_time))}")
 
             # save the best model
             for mode in ['train', 'valid', 'test']:
@@ -710,20 +731,21 @@ class NeuralNet():
 
             # save all the model if required
             if save_model == 'all':
-                self.save_model(filename="model_epoch_%04d.pth.tar" % epoch)
+                self.save_model(
+                    filename="model_epoch_%04d.pth.tar" % epoch)
 
             # plot and save epoch
             if (export_intermediate and epoch % nprint == nprint - 1) or \
-                epoch == 0 or epoch == nepoch - 1:
+                    epoch == 0 or epoch == nepoch - 1:
 
                 if self.plot:
                     figname = os.path.join(self.outdir,
-                        f"prediction_{epoch:04d}.png")
+                                           f"prediction_{epoch:04d}.png")
                     self._plot_scatter(figname)
 
                 if self.save_hitrate:
                     figname = os.path.join(self.outdir,
-                        f"hitrate_{epoch:04d}.png")
+                                           f"hitrate_{epoch:04d}.png")
                     self.plot_hit_rate(figname)
 
                 self._export_epoch_hdf5(epoch, self.data)
@@ -849,7 +871,8 @@ class NeuralNet():
         if n != 0:
             running_loss /= n
         else:
-            warnings.warn(f'Empty input in data_loader {data_loader}.')
+            warnings.warn(
+                f'Empty input in data_loader {data_loader}.')
 
         return running_loss, data
 
@@ -875,7 +898,8 @@ class NeuralNet():
             targets = targets.cuda(non_blocking=True)
 
         # get the varialbe as float by default
-        inputs, targets = Variable(inputs).float(), Variable(targets).float()
+        inputs, targets = Variable(
+            inputs).float(), Variable(targets).float()
 
         # change the targets to long for classification
         if self.task == 'class':
@@ -898,8 +922,8 @@ class NeuralNet():
         fig, ax = plt.subplots()
         for ik, name in enumerate(self.losses):
             plt.plot(np.array(self.losses[name]),
-                     c = color_plot[ik],
-                     label = labels[ik])
+                     c=color_plot[ik],
+                     label=labels[ik])
 
         legend = ax.legend(loc='upper left')
         ax.set_xlabel('Epoch')
@@ -923,7 +947,8 @@ class NeuralNet():
         data = self.classmetrics[metricname]
         fig, ax = plt.subplots()
         for ik, name in enumerate(data):
-            plt.plot(np.array(data[name]), c=color_plot[ik], label=labels[ik])
+            plt.plot(np.array(data[name]),
+                     c=color_plot[ik], label=labels[ik])
 
         legend = ax.legend(loc='upper left')
         ax.set_xlabel('Epoch')
@@ -953,7 +978,8 @@ class NeuralNet():
 
         logger.info(f'\n  --> Scatter Plot : {figname}')
 
-        color_plot = {'train': 'red', 'valid': 'blue', 'test': 'green'}
+        color_plot = {'train': 'red',
+                      'valid': 'blue', 'test': 'green'}
         labels = ['train', 'valid', 'test']
 
         fig, ax = plt.subplots()
@@ -1000,7 +1026,8 @@ class NeuralNet():
 
         logger.info(f'\n  --> Box Plot : {figname}')
 
-        color_plot = {'train': 'red', 'valid': 'blue', 'test': 'green'}
+        color_plot = {'train': 'red',
+                      'valid': 'blue', 'test': 'green'}
         labels = ['train', 'valid', 'test']
 
         nwin = len(self.data)
@@ -1018,7 +1045,8 @@ class NeuralNet():
                 data = [[], []]
                 confusion = [[0, 0], [0, 0]]
                 for pts, t in zip(out, tar):
-                    r = F.softmax(torch.FloatTensor(pts), dim=0).data.numpy()
+                    r = F.softmax(torch.FloatTensor(
+                        pts), dim=0).data.numpy()
                     data[t].append(r[1])
                     confusion[t][bool(r[1] > 0.5)] += 1
 
@@ -1048,17 +1076,20 @@ class NeuralNet():
 
         logger.info(f'\n  --> Hitrate plot: {figname}\n')
 
-        color_plot = {'train': 'red', 'valid': 'blue', 'test': 'green'}
+        color_plot = {'train': 'red',
+                      'valid': 'blue', 'test': 'green'}
         labels = ['train', 'valid', 'test']
 
         fig, ax = plt.subplots()
         for l in labels:
             if l in self.data:
                 if 'hit' in self.data[l]:
-                    hitrate = rankingMetrics.hitrate(self.data[l]['hit'])
+                    hitrate = rankingMetrics.hitrate(
+                        self.data[l]['hit'])
                     m = len(hitrate)
                     x = np.linspace(0, 100, m)
-                    plt.plot(x, hitrate, c=color_plot[l], label=f"{l} M={m}")
+                    plt.plot(
+                        x, hitrate, c=color_plot[l], label=f"{l} M={m}")
         legend = ax.legend(loc='upper left')
         ax.set_xlabel('Top M (%)')
         ax.set_ylabel('Hit Rate')
@@ -1108,7 +1139,8 @@ class NeuralNet():
                 irmsd = np.array(irmsd)[ind_sort]
 
                 # make a binary list out of that
-                binary_recomendation = (irmsd <= irmsd_thr).astype('int')
+                binary_recomendation = (
+                    irmsd <= irmsd_thr).astype('int')
 
                 # number of recommended hit
                 npos = np.sum(binary_recomendation)
@@ -1142,7 +1174,8 @@ class NeuralNet():
 
         # sort the data
         if self.task == 'class':
-            out = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()[:, 1]
+            out = F.softmax(torch.FloatTensor(
+                out), dim=1).data.numpy()[:, 1]
         ind_sort = np.argsort(out)
 
         if not inverse:
@@ -1180,7 +1213,8 @@ class NeuralNet():
     def _get_binclass_prediction(data):
 
         out = data['outputs']
-        probility = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()
+        probility = F.softmax(
+            torch.FloatTensor(out), dim=1).data.numpy()
         pred = probility[:, 0] <= probility[:, 1]
         return pred.astype(int)
 

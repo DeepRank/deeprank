@@ -3,7 +3,7 @@ import os
 import unittest
 
 import numpy as np
-
+from torch import optim
 try:
     from deeprank.learn import *
     from deeprank.learn.model3d import cnn_reg as cnn3d
@@ -61,6 +61,9 @@ class TestLearn(unittest.TestCase):
         model = NeuralNet(data_set, cnn3d, model_type='3d', task='reg',
                           cuda=False, plot=True, outdir=out)
 
+        # set the topimizer
+        model.set_optimizer(optim.adam, lr=0.001)
+
         # start the training
         model.train(
             nepoch=5,
@@ -98,14 +101,14 @@ class TestLearn(unittest.TestCase):
             grid_shape=(30, 30, 30),
             select_feature={
                 'AtomicDensities_ind': 'all',
-                'Feature_ind': [ 'coulomb', 'vdwaals', 'charge', 'PSSM_*']},
+                'Feature_ind': ['coulomb', 'vdwaals', 'charge', 'PSSM_*']},
             select_target='DOCKQ',
             tqdm=True,
             normalize_features=True,
             normalize_targets=True,
             clip_features=False,
             pair_chain_feature=np.add,
-            dict_filter={ 'DOCKQ': '<1.'})
+            dict_filter={'DOCKQ': '<1.'})
         # dict_filter={'IRMSD':'<4. or >10.'})
 
         # create the networkt
@@ -142,10 +145,10 @@ class TestLearn(unittest.TestCase):
             valid_database=None,
             test_database=None,
             mapfly=False,
-            grid_shape=( 30, 30, 30),
+            grid_shape=(30, 30, 30),
             select_feature={
                 'AtomicDensities_ind': 'all',
-                'Feature_ind': [ 'coulomb', 'vdwaals', 'charge', 'PSSM_*']},
+                'Feature_ind': ['coulomb', 'vdwaals', 'charge', 'PSSM_*']},
             select_target='BIN_CLASS',
             tqdm=True,
             normalize_features=True,
@@ -192,7 +195,7 @@ class TestLearn(unittest.TestCase):
             mapfly=False,
             select_feature={
                 'AtomicDensities_ind': 'all',
-                'Feature_ind': [ 'coulomb', 'vdwaals', 'charge', 'PSSM_*']},
+                'Feature_ind': ['coulomb', 'vdwaals', 'charge', 'PSSM_*']},
             select_target='DOCKQ',
             tqdm=True,
             normalize_features=True,
