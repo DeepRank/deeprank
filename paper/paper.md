@@ -105,7 +105,8 @@ model.train(nepoch=50, divide_trainset=[0.8,0.2,0.0], train_batch_size=5)
  
 ```
 # Conclusion
-`DeepRank` provides a user friendly platform for researcher to train their models on their own data for applications ranging from PPI ranking to XXX.
+
+`DeepRank` provides a user friendly platform for researcher to train their models on their own data for applications ranging from PPI ranking to XXX. The featurization is assisted by dedicatd classes that handle the calculation and user can define their own features very easily and use `DeepRank` to map them on grids and store the maps in the HDF5 files. Sevral metrics are included in `DeepRank` but users can also define their own. Users can then specify the architecture of their network using standaed pytorch notation as well as the optimizer and the loss function. The training of the model can then be performed easily. 
 
 # Acknowledgements
 
