@@ -83,7 +83,7 @@ grid_info = {'number_of_points' : [30,30,30], 'resolution' : [1.,1.,1.]}
 database.map_features(grid_info)
 ```
 
-![Left - Example of Feature in DeepRank of 1AK4. The feature are mapped on a regular grid spanning the interface. Here the atomic density of the carbon atoms on both chains are represented in red and blue respectively. Right - Example of training on a small dataset showing the scatter plots of ground truth vs prediction and evolution of the loss for the training and validation sets.\label{fig:example}](joss_dr_fig2_v2.png)
+![Left - Example of Feature in DeepRank of 1AK4. The feature are mapped on a regular grid spanning the interface. Here the atomic density of the carbon atoms on both chains are represented in red and blue respectively. Right - Example of training on a small dataset showing the scatter plots of ground truth vs prediction and evolution of the loss for the training and validation sets.\label{fig:example}](joss_dr_fig2_v3.png)
 
 ## Model Training
 
@@ -95,7 +95,7 @@ from deeprank.learn import DataSet, NeuralNet
 from deeprank.learn.model3d import cnn_reg as cnn3d
 
 # Create data set
-data_set = DataSet('1ak4.hdf5', select_target='IRMSD')
+data_set = DataSet('1ak4.hdf5', select_target='IRMSD', dict_filter={'IRMSD':'<5. or >10.'})
 
 # create the network
 model = NeuralNet(data_set, cnn3d, task='reg')
@@ -106,7 +106,7 @@ model.train(nepoch=50, divide_trainset=[0.8,0.2,0.0], train_batch_size=5)
 ```
 # Conclusion
 
-`DeepRank` provides a user friendly platform for researcher to train their models on their own data for applications ranging from PPI ranking to XXX. The featurization is assisted by dedicatd classes that handle the calculation and user can define their own features very easily and use `DeepRank` to map them on grids and store the maps in the HDF5 files. Sevral metrics are included in `DeepRank` but users can also define their own. Users can then specify the architecture of their network using standaed pytorch notation as well as the optimizer and the loss function. The training of the model can then be performed easily. 
+`DeepRank` provides a user friendly platform for researcher to train their models on their own data for applications ranging from PPI ranking to XXX. The featurization is assisted by dedicatd classes that handle the calculation and user can define their own features very easily and use `DeepRank` to map them on grids and store the maps in the HDF5 files. Sevral metrics are included in `DeepRank` but users can also define their own. Users can then specify the architecture of their network using standaed pytorch notation as well as the optimizer and the loss function. The training of the model can then be performed easily.
 
 # Acknowledgements
 
