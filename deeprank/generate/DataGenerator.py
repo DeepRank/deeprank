@@ -1022,7 +1022,6 @@ class DataGenerator(object):
 #
 # ====================================================================================
 
-
     def map_features(self, grid_info={},
                      cuda=False, gpu_block=None,
                      cuda_kernel='/kernel_map.c',
@@ -1102,7 +1101,8 @@ class DataGenerator(object):
 
         # by default we do not map atomic densities
         if 'atomic_densities' not in grid_info:
-            grid_info['atomic_densities'] = None
+            grid_info['atomic_densities'] = {
+                'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8}
 
         # fills in the features mode if somes are missing : default = IND
         modes = ['atomic_densities_mode', 'feature_mode']
@@ -1267,7 +1267,6 @@ class DataGenerator(object):
 #
 # ====================================================================================
 
-
     def _tune_cuda_kernel(self, grid_info, cuda_kernel='kernel_map.c', func='gaussian'):  # pragma: no cover
         """Tune the CUDA kernel using the kernel tuner
         http://benvanwerkhoven.github.io/kernel_tuner/
@@ -1342,7 +1341,6 @@ class DataGenerator(object):
 #       Simply test the kernel
 #
 # ====================================================================================
-
 
     def _test_cuda(self, grid_info, gpu_block=8, cuda_kernel='kernel_map.c', func='gaussian'):  # pragma: no cover
         """Test the CUDA kernel.
@@ -1478,7 +1476,6 @@ class DataGenerator(object):
 #
 # ===================================================================================
 
-
     def _filter_cplx(self):
         """Filter the name of the complexes."""
 
@@ -1560,7 +1557,6 @@ class DataGenerator(object):
 #       ADD PDB FILE
 #
 # ====================================================================================
-
 
     def _add_pdb(self, molgrp, pdbfile, name):
         """Add a pdb to a molgrp.
