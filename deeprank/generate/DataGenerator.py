@@ -37,7 +37,7 @@ class DataGenerator(object):
 
     def __init__(self, pdb_select=None, pdb_source=None,
                  pdb_native=None, pssm_source=None, align=None,
-                 compute_targets=None, compute_features=None,
+                 compute_targets='all', compute_features='all',
                  data_augmentation=None, hdf5='database.h5', mpi_comm=None):
         """Generate the data (features/targets/maps) required for deeprank.
 
@@ -52,8 +52,8 @@ class DataGenerator(object):
                                     e.g. align = {"selection":"interface","plane":"xy"}
                                     if "selection" is not specified the entire complex is used for alignement
             compute_targets (list(str), optional): List of python files computing the targets,
-                "pdb_native" must be set if having targets to compute.
-            compute_features (list(str), optional): List of python files computing the features
+                "pdb_native" must be set if having targets to compute. Default 'all'
+            compute_features (list(str), optional): List of python files computing the features Default 'all'
             data_augmentation (int, optional): Number of rotation performed one each complex
             hdf5 (str, optional): name of the hdf5 file where the data is saved, default to 'database.h5'
             mpi_comm (MPI_COMM) : MPI COMMUNICATOR
@@ -89,8 +89,25 @@ class DataGenerator(object):
         if self.pssm_source is not None:
             config.PATH_PSSM_SOURCE = self.pssm_source
 
-        self.compute_targets = compute_targets
-        self.compute_features = compute_features
+        # handle the targets
+        if compute_targets == 'all':
+            self.compute_targets = [
+                'deeprank.targets.dockQ',
+                'deeprank.targets.binary_class',
+                'deeprank.targets.capri_class']
+        else:
+            self.compute_targets = compute_targets
+
+        # handle the features
+        if compute_features == 'all':
+            self.compute_features = [
+                'deeprank.features.AtomicFeature',
+                'deeprank.features.FullPSSM',
+                'deeprank.features.PSSM_IC',
+                'deeprank.features.BSA',
+                'deeprank.features.ResidueDensity']
+        else:
+            self.compute_features = compute_features
 
         self.data_augmentation = data_augmentation
 
@@ -119,13 +136,12 @@ class DataGenerator(object):
 
         # handle pssm source
         pssm_features = ('deeprank.features.FullPSSM',
-                        'deeprank.features.PSSM_IC')
+                         'deeprank.features.PSSM_IC')
         if self.compute_features and \
-            set.intersection(set(pssm_features), set(self.compute_features)):
+                set.intersection(set(pssm_features), set(self.compute_features)):
             if config.PATH_PSSM_SOURCE is None:
                 raise ValueError(
                     'You must provide "pssm_source" to compute PSSM features.')
-
 
         # get all the conformation path
         for src in self.pdb_source:
@@ -149,7 +165,8 @@ class DataGenerator(object):
         # filter the cplx if required
         if self.pdb_select:
             for i in self.pdb_select:
-                self.pdb_path += list(filter(lambda x: i in x, self.all_pdb))
+                self.pdb_path += list(filter(lambda x: i in x,
+                                             self.all_pdb))
         else:
             self.pdb_path = self.all_pdb
 
@@ -166,7 +183,6 @@ class DataGenerator(object):
             prog_bar=False,
             contact_distance=8.5,
             random_seed=None):
-
         """Create the hdf5 file architecture and compute the features/targets.
 
         Args:
@@ -230,20 +246,25 @@ class DataGenerator(object):
 
         # set metadata to hdf5 file
         self.f5.attrs['DeepRank_version'] = deeprank.__version__
-        self.f5.attrs['pdb_source'] = [os.path.abspath(f) for f in self.pdb_source]
-        self.f5.attrs['pdb_native'] = [os.path.abspath(f) for f in self.pdb_native]
-        self.f5.attrs['pssm_source'] = os.path.abspath(self.pssm_source)
+        self.f5.attrs['pdb_source'] = [
+            os.path.abspath(f) for f in self.pdb_source]
+        self.f5.attrs['pdb_native'] = [
+            os.path.abspath(f) for f in self.pdb_native]
+        self.f5.attrs['pssm_source'] = os.path.abspath(
+            self.pssm_source)
         self.f5.attrs['features'] = self.compute_features
         self.f5.attrs['targets'] = self.compute_targets
 
         ##################################################
         # Start generating HDF5 database
         ##################################################
-        self.logger.info(f'\n# Start creating HDF5 database: {self.hdf5}')
+        self.logger.info(
+            f'\n# Start creating HDF5 database: {self.hdf5}')
 
         # get the local progress bar
         desc = '{:25s}'.format('Creating database')
-        cplx_tqdm = tqdm(self.local_pdbs, desc=desc, disable=not prog_bar)
+        cplx_tqdm = tqdm(self.local_pdbs, desc=desc,
+                         disable=not prog_bar)
 
         for cplx in cplx_tqdm:
 
@@ -318,13 +339,15 @@ class DataGenerator(object):
 
                 if self.compute_features is not None:
                     if verbose:
-                        self.logger.info(f'{"":4s}Calculating features...')
+                        self.logger.info(
+                            f'{"":4s}Calculating features...')
 
                     molgrp.require_group('features')
                     molgrp.require_group('features_raw')
 
                     feature_error_flag = self._compute_features(self.compute_features,
-                                                                molgrp['complex'][()],
+                                                                molgrp['complex'][(
+                                                                )],
                                                                 molgrp['features'],
                                                                 molgrp['features_raw'],
                                                                 self.logger)
@@ -350,7 +373,8 @@ class DataGenerator(object):
                 ################################################
                 if self.compute_targets is not None:
                     if verbose:
-                        self.logger.info(f'{"":4s}Calculating targets...')
+                        self.logger.info(
+                            f'{"":4s}Calculating targets...')
 
                     molgrp.require_group('targets')
 
@@ -367,7 +391,8 @@ class DataGenerator(object):
                 #   add the box center
                 ################################################
                 if verbose:
-                    self.logger.info(f'{"":4s}Calculating grid box center...')
+                    self.logger.info(
+                        f'{"":4s}Calculating grid box center...')
 
                 grid_error_flag = False
                 molgrp.require_group('grid_points')
@@ -375,7 +400,8 @@ class DataGenerator(object):
                 try:
                     center = self._get_grid_center(
                         molgrp['complex'][()], contact_distance)
-                    molgrp['grid_points'].create_dataset('center', data=center)
+                    molgrp['grid_points'].create_dataset(
+                        'center', data=center)
                     if verbose:
                         self.logger.info(
                             f'{"":4s}Generated subgroup "grid_points"'
@@ -420,7 +446,8 @@ class DataGenerator(object):
 
                     # get the rotation axis and angle
                     if self.align is None:
-                        axis, angle = pdb2sql.transform.get_rot_axis_angle(random_seed)
+                        axis, angle = pdb2sql.transform.get_rot_axis_angle(
+                            random_seed)
                     else:
                         axis, angle = self._get_aligned_rotation_axis_angle(random_seed,
                                                                             self.align)
@@ -436,7 +463,8 @@ class DataGenerator(object):
                     self.f5.copy(mol_name + '/features/', molgrp)
 
                     # rotate the feature
-                    self._rotate_feature(molgrp, axis, angle, mol_center)
+                    self._rotate_feature(
+                        molgrp, axis, angle, mol_center)
 
                     # grid center used to create grid box
                     molgrp.require_group('grid_points')
@@ -444,7 +472,8 @@ class DataGenerator(object):
                         self.f5[mol_name + '/grid_points/center'],
                         axis, angle, mol_center)
 
-                    molgrp['grid_points'].create_dataset('center', data=center)
+                    molgrp['grid_points'].create_dataset(
+                        'center', data=center)
 
                     # store the rotation axis/angl/center as attriutes
                     # in case we need them later
@@ -503,7 +532,8 @@ class DataGenerator(object):
 
         # close the file
         self.f5.close()
-        self.logger.info(f'\n# Successfully created database: {self.hdf5}\n')
+        self.logger.info(
+            f'\n# Successfully created database: {self.hdf5}\n')
 
     def aug_data(self, augmentation, keep_existing_aug=True, random_seed=None):
         """Augment exiting original PDB data and features.
@@ -526,7 +556,8 @@ class DataGenerator(object):
 
         # check if file exists
         if not os.path.isfile(self.hdf5):
-            raise FileNotFoundError('File %s does not exists' % self.hdf5)
+            raise FileNotFoundError(
+                'File %s does not exists' % self.hdf5)
 
         # get the folder names
         f5 = h5py.File(self.hdf5, 'a')
@@ -543,7 +574,7 @@ class DataGenerator(object):
         aug_id_start = 0
         if keep_existing_aug:
             exiting_augs = list(
-                filter(lambda x: re.search(fnames_original[0]+ r'_r\d+$', x), fnames_augmented))
+                filter(lambda x: re.search(fnames_original[0] + r'_r\d+$', x), fnames_augmented))
             aug_id_start += len(exiting_augs)
         else:
             for i in fnames_augmented:
@@ -572,7 +603,8 @@ class DataGenerator(object):
 
                 # get the rotation axis and angle
                 if self.align is None:
-                    axis, angle = pdb2sql.transform.get_rot_axis_angle(random_seed)
+                    axis, angle = pdb2sql.transform.get_rot_axis_angle(
+                        random_seed)
                 else:
                     axis, angle = self._get_aligned_rotation_axis_angle(random_seed,
                                                                         self.align)
@@ -596,7 +628,8 @@ class DataGenerator(object):
                     f5[mol_name + '/grid_points/center'],
                     axis, angle, mol_center)
 
-                molgrp['grid_points'].create_dataset('center', data=center)
+                molgrp['grid_points'].create_dataset(
+                    'center', data=center)
 
                 # store the rotation axis/angl/center as attriutes
                 # in case we need them later
@@ -604,14 +637,14 @@ class DataGenerator(object):
                 molgrp.attrs['angle'] = angle
                 molgrp.attrs['center'] = mol_center
         f5.close()
-        self.logger.info(f'\n# Successfully augmented data in {self.hdf5}')
+        self.logger.info(
+            f'\n# Successfully augmented data in {self.hdf5}')
 
 # ====================================================================================
 #
 #       ADD FEATURES TO AN EXISTING DATASET
 #
 # ====================================================================================
-
 
     def add_feature(self, remove_error=True, prog_bar=True):
         """Add a feature to an existing hdf5 file.
@@ -633,7 +666,8 @@ class DataGenerator(object):
 
         # check if file exists
         if not os.path.isfile(self.hdf5):
-            raise FileNotFoundError('File %s does not exists' % self.hdf5)
+            raise FileNotFoundError(
+                'File %s does not exists' % self.hdf5)
 
         # get the folder names
         f5 = h5py.File(self.hdf5, 'a')
@@ -700,7 +734,8 @@ class DataGenerator(object):
                     # copy
                     data = src_molgrp['features/' + k][()]
                     aug_molgrp.require_group('features')
-                    aug_molgrp.create_dataset("features/" + k, data=data)
+                    aug_molgrp.create_dataset(
+                        "features/" + k, data=data)
 
                     # rotate
                     self._rotate_feature(
@@ -709,7 +744,8 @@ class DataGenerator(object):
         # find errored augmented molecules
         tmp_aug_error = []
         for mol in self.feature_error:
-            tmp_aug_error += list(filter(lambda x: mol in x, fnames_augmented))
+            tmp_aug_error += list(filter(lambda x: mol in x,
+                                         fnames_augmented))
         self.feature_error += tmp_aug_error
 
         #  Remove errored molecules
@@ -749,7 +785,8 @@ class DataGenerator(object):
 
         # check if file exists
         if not os.path.isfile(self.hdf5):
-            raise FileNotFoundError('File %s does not exists' % self.hdf5)
+            raise FileNotFoundError(
+                'File %s does not exists' % self.hdf5)
 
         f5 = h5py.File(self.hdf5, 'a')
         for mol in list(f5.keys()):
@@ -777,7 +814,8 @@ class DataGenerator(object):
 
         # check if file exists
         if not os.path.isfile(self.hdf5):
-            raise FileNotFoundError('File %s does not exists' % self.hdf5)
+            raise FileNotFoundError(
+                'File %s does not exists' % self.hdf5)
 
         # name of the hdf5 file
         f5 = h5py.File(self.hdf5, 'a')
@@ -823,7 +861,8 @@ class DataGenerator(object):
                 if k not in aug_molgrp['targets']:
                     data = src_molgrp['targets/' + k][()]
                     aug_molgrp.require_group('targets')
-                    aug_molgrp.create_dataset("targets/" + k, data=data)
+                    aug_molgrp.create_dataset(
+                        "targets/" + k, data=data)
 
         # close the file
         f5.close()
@@ -854,10 +893,11 @@ class DataGenerator(object):
         >>>                           pssm_source='./1ak4_pssm/')
         """
 
-        f5 = h5py.File(self.hdf5,'a')
+        f5 = h5py.File(self.hdf5, 'a')
 
         mol_names = f5.keys()
-        self.logger.info(f'\n# Start aligning the HDF5 database: {self.hdf5}')
+        self.logger.info(
+            f'\n# Start aligning the HDF5 database: {self.hdf5}')
 
         # deal with the features
         if self.compute_features is None:
@@ -876,7 +916,7 @@ class DataGenerator(object):
 
         elif 'pssm_source' in f5.attrs:
             config.PATH_PSSM_SOURCE = f5.attrs['pssm_source']
-        else :
+        else:
             raise ValueError('No pssm source detected')
 
         # loop over the complexes
@@ -918,13 +958,13 @@ class DataGenerator(object):
 #
 # ====================================================================================
 
-
     @staticmethod
     def _get_grid_center(pdb, contact_distance):
 
         sqldb = pdb2sql.interface(pdb)
 
-        contact_atoms = sqldb.get_contact_atoms(cutoff=contact_distance)
+        contact_atoms = sqldb.get_contact_atoms(
+            cutoff=contact_distance)
 
         tmp = []
         for i in contact_atoms.values():
@@ -982,6 +1022,7 @@ class DataGenerator(object):
 #
 # ====================================================================================
 
+
     def map_features(self, grid_info={},
                      cuda=False, gpu_block=None,
                      cuda_kernel='/kernel_map.c',
@@ -1035,7 +1076,8 @@ class DataGenerator(object):
         if self.mpi_comm is not None:
             if self.mpi_comm.Get_size() > 1:
                 if cuda:
-                    self.logger.warning('CUDA mapping disabled when using MPI')
+                    self.logger.warning(
+                        'CUDA mapping disabled when using MPI')
                     cuda = False
 
         # name of the hdf5 file
@@ -1087,11 +1129,13 @@ class DataGenerator(object):
             module = self._compile_cuda_kernel(cuda_kernel, npts, res)
 
             # get the cuda function for the atomic/residue feature
-            cuda_func = self._get_cuda_function(module, cuda_func_name)
+            cuda_func = self._get_cuda_function(
+                module, cuda_func_name)
 
             # get the cuda function for the atomic densties
             cuda_atomic_name = 'atomic_densities'
-            cuda_atomic = self._get_cuda_function(module, cuda_atomic_name)
+            cuda_atomic = self._get_cuda_function(
+                module, cuda_atomic_name)
 
         # get the local progress bar
         desc = '{:25s}'.format('Map Features')
@@ -1109,7 +1153,8 @@ class DataGenerator(object):
             if 'feature' not in grid_info_ref:
                 # if we havent mapped anything yet or if we reset
                 if 'mapped_features' not in list(f5[mol].keys()) or reset:
-                    grid_info['feature'] = list(f5[mol + '/features'].keys())
+                    grid_info['feature'] = list(
+                        f5[mol + '/features'].keys())
 
                 # if we have already mapped stuff
                 elif 'mapped_features' in list(f5[mol].keys()):
@@ -1125,7 +1170,7 @@ class DataGenerator(object):
                     grid_info['feature'] = []
                     for feat_name in all_feat:
                         if not any(map(lambda x: x.startswith(feat_name + '_'),
-                                    mapped_feat)):
+                                       mapped_feat)):
                             grid_info['feature'].append(feat_name)
 
             try:
@@ -1148,7 +1193,8 @@ class DataGenerator(object):
 
             except BaseException:
                 self.map_error.append(mol)
-                self.logger.exception(f'Error during the mapping of {mol}')
+                self.logger.exception(
+                    f'Error during the mapping of {mol}')
 
         # remove the molecule with issues
         if self.map_error:
@@ -1221,6 +1267,7 @@ class DataGenerator(object):
 #
 # ====================================================================================
 
+
     def _tune_cuda_kernel(self, grid_info, cuda_kernel='kernel_map.c', func='gaussian'):  # pragma: no cover
         """Tune the CUDA kernel using the kernel tuner
         http://benvanwerkhoven.github.io/kernel_tuner/
@@ -1237,14 +1284,16 @@ class DataGenerator(object):
         try:
             from kernel_tuner import tune_kernel
         except BaseException:
-            print('Install the Kernel Tuner : \n \t\t pip install kernel_tuner')
+            print(
+                'Install the Kernel Tuner : \n \t\t pip install kernel_tuner')
             print('http://benvanwerkhoven.github.io/kernel_tuner/')
 
         # fills in the grid data if not provided : default = NONE
         grinfo = ['number_of_points', 'resolution']
         for gr in grinfo:
             if gr not in grid_info:
-                raise ValueError('%s must be specified to tune the kernel')
+                raise ValueError(
+                    '%s must be specified to tune the kernel')
 
         # define the grid
         nx, ny, nz = grid_info['number_of_points']
@@ -1273,7 +1322,8 @@ class DataGenerator(object):
         problem_size = grid_info['number_of_points']
 
         # get the kernel
-        kernel = os.path.dirname(os.path.abspath(__file__)) + '/' + cuda_kernel
+        kernel = os.path.dirname(
+            os.path.abspath(__file__)) + '/' + cuda_kernel
         kernel_code_template = open(kernel, 'r').read()
 
         npts = grid_info['number_of_points']
@@ -1292,6 +1342,7 @@ class DataGenerator(object):
 #       Simply test the kernel
 #
 # ====================================================================================
+
 
     def _test_cuda(self, grid_info, gpu_block=8, cuda_kernel='kernel_map.c', func='gaussian'):  # pragma: no cover
         """Test the CUDA kernel.
@@ -1312,7 +1363,8 @@ class DataGenerator(object):
         grinfo = ['number_of_points', 'resolution']
         for gr in grinfo:
             if gr not in grid_info:
-                raise ValueError('%s must be specified to tune the kernel')
+                raise ValueError(
+                    '%s must be specified to tune the kernel')
 
         # get the cuda function
         npts = grid_info['number_of_points']
@@ -1334,7 +1386,8 @@ class DataGenerator(object):
         x_gpu = gpuarray.to_gpu(x.astype(np.float32))
         y_gpu = gpuarray.to_gpu(y.astype(np.float32))
         z_gpu = gpuarray.to_gpu(z.astype(np.float32))
-        grid_gpu = gpuarray.zeros(grid_info['number_of_points'], np.float32)
+        grid_gpu = gpuarray.zeros(
+            grid_info['number_of_points'], np.float32)
 
         #  make sure we have three block value
         if not isinstance(gpu_block, list):
@@ -1375,7 +1428,8 @@ class DataGenerator(object):
             compiler.SourceModule: compiled kernel
         """
         # get the cuda kernel path
-        kernel = os.path.dirname(os.path.abspath(__file__)) + '/' + cuda_kernel
+        kernel = os.path.dirname(
+            os.path.abspath(__file__)) + '/' + cuda_kernel
         kernel_code_template = open(kernel, 'r').read()
         kernel_code = kernel_code_template % {
             'nx': npts[0], 'ny': npts[1], 'nz': npts[2], 'RES': np.max(res)}
@@ -1424,6 +1478,7 @@ class DataGenerator(object):
 #
 # ===================================================================================
 
+
     def _filter_cplx(self):
         """Filter the name of the complexes."""
 
@@ -1435,7 +1490,8 @@ class DataGenerator(object):
         # create the filters
         tmp_path = []
         for name in pdb_name:
-            tmp_path += list(filter(lambda x: name in x, self.pdb_path))
+            tmp_path += list(filter(lambda x: name in x,
+                                    self.pdb_path))
 
         # update the pdb_path
         self.pdb_path = tmp_path
@@ -1446,7 +1502,6 @@ class DataGenerator(object):
 #       FEATURES ROUTINES
 #
 # ====================================================================================
-
 
     @staticmethod
     def _compute_features(feat_list, pdb_data, featgrp, featgrp_raw, logger):
@@ -1467,8 +1522,10 @@ class DataGenerator(object):
         error_flag = False  # when False: success; when True: failed
         for feat in feat_list:
             try:
-                feat_module = importlib.import_module(feat, package=None)
-                feat_module.__compute_feature__(pdb_data, featgrp, featgrp_raw)
+                feat_module = importlib.import_module(
+                    feat, package=None)
+                feat_module.__compute_feature__(
+                    pdb_data, featgrp, featgrp_raw)
 
             except Exception as ex:
                 logger.exception(ex)
@@ -1482,7 +1539,6 @@ class DataGenerator(object):
 #       TARGETS ROUTINES
 #
 # ====================================================================================
-
 
     @staticmethod
     def _compute_targets(targ_list, pdb_data, targrp):
@@ -1504,6 +1560,7 @@ class DataGenerator(object):
 #       ADD PDB FILE
 #
 # ====================================================================================
+
 
     def _add_pdb(self, molgrp, pdbfile, name):
         """Add a pdb to a molgrp.
@@ -1541,7 +1598,7 @@ class DataGenerator(object):
             dict_align {dict} -- dictionanry of options to align the pdb
         """
         if 'selection' not in dict_align.keys():
-                dict_align['selection'] = {}
+            dict_align['selection'] = {}
 
         if 'export' not in dict_align.keys():
             dict_align['export'] = False
@@ -1549,8 +1606,8 @@ class DataGenerator(object):
         if dict_align['selection'] == 'interface':
 
             if np.all([k in dict_align for k in ['chain1', 'chain2']]):
-                chains = {'chain1' : dict_align['chain1'],
-                            'chain2' : dict_align['chain2']}
+                chains = {'chain1': dict_align['chain1'],
+                          'chain2': dict_align['chain2']}
             else:
                 chains = {}
 
@@ -1561,8 +1618,8 @@ class DataGenerator(object):
         else:
 
             sqldb = align_along_axis(pdbfile, axis=dict_align['axis'],
-                                    export = dict_align['export'],
-                                        **dict_align['selection'])
+                                     export=dict_align['export'],
+                                     **dict_align['selection'])
 
         return sqldb
 
@@ -1593,21 +1650,21 @@ class DataGenerator(object):
 
         if 'plane' in dict_align.keys():
             if dict_align['plane'] == 'xy':
-                axis = [0.,0.,1.]
+                axis = [0., 0., 1.]
             elif dict_align['plane'] == 'xz':
-                axis = [0.,1.,0.]
+                axis = [0., 1., 0.]
             elif dict_align['plane'] == 'yz':
-                axis = [1.,0.,0.]
+                axis = [1., 0., 0.]
             else:
                 raise ValueError("plane must be xy, xz or yz")
 
         elif 'axis' in dict_align.keys():
             if dict_align['axis'] == 'x':
-                axis = [1.,0.,0.]
+                axis = [1., 0., 0.]
             elif dict_align['axis'] == 'y':
-                axis = [0.,1.,0.]
+                axis = [0., 1., 0.]
             elif dict_align['axis'] == 'z':
-                axis = [0.,0.,1.]
+                axis = [0., 0., 1.]
             else:
                 raise ValueError("axis must be x, y or z")
         else:
@@ -1685,7 +1742,8 @@ class DataGenerator(object):
                 xyz = data[:, 1:4]
 
                 # get rotated xyz
-                xyz_rot = pdb2sql.transform.rot_xyz_around_axis(xyz, axis, angle, center)
+                xyz_rot = pdb2sql.transform.rot_xyz_around_axis(
+                    xyz, axis, angle, center)
 
                 # put back the data
                 molgrp['features/' + fn][:, 1:4] = xyz_rot
