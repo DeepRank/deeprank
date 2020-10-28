@@ -83,7 +83,7 @@ grid_info = {'number_of_points' : [30,30,30], 'resolution' : [1.,1.,1.]}
 database.map_features(grid_info)
 ```
 
-![Left - Example of Feature in DeepRank of 1AK4. The feature are mapped on a regular grid spanning the interface. Here the atomic density of the carbon atoms on both chains are represented in red and blue respectively. Right - Example of training on a small dataset showing the scatter plots of ground truth vs prediction and evolution of the loss for the training and validation sets.\label{fig:example}](joss_dr_fig2.png)
+![Left - Example of Feature in DeepRank of 1AK4. The feature are mapped on a regular grid spanning the interface. Here the atomic density of the carbon atoms on both chains are represented in red and blue respectively. Right - Example of training on a small dataset showing the scatter plots of ground truth vs prediction and evolution of the loss for the training and validation sets.\label{fig:example}](joss_dr_fig2_v2.png)
 
 ## Model Training
 
