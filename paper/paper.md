@@ -71,7 +71,7 @@ from mpi4py import MPI
 
 # Initialize the database
 database = DataGenerator( pdb_source='1AK4/decoys/', pdb_native='1AK4/native/', pssm_source='1AK4/pssm/',
-    align={"selection":"interface", "plane":"xy", 'export':True}, hdf5='1ak4.hdf5', mpi_comm=MPI.COMM_WORLD)
+    align={"axis":"x", 'export':True}, hdf5='1ak4.hdf5', mpi_comm=MPI.COMM_WORLD)
 
 # Compute the features and targets
 database.create_database()
