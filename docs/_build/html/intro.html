@@ -1,33 +1,25 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Installation &#8212; DeepRank 0.1 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Tutorial : Data Generation" href="tutorial.html" />
     <link rel="prev" title="Welcome to DeepRank’s documentation!" href="index.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -43,7 +35,8 @@
         <li class="right" >
           <a href="index.html" title="Welcome to DeepRank’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Installation</a></li> 
       </ul>
     </div>  
 
@@ -58,8 +51,8 @@
 <p>At the moment the code allows to:</p>
 <blockquote>
 <div><ul class="simple">
-<li>Create one/multiple HDF5 files containing all the data (structures, features, mapped features, targets) required to use deep learning.</li>
-<li>Train convolutional neural networks to predict possible targets (binary class, haddock-score …) from the mapped feataures</li>
+<li><p>Create one/multiple HDF5 files containing all the data (structures, features, mapped features, targets) required to use deep learning.</p></li>
+<li><p>Train convolutional neural networks to predict possible targets (binary class, haddock-score …) from the mapped feataures</p></li>
 </ul>
 </div></blockquote>
 <div class="section" id="github">
@@ -68,22 +61,22 @@
 <p>To install the code</p>
 <blockquote>
 <div><ul class="simple">
-<li>clone the repository <code class="docutils literal"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">https://github.com/DeepRank/deeprank.git</span></code></li>
-<li>go there <code class="docutils literal"><span class="pre">cd</span> <span class="pre">deeprank</span></code></li>
-<li>install the module <code class="docutils literal"><span class="pre">pip</span> <span class="pre">insall</span> <span class="pre">-e</span> <span class="pre">./</span></code></li>
+<li><p>clone the repository <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">https://github.com/DeepRank/deeprank.git</span></code></p></li>
+<li><p>go there <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">deeprank</span></code></p></li>
+<li><p>install the module <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">insall</span> <span class="pre">-e</span> <span class="pre">./</span></code></p></li>
 </ul>
 </div></blockquote>
 </div>
 <div class="section" id="test-the-installation">
 <h2>Test the installation<a class="headerlink" href="#test-the-installation" title="Permalink to this headline">¶</a></h2>
-<p>To test the module go to the test folder <code class="docutils literal"><span class="pre">cd</span> <span class="pre">./test</span></code> and execute the following test:</p>
+<p>To test the module go to the test folder <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">./test</span></code> and execute the following test:</p>
 <blockquote>
 <div><ul class="simple">
-<li>Atomic Features : <code class="docutils literal"><span class="pre">python</span> <span class="pre">test_atomic_features.py</span></code></li>
-<li>RMSD and dockQ : <code class="docutils literal"><span class="pre">python</span> <span class="pre">test_rmsd.py</span></code></li>
-<li>Generate Data : <code class="docutils literal"><span class="pre">python</span> <span class="pre">test_generate.py</span></code></li>
-<li>Generate Data (CUDA): <code class="docutils literal"><span class="pre">python</span> <span class="pre">notravis_test_generate_cuda.py</span></code></li>
-<li>Deep learning: <code class="docutils literal"><span class="pre">python</span> <span class="pre">notravis_test_learn.py</span></code></li>
+<li><p>Atomic Features : <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">test_atomic_features.py</span></code></p></li>
+<li><p>RMSD and dockQ : <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">test_rmsd.py</span></code></p></li>
+<li><p>Generate Data : <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">test_generate.py</span></code></p></li>
+<li><p>Generate Data (CUDA): <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">notravis_test_generate_cuda.py</span></code></p></li>
+<li><p>Deep learning: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">notravis_test_learn.py</span></code></p></li>
 </ul>
 </div></blockquote>
 <p>These tests (except the notravis ones) are automatically run on Travis CI at each new push. So if the build button display passing they should work !</p>
@@ -93,17 +86,17 @@
 <p>The code is written in Python3. Several packages are required to run the code but most are pretty standard. Here is an non-exhaustive list of dependencies</p>
 <blockquote>
 <div><ul class="simple">
-<li>Numpy (<a class="reference external" href="http://www.numpy.org">http://www.numpy.org</a>)</li>
-<li>Scipy (<a class="reference external" href="https://www.scipy.org/">https://www.scipy.org/</a>)</li>
-<li>PyTorch (<a class="reference external" href="http://pytorch.org">http://pytorch.org</a>)</li>
-<li>h5py (<a class="reference external" href="http://www.h5py.org/">http://www.h5py.org/</a>)</li>
-<li>pickle ()</li>
-<li>matplotlib</li>
+<li><p>Numpy (<a class="reference external" href="http://www.numpy.org">http://www.numpy.org</a>)</p></li>
+<li><p>Scipy (<a class="reference external" href="https://www.scipy.org/">https://www.scipy.org/</a>)</p></li>
+<li><p>PyTorch (<a class="reference external" href="http://pytorch.org">http://pytorch.org</a>)</p></li>
+<li><p>h5py (<a class="reference external" href="http://www.h5py.org/">http://www.h5py.org/</a>)</p></li>
+<li><p>pickle ()</p></li>
+<li><p>matplotlib</p></li>
 </ul>
 </div></blockquote>
 <p>The deep learning was implemented with PyTorch 2. (<a class="reference external" href="http://www.pytorch.org">http://www.pytorch.org</a>)
 To install pytorch with anaconda</p>
-<p><code class="docutils literal"><span class="pre">`</span>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
 <span class="pre">conda</span> <span class="pre">install</span> <span class="pre">pytorch</span> <span class="pre">torchvision</span> <span class="pre">cuda80</span> <span class="pre">-c</span> <span class="pre">soumith</span>
 <span class="pre">`</span></code></p>
 </div>
@@ -112,18 +105,18 @@ To install pytorch with anaconda</p>
 <p>Network visualization</p>
 <blockquote>
 <div><ul class="simple">
-<li>tensorboard (<a class="reference external" href="https://github.com/lanpa/tensorboard-pytorch">https://github.com/lanpa/tensorboard-pytorch</a>)</li>
+<li><p>tensorboard (<a class="reference external" href="https://github.com/lanpa/tensorboard-pytorch">https://github.com/lanpa/tensorboard-pytorch</a>)</p></li>
 </ul>
 </div></blockquote>
 <p>It is possible to visualize the parameters of the CNN using tensorboard. This is not required but could help in finding better architectures. You first have to install tensorflow and then install pytorch-tensorboard with pip</p>
-<p><code class="docutils literal"><span class="pre">`</span>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
 <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">tensorflow-tensorboard</span>
 <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">tensorboard-pytorch</span>
 <span class="pre">`</span></code></p>
 <p>Feature visualization</p>
 <blockquote>
 <div><ul class="simple">
-<li>VMD (<a class="reference external" href="http://www.ks.uiuc.edu/Research/vmd/">http://www.ks.uiuc.edu/Research/vmd/</a>)</li>
+<li><p>VMD (<a class="reference external" href="http://www.ks.uiuc.edu/Research/vmd/">http://www.ks.uiuc.edu/Research/vmd/</a>)</p></li>
 </ul>
 </div></blockquote>
 <p>The code can output visualization file of the mapped features that can be used in VMD We can develop other stategies using pyMol or other softwares in the future. All the features are exported as .cube files which is pretty standard format. The code also outputs VMD script that automatically load all the data. The tool <a class="reference external" href="https://github.com/DeepRank/DeepXplorer">https://github.com/DeepRank/DeepXplorer</a> can be really usefull to explore the HDF5 files generated by DeepRank</p>
@@ -131,12 +124,13 @@ To install pytorch with anaconda</p>
 </div>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h3><a href="index.html">Table Of Contents</a></h3>
+<h3><a href="index.html">Table of Contents</a></h3>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
@@ -166,15 +160,15 @@ To install pytorch with anaconda</p>
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -194,12 +188,13 @@ To install pytorch with anaconda</p>
         <li class="right" >
           <a href="index.html" title="Welcome to DeepRank’s documentation!"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Installation</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Nicolas Renaud.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
     </div>
   </body>
 </html>

@@ -1,33 +1,25 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tutorial : Deep learning &#8212; DeepRank 0.1 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Advanced Tutorial" href="advTuto.html" />
     <link rel="prev" title="Tutorial : Data Generation" href="tutorial.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -43,7 +35,8 @@
         <li class="right" >
           <a href="tutorial.html" title="Tutorial : Data Generation"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Tutorial : Deep learning</a></li> 
       </ul>
     </div>  
 
@@ -54,26 +47,29 @@
             
   <div class="section" id="tutorial-deep-learning">
 <h1>Tutorial : Deep learning<a class="headerlink" href="#tutorial-deep-learning" title="Permalink to this headline">¶</a></h1>
-<p>This page gives a introduction of thedeep learning process in DeepRank. This is a breakdown of the file <code class="docutils literal"><span class="pre">test/notravis_test_learn.py</span></code>.</p>
-<p>The deep learning module of DeepRank allows to use the data stored in the  HDF5 files in pyTorch and run deep learning experiments using different combinations of conformations, features, targets, network architecture. We will illutrate how the process work</p>
+<p>This page gives a introduction of the deep learning process in DeepRank. This is a breakdown of the file <code class="docutils literal notranslate"><span class="pre">test/test_learn.py</span></code>.</p>
+<p>The deep learning module of DeepRank allows to use the data stored in the  HDF5 files in pyTorch and run deep learning experiments using different combinations of conformations, features, targets, network architecture. We will illustrate how the process work</p>
 <div class="section" id="creating-the-dataset">
 <h2>Creating the dataset<a class="headerlink" href="#creating-the-dataset" title="Permalink to this headline">¶</a></h2>
 <p>The two first lines of the code are to import the module we need</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">deeprank.learn</span> <span class="k">import</span> <span class="o">*</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">deeprank.learn</span> <span class="k">import</span> <span class="o">*</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">deeprank.learn.model3d</span> <span class="k">import</span> <span class="n">cnn</span>
 </pre></div>
 </div>
-<p>The first lines import the <code class="docutils literal"><span class="pre">DataSet</span></code> and <code class="docutils literal"><span class="pre">NeuralNetwork</span></code> class that are in charge of deep learning. The second import a pre-generated 3D convolution neural network. This file has been generated automatically using <code class="docutils literal"><span class="pre">deeprank.learn.modelGenerator</span></code>.</p>
+<p>The first line imports the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> and <code class="docutils literal notranslate"><span class="pre">NeuralNetwork</span></code> class that are in charge of deep learning. The second imports a pre-generated 3D convolution neural network. This file has been generated automatically using <code class="docutils literal notranslate"><span class="pre">deeprank.learn.modelGenerator</span></code>.</p>
 <p>The first thing we then need to do is to define which database contains the information we want to use to train the network. This is done by:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">database</span> <span class="o">=</span> <span class="s1">&#39;1ak4.hdf5&#39;</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">database</span> <span class="o">=</span> <span class="s1">&#39;1ak4.hdf5&#39;</span>
 </pre></div>
 </div>
-<p>This is the file we have generated above. Note that more than one file can be specified here. Hence the command</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">database</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1ak4.hdf5&#39;</span><span class="p">,</span><span class="s1">&#39;1atn.hdf5&#39;</span><span class="p">]</span>
+<p>This is the file we have generated before in “Tutorial : Data Generation”. Note that more than one file can be specified here. Hence the command</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">database</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1ak4.hdf5&#39;</span><span class="p">,</span><span class="s1">&#39;1atn.hdf5&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>will use all the data contained in both of these files to train the network. We can now create an instance of deeprank.DataSet</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data_set</span> <span class="o">=</span> <span class="n">DataSet</span><span class="p">(</span><span class="n">database</span><span class="p">,</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data_set</span> <span class="o">=</span> <span class="n">DataSet</span><span class="p">(</span><span class="n">database</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>                   <span class="n">grid_info</span><span class="o">=</span><span class="p">{</span>
+<span class="gp">&gt;&gt;&gt; </span>                   <span class="s1">&#39;number_of_points&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>                   <span class="s1">&#39;resolution&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)},</span>
 <span class="gp">&gt;&gt;&gt; </span>                   <span class="n">select_feature</span><span class="o">=</span><span class="p">{</span>
 <span class="gp">&gt;&gt;&gt; </span>                    <span class="s1">&#39;AtomicDensities_ind&#39;</span> <span class="p">:</span> <span class="s1">&#39;all&#39;</span><span class="p">,</span>
 <span class="gp">&gt;&gt;&gt; </span>                    <span class="s1">&#39;Feature_ind&#39;</span> <span class="p">:</span> <span class="p">[</span><span class="s1">&#39;coulomb&#39;</span><span class="p">,</span><span class="s1">&#39;vdwaals&#39;</span><span class="p">,</span><span class="s1">&#39;charge&#39;</span><span class="p">,</span><span class="s1">&#39;pssm&#39;</span><span class="p">]},</span>
@@ -82,40 +78,40 @@
 <span class="gp">&gt;&gt;&gt; </span>                   <span class="n">dict_filter</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;IRMSD&#39;</span><span class="p">:</span><span class="s1">&#39;&lt;4. or &gt;10.&#39;</span><span class="p">})</span>
 </pre></div>
 </div>
-<p>On top of the database that specify which files to use we also must specify which features and which targets must be used during the traing. The feature selection is done via the argument <code class="docutils literal"><span class="pre">select_features</span></code>. Several options are possible for this argument.</p>
+<p>On top of the database that specifies which files to use we also must specify which features and which targets must be used during the training. The feature selection is done via the argument <code class="docutils literal notranslate"><span class="pre">select_features</span></code>. Several options are possible for this argument.</p>
 <p>The simplest (and default) option is to use all the features stored in the HDF5 file. To do that simply use:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># select all the features</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># select all the features</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">select_feature</span> <span class="o">=</span> <span class="s1">&#39;all&#39;</span>
 </pre></div>
 </div>
-<p>Most of the time one want to specify which feature to use. We must then use a <em>dictionary</em>. As you cans ee in the HDF5 file, the <code class="docutils literal"><span class="pre">mapped_features</span></code> subgroup of each complex contains two groups <code class="docutils literal"><span class="pre">AtomicDensities_ind</span></code> and <code class="docutils literal"><span class="pre">Feature_ind</span></code>. We’ll forget about the <code class="docutils literal"><span class="pre">_ind</span></code> that is for legacy reasons, but these two groups contains the atomic densities and other features respectively. Therefore the value used in the example above:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">select_feature</span><span class="o">=</span><span class="p">{</span> <span class="s1">&#39;AtomicDensities_ind&#39;</span> <span class="p">:</span> <span class="s1">&#39;all&#39;</span><span class="p">,</span>
+<p>Most of the time one wants to specify which feature to use. We must then use a <em>dictionary</em>. As you can see in the HDF5 file, the <code class="docutils literal notranslate"><span class="pre">mapped_features</span></code> subgroup of each complex contains two groups <code class="docutils literal notranslate"><span class="pre">AtomicDensities_ind</span></code> and <code class="docutils literal notranslate"><span class="pre">Feature_ind</span></code>. We’ll forget about the <code class="docutils literal notranslate"><span class="pre">_ind</span></code> that is for legacy reasons, but these two groups contains the atomic densities and other features respectively. Therefore the value used in the example above:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">select_feature</span><span class="o">=</span><span class="p">{</span> <span class="s1">&#39;AtomicDensities_ind&#39;</span> <span class="p">:</span> <span class="s1">&#39;all&#39;</span><span class="p">,</span>
 <span class="gp">&gt;&gt;&gt; </span>                 <span class="s1">&#39;Feature_ind&#39;</span> <span class="p">:</span> <span class="p">[</span><span class="s1">&#39;coulomb&#39;</span><span class="p">,</span><span class="s1">&#39;vdwaals&#39;</span><span class="p">,</span><span class="s1">&#39;charge&#39;</span><span class="p">,</span><span class="s1">&#39;pssm&#39;</span><span class="p">]}</span>
 </pre></div>
 </div>
-<p>Specify that we want to use all the atomic densities and only a few features that are named here. If for example one want to only use the pssm_ic feature then the arguments should be set to:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">select_feature</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Feature_ind&#39;</span><span class="p">:[</span><span class="s1">&#39;pssm_ic&#39;</span><span class="p">]}</span>
+<p>Specify that we want to use all the atomic densities and only a few features that are named here. If for example one wants to only use the pssm_ic feature then the arguments should be set to:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">select_feature</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Feature_ind&#39;</span><span class="p">:[</span><span class="s1">&#39;pssm_ic&#39;</span><span class="p">]}</span>
 </pre></div>
 </div>
-<p>As you can see in the HDF5 file the for each feature, the data of chainA and chainB are stored separately. But it is possible to combine the feature of both chains in a single channel via the argument <code class="docutils literal"><span class="pre">pair_chain_feature</span></code>. For example here this argument is set to:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pair_chain_feature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span>
+<p>As you can see in the HDF5 file for each feature, the data of chainA and chainB are stored separately. But it is possible to combine the feature of both chains in a single channel via the argument <code class="docutils literal notranslate"><span class="pre">pair_chain_feature</span></code>. For example here this argument is set to:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pair_chain_feature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span>
 </pre></div>
 </div>
-<p>which means that the map of chainA and chainB will be added to each other to create a single channel. By default this <code class="docutils literal"><span class="pre">pair_chain_feature=None</span></code> and therefore the individual maps are kept.</p>
-<p>You must also specify which target values must be used for the training. It is the IRMSD of the complex. Finally it is possible to screen the complex contained in <code class="docutils literal"><span class="pre">database</span></code> and only select a few via the <code class="docutils literal"><span class="pre">dict_filter</span></code> argument. For example here</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dict_filter</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;IRMSD&#39;</span><span class="p">:</span><span class="s1">&#39;&lt;4. or &gt;10.&#39;</span><span class="p">}</span>
+<p>which means that the map of chainA and chainB will be added to each other to create a single channel. By default this <code class="docutils literal notranslate"><span class="pre">pair_chain_feature=None</span></code> and therefore the individual maps are kept.</p>
+<p>You must also specify which target values must be used for the training. It is the IRMSD of the complex. Finally it is possible to screen the complex contained in <code class="docutils literal notranslate"><span class="pre">database</span></code> and only select a few via the <code class="docutils literal notranslate"><span class="pre">dict_filter</span></code> argument. For example here</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dict_filter</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;IRMSD&#39;</span><span class="p">:</span><span class="s1">&#39;&lt;4. or &gt;10.&#39;</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>will only select the complexes whose IRMSD are inferior to 4. and superior to 10. Angs. If one wants to select the complexes with only high dockQ score, one can use</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dict_filter</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;DOCKQ&#39;</span><span class="p">:</span><span class="s1">&#39;&gt;0.2&#39;</span><span class="p">}</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dict_filter</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;DOCKQ&#39;</span><span class="p">:</span><span class="s1">&#39;&gt;0.2&#39;</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>Other filter can be set similarly.</p>
 </div>
 <div class="section" id="creating-the-neural-network">
 <h2>Creating the Neural Network<a class="headerlink" href="#creating-the-neural-network" title="Permalink to this headline">¶</a></h2>
-<p>DeepRank excpets the definition of the neural network to be given in a rather well defined format. Example of 2D and 3D CNN are given in <code class="docutils literal"><span class="pre">learn/model2d.py</span></code> and <code class="docutils literal"><span class="pre">learn/model3d.py</span></code>. Here is for example the defintion of a simple 3D CNN</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">torch</span>
+<p>DeepRank excpets the definition of the neural network to be given in a rather well defined format. Example of 2D and 3D CNN are given in <code class="docutils literal notranslate"><span class="pre">learn/model2d.py</span></code> and <code class="docutils literal notranslate"><span class="pre">learn/model3d.py</span></code>. Here is for example the defintion of a simple 3D CNN</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="k">import</span> <span class="n">Variable</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
@@ -156,9 +152,9 @@
 <span class="gp">&gt;&gt;&gt; </span>        <span class="k">return</span> <span class="n">x</span>
 </pre></div>
 </div>
-<p>In the <code class="docutils literal"><span class="pre">__init__</span></code> all the convolution and fully conected layers are defined. We can here specfiy the kernel size, strides, input/output size of each layer. method <code class="docutils literal"><span class="pre">_get_conv_output()</span></code> allows to automatically determine the input size of the first fully connected layer. This  method relies on the <code class="docutils literal"><span class="pre">_forward_features()</span></code> method that passes the input data through the convolutional stage. Finally the <code class="docutils literal"><span class="pre">forward</span></code> method is required by pyTorch to use the network.</p>
-<p>To facilitate the creation of these files, an automatic generator has been developped. This is the class <code class="docutils literal"><span class="pre">modelGenerator</span></code> that is defined in the file <code class="docutils literal"><span class="pre">learn/modelGenerator.py</span></code>. For example the creation of the file above can be done with the following code :</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">deeprank.learn.modelGenerator</span> <span class="k">import</span> <span class="o">*</span>
+<p>In the <code class="docutils literal notranslate"><span class="pre">__init__</span></code> all the convolution and fully conected layers are defined. We can here specifiy the kernel size, strides, input/output size of each layer. Method <code class="docutils literal notranslate"><span class="pre">_get_conv_output()</span></code> allows to automatically determine the input size of the first fully connected layer. This  method relies on the <code class="docutils literal notranslate"><span class="pre">_forward_features()</span></code> method that passes the input data through the convolutional stage. Finally the <code class="docutils literal notranslate"><span class="pre">forward</span></code> method is required by pyTorch to use the network.</p>
+<p>To facilitate the creation of these files, an automatic generator has been developed. This is the class <code class="docutils literal notranslate"><span class="pre">modelGenerator</span></code> that is defined in the file <code class="docutils literal notranslate"><span class="pre">learn/modelGenerator.py</span></code>. For example the creation of the file above can be done with the following code :</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">deeprank.learn.modelGenerator</span> <span class="k">import</span> <span class="o">*</span>
 <span class="go">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">conv_layers</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">conv_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conv</span><span class="p">(</span><span class="n">output_size</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">post</span><span class="o">=</span><span class="s1">&#39;relu&#39;</span><span class="p">))</span>
@@ -176,36 +172,36 @@
 <span class="gp">&gt;&gt;&gt; </span><span class="n">gen</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>As you can see all you have to do is to create to list of neural netwok layers, one for the convolutional stage and the other for the fully connected stage. Then simply feed that to the generator and write the model to file !</p>
-<p>The classes <code class="docutils literal"><span class="pre">conv</span></code>, <code class="docutils literal"><span class="pre">pool</span></code>, and <code class="docutils literal"><span class="pre">fc</span></code> are defined in <code class="docutils literal"><span class="pre">learn/modelGenerator.py</span></code>. And are here defined for the 3D case. More classes can be defined following the same format.</p>
+<p>As you can see all you have to do is to create a list of neural netwok layers, one for the convolutional stage and the other for the fully connected stage. Then simply feed that to the generator and write the model to file!</p>
+<p>The classes <code class="docutils literal notranslate"><span class="pre">conv</span></code>, <code class="docutils literal notranslate"><span class="pre">pool</span></code>, and <code class="docutils literal notranslate"><span class="pre">fc</span></code> are defined in <code class="docutils literal notranslate"><span class="pre">learn/modelGenerator.py</span></code> and are here defined for the 3D case. More classes can be defined following the same format.</p>
 </div>
 <div class="section" id="deep-learning">
 <h2>Deep learning<a class="headerlink" href="#deep-learning" title="Permalink to this headline">¶</a></h2>
 <p>We are now all set to start the deep learning experiment. We are going to see how to set up both experiment for 2D and 3D case. By default the network performs a regression on the score requrested. However it is possible to specify a classification by just changing a few parameters</p>
 <div class="section" id="regression-with-a-3d-cnn">
 <h3>Regression with a 3D CNN<a class="headerlink" href="#regression-with-a-3d-cnn" title="Permalink to this headline">¶</a></h3>
-<p>The default options are all set to perform a regression using 3D volumetric data. Therefore we here simply need to create an instance of the <code class="docutils literal"><span class="pre">NeuralNetwork</span></code> class with options set to thir default values (i.e. we don’t need to specify them):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">NeuralNet</span><span class="p">(</span><span class="n">data_set</span><span class="p">,</span><span class="n">cnn</span><span class="p">)</span>
+<p>The default options are all set to perform a regression using 3D volumetric data. Therefore we here simply need to create an instance of the <code class="docutils literal notranslate"><span class="pre">NeuralNetwork</span></code> class with options set to their default values (i.e. we don’t need to specify them):</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">NeuralNet</span><span class="p">(</span><span class="n">data_set</span><span class="p">,</span><span class="n">cnn</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><code class="docutils literal"><span class="pre">data_set</span></code> is the dataset created above and <code class="docutils literal"><span class="pre">cnn</span></code> is the automatically generated network. Other options can be specified here but that will do for now. Creating an instance of <code class="docutils literal"><span class="pre">NeuralNet</span></code> initialize all the required parts to do deep learning. The only thing we therefore need to do is to train the network</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">nepoch</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span><span class="n">divide_trainset</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">train_batch_size</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span><span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<p><code class="docutils literal notranslate"><span class="pre">data_set</span></code> is the dataset created above and <code class="docutils literal notranslate"><span class="pre">cnn</span></code> is the automatically generated network. Other options can be specified here but that will do for now. Creating an instance of <code class="docutils literal notranslate"><span class="pre">NeuralNet</span></code> initialize all the required parts to do deep learning. The only thing we therefore need to do is to train the network</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">nepoch</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span><span class="n">divide_trainset</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">train_batch_size</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span><span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>We specify here the number of epoch, the amount of data used for training (the remaining data is for validation 0.2 here), the batch size and the number of workers (CPU threads) in charge of batch preparation. This will start the training process and output regression plots and the corresponding data <code class="docutils literal"><span class="pre">data.hdf5</span></code>.</p>
+<p>We specify here the number of epoch, the amount of data used for training (the remaining data is for validation 0.2 here), the batch size and the number of workers (CPU threads) in charge of batch preparation. This will start the training process and output regression plots and the corresponding data <code class="docutils literal notranslate"><span class="pre">data.hdf5</span></code>.</p>
 </div>
 <div class="section" id="regression-with-a-2d-cnn">
 <h3>Regression with a 2D CNN<a class="headerlink" href="#regression-with-a-2d-cnn" title="Permalink to this headline">¶</a></h3>
-<p>Deeprank also allows to transform the 3D volumetric data in 2D data by slicing planes of the data and using each plane as given channel. Very little modification of the code are necessary to do so. The creation of the dataset is identical to the 3D case, you must simply specify <code class="docutils literal"><span class="pre">model_type=2D</span></code> in the definition of the NeuralNet</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">NeuralNet</span><span class="p">(</span><span class="n">data_set</span><span class="p">,</span><span class="n">cnn</span><span class="p">,</span><span class="n">model_type</span><span class="o">=</span><span class="s1">&#39;2d&#39;</span><span class="p">,</span><span class="n">proj2d</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<p>Deeprank also allows to transform the 3D volumetric data in 2D data by slicing planes of the data and using each plane as given channel. Very little modification of the code are necessary to do so. The creation of the dataset is identical to the 3D case, you must simply specify <code class="docutils literal notranslate"><span class="pre">model_type=2D</span></code> in the definition of the NeuralNet</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">NeuralNet</span><span class="p">(</span><span class="n">data_set</span><span class="p">,</span><span class="n">cnn</span><span class="p">,</span><span class="n">model_type</span><span class="o">=</span><span class="s1">&#39;2d&#39;</span><span class="p">,</span><span class="n">proj2d</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>And that’s it. The <code class="docutils literal"><span class="pre">proj2d</span></code> argumetn specify how to slice the 3D volumetric data. Value of: 0, 1, 2 are possible to slice along the YZ, XZ or XY plane respectively. Note that the <code class="docutils literal"><span class="pre">cnn</span></code> used here also must be a 2D CNN and not a 3D CNN.</p>
+<p>And that’s it. The <code class="docutils literal notranslate"><span class="pre">proj2d</span></code> argumetn specify how to slice the 3D volumetric data. Value of: 0, 1, 2 are possible to slice along the YZ, XZ or XY plane respectively. Note that the <code class="docutils literal notranslate"><span class="pre">cnn</span></code> used here also must be a 2D CNN and not a 3D CNN.</p>
 </div>
 <div class="section" id="binary-classification">
 <h3>Binary Classification<a class="headerlink" href="#binary-classification" title="Permalink to this headline">¶</a></h3>
-<p>If one want to perform a binary classification just a few modification must be performed. First the last fully connected layer of the network must have a size of 2. Hence make sure that the definition of the network is something like that</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">cnn</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<p>If one wants to perform a binary classification just a few modification must be performed. First the last fully connected layer of the network must have a size of 2. Hence make sure that the definition of the network is something like that</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">cnn</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="go">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">input_shape</span><span class="p">):</span>
 <span class="gp">&gt;&gt;&gt; </span>        <span class="nb">super</span><span class="p">(</span><span class="n">cnn</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -220,32 +216,33 @@
 <span class="gp">&gt;&gt;&gt; </span>        <span class="o">...</span>
 </pre></div>
 </div>
-<p>Once this is done you simply have to set one option in the creation of the <code class="docutils literal"><span class="pre">NeuralNetwork</span></code> instance</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">NeuralNet</span><span class="p">(</span><span class="n">data_set</span><span class="p">,</span><span class="n">cnn</span><span class="p">,</span><span class="n">task</span><span class="o">=</span><span class="s1">&#39;reg&#39;</span><span class="p">)</span>
+<p>Once this is done you simply have to set one option in the creation of the <code class="docutils literal notranslate"><span class="pre">NeuralNetwork</span></code> instance</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">NeuralNet</span><span class="p">(</span><span class="n">data_set</span><span class="p">,</span><span class="n">cnn</span><span class="p">,</span><span class="n">task</span><span class="o">=</span><span class="s1">&#39;reg&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>And that’s it really. Specifying <code class="docutils literal"><span class="pre">task='reg'</span></code> wil automatically adjust all the parameters of the training process to perform a regression. It will for example set the loss function to a cross entropy loss.</p>
+<p>And that’s it really. Specifying <code class="docutils literal notranslate"><span class="pre">task='reg'</span></code> wil automatically adjust all the parameters of the training process to perform a regression. It will for example set the loss function to a cross entropy loss.</p>
 </div>
 </div>
 <div class="section" id="reusing-a-pretrained-model">
 <h2>Reusing a pretrained model<a class="headerlink" href="#reusing-a-pretrained-model" title="Permalink to this headline">¶</a></h2>
-<p>In many cases after you’ve trained the network you would like to reuse the model either to test its performace on a test set or to continue the training. To do that you would also like to reuse the options for the dataset (i.e. the same feature, target, pairing of the features, etc …). All of the can be done automatically with DeepRank and an example is given in <code class="docutils literal"><span class="pre">test/notravis_test_transfer.py</span></code>. Let’s say that the pretrained model (automatically generated at the end of the training) is located at <code class="docutils literal"><span class="pre">model.pth.tar</span></code>. In that case you can simply specify the following:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">database</span> <span class="o">=</span> <span class="s1">&#39;1ak4.hdf5&#39;</span>
+<p>In many cases after you’ve trained the network you would like to reuse the model either to test its performace on a test set or to continue the training. To do that you would also like to reuse the options for the dataset (i.e. the same feature, target, pairing of the features, etc …). All of this can be done automatically with DeepRank and an example is given in <code class="docutils literal notranslate"><span class="pre">test/notravis_test_transfer.py</span></code>. Let’s say that the pretrained model (automatically generated at the end of the training) is located at <code class="docutils literal notranslate"><span class="pre">model.pth.tar</span></code>. In that case you can simply specify the following:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">database</span> <span class="o">=</span> <span class="s1">&#39;1ak4.hdf5&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">NeuralNet</span><span class="p">(</span><span class="n">database</span><span class="p">,</span><span class="n">cnn</span><span class="p">,</span><span class="n">pretrained_model</span><span class="o">=</span><span class="s1">&#39;model.pth.tar&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">test</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>Note that here the database is simply the name of the hdf5 file we want to test the model on. All the processing of the dataset will be automatically done in the exact same way than it was done during the training of the model. Hence you do not have to copy the <code class="docutils literal"><span class="pre">select_features</span></code> and <code class="docutils literal"><span class="pre">select_target</span></code> …. arguments, all that is done for you.</p>
+<p>Note that here the database is simply the name of the hdf5 file we want to test the model on. All the processing of the dataset will be automatically done in the exact same way than it was done during the training of the model. Hence you do not have to copy the <code class="docutils literal notranslate"><span class="pre">select_features</span></code> and <code class="docutils literal notranslate"><span class="pre">select_target</span></code> …. arguments, all that is done for you.</p>
 </div>
 </div>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h3><a href="index.html">Table Of Contents</a></h3>
+<h3><a href="index.html">Table of Contents</a></h3>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Installation</a></li>
@@ -280,15 +277,15 @@
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -308,12 +305,13 @@
         <li class="right" >
           <a href="tutorial.html" title="Tutorial : Data Generation"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Tutorial : Deep learning</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Nicolas Renaud.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
     </div>
   </body>
 </html>

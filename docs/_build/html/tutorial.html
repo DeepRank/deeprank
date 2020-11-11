@@ -1,33 +1,25 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tutorial : Data Generation &#8212; DeepRank 0.1 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Tutorial : Deep learning" href="tutorial_deeplearning.html" />
     <link rel="prev" title="Installation" href="intro.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -43,7 +35,8 @@
         <li class="right" >
           <a href="intro.html" title="Installation"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Tutorial : Data Generation</a></li> 
       </ul>
     </div>  
 
@@ -54,98 +47,105 @@
             
   <div class="section" id="tutorial-data-generation">
 <h1>Tutorial : Data Generation<a class="headerlink" href="#tutorial-data-generation" title="Permalink to this headline">¶</a></h1>
-<p>This page gives a introduction of the data generation process in DeepRank. This is a breakdown of the file <code class="docutils literal"><span class="pre">test/test_generate.py</span></code>.</p>
+<p>This page gives a introduction of the data generation process in DeepRank. This is a breakdown of the file <code class="docutils literal notranslate"><span class="pre">test/test_generate.py</span></code>.</p>
 <p>The data generation process allows to compute features and targets of a collections of PDB files and store all the data in a single HDF5 file. The use of HDF5 files not only allows to save diskspace through compression but also reduce I/O time during the deep learning phase.</p>
-<p>To have an idea on how to generate data with DeepRank you can refer to the file <code class="docutils literal"><span class="pre">test/test_generate.py</span></code>. We are now going to go in detail through this file.</p>
+<p>To have an idea on how to generate data with DeepRank you can refer to the file <code class="docutils literal notranslate"><span class="pre">test/test_generate.py</span></code>. We are now going to go in detail through this file.</p>
 <p>The file of course starts with</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">deeprank.generate</span> <span class="k">import</span> <span class="o">*</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">deeprank.generate</span> <span class="k">import</span> <span class="o">*</span>
 </pre></div>
 </div>
 <p>That imports all the submodules required to generate data.</p>
 <div class="section" id="create-the-database">
 <h2>Create the database<a class="headerlink" href="#create-the-database" title="Permalink to this headline">¶</a></h2>
-<p>The generation of the data also require a series of PDB file for which we want to compute features and targets. To specify where these files are located you can simply provide the path of the directory where these files are stored. This is called here <code class="docutils literal"><span class="pre">pdb_source</span></code>. In the test file we set:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pdb_source</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;./1AK4/decoys&#39;</span><span class="p">]</span>
+<p>The generation of the data also requires a series of PDB files for which we want to compute features and targets. To specify where these files are located you can simply provide the path of the directory where these files are stored. This is called here <code class="docutils literal notranslate"><span class="pre">pdb_source</span></code>. In the test file we set:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pdb_source</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;./1AK4/decoys&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>where we have stored 10 decoys of the 1AK4 complex. These 10 decoys will therefore be included in the final HDF5 file generated by DeepRank.</p>
 <p>Most target values require the comparison of the decoy structure with those of the corresponding native conformation. Therefore we must specify where to find these native conformation. There as well you only have to specify the directory where native conformations are stored</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pdb_native</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;./1AK4/native&#39;</span><span class="p">]</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pdb_native</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;./1AK4/native&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>The code will look for PDB in that folder and use the one whose name correspond to the decoy. For example if the decoy is named 1AK4_100w.pdb, the code will use the native 1AK4.pdb.</p>
-<p>Finally we must specify the name of the HDF5 file where to store the data:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">hdf5</span> <span class="o">=</span> <span class="s1">&#39;1ak4.hdf5&#39;</span>
+<p>Then, if you want to compute pssm-related features like PSSM_IC, you must specify the path to the pssm files. The code will look for a .pssm file for each chain in the provided .pdb file.
+The .pssm file must be named as &lt;PDB_ID&gt;.&lt;Chain_ID&gt;.pssm .</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pssm_source</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;./1AK4/pssm_raw/&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>We are now ready to initialize the <code class="docutils literal"><span class="pre">DataGenerator</span></code> class included in DeepRank</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">database</span> <span class="o">=</span> <span class="n">DataGenerator</span><span class="p">(</span><span class="n">pdb_source</span><span class="o">=</span><span class="n">pdb_source</span><span class="p">,</span><span class="n">pdb_native</span><span class="o">=</span><span class="n">pdb_native</span><span class="p">,</span>
+<p>Finally we must specify the name of the HDF5 file where to store the data:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">hdf5</span> <span class="o">=</span> <span class="s1">&#39;1ak4.hdf5&#39;</span>
+</pre></div>
+</div>
+<p>We are now ready to initialize the <code class="docutils literal notranslate"><span class="pre">DataGenerator</span></code> class included in DeepRank</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">database</span> <span class="o">=</span> <span class="n">DataGenerator</span><span class="p">(</span><span class="n">pdb_source</span><span class="o">=</span><span class="n">pdb_source</span><span class="p">,</span><span class="n">pdb_native</span><span class="o">=</span><span class="n">pdb_native</span><span class="p">,</span><span class="n">pssm_source</span><span class="o">=</span><span class="n">pssm_source</span><span class="p">,</span>
 <span class="gp">&gt;&gt;&gt; </span>                         <span class="n">compute_targets</span>  <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;deeprank.targets.dockQ&#39;</span><span class="p">],</span>
 <span class="gp">&gt;&gt;&gt; </span>                         <span class="n">compute_features</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;deeprank.features.AtomicFeature&#39;</span><span class="p">,</span>
-<span class="gp">&gt;&gt;&gt; </span>                                             <span class="s1">&#39;deeprank.features.NaivePSSM&#39;</span><span class="p">,</span>
 <span class="gp">&gt;&gt;&gt; </span>                                             <span class="s1">&#39;deeprank.features.PSSM_IC&#39;</span><span class="p">,</span>
 <span class="gp">&gt;&gt;&gt; </span>                                             <span class="s1">&#39;deeprank.features.BSA&#39;</span><span class="p">],</span>
 <span class="gp">&gt;&gt;&gt; </span>                         <span class="n">hdf5</span><span class="o">=</span><span class="n">h5file</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>As you can see we specify here the <code class="docutils literal"><span class="pre">pdb_source</span></code> and <code class="docutils literal"><span class="pre">pdb_native</span></code> argument of the <code class="docutils literal"><span class="pre">DataGenerator</span></code>. We also must specify which feature and which target values must be computed for each complex. This is done by providing a list of file names that are in charge of these calculations. A detail of these files can be found here and a example on how to create and call your own feature/target module here.</p>
-<p>The above statement initalize the calss instance but do not compute anything. To actually perform the calculation, we must use the <code class="docutils literal"><span class="pre">create_database()</span></code> method of the class:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">database</span><span class="o">.</span><span class="n">create_database</span><span class="p">(</span><span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<p>As you can see we specify here the <code class="docutils literal notranslate"><span class="pre">pdb_source</span></code> and <code class="docutils literal notranslate"><span class="pre">pdb_native</span></code> argument of the <code class="docutils literal notranslate"><span class="pre">DataGenerator</span></code>. We also must specify which feature and which target values must be computed for each complex. This is done by providing a list of file names that are in charge of these calculations. A detail of these files can be found here and a example on how to create and call your own feature/target module here.</p>
+<p>The above statement initalize the calss instance but do not compute anything. To actually perform the calculation, we must use the <code class="docutils literal notranslate"><span class="pre">create_database()</span></code> method of the class:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">database</span><span class="o">.</span><span class="n">create_database</span><span class="p">(</span><span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Once you punch that in the code will fo through all the complex specified as input and compute all the feature/targets require in the definition of the class.</p>
 </div>
-<div class="section" id="adding-features-targets">
-<h2>Adding Features/Targets<a class="headerlink" href="#adding-features-targets" title="Permalink to this headline">¶</a></h2>
-<p>Suppose you’ve finised creating a huge database and you jusr realize you forgot to compute a specific feature or target. Do you have to recompute everything ? Well that would be silly. You can add features and targets to an existing database very simply:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">h5file</span> <span class="o">=</span> <span class="s1">&#39;1ak4.hdf5&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">database</span> <span class="o">=</span> <span class="n">DataGenerator</span><span class="p">(</span><span class="n">compute_targets</span>  <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;deeprank.targets.binary_class&#39;</span><span class="p">],</span>
-<span class="gp">&gt;&gt;&gt; </span>                         <span class="n">compute_features</span>  <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;deeprank.features.ResidueDensity&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span>                         <span class="n">hdf5</span><span class="o">=</span><span class="n">h5file</span><span class="p">)</span>
-<span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># add targets/features</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">database</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">database</span><span class="o">.</span><span class="n">add_feature</span><span class="p">()</span>
-<span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># map features</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">database</span><span class="o">.</span><span class="n">map_features</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>Voila ! Here we simply sepcify the name of an existing hdf5 file containing the database and new features/targets to add to this database. The methods <code class="docutils literal"><span class="pre">add_target</span></code> and <code class="docutils literal"><span class="pre">add_feature</span></code> are then simply called to add data to the file. Don’t forget to map the new features afterwards.</p>
-</div>
 <div class="section" id="map-the-features">
 <h2>Map the features<a class="headerlink" href="#map-the-features" title="Permalink to this headline">¶</a></h2>
 <p>The next step consists in mapping the features calculated above to a grid of points centered around the molecule interface. Before mapping the feature, we must specify basic information about the grid. This can be done via a dictionnary:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">grid_info</span> <span class="o">=</span> <span class="p">{</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">grid_info</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="s1">&#39;number_of_points&#39;</span> <span class="p">:</span> <span class="p">[</span><span class="mi">30</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">30</span><span class="p">],</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="s1">&#39;resolution&#39;</span> <span class="p">:</span> <span class="p">[</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">],</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="s1">&#39;atomic_densities&#39;</span> <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;CA&#39;</span><span class="p">:</span><span class="mf">3.5</span><span class="p">,</span><span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="mf">3.5</span><span class="p">,</span><span class="s1">&#39;O&#39;</span><span class="p">:</span><span class="mf">3.5</span><span class="p">,</span><span class="s1">&#39;C&#39;</span><span class="p">:</span><span class="mf">3.5</span><span class="p">},</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="p">}</span>
 </pre></div>
 </div>
-<p>Here we specify that we want 30 points in each direction with distance of 1 Angs between each points. We must also here sepcify the atomic densities we want. While atomic densities are really a feature of the conformation, they do not require any precalculation unlike, the other features calculated above. Hence they can be directly specified in the <code class="docutils literal"><span class="pre">grid_info</span></code>. We will see how to create a feature calculator that does the same job below to illustrate the creation of new features.</p>
+<p>Here we specify that we want 30 points in each direction with distance of 1 Angs between each point. We must also here sepcify the atomic densities we want. While atomic densities are really a feature of the conformation, they do not require any precalculation, unlike the other features calculated above. Hence they can be directly specified in the <code class="docutils literal notranslate"><span class="pre">grid_info</span></code>. We will see how to create a feature calculator that does the same job below to illustrate the creation of new features.</p>
 <p>We are now able to map all the features we have calculated on the grid. This is simply done with the method call:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">database</span><span class="o">.</span><span class="n">map_features</span><span class="p">(</span><span class="n">grid_info</span><span class="p">,</span><span class="n">try_sparse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">database</span><span class="o">.</span><span class="n">map_features</span><span class="p">(</span><span class="n">grid_info</span><span class="p">,</span><span class="n">try_sparse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>By setting <code class="docutils literal"><span class="pre">try_sparse</span></code> to True the code will try to store the 3D maps as a built-in sparse format. This can seriously reduce the disck space required by the datase. As a result you must have now a file called <code class="docutils literal"><span class="pre">1ak4.hdf5</span></code> that contains all the data of the 10 decoys located in <code class="docutils literal"><span class="pre">1AK4/decoys/</span></code>. You can easily explore this file and visualized the data using the DeepXplorer interface (<a class="reference external" href="https://github.com/DeepRank/DeepXplorer">https://github.com/DeepRank/DeepXplorer</a>).</p>
+<p>By setting <code class="docutils literal notranslate"><span class="pre">try_sparse</span></code> to True the code will try to store the 3D maps as a built-in sparse format. This can seriously reduce the disck space required by the datase. As a result you must have now a file called <code class="docutils literal notranslate"><span class="pre">1ak4.hdf5</span></code> that contains all the data of the 10 decoys located in <code class="docutils literal notranslate"><span class="pre">1AK4/decoys/</span></code>. You can easily explore this file and visualized the data using the DeepXplorer interface (<a class="reference external" href="https://github.com/DeepRank/DeepXplorer">https://github.com/DeepRank/DeepXplorer</a>).</p>
+</div>
+<div class="section" id="adding-features-targets">
+<h2>Adding Features/Targets<a class="headerlink" href="#adding-features-targets" title="Permalink to this headline">¶</a></h2>
+<p>Suppose you’ve finised creating a huge database and you jusr realize you forgot to compute a specific feature or target. Do you have to recompute everything ? Well that would be silly. You can add features and targets to an existing database in a very simple way:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">h5file</span> <span class="o">=</span> <span class="s1">&#39;1ak4.hdf5&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">database</span> <span class="o">=</span> <span class="n">DataGenerator</span><span class="p">(</span><span class="n">compute_targets</span>  <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;deeprank.targets.binary_class&#39;</span><span class="p">],</span>
+<span class="gp">&gt;&gt;&gt; </span>                         <span class="n">compute_features</span>  <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;deeprank.features.ResidueDensity&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span>                         <span class="n">hdf5</span><span class="o">=</span><span class="n">h5file</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># add targets</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">database</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># adda feature</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">database</span><span class="o">.</span><span class="n">add_feature</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># map features</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">database</span><span class="o">.</span><span class="n">map_features</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Voila ! Here we simply sepcify the name of an existing hdf5 file containing the database and new features/targets to add to this database. The methods <code class="docutils literal notranslate"><span class="pre">add_target</span></code> and <code class="docutils literal notranslate"><span class="pre">add_feature</span></code> are then simply called to add data to the file. Don’t forget to map the new features afterwards. Note that you don’t have to provide any information for the mapping. The code will detect the grid used for the mapping of the other features and will only map the features newly added to the database.</p>
 </div>
 </div>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h3><a href="index.html">Table Of Contents</a></h3>
+<h3><a href="index.html">Table of Contents</a></h3>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial : Data Generation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#create-the-database">Create the database</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#adding-features-targets">Adding Features/Targets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#map-the-features">Map the features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-features-targets">Adding Features/Targets</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial_deeplearning.html">Tutorial : Deep learning</a></li>
@@ -167,15 +167,15 @@
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -195,12 +195,13 @@
         <li class="right" >
           <a href="intro.html" title="Installation"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DeepRank 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Tutorial : Data Generation</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Nicolas Renaud.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
     </div>
   </body>
 </html>

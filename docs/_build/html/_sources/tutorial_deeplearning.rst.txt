@@ -1,9 +1,9 @@
 Tutorial : Deep learning
 =========================
 
-This page gives a introduction of thedeep learning process in DeepRank. This is a breakdown of the file ``test/notravis_test_learn.py``.
+This page gives a introduction of the deep learning process in DeepRank. This is a breakdown of the file ``test/test_learn.py``.
 
-The deep learning module of DeepRank allows to use the data stored in the  HDF5 files in pyTorch and run deep learning experiments using different combinations of conformations, features, targets, network architecture. We will illutrate how the process work
+The deep learning module of DeepRank allows to use the data stored in the  HDF5 files in pyTorch and run deep learning experiments using different combinations of conformations, features, targets, network architecture. We will illustrate how the process work
 
 Creating the dataset
 ----------------------------
@@ -13,19 +13,22 @@ The two first lines of the code are to import the module we need
 >>> from deeprank.learn import *
 >>> from deeprank.learn.model3d import cnn
 
-The first lines import the ``DataSet`` and ``NeuralNetwork`` class that are in charge of deep learning. The second import a pre-generated 3D convolution neural network. This file has been generated automatically using ``deeprank.learn.modelGenerator``.
+The first line imports the ``DataSet`` and ``NeuralNetwork`` class that are in charge of deep learning. The second imports a pre-generated 3D convolution neural network. This file has been generated automatically using ``deeprank.learn.modelGenerator``.
 
 The first thing we then need to do is to define which database contains the information we want to use to train the network. This is done by:
 
 >>> database = '1ak4.hdf5'
 
-This is the file we have generated above. Note that more than one file can be specified here. Hence the command
+This is the file we have generated before in "Tutorial : Data Generation". Note that more than one file can be specified here. Hence the command
 
 >>> database = ['1ak4.hdf5','1atn.hdf5']
 
 will use all the data contained in both of these files to train the network. We can now create an instance of deeprank.DataSet
 
 >>> data_set = DataSet(database,
+>>>                    grid_info={
+>>>                    'number_of_points': (10, 10, 10),
+>>>                    'resolution': (3, 3, 3)},
 >>>                    select_feature={
 >>>                     'AtomicDensities_ind' : 'all',
 >>>                     'Feature_ind' : ['coulomb','vdwaals','charge','pssm']},
@@ -33,23 +36,23 @@ will use all the data contained in both of these files to train the network. We 
 >>>                    select_target='IRMSD',
 >>>                    dict_filter={'IRMSD':'<4. or >10.'})
 
-On top of the database that specify which files to use we also must specify which features and which targets must be used during the traing. The feature selection is done via the argument ``select_features``. Several options are possible for this argument.
+On top of the database that specifies which files to use we also must specify which features and which targets must be used during the training. The feature selection is done via the argument ``select_features``. Several options are possible for this argument.
 
 The simplest (and default) option is to use all the features stored in the HDF5 file. To do that simply use:
 
 >>> # select all the features
 >>> select_feature = 'all'
 
-Most of the time one want to specify which feature to use. We must then use a *dictionary*. As you cans ee in the HDF5 file, the ``mapped_features`` subgroup of each complex contains two groups ``AtomicDensities_ind`` and ``Feature_ind``. We'll forget about the ``_ind`` that is for legacy reasons, but these two groups contains the atomic densities and other features respectively. Therefore the value used in the example above:
+Most of the time one wants to specify which feature to use. We must then use a *dictionary*. As you can see in the HDF5 file, the ``mapped_features`` subgroup of each complex contains two groups ``AtomicDensities_ind`` and ``Feature_ind``. We'll forget about the ``_ind`` that is for legacy reasons, but these two groups contains the atomic densities and other features respectively. Therefore the value used in the example above:
 
 >>> select_feature={ 'AtomicDensities_ind' : 'all',
 >>>                  'Feature_ind' : ['coulomb','vdwaals','charge','pssm']}
 
-Specify that we want to use all the atomic densities and only a few features that are named here. If for example one want to only use the pssm_ic feature then the arguments should be set to:
+Specify that we want to use all the atomic densities and only a few features that are named here. If for example one wants to only use the pssm_ic feature then the arguments should be set to:
 
 >>> select_feature={'Feature_ind':['pssm_ic']}
 
-As you can see in the HDF5 file the for each feature, the data of chainA and chainB are stored separately. But it is possible to combine the feature of both chains in a single channel via the argument ``pair_chain_feature``. For example here this argument is set to:
+As you can see in the HDF5 file for each feature, the data of chainA and chainB are stored separately. But it is possible to combine the feature of both chains in a single channel via the argument ``pair_chain_feature``. For example here this argument is set to:
 
 >>> pair_chain_feature = np.add
 
@@ -111,9 +114,9 @@ DeepRank excpets the definition of the neural network to be given in a rather we
 >>>         x = self.fclayer_001(x)
 >>>         return x
 
-In the ``__init__`` all the convolution and fully conected layers are defined. We can here specfiy the kernel size, strides, input/output size of each layer. method ``_get_conv_output()`` allows to automatically determine the input size of the first fully connected layer. This  method relies on the ``_forward_features()`` method that passes the input data through the convolutional stage. Finally the ``forward`` method is required by pyTorch to use the network.
+In the ``__init__`` all the convolution and fully conected layers are defined. We can here specifiy the kernel size, strides, input/output size of each layer. Method ``_get_conv_output()`` allows to automatically determine the input size of the first fully connected layer. This  method relies on the ``_forward_features()`` method that passes the input data through the convolutional stage. Finally the ``forward`` method is required by pyTorch to use the network.
 
-To facilitate the creation of these files, an automatic generator has been developped. This is the class ``modelGenerator`` that is defined in the file ``learn/modelGenerator.py``. For example the creation of the file above can be done with the following code :
+To facilitate the creation of these files, an automatic generator has been developed. This is the class ``modelGenerator`` that is defined in the file ``learn/modelGenerator.py``. For example the creation of the file above can be done with the following code :
 
 
 >>> from deeprank.learn.modelGenerator import *
@@ -133,9 +136,9 @@ To facilitate the creation of these files, an automatic generator has been devel
 >>> gen.print()
 >>> gen.write()
 
-As you can see all you have to do is to create to list of neural netwok layers, one for the convolutional stage and the other for the fully connected stage. Then simply feed that to the generator and write the model to file !
+As you can see all you have to do is to create a list of neural netwok layers, one for the convolutional stage and the other for the fully connected stage. Then simply feed that to the generator and write the model to file!
 
-The classes ``conv``, ``pool``, and ``fc`` are defined in ``learn/modelGenerator.py``. And are here defined for the 3D case. More classes can be defined following the same format.
+The classes ``conv``, ``pool``, and ``fc`` are defined in ``learn/modelGenerator.py`` and are here defined for the 3D case. More classes can be defined following the same format.
 
 
 Deep learning
@@ -147,7 +150,7 @@ We are now all set to start the deep learning experiment. We are going to see ho
 Regression with a 3D CNN
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The default options are all set to perform a regression using 3D volumetric data. Therefore we here simply need to create an instance of the ``NeuralNetwork`` class with options set to thir default values (i.e. we don't need to specify them):
+The default options are all set to perform a regression using 3D volumetric data. Therefore we here simply need to create an instance of the ``NeuralNetwork`` class with options set to their default values (i.e. we don't need to specify them):
 
 >>> model = NeuralNet(data_set,cnn)
 
@@ -169,7 +172,7 @@ And that's it. The ``proj2d`` argumetn specify how to slice the 3D volumetric da
 Binary Classification
 ^^^^^^^^^^^^^^^^^^^^^^
 
-If one want to perform a binary classification just a few modification must be performed. First the last fully connected layer of the network must have a size of 2. Hence make sure that the definition of the network is something like that
+If one wants to perform a binary classification just a few modification must be performed. First the last fully connected layer of the network must have a size of 2. Hence make sure that the definition of the network is something like that
 
 >>> class cnn(nn.Module):
 >>>
@@ -194,7 +197,7 @@ And that's it really. Specifying ``task='reg'`` wil automatically adjust all the
 Reusing a pretrained model
 ---------------------------
 
-In many cases after you've trained the network you would like to reuse the model either to test its performace on a test set or to continue the training. To do that you would also like to reuse the options for the dataset (i.e. the same feature, target, pairing of the features, etc ...). All of the can be done automatically with DeepRank and an example is given in ``test/notravis_test_transfer.py``. Let's say that the pretrained model (automatically generated at the end of the training) is located at ``model.pth.tar``. In that case you can simply specify the following:
+In many cases after you've trained the network you would like to reuse the model either to test its performace on a test set or to continue the training. To do that you would also like to reuse the options for the dataset (i.e. the same feature, target, pairing of the features, etc ...). All of this can be done automatically with DeepRank and an example is given in ``test/notravis_test_transfer.py``. Let's say that the pretrained model (automatically generated at the end of the training) is located at ``model.pth.tar``. In that case you can simply specify the following:
 
 >>> database = '1ak4.hdf5'
 >>> model = NeuralNet(database,cnn,pretrained_model='model.pth.tar')
