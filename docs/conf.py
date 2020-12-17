@@ -38,8 +38,10 @@ MOCK_MODULES = [
     'torch.utils.data',
     'matplotlib',
     'matplotlib.pyplot',
+    'matplotlib.ticker',
     'torch.autograd',
     'torch.nn',
+    'torch.nn.functional',
     'torch.optim',
     'torch.cuda',
     'tqdm']
