@@ -29,6 +29,8 @@ class TestGenerateCUDA(unittest.TestCase):
 
         # init the data assembler
         database = DataGenerator(
+            chain1='C',
+            chain2='D',
             pdb_source=self.pdb_source,
             pdb_native=self.pdb_native,
             compute_targets=['deeprank.targets.dockQ'],

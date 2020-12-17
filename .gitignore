@@ -7,7 +7,7 @@ Byte-compiled / optimized
 deeprank.egg-info
 database*
 dist
-build 
+build
 
 # specific architure files
 deeprank/learn/arch_*
@@ -60,3 +60,7 @@ test/atomic_pair_interaction.dat
 # Mac OSX files
 .DS_Store
 
+# test coverage
+htmlcov
+coverage.xml
+.coverage
