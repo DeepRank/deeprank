@@ -35,13 +35,17 @@ def _printif(string, cond): return print(string) if cond else None
 
 class DataGenerator(object):
 
-    def __init__(self, pdb_select=None, pdb_source=None,
+    def __init__(self, chain1, chain2,
+                 pdb_select=None, pdb_source=None,
                  pdb_native=None, pssm_source=None, align=None,
                  compute_targets=None, compute_features=None,
-                 data_augmentation=None, hdf5='database.h5', mpi_comm=None):
+                 data_augmentation=None, hdf5='database.h5',
+                 mpi_comm=None):
         """Generate the data (features/targets/maps) required for deeprank.
 
         Args:
+            chain1 (str): First chain ID
+            chain2 (str): Second chain ID
             pdb_select (list(str), optional): List of individual conformation for mapping
             pdb_source (list(str), optional): List of folders where to find the pdbs for mapping
             pdb_native (list(str), optional): List of folders where to find the native comformations,
@@ -70,7 +74,9 @@ class DataGenerator(object):
         >>> h5file = '1ak4.hdf5'
         >>>
         >>> #init the data assembler
-        >>> database = DataGenerator(pdb_source=pdb_source,
+        >>> database = DataGenerator(chain1='A',
+        >>>                          chain2='B',
+        >>>                          pdb_source=pdb_source,
         >>>                          pdb_native=pdb_native,
         >>>                          data_augmentation=None,
         >>>                          compute_targets=['deeprank.targets.dockQ'],
@@ -79,6 +85,9 @@ class DataGenerator(object):
         >>>                                            'deeprank.features.BSA'],
         >>>                          hdf5=h5file)
         """
+
+        self.chain1 = chain1
+        self.chain2 = chain2
 
         self.pdb_select = pdb_select or []
         self.pdb_source = pdb_source or []
@@ -327,6 +336,8 @@ class DataGenerator(object):
                                                                 molgrp['complex'][()],
                                                                 molgrp['features'],
                                                                 molgrp['features_raw'],
+                                                                self.chain1,
+                                                                self.chain2,
                                                                 self.logger)
                     if feature_error_flag:
                         self.feature_error += [mol_name]
@@ -673,6 +684,8 @@ class DataGenerator(object):
                                                     molgrp['complex'][()],
                                                     molgrp['features'],
                                                     molgrp['features_raw'],
+                                                    self.chain1,
+                                                    self.chain2,
                                                     self.logger)
 
                 if error_flag:
@@ -908,6 +921,8 @@ class DataGenerator(object):
                                                 molgrp['complex'][()],
                                                 molgrp['features'],
                                                 molgrp['features_raw'],
+                                                self.chain1,
+                                                self.chain2,
                                                 self.logger)
 
         f5.close()
@@ -919,12 +934,12 @@ class DataGenerator(object):
 # ====================================================================================
 
 
-    @staticmethod
-    def _get_grid_center(pdb, contact_distance):
+    def _get_grid_center(self, pdb, contact_distance):
 
         sqldb = pdb2sql.interface(pdb)
 
-        contact_atoms = sqldb.get_contact_atoms(cutoff=contact_distance)
+        contact_atoms = sqldb.get_contact_atoms(cutoff=contact_distance,
+            chain1=self.chain1, chain2=self.chain2)
 
         tmp = []
         for i in contact_atoms.values():
@@ -966,6 +981,8 @@ class DataGenerator(object):
 
             # compute the data we want on the grid
             gt.GridTools(molgrp=f5[mol],
+                         chain1=self.chain1,
+                         chain2=self.chain2,
                          number_of_points=grid_info['number_of_points'],
                          resolution=grid_info['resolution'],
                          contact_distance=contact_distance,
@@ -1132,6 +1149,8 @@ class DataGenerator(object):
                 # compute the data we want on the grid
                 gt.GridTools(
                     molgrp=f5[mol],
+                    chain1=self.chain1,
+                    chain2=self.chain2,
                     number_of_points=grid_info['number_of_points'],
                     resolution=grid_info['resolution'],
                     atomic_densities=grid_info['atomic_densities'],
@@ -1449,7 +1468,7 @@ class DataGenerator(object):
 
 
     @staticmethod
-    def _compute_features(feat_list, pdb_data, featgrp, featgrp_raw, logger):
+    def _compute_features(feat_list, pdb_data, featgrp, featgrp_raw, chain1, chain2, logger):
         """Compute the features.
 
         Args:
@@ -1459,6 +1478,8 @@ class DataGenerator(object):
             pdb_data (bytes): PDB translated in bytes
             featgrp (str): name of the group where to store the xyz feature
             featgrp_raw (str): name of the group where to store the raw feature
+            chain1 (str): First chain ID
+            chain2 (str): Second chain ID
             logger (logger): name of logger object
 
         Return:
@@ -1468,7 +1489,8 @@ class DataGenerator(object):
         for feat in feat_list:
             try:
                 feat_module = importlib.import_module(feat, package=None)
-                feat_module.__compute_feature__(pdb_data, featgrp, featgrp_raw)
+                feat_module.__compute_feature__(pdb_data, featgrp, featgrp_raw,
+                    chain1, chain2)
 
             except Exception as ex:
                 logger.exception(ex)
@@ -1532,8 +1554,8 @@ class DataGenerator(object):
         data = np.array(data).astype('|S78')
         molgrp.create_dataset(name, data=data)
 
-    @staticmethod
-    def _get_aligned_sqldb(pdbfile, dict_align):
+    # @staticmethod
+    def _get_aligned_sqldb(self, pdbfile, dict_align):
         """return a sqldb of the pdb that is aligned as specified in the dict
 
         Arguments:
@@ -1548,15 +1570,9 @@ class DataGenerator(object):
 
         if dict_align['selection'] == 'interface':
 
-            if np.all([k in dict_align for k in ['chain1', 'chain2']]):
-                chains = {'chain1' : dict_align['chain1'],
-                            'chain2' : dict_align['chain2']}
-            else:
-                chains = {}
-
             sqldb = align_interface(pdbfile, plane=dict_align['plane'],
                                     export=dict_align['export'],
-                                    **chains)
+                                    chain1=self.chain1, chain2=self.chain2)
 
         else:
 
