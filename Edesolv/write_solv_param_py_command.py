@@ -11,14 +11,14 @@ for i, line in enumerate(infile):
     print(row)
     if i == 0:
         outfile.write('if atom.name() == "%s" or atom.name().startswith("%s"):\n' %(row[5], row[8][:2]))
-        outfile.write('    atom.solv() = %s\n' %row[3])
+        outfile.write('    atom.solv() = %s\n' %row[3].replace(')', ''))
     else:
         if '*' in row[5]:
-            outfile.write('elif atom.name().startswith("%s") and atom.resn()=="%s":\n' %(row[5], row[8][:3]))
-            outfile.write('    atom.solv() = %s\n' %row[3])
+            outfile.write('elif atom.name().startswith("%s") and atom.resn()=="%s":\n' %(row[5].replace('*',''), row[8][:3]))
+            outfile.write('    atom.solv() = %s\n' %row[3].replace(')', ''))
         else:
-            outfile.write('elif atom.name() == "%s" and atom.resn()=="%s":\n' %(row[5], row[8][:3]))
-            outfile.write('    atom.solv() = %s\n' %row[3])
+            outfile.write('elif atom.name() == "%s" and atom.resn()=="%s":\n' %(row[5].replace('*',''), row[8][:3]))
+            outfile.write('    atom.solv() = %s\n' %row[3].replace(')', ''))
 
 infile.close()
 outfile.close()

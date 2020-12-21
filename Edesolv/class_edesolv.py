@@ -1,12 +1,64 @@
-import freesasa
+from pdb2sql import pdb2sql, interface
+# a new class based on the FeatureClass
+class Edesolv(FeatureClass):
 
-test = freesasa.Structure('1AK4.pdb')
-res = freesasa.calc(test)
+    # init the class
+    def __init__(self,pdbfile):
+        super().__init__('Atomic')
+            self.pdb = pdb
 
-print(res.totalArea())
+        # the feature extractor
+        def get_feature(self):
 
+            # create a sql database
+            pdb_db = pdb2sql(self.pdb)
+            db = interface(pdb_db)
 
+            # get the contact atoms
+            indA,indB = list(db.get_contact_atoms().values())
+            contact = indA + indB
 
+            # extract the atom keys and xyz of the contact CA atoms
+            keys = db.get('chainID,resName,resSeq,name',rowID=contact)
+            #xyz = db.get('x,y,z',rowID=contact)
+
+            # create the dictionary of human readable and xyz-val data
+            #hread, xyzval = {},{}
+            #for key,xyz in zip(keys,xyz):
+            hread = {}
+            for key in keys:
+
+                    # human readable
+                    # { (chainID,resName,resSeq,name) : [val] }
+                    hread[tuple(key)] = [1.0] #Put Edesolv here!
+
+                    '''
+                    # xyz-val
+                    # { (0|1,x,y,z) : [val] }
+                    chain = [{'A':0,'B':1}[key[0]]]
+                    k = tuple( chain + xyz)
+                    xyzval[k] = [1.0]
+                    '''
+                    
+            self.feature_data['Edesolv'] = hread
+            #self.feature_data_xyz['CA'] = xyzval
+
+class Atom():
+    
+    def __init__(self,atom_specs):
+        chainID = atom_specs[0]
+        resn = atom_specs[1]
+        resid = atom_specs[2]
+        atom = atom_specs[3]
+        
+        self.resn = resn
+        self.name = atom
+        if atom in ['C', 'O', 'N', 'CA']:
+            self.descr = 'BB'
+        else:
+            self.descr = 'SC'
+        
+        
 def assign_solv_param(atom):
     arofac = 6.26
     alifac = 1.27
@@ -36,114 +88,93 @@ def assign_solv_param(atom):
         atom.solv = 0.0000
 
     elif atom.name() == "BB" or atom.name().startswith("SC"):
-        atom.solv() = 0.0000
+        atom.solv = 0.0000
     elif atom.name() == "BB" and atom.resn()=="ALA":
-        atom.solv() = -0.0107
+        atom.solv = -0.0107
     elif atom.name() == "BB" and atom.resn()=="GLY":
-        atom.solv() = -0.0089
+        atom.solv = -0.0089
     elif atom.name() == "BB" and atom.resn()=="ILE":
-        atom.solv() = -0.0153
+        atom.solv = -0.0153
     elif atom.name() == "BB" and atom.resn()=="VAL":
-        atom.solv() = -0.0158
+        atom.solv = -0.0158
     elif atom.name() == "BB" and atom.resn()=="PRO":
-        atom.solv() = -0.0046
+        atom.solv = -0.0046
     elif atom.name() == "BB" and atom.resn()=="ASN":
-        atom.solv() = -0.0137
+        atom.solv = -0.0137
     elif atom.name() == "BB" and atom.resn()=="GLN":
-        atom.solv() = -0.0147
+        atom.solv = -0.0147
     elif atom.name() == "BB" and atom.resn()=="THR":
-        atom.solv() = -0.0165
+        atom.solv = -0.0165
     elif atom.name() == "BB" and atom.resn()=="SER":
-        atom.solv() = -0.0154
+        atom.solv = -0.0154
     elif atom.name() == "BB" and atom.resn()=="MET":
-        atom.solv() = -0.0130
+        atom.solv = -0.0130
     elif atom.name() == "BB" and atom.resn()=="CYS":
-        atom.solv() = -0.0167
+        atom.solv = -0.0167
     elif atom.name() == "BB" and atom.resn()=="PHE":
-        atom.solv() = -0.0126
+        atom.solv = -0.0126
     elif atom.name() == "BB" and atom.resn()=="TYR":
-        atom.solv() = -0.0134
+        atom.solv = -0.0134
     elif atom.name() == "BB" and atom.resn()=="TRP":
-        atom.solv() = -0.0134
+        atom.solv = -0.0134
     elif atom.name() == "BB" and atom.resn()=="ASP":
-        atom.solv() = -0.0169
+        atom.solv = -0.0169
     elif atom.name() == "BB" and atom.resn()=="GLU":
-        atom.solv() = -0.0150
+        atom.solv = -0.0150
     elif atom.name() == "BB" and atom.resn()=="HIS":
-        atom.solv() = -0.0155
+        atom.solv = -0.0155
     elif atom.name() == "BB" and atom.resn()=="LYS":
-        atom.solv() = -0.0163
+        atom.solv = -0.0163
     elif atom.name() == "BB" and atom.resn()=="ARG":
-        atom.solv() = -0.0162
+        atom.solv = -0.0162
     elif atom.name().startswith("SC") and atom.resn()=="ILE":
-        atom.solv() = 0.0255
+        atom.solv = 0.0255
     elif atom.name().startswith("SC") and atom.resn()=="VAL":
-        atom.solv() = 0.0222
+        atom.solv = 0.0222
     elif atom.name().startswith("SC") and atom.resn()=="PRO":
-        atom.solv() = 0.0230
+        atom.solv = 0.0230
     elif atom.name().startswith("SC") and atom.resn()=="ASN":
-        atom.solv() = -0.0192
+        atom.solv = -0.0192
     elif atom.name().startswith("SC") and atom.resn()=="GLN":
-        atom.solv() = -0.0135
+        atom.solv = -0.0135
     elif atom.name().startswith("SC") and atom.resn()=="THR":
-        atom.solv() = -0.0009
+        atom.solv = -0.0009
     elif atom.name().startswith("SC") and atom.resn()=="SER":
-        atom.solv() = -0.0056
+        atom.solv = -0.0056
     elif atom.name().startswith("SC") and atom.resn()=="MET":
-        atom.solv() = 0.0202
+        atom.solv = 0.0202
     elif atom.name().startswith("SC") and atom.resn()=="CYS":
-        atom.solv() = 0.0201
+        atom.solv = 0.0201
     elif atom.name().startswith("SC") and atom.resn()=="PHE":
-        atom.solv() = 0.1005
+        atom.solv = 0.1005
     elif atom.name().startswith("SC") and atom.resn()=="TYR":
-        atom.solv() = 0.0669
+        atom.solv = 0.0669
     elif atom.name().startswith("SC") and atom.resn()=="TRP":
-        atom.solv() = 0.0872
+        atom.solv = 0.0872
     elif atom.name().startswith("SC") and atom.resn()=="ASP":
-        atom.solv() = -0.0360
+        atom.solv = -0.0360
     elif atom.name().startswith("SC") and atom.resn()=="GLU":
-        atom.solv() = -0.0301
+        atom.solv = -0.0301
     elif atom.name().startswith("SC") and atom.resn()=="HIS":
-        atom.solv() = 0.0501
+        atom.solv = 0.0501
     elif atom.name().startswith("SC") and atom.resn()=="LYS":
-        atom.solv() = -0.0210
+        atom.solv = -0.0210
     elif atom.name().startswith("SC") and atom.resn()=="ARG":
-        atom.solv() = -0.0229
+        atom.solv = -0.0229
     elif atom.name().startswith("SCD") and atom.resn()=="ASN":
-        atom.solv() = 0.0
+        atom.solv = 0.0
     elif atom.name().startswith("SCD") and atom.resn()=="GLN":
-        atom.solv() = 0.0
+        atom.solv = 0.0
     elif atom.name().startswith("SCD") and atom.resn()=="SER":
-        atom.solv() = 0.0
+        atom.solv = 0.0
     elif atom.name().startswith("SCD") and atom.resn()=="THR":
-        atom.solv() = 0.0
+        atom.solv = 0.0
     elif atom.name().startswith("SCD") and atom.resn()=="ARG":
-        atom.solv() = 0.0
+        atom.solv = 0.0
     elif atom.name().startswith("SCD") and atom.resn()=="LYS":
-        atom.solv() = 0.0
+        atom.solv = 0.0
     elif atom.name().startswith("SCD") and atom.resn()=="GLU":
-        atom.solv() = 0.0
+        atom.solv = 0.0
     elif atom.name().startswith("SCD") and atom.resn()=="ASP":
-        atom.solv() = 0.0
-
-from random import choice
-
-names = ['BB', 'CG', 'N', 'OD']
-residues = ['ALA', 'GLY', 'GLU', 'ASP', 'THR', 'LYS', 'ILE']
-class atom():
-    def __init__(self):
-        self.name = choice(names)
-        self.resn = choice(residues)
-structure = [atom() for x in range(1000)]
-result = map(assign_solv_param, structure)
-
-
-
-
-
-# for atom in structure:
-# surface mode=access accu=0.075 rh2o=1.4 sele=(segid $Toppar.prot_segid_$nchain1) end
-# do (store2 = rmsd * store1) (segid $Toppar.prot_segid_$nchain1 and not ((resn WAT or resn HOH or resn TIP*) or resn DMS))
-# show sum (store2) (segid $Toppar.prot_segid_$nchain1 and not ((resn WAT or resn HOH or resn TIP*) or resn DMS))
-# evaluate ($esolfree = $esolfree + $result)
-# evaluate ($nchain1 = $nchain1 + 1)
+        atom.solv = 0.0
+    
