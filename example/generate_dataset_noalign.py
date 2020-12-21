@@ -1,3 +1,7 @@
+# generate a hdf5 file
+# 1. calculate features/targets
+# 2. map features to 3D grids
+# 3. write to a hdf5 file
 from deeprank.generate import *
 from mpi4py import MPI
 
@@ -18,14 +22,12 @@ pdb_native = '../test/1AK4/native/'
 # where to find the pssm
 pssm_source = '../test/1AK4/pssm_new/'
 
-
 # initialize the database
 database = DataGenerator(
     pdb_source=pdb_source,
     pdb_native=pdb_native,
     pssm_source=pssm_source,
-    align={"axis":'z'},
-    data_augmentation=2,
+    data_augmentation=None,
     compute_targets=[
         'deeprank.targets.dockQ',
         'deeprank.targets.binary_class'],
@@ -45,22 +47,26 @@ print('{:25s}'.format('Create new database') + database.hdf5)
 database.create_database(prog_bar=True)
 
 
-# define the 3D grid
-# grid_info = {
-#   'number_of_points' : [30,30,30],
-#   'resolution' : [1.,1.,1.],
-#   'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
-# }
+#define the 3D grid
+grid_info = {
+  'number_of_points' : [30,30,30],
+  'resolution' : [1.,1.,1.],
+  'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
+}
 
-# generate the grid
-#print('{:25s}'.format('Generate the grid') + database.hdf5)
-#database.precompute_grid(grid_info,try_sparse=True, time=False, prog_bar=True)
+# generate the grid and write the grid coordinates to hdf5
+# This step can be skipped and is covered by map_features() below.
+#
+# print('{:25s}'.format('Generate the grid') + database.hdf5)
+# database.precompute_grid(grid_info,try_sparse=True, time=False, prog_bar=True)
 
+# map features to the 3D grid
+print('{:25s}'.format('Map features in database') + database.hdf5)
+database.map_features(grid_info,try_sparse=True, time=False, prog_bar=True)
 
-# print('{:25s}'.format('Map features in database') + database.hdf5)
-# database.map_features(grid_info,try_sparse=True, time=False, prog_bar=True)
-
-# # get the normalization of the features
+# get the normalization of the features.
+# This step can also be done the DataSet class (see learn.py)
+#
 # print('{:25s}'.format('Normalization') + database.hdf5)
 # norm = NormalizeData(database.hdf5)
 # norm.get()

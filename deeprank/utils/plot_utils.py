@@ -46,25 +46,23 @@ def read_epoch_data(DR_h5FL, epoch):
     0  Test  1AVX_ranair-it0_5286       0  0.503823  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     1  Test     1AVX_ti5-itw_354w       1  0.502845  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5
     """
-    print (f"-> Read epoch data from {DR_h5FL} into df")
+    print (f"-> Read epoch {epoch} data from {DR_h5FL} into df")
 
     # -- 1. read deeprank output data for the specific epoch
     h5 = h5py.File(DR_h5FL, 'r')
+
+    keys = list(h5.keys())
+    last_epoch_key = list(filter(lambda x: 'epoch_' in x, keys))[-1]
+
     if epoch is None:
-        print(f"epoch is not provided. Use the last epoch data.")
-        keys = list(h5.keys())
-        last_epoch_key = list(filter(lambda x: 'epoch_' in x, keys))[-1]
+        print(f"epoch is not provided. Use the last epoch data: {last_epoch_key}.")
+        epoch_key = last_epoch_key
     else:
-        last_epoch_key = 'epoch_%04d' % epoch
-        if last_epoch_key not in h5:
-            print(
-                'Incorrect epcoh name\n Possible options are: ' +
-                ' '.join(
-                    list(
-                        h5.keys())))
-            h5.close()
-            return
-    data = h5[last_epoch_key]
+        epoch_key = 'epoch_%04d' % epoch
+        if epoch_key not in h5:
+            print('Incorrect epoch name. Use the last epoch data: {last_epoch_key}.')
+            epoch_key = last_epoch_key
+    data = h5[epoch_key]
 
     # -- 2. convert into pd.DataFrame
     labels = list(data)  # labels = ['train', 'test', 'valid']
@@ -361,10 +359,16 @@ def get_HS(modelIDs, haddockS):
     HS = []
     idx_keep = []
 
+    # -- remove r000 from modelID
+    modelIDs = [re.sub("_r\d+$",'', modelID) for modelID in modelIDs ]
+
+    # -- retrieve HS
     for idx, modelID in enumerate(modelIDs):
         if modelID in haddockS:
             HS.append(haddockS[modelID])
             idx_keep.append(idx)
+        else:
+            print(f"Warning: model ID {modelID} does not have HS.")
     return HS, idx_keep
 
 def filter_models(df, label = 'Test', scenario = 'ranair'):
@@ -463,6 +467,7 @@ def prepare_df(deeprank_h5FL, HS_h5FL, epoch, scenario):
         label caseID               modelID target                                          sourceFL        DR      irmsd         HS
         Test   1AVX  1AVX_ranair-it0_5286      0  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.503823  25.189108   6.980802
         Test   1AVX     1AVX_ti5-itw_354w      1  /home/lixue/DBs/BM5-haddock24/hdf5/000_1AVX.hdf5  0.502845   3.668682 -95.158100
+
     '''
 
     print ("=== Prepare the df ===")
@@ -761,6 +766,9 @@ def main(HS_h5FL='/projects/0/deeprank/BM5/docked_models/stats.h5'): # on cartes
     rawdataFL=f'{scenario}.rawdata.tsv'
     df.to_csv(rawdataFL, sep = '\t', index = False, float_format = '%.5f')
     print(f'{rawdataFL} generated.\n')
+
+    #rawdataFL=f'{scenario}.rawdata.tsv'
+    #df = pd.read_csv(rawdataFL, sep='\t')
 
     # -- report the number of hits for train/valid/test
     hit_statistics(df)

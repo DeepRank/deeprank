@@ -1,9 +1,13 @@
 Byte-compiled / optimized
 *__pycache__*
 
+
+
 # distribution
 deeprank.egg-info
 database*
+dist
+build
 
 # specific architure files
 deeprank/learn/arch_*
@@ -59,3 +63,7 @@ test/atomic_pair_interaction.dat
 # Mac OSX files
 .DS_Store
 
+# test coverage
+htmlcov
+coverage.xml
+.coverage
