@@ -24,12 +24,12 @@ class SASA(object):
 
         self.pdbfile = pdbfile
 
-    def get_center(self, chainA='A', chainB='B', center='cb'):
+    def get_center(self, chain1='A', chain2='B', center='cb'):
         """Get the center of the resiudes.
 
         Args:
-            chainA (str, optional): Name of the first chain
-            chainB (str, optional): Name of the second chain
+            chain1 (str, optional): Name of the first chain
+            chain2 (str, optional): Name of the second chain
             center (str, optional): Specify the center.
                 'cb': the center locates on carbon beta of each residue
                 'center': average position of all atoms of the residue
@@ -38,59 +38,59 @@ class SASA(object):
         """
 
         if center == 'center':
-            self.get_residue_center(chainA=chainA, chainB=chainB)
+            self.get_residue_center(chain1=chain1, chain2=chain2)
         elif center == 'cb':
-            self.get_residue_carbon_beta(chainA=chainA, chainB=chainB)
+            self.get_residue_carbon_beta(chain1=chain1, chain2=chain2)
         else:
             raise ValueError(
                 'Options %s not recognized in SASA.get_center' %
                 center)
 
-    def get_residue_center(self, chainA='A', chainB='B'):
+    def get_residue_center(self, chain1='A', chain2='B'):
         """Compute the average position of all the residues.
 
         Args:
-            chainA (str, optional): Name of the first chain
-            chainB (str, optional): Name of the second chain
+            chain1 (str, optional): Name of the first chain
+            chain2 (str, optional): Name of the second chain
         """
 
         sql = pdb2sql.pdb2sql(self.pdbfile)
-        resA = np.array(sql.get('resSeq,resName', chainID=chainA))
-        resB = np.array(sql.get('resSeq,resName', chainID=chainB))
+        resA = np.array(sql.get('resSeq,resName', chainID=chain1))
+        resB = np.array(sql.get('resSeq,resName', chainID=chain2))
 
         resSeqA = np.unique(resA[:, 0].astype(np.int))
         resSeqB = np.unique(resB[:, 0].astype(np.int))
 
         self.xyz = {}
 
-        self.xyz[chainA] = []
+        self.xyz[chain1] = []
         for r in resSeqA:
-            xyz = sql.get('x,y,z', chainID=chainA, resSeq=str(r))
-            self.xyz[chainA].append(np.mean(xyz))
+            xyz = sql.get('x,y,z', chainID=chain1, resSeq=str(r))
+            self.xyz[chain1].append(np.mean(xyz))
 
-        self.xyz[chainB] = []
+        self.xyz[chain2] = []
         for r in resSeqB:
-            xyz = sql.get('x,y,z', chainID=chainB, resSeq=str(r))
-            self.xyz[chainA].append(np.mean(xyz))
+            xyz = sql.get('x,y,z', chainID=chain2, resSeq=str(r))
+            self.xyz[chain1].append(np.mean(xyz))
 
         self.resinfo = {}
-        self.resinfo[chainA] = []
+        self.resinfo[chain1] = []
         for r in resA[:, :2]:
-            if tuple(r) not in self.resinfo[chainA]:
-                self.resinfo[chainA].append(tuple(r))
+            if tuple(r) not in self.resinfo[chain1]:
+                self.resinfo[chain1].append(tuple(r))
 
-        self.resinfo[chainB] = []
+        self.resinfo[chain2] = []
         for r in resB[:, :2]:
-            if tuple(r) not in self.resinfo[chainB]:
-                self.resinfo[chainB].append(tuple(r))
+            if tuple(r) not in self.resinfo[chain2]:
+                self.resinfo[chain2].append(tuple(r))
         sql._close()
 
-    def get_residue_carbon_beta(self, chainA='A', chainB='B'):
+    def get_residue_carbon_beta(self, chain1='A', chain2='B'):
         """Extract the position of the carbon beta of each residue.
 
         Args:
-            chainA (str, optional): Name of the first chain
-            chainB (str, optional): Name of the second chain
+            chain1 (str, optional): Name of the first chain
+            chain2 (str, optional): Name of the second chain
         """
 
         sql = pdb2sql.pdb2sql(self.pdbfile)
@@ -98,12 +98,12 @@ class SASA(object):
             sql.get(
                 'resSeq,resName,x,y,z',
                 name='CB',
-                chainID=chainA))
+                chainID=chain1))
         resB = np.array(
             sql.get(
                 'resSeq,resName,x,y,z',
                 name='CB',
-                chainID=chainB))
+                chainID=chain2))
         sql._close()
 
         assert len(resA[:, 0].astype(np.int).tolist()) == len(
@@ -112,19 +112,19 @@ class SASA(object):
             np.unique(resB[:, 0].astype(np.int)).tolist())
 
         self.xyz = {}
-        self.xyz[chainA] = resA[:, 2:].astype(np.float)
-        self.xyz[chainB] = resB[:, 2:].astype(np.float)
+        self.xyz[chain1] = resA[:, 2:].astype(np.float)
+        self.xyz[chain2] = resB[:, 2:].astype(np.float)
 
         self.resinfo = {}
-        self.resinfo[chainA] = resA[:, :2]
-        self.resinfo[chainB] = resB[:, :2]
+        self.resinfo[chain1] = resA[:, :2]
+        self.resinfo[chain2] = resB[:, :2]
 
     def neighbor_vector(
             self,
             lbound=3.3,
             ubound=11.1,
-            chainA='A',
-            chainB='B',
+            chain1='A',
+            chain2='B',
             center='cb'):
         """Compute teh SASA folowing the neighbour vector approach.
 
@@ -134,8 +134,8 @@ class SASA(object):
         Args:
             lbound (float, optional): lower boubd
             ubound (float, optional): upper bound
-            chainA (str, optional): name of the first chain
-            chainB (str, optional): name of the second chain
+            chain1 (str, optional): name of the first chain
+            chain2 (str, optional): name of the second chain
             center (str, optional): specify the center
                 (see get_residue_center)
 
@@ -144,11 +144,11 @@ class SASA(object):
         """
 
         # get the center
-        self.get_center(chainA=chainA, chainB=chainB, center=center)
+        self.get_center(chain1=chain1, chain2=chain2, center=center)
 
         NV = {}
 
-        for chain in [chainA, chainB]:
+        for chain in [chain1, chain2]:
 
             for i, xyz in enumerate(self.xyz[chain]):
 
@@ -178,8 +178,8 @@ class SASA(object):
             self,
             lbound=4.0,
             ubound=11.4,
-            chainA='A',
-            chainB='B',
+            chain1='A',
+            chain2='B',
             center='cb'):
         """Compute the neighbourhood count of each residue.
 
@@ -189,8 +189,8 @@ class SASA(object):
         Args:
             lbound (float, optional): lower boubd
             ubound (float, optional): upper bound
-            chainA (str, optional): name of the first chain
-            chainB (str, optional): name of the second chain
+            chain1 (str, optional): name of the first chain
+            chain2 (str, optional): name of the second chain
             center (str, optional): specify the center
             (see get_residue_center)
 
@@ -199,12 +199,12 @@ class SASA(object):
         """
 
         # get the center
-        self.get_center(chainA=chainA, chainB=chainB, center=center)
+        self.get_center(chain1=chain1, chain2=chain2, center=center)
 
         # dict of NC
         NC = {}
 
-        for chain in [chainA, chainB]:
+        for chain in [chain1, chain2]:
 
             for i, xyz in enumerate(self.xyz[chain]):
                 dist = np.sqrt(np.sum((self.xyz[chain] - xyz)**2, 1))

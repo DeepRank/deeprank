@@ -1,10 +1,8 @@
-Project Setup
-=============
+Developer Guideline
+===================
 
-Here we provide some details about the project setup. Most of the
+Here we provide some details about guideline for internal developers. Most of the
 choices are explained in the [guide](https://guide.esciencecenter.nl).
-Links to the relevant sections are included below. Feel free to remove
-this text when the development of the software package takes off.
 
 For a quick reference on software development, we refer to [the software
 guide checklist](https://guide.esciencecenter.nl/best_practices/checklist.html).
@@ -12,31 +10,27 @@ guide checklist](https://guide.esciencecenter.nl/best_practices/checklist.html).
 Version control
 ---------------
 
-Once your Python package is created, put it under [version
-control](https://guide.esciencecenter.nl/best_practices/version_control.html)!
-We recommend using [git](http://git-scm.com/) and
-[github](https://github.com/).
+We use [git](http://git-scm.com/) and [github](https://github.com/) for developing
+[DeepRank](https://github.com/DeepRank/deeprank). And [Github Desktop](https://desktop.github.com/) is recommennded to simplify development workflow.
 
-``` {.sourceCode .console}
-cd deeprank
-git init
-git add -A
-git commit
-```
+To get onboard, first ask project manager to get access to the DeepRank repo (short for repository), then clone the repo to your local machine.
 
-To put your code on github, follow [this
-tutorial](https://help.github.com/articles/adding-an-existing-project-to-github-using-the-command-line/).
+**The development workflow is as the following**:
+1. Create an issue in [the repo Issues](https://github.com/DeepRank/deeprank/issues) for any idea, bug, feature, improvement, etc.
+2. Comment and mention (i.e. @) someone in the issue for discussion if necessary.
+3. Assign the issue to yourself or someone after asking
+4. Create a new branch from the `development` branch for this issue, and name it in a format of `issue{ID}_*`, e.g. `issue7_format_docstring`.
+5. Work in this issue branch to solve the issue. Check this [guide](https://google.github.io/eng-practices/review/developer/) to see how to make good commits.
+6. Create a Pull Request to merge this issue branch to the `development` branch when last step is completed.
+7. Assign someone but not yourself to review the pull request. For reviewers, check this [guide](https://google.github.io/eng-practices/review/reviewer/) to see how to do a code review.
+8. Follow reviewer's comments to fix the code until reviewer approve you to merge. Check this [guide](https://google.github.io/eng-practices/review/developer/handling-comments.html) to see how to handle reviewer comments.
+9. Merge the issue branch to `development` branch and delete the issue branch.
+10. Close the issue after leavning a comment of the related pull request ID.
 
-Python versions
----------------
+Repeat the 1-10 steps for next issue.
 
-This repository is set up with Python version:
+Note that try to keep the issue and pull request small for efficient code review. In principle, it should take ≤30 mins to review a pull request.
 
--   3.7
-
-Add or remove Python versions based on project requirements. See [the
-guide](https://guide.esciencecenter.nl/best_practices/language_guides/python.html)
-for more information about Python versions.
 
 Package management and dependencies
 -----------------------------------
@@ -85,10 +79,7 @@ Testing and code coverage
 -   Tests should be put in the `test` folder.
 -   The `test` folder contains:
     -   Example tests that you should replace with your own meaningful
-        tests (file:
-        `test_deeprank`)
-    -   A test that checks whether your code conforms to the Python
-        style guide (PEP 8) (file: `test_lint.py`)
+        tests (file: `test_learn.py`)
 -   The testing framework used is [PyTest](https://pytest.org)
     -   [PyTest
         introduction](http://pythontesting.net/framework/pytest/pytest-introduction/)

@@ -8,13 +8,13 @@ from deeprank import config
 
 class ResidueDensity(FeatureClass):
 
-    def __init__(self, pdb_data, chainA='A', chainB='B'):
+    def __init__(self, pdb_data, chain1='A', chain2='B'):
         """Compute the residue contacts between polar/apolar/charged residues.
 
         Args :
             pdb_data (list(byte) or str): pdb data or pdb filename
-            chainA (str, optional): name of the first chain
-            chainB (str, optional): name of the second chain
+            chain1 (str): First chain ID. Defaults to 'A'
+            chain2 (str): Second chain ID. Defaults to 'B'
 
         Example :
         >>> rcd = ResidueDensity('1EWY_100w.pdb')
@@ -24,7 +24,9 @@ class ResidueDensity(FeatureClass):
 
         self.pdb_data = pdb_data
         self.sql = pdb2sql.interface(pdb_data)
-        self.chains_label = [chainA, chainB]
+        self.chains_label = [chain1, chain2]
+        self.chain1 = chain1
+        self.chain2 = chain2
 
         self.feature_data = {}
         self.feature_data_xyz = {}
@@ -37,9 +39,9 @@ class ResidueDensity(FeatureClass):
         Raises:
             ValueError: No residue contact found.
         """
-        # res = {('chainA,resSeq,resName'): set(
-        #                               ('chainB,res1Seq,res1Name),
-        #                               ('chainB,res2Seq,res2Name'))}
+        # res = {('chain1,resSeq,resName'): set(
+        #                               ('chain2,res1Seq,res1Name),
+        #                               ('chain2,res2Seq,res2Name'))}
         res = self.sql.get_contact_residues(chain1=self.chains_label[0],
                                            chain2=self.chains_label[1],
                                            cutoff=cutoff,
@@ -123,17 +125,10 @@ class ResidueDensity(FeatureClass):
             # total density in raw format
             self.feature_data['RCD_total'][key] = [res.density['total']]
 
-            # get the type of the center
-            atcenter = 'CB'
-            if key[2] == 'GLY':
-                atcenter = 'CA'
+            # get the center
+            _, xyz = self.get_residue_center(self.sql, res=key)
+            xyz_key = tuple([{self.chain1: 0, self.chain2: 1}[key[0]]] + xyz[0])
 
-            # get the xyz of the center atom
-            xyz = self.sql.get(
-                'x,y,z', resSeq=key[1], chainID=key[0], name=atcenter)[0]
-            #xyz = np.mean(self.sql.get('x,y,z',resSeq=key[1],chainID=key[0]),0).tolist()
-
-            xyz_key = tuple([{'A': 0, 'B': 1}[key[0]]] + xyz)
             self.feature_data_xyz['RCD_total'][xyz_key] = [
                 res.density['total']]
 
@@ -163,10 +158,19 @@ class residue_pair(object):
 #
 ########################################################################
 
-def __compute_feature__(pdb_data, featgrp, featgrp_raw):
+def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2):
+    """Main function called in deeprank for the feature calculations.
+
+    Args:
+        pdb_data (list(bytes)): pdb information
+        featgrp (str): name of the group where to save xyz-val data
+        featgrp_raw (str): name of the group where to save human readable data
+        chain1 (str): First chain ID
+        chain2 (str): Second chain ID
+    """
 
     # create instance
-    resdens = ResidueDensity(pdb_data)
+    resdens = ResidueDensity(pdb_data, chain1=chain1, chain2=chain2)
 
     # get the residue conacts
     resdens.get()

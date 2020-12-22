@@ -13,9 +13,9 @@ class TestTools(unittest.TestCase):
         # create the sql db
         pdb = './1AK4/decoys/1AK4_cm-it0_745.pdb'
         sasa = SASA(pdb)
-        sasa.get_center()
-        sasa.get_residue_center()
-        sasa.neighbor_count()
+        sasa.get_center(chain1='C', chain2='D')
+        sasa.get_residue_center(chain1='C', chain2='D')
+        sasa.neighbor_count(chain1='C', chain2='D')
 
 
 if __name__ == '__main__':
