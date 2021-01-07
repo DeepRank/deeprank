@@ -35,7 +35,7 @@ CAPRI class
 DockQ
 ------------------------------------
 
-.. automodule:: deeprank.targets.DockQ
+.. automodule:: deeprank.targets.dockQ
     :members:
     :undoc-members:
 
