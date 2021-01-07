@@ -16,14 +16,13 @@ As you can see in the source each python file contained a ``__compute_feature__`
 
 
 
-Here are detailled the class in charge of feature calculations.
+Here are detailed the class in charge of feature calculations.
+
 
 Atomic Feature
 ----------------------------------------
 
 .. automodule:: deeprank.features.AtomicFeature
-    :members:
-    :undoc-members:
 
 Burried Surface Area
 ------------------------------

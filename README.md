@@ -19,12 +19,18 @@ The documentation of the module can be found on readthedocs :
 
 Minimal information to install the module
 
+Installation with pypi:
 
--   clone the repository `git clone https://github.com/DeepRank/deeprank.git`
--   go there             `cd deeprank`
--   install the module   `pip install -e ./`
--   go int the test dir `cd test`
--   run the test suite `pytest`
+-   Install the module `pip install deeprank`
+-   Run the test suite `pytest`
+
+Installation from GitHub repository:
+
+-   Clone the repository `git clone https://github.com/DeepRank/deeprank.git`
+-   Go there             `cd deeprank`
+-   Install the module   `pip install -e ./`
+-   Go int the test dir `cd test`
+-   Run the test suite `pytest`
 
 
 ## 2 . Tutorial
