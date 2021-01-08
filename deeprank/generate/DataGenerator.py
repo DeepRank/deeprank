@@ -67,25 +67,25 @@ class DataGenerator(object):
 
         Example :
 
-        >>> from deeprank.generate import *
-        >>> # sources to assemble the data base
-        >>> pdb_source     = ['./1AK4/decoys/']
-        >>> pdb_native     = ['./1AK4/native/']
-        >>> pssm_source    = ['./1AK4/pssm_new/']
-        >>> h5file = '1ak4.hdf5'
-        >>>
-        >>> #init the data assembler
-        >>> database = DataGenerator(chain1='A',
-        >>>                          chain2='B',
-        >>>                          pdb_source=pdb_source,
-        >>>                          pdb_native=pdb_native,
-        >>>                          pssm_source=pssm_source,
-        >>>                          data_augmentation=None,
-        >>>                          compute_targets=['deeprank.targets.dockQ'],
-        >>>                          compute_features=['deeprank.features.AtomicFeature',
-        >>>                                            'deeprank.features.PSSM_IC',
-        >>>                                            'deeprank.features.BSA'],
-        >>>                          hdf5=h5file)
+            >>> from deeprank.generate import *
+            >>> # sources to assemble the data base
+            >>> pdb_source     = ['./1AK4/decoys/']
+            >>> pdb_native     = ['./1AK4/native/']
+            >>> pssm_source    = ['./1AK4/pssm_new/']
+            >>> h5file = '1ak4.hdf5'
+            >>>
+            >>> #init the data assembler
+            >>> database = DataGenerator(chain1='A',
+            >>>                          chain2='B',
+            >>>                          pdb_source=pdb_source,
+            >>>                          pdb_native=pdb_native,
+            >>>                          pssm_source=pssm_source,
+            >>>                          data_augmentation=None,
+            >>>                          compute_targets=['deeprank.targets.dockQ'],
+            >>>                          compute_features=['deeprank.features.AtomicFeature',
+            >>>                                            'deeprank.features.PSSM_IC',
+            >>>                                            'deeprank.features.BSA'],
+            >>>                          hdf5=h5file)
         """
 
         self.chain1 = chain1

@@ -29,6 +29,8 @@ class Mock(MagicMock):
 
 
 MOCK_MODULES = [
+    'pdb2sql',
+    'pdb2sql.align',
     'numpy',
     'scipy',
     'h5py',

@@ -16,10 +16,10 @@ class ResidueDensity(FeatureClass):
             chain1 (str): First chain ID. Defaults to 'A'
             chain2 (str): Second chain ID. Defaults to 'B'
 
-        Example :
-        >>> rcd = ResidueDensity('1EWY_100w.pdb')
-        >>> rcd.get(cutoff=5.5)
-        >>> rcd.extract_features()
+        Example:
+            >>> rcd = ResidueDensity('1EWY_100w.pdb')
+            >>> rcd.get(cutoff=5.5)
+            >>> rcd.extract_features()
         """
 
         self.pdb_data = pdb_data

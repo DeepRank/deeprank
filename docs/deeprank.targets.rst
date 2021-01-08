@@ -1,4 +1,4 @@
-Targets
+Target
 ==========================
 
 
@@ -20,14 +20,14 @@ Here are detailed the class in charge of target calculations.
 Binary Class
 ----------------------------------------
 
-.. automodule:: deeprank.targets.binary_class
+.. automodule:: deeprank.targets.binary_class.__compute_target__
     :members:
     :undoc-members:
 
 CAPRI class
 ----------------------------------------
 
-.. automodule:: deeprank.targets.capri_class
+.. automodule:: deeprank.targets.capri_class.__compute_target__
     :members:
     :undoc-members:
 
@@ -35,7 +35,7 @@ CAPRI class
 DockQ
 ----------------------------------------
 
-.. automodule:: deeprank.targets.dockQ
+.. automodule:: deeprank.targets.dockQ.__compute_target__
     :members:
     :undoc-members:
 
@@ -43,11 +43,6 @@ DockQ
 RMSD fNat
 ----------------------------------------
 
-.. automodule:: deeprank.targets.rmsd_fnat
+.. automodule:: deeprank.targets.rmsd_fnat.__compute_target__
     :members:
     :undoc-members:
-
-.. _ref_own_target:
-
-Make your own Target
----------------------------------------

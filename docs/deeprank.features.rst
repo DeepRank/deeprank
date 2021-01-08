@@ -23,6 +23,8 @@ Atomic Feature
 ----------------------------------------
 
 .. automodule:: deeprank.features.AtomicFeature
+    :members:
+    :undoc-members:
 
 Burried Surface Area
 ------------------------------
@@ -62,8 +64,3 @@ Generic Feature Class
 .. automodule:: deeprank.features.FeatureClass
     :members:
     :undoc-members:
-
-.. _ref_own_feature:
-
-Make your own Feature
----------------------------------------
