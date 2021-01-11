@@ -75,8 +75,8 @@ class DataGenerator(object):
             >>> h5file = '1ak4.hdf5'
             >>>
             >>> #init the data assembler
-            >>> database = DataGenerator(chain1='A',
-            >>>                          chain2='B',
+            >>> database = DataGenerator(chain1='C',
+            >>>                          chain2='D',
             >>>                          pdb_source=pdb_source,
             >>>                          pdb_native=pdb_native,
             >>>                          pssm_source=pssm_source,
@@ -198,7 +198,9 @@ class DataGenerator(object):
         >>> h5file = '1ak4.hdf5'
         >>>
         >>> #init the data assembler
-        >>> database = DataGenerator(pdb_source=pdb_source,
+        >>> database = DataGenerator(chain1='C',
+        >>>                          chain2='D',
+        >>>                          pdb_source=pdb_source,
         >>>                          pdb_native=pdb_native,
         >>>                          pssm_source=pssm_source,
         >>>                          data_augmentation=None,

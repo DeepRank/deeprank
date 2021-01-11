@@ -22,14 +22,13 @@ Minimal information to install the module
 Installation with pypi:
 
 -   Install the module `pip install deeprank`
--   Run the test suite `pytest`
 
 Installation from GitHub repository:
 
 -   Clone the repository `git clone https://github.com/DeepRank/deeprank.git`
 -   Go there             `cd deeprank`
 -   Install the module   `pip install -e ./`
--   Go int the test dir `cd test`
+-   Go into the test dir `cd test`
 -   Run the test suite `pytest`
 
 
@@ -43,7 +42,6 @@ We give here the tutorial like introduction to the DeepRank machinery. More info
 ### A . Generate the data set (using MPI)
 
 The generation of the data require only require PDBs files of decoys and their native and the PSSM if needed. All the features/targets and mapped features onto grid points will be auomatically calculated and store in a HDF5 file.
-In the generate_dataset.py under the example folder we provide an example of dataset generation.
 
 ```python
 from deeprank.generate import * 
@@ -55,13 +53,13 @@ comm = MPI.COMM_WORLD
 h5file = './hdf5/1ak4.hdf5' 
  
 # for each hdf5 file where to find the pdbs 
-pdb_source = '../test/1AK4/decoys/' 
+pdb_source = ['../test/1AK4/decoys/'] 
 
 
 # where to find the native conformations 
 # pdb_native is only used to calculate i-RMSD, dockQ and so on. 
 # The native pdb files will not be saved in the hdf5 file 
-pdb_native = '../test/1AK4/native/' 
+pdb_native = ['../test/1AK4/native/'] 
  
  
 # where to find the pssm 
@@ -69,7 +67,8 @@ pssm_source = '../test/1AK4/pssm_new/'
  
  
 # initialize the database 
-database = DataGenerator( 
+database = DataGenerator(
+    chain1='C', chain2='D', 
     pdb_source=pdb_source, 
     pdb_native=pdb_native, 
     pssm_source=pssm_source, 
@@ -94,24 +93,15 @@ database.create_database(prog_bar=True)
  
  
 # define the 3D grid 
-# grid_info = { 
-#   'number_of_points' : [30,30,30], 
-#   'resolution' : [1.,1.,1.], 
-#   'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8}, 
-# } 
+ grid_info = { 
+   'number_of_points' : [30,30,30], 
+   'resolution' : [1.,1.,1.], 
+   'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8}, 
+ } 
  
-# generate the grid 
-#print('{:25s}'.format('Generate the grid') + database.hdf5) 
-#database.precompute_grid(grid_info,try_sparse=True, time=False, prog_bar=True) 
+# Map the features 
+database.map_features(grid_info,try_sparse=True, time=False, prog_bar=True) 
  
- 
-# print('{:25s}'.format('Map features in database') + database.hdf5) 
-# database.map_features(grid_info,try_sparse=True, time=False, prog_bar=True) 
- 
-# # get the normalization of the features 
-# print('{:25s}'.format('Normalization') + database.hdf5) 
-# norm = NormalizeData(database.hdf5) 
-# norm.get()
 ```
 
 This script can be exectuted using for example 4 MPI processes with the command:
@@ -149,25 +139,34 @@ The HDF5 files generated above can be used as input for deep learning experiment
 
 ```python
 from deeprank.learn import *
-from deeprank.learn.model3d import cnn as cnn3d
+from deeprank.learn.model3d import cnn_reg
 import torch.optim as optim
+import numpy as np
 
 # input database
 database = '1ak4.hdf5'
 
+# output directory
+out = './my_DL_test/'
+
 # declare the dataset instance
 data_set = DataSet(database,
-            grid_shape=(30,30,30),
-            select_feature={'AtomicDensities_ind' : 'all',
-                            'Feature_ind' : ['coulomb','vdwaals','charge','pssm'] },
+            chain1='C',
+            chain2='D',
+            grid_info={
+                'number_of_points': (10, 10, 10),
+                'resolution': (3, 3, 3)},
+            select_feature={
+                'AtomicDensities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
+                'Features': ['coulomb', 'vdwaals', 'charge', 'PSSM_*']},
             select_target='DOCKQ',
             normalize_features = True, normalize_targets=True,
             pair_chain_feature=np.add,
-            dict_filter={'IRMSD':'<4. or >10.'})
+            dict_filter={'DOCKQ':'<1'})
 
 
-# create the networkt
-model = NeuralNet(data_set,cnn3d,model_type='3d',task='reg',
+# create the network
+model = NeuralNet(data_set,cnn_reg,model_type='3d',
                   cuda=False,plot=True,outdir=out)
 
 # change the optimizer (optional)

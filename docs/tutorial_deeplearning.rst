@@ -45,12 +45,12 @@ The simplest (and default) option is to use all the features stored in the HDF5 
 
 Most of the time one wants to specify which feature to use. We must then use a *dictionary*. As you can see in the HDF5 file, the ``mapped_features`` subgroup of each complex contains two groups ``AtomicDensities_ind`` and ``Feature_ind``. We'll forget about the ``_ind`` that is for legacy reasons, but these two groups contains the atomic densities and other features respectively. Therefore the value used in the example above:
 
->>> select_feature={ 'AtomicDensities_ind' : 'all',
->>>                  'Feature_ind' : ['coulomb','vdwaals','charge','pssm']}
+>>> select_feature={ 'AtomicDensities' : 'all',
+>>>                  'Features' : ['coulomb','vdwaals','charge','pssm']}
 
 Specify that we want to use all the atomic densities and only a few features that are named here. If for example one wants to only use the pssm_ic feature then the arguments should be set to:
 
->>> select_feature={'Feature_ind':['pssm_ic']}
+>>> select_feature={'Features':['pssm_ic']}
 
 As you can see in the HDF5 file for each feature, the data of chainA and chainB are stored separately. But it is possible to combine the feature of both chains in a single channel via the argument ``pair_chain_feature``. For example here this argument is set to:
 

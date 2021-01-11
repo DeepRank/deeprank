@@ -32,9 +32,6 @@ test/*.pckl
 test/*.hdf5
 test/*.pdb
 
-#doc_DM branch test files
-test/*_try.py
-
 
 # datafile
 #*.pdb

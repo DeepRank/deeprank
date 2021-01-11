@@ -13,7 +13,7 @@ At the moment a number of features are already implemented. This include:
     - Atomic charges
     - PSSM data
     - Information content
-    - Burried surface area
+    - Buried surface area
     - Contact Residue Densities
 
 More features can be easily implemented and integrated in the data generation workflow. You can see example here. The calculation of a number of target values have also been implemented:
@@ -23,7 +23,6 @@ More features can be easily implemented and integrated in the data generation wo
     - FNAT
     - DockQ
     - binary class
-    - Haddock score
 
 There as well new targets can be implemented and integrated to the workflow.
 
@@ -40,7 +39,8 @@ Example:
 >>> h5file = '1ak4.hdf5'
 >>>
 >>> #init the data assembler
->>> database = DataGenerator(pdb_source=pdb_source,pdb_native=pdb_native,pssm_source=pssm_source,
+>>> database = DataGenerator(chain1='C',chain2='D',
+>>>                          pdb_source=pdb_source,pdb_native=pdb_native,pssm_source=pssm_source,
 >>>                          data_augmentation=None,
 >>>                          compute_targets  = ['deeprank.targets.dockQ'],
 >>>                          compute_features = ['deeprank.features.AtomicFeature',
@@ -77,14 +77,16 @@ Structure Alignement
 
 All the complexes contained in the dataset can be aligned similarly to facilitate and improve the training of the model. This can easily be done using the `align` option of the `DataGenerator` for example to align all the complexes along the 'z' direction one can use:
 
->>> database = DataGenerator(pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
+>>> database = DataGenerator(chain1='C',chain2='D',
+>>>                          pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
 >>>                          align={"axis":'z'}, data_augmentation=2,
 >>>                          compute_targets=[ ... ], compute_features=[ ... ], ... )
 
 
 Other options are possbile, for example if you would like to have the alignement done only using a subpart of the complex, say the chains A and B you can use :
 
->>> database = DataGenerator(pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
+>>> database = DataGenerator(chain1='C',chain2='D',
+>>>                          pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
 >>>                          align={"axis":'z', "selection": {"chainID":["A","B"]} }, data_augmentation=2,
 >>>                          compute_targets=[ ... ], compute_features=[ ... ], ... )
 
@@ -92,13 +94,15 @@ All the selection offered by `pdb2sql` can be used in the `align` dictionnary e.
 
 You can also try to align the interface between two chains in a given plane. This can be done using :
 
->>> database = DataGenerator(pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
+>>> database = DataGenerator(chain1='C',chain2='D',
+>>>                          pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
 >>>                          align={"plane":'xy', "selection":"interface"}, data_augmentation=2,
 >>>                          compute_targets=[ ... ], compute_features=[ ... ], ... )
 
 which by default will use the interface between the first two chains. If you have more than two chains in the complex and want to specify which chains are forming the interface to be aligned you can use :
 
->>> database = DataGenerator(pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
+>>> database = DataGenerator(chain1='C',chain2='D',
+>>>                          pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
 >>>                          align={"plane":'xy', "selection":"interface", "chain1":'A', "chain2":'C'}, data_augmentation=2,
 >>>                          compute_targets=[ ... ], compute_features=[ ... ], ... )
 

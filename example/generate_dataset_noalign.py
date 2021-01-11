@@ -24,6 +24,8 @@ pssm_source = '../test/1AK4/pssm_new/'
 
 # initialize the database
 database = DataGenerator(
+    chain1='C',
+    chain2='D',
     pdb_source=pdb_source,
     pdb_native=pdb_native,
     pssm_source=pssm_source,
