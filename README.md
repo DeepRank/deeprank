@@ -49,21 +49,22 @@ from mpi4py import MPI
  
 comm = MPI.COMM_WORLD 
  
+# let's put this sample script in the test folder, so the working path will be deeprank/test/
 # name of the hdf5 to generate 
 h5file = './hdf5/1ak4.hdf5' 
  
 # for each hdf5 file where to find the pdbs 
-pdb_source = ['../test/1AK4/decoys/'] 
+pdb_source = ['./1AK4/decoys/'] 
 
 
 # where to find the native conformations 
 # pdb_native is only used to calculate i-RMSD, dockQ and so on. 
 # The native pdb files will not be saved in the hdf5 file 
-pdb_native = ['../test/1AK4/native/'] 
+pdb_native = ['./1AK4/native/'] 
  
  
 # where to find the pssm 
-pssm_source = '../test/1AK4/pssm_new/' 
+pssm_source = './1AK4/pssm_new/' 
  
  
 # initialize the database 
@@ -88,7 +89,6 @@ database = DataGenerator(
  
 # create the database 
 # compute features/targets for all complexes 
-print('{:25s}'.format('Create new database') + database.hdf5) 
 database.create_database(prog_bar=True) 
  
  
