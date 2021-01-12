@@ -166,7 +166,7 @@ data_set = DataSet(database,
 
 
 # create the network
-model = NeuralNet(data_set,cnn_reg,model_type='3d',
+model = NeuralNet(data_set,cnn_reg,model_type='3d',task='reg',
                   cuda=False,plot=True,outdir=out)
 
 # change the optimizer (optional)

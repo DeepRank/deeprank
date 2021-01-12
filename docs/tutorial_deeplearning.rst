@@ -197,7 +197,7 @@ And that's it really. Specifying ``task='reg'`` wil automatically adjust all the
 Reusing a pretrained model
 ---------------------------
 
-In many cases after you've trained the network you would like to reuse the model either to test its performace on a test set or to continue the training. To do that you would also like to reuse the options for the dataset (i.e. the same feature, target, pairing of the features, etc ...). All of this can be done automatically with DeepRank and an example is given in ``test/notravis_test_transfer.py``. Let's say that the pretrained model (automatically generated at the end of the training) is located at ``model.pth.tar``. In that case you can simply specify the following:
+In many cases after you've trained the network you would like to reuse the model either to test its performace on a test set or to continue the training. To do that you would also like to reuse the options for the dataset (i.e. the same feature, target, pairing of the features, etc ...). All of this can be done automatically with DeepRank. Let's say that the pretrained model (automatically generated at the end of the training) is located at ``model.pth.tar``. In that case you can simply specify the following:
 
 >>> database = '1ak4.hdf5'
 >>> model = NeuralNet(database,cnn,pretrained_model='model.pth.tar')

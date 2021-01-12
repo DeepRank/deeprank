@@ -22,7 +22,7 @@ Example:
 >>>
 >>>
 >>> # create the network
->>> model = NeuralNet(data_set, cnn_class, model_type='3d')
+>>> model = NeuralNet(data_set, cnn_class, model_type='3d', task='class')
 >>>
 >>> # start the training
 >>> model.train(nepoch = 250,divide_trainset=0.8, train_batch_size = 50, num_workers=8)
