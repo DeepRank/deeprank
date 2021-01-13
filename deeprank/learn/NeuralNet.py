@@ -51,10 +51,14 @@ class NeuralNet():
                 Must subclass nn.Module.
                 See examples in model2d.py and model3d.py
 
-            model_type (srt): Type of model we want to use.
+            model_type (str): Type of model we want to use.
                 Must be '2d' or '3d'.
                 If we specify a 2d model, the data set is automatically
                 converted to the correct format.
+
+            proj2d (int): Defines how to slice the 3D volumetric data to generate
+                2D data. Allowed values are 0, 1 and 2, which are to slice along
+                the YZ, XZ or XY plane, respectively.
 
             task (str 'reg' or 'class'): Task to perform.
                 - 'reg' for regression
