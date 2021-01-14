@@ -1,5 +1,5 @@
-Feature
-==========================
+Features
+========
 
 
 .. automodule:: deeprank.features
@@ -20,14 +20,14 @@ Here are detailed the class in charge of feature calculations.
 
 
 Atomic Feature
-----------------------------------------
+--------------
 
 .. automodule:: deeprank.features.AtomicFeature
     :members:
     :undoc-members:
 
 Burried Surface Area
-------------------------------
+--------------------
 
 .. automodule:: deeprank.features.BSA
     :members:
@@ -35,7 +35,7 @@ Burried Surface Area
 
 
 FullPSSM
-------------------------------------
+--------
 
 .. automodule:: deeprank.features.FullPSSM
     :members:
@@ -43,7 +43,7 @@ FullPSSM
 
 
 PSSM Information Content
------------------------------------
+------------------------
 
 .. automodule:: deeprank.features.PSSM_IC
     :members:
@@ -51,7 +51,7 @@ PSSM Information Content
 
 
 Contact Residue Density
------------------------------------------
+-----------------------
 
 .. automodule:: deeprank.features.ResidueDensity
     :members:
@@ -59,7 +59,7 @@ Contact Residue Density
 
 
 Generic Feature Class
----------------------------------------
+---------------------
 
 .. automodule:: deeprank.features.FeatureClass
     :members:

@@ -1,5 +1,5 @@
-Generate Data
-==========================
+Data Generation
+===============
 
 .. automodule:: deeprank.generate
 
@@ -127,4 +127,3 @@ GridTools
 .. automodule:: deeprank.generate.GridTools
     :members:
     :undoc-members:
-

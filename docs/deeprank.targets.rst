@@ -1,5 +1,5 @@
-Target
-==========================
+Targets
+=======
 
 
 .. automodule:: deeprank.targets
@@ -13,36 +13,25 @@ This module contains all the functions to compute target values for molecular st
 
 As you can see in the source each python file contained a ``__compute_target__`` function. This is the function called in ``deeprank.generate``.
 
+Here are detailed the function in charge of target calculations.
 
+Binary class
+------------
 
-Here are detailed the class in charge of target calculations.
-
-Binary Class
-----------------------------------------
-
-.. automodule:: deeprank.targets.binary_class.__compute_target__
-    :members:
-    :undoc-members:
+.. autofunction:: deeprank.targets.binary_class.__compute_target__
 
 CAPRI class
-----------------------------------------
+-----------
 
-.. automodule:: deeprank.targets.capri_class.__compute_target__
-    :members:
-    :undoc-members:
-
+.. autofunction:: deeprank.targets.capri_class.__compute_target__
 
 DockQ
-----------------------------------------
+-----
 
-.. automodule:: deeprank.targets.dockQ.__compute_target__
-    :members:
-    :undoc-members:
+.. autofunction:: deeprank.targets.dockQ.__compute_target__
 
 
-RMSD fNat
-----------------------------------------
+RMSDs & FNAT
+------------
 
-.. automodule:: deeprank.targets.rmsd_fnat.__compute_target__
-    :members:
-    :undoc-members:
+.. autofunction:: deeprank.targets.rmsd_fnat.__compute_target__
