@@ -23,7 +23,7 @@ First import the necessary modules,
 
 The second line imports all the submodules required for data generation.
 
-Then, we need to set out MPI communicator that will be used later
+Then, we need to set the MPI communicator, that will be used later
 
 >>> comm = MPI.COMM_WORLD
 
@@ -38,7 +38,7 @@ which contains 5 docking decoys of the 1AK4 complex. The structure information o
 these 5 decoys will be copied to the output HDF5 file.
 
 We also need to specify the PDB files of native structures, which are required to
-calculate targets like RMSD, FNAT, etc,
+calculate targets like RMSD, FNAT, etc.
 
 >>> pdb_native = ['./1AK4/native']
 
@@ -46,6 +46,7 @@ DeepRank will automatically look for native structure for each docking decoy by
 name matching. For example, the native structure for the decoy ``./1AK4/decoys/1AK4_100w.pdb`` will be ``./1AK4/native/1AK4.pdb``.
 
 Then, if you want to compute PSSM-related features like ``PSSM_IC``, you must specify the path to the PSSM files. The PSSM file must be named as ``<PDB_ID>.<Chain_ID>.pssm`` .
+To produce PSSM files that are coherent with your pdb files and have already the correct file names, you can check out our module `PSSMGen <https://github.com/DeepRank/PSSMGen>`_.
 
 >>> pssm_source = ['./1AK4/pssm_new/']
 
@@ -117,7 +118,7 @@ No! You can append more features and targets to the existing HDF5 database in a 
 >>> # add targets
 >>> database.add_target()
 >>>
->>> # adda feature
+>>> # add features
 >>> database.add_feature()
 >>>
 >>> # map features

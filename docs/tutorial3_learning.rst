@@ -9,7 +9,7 @@ Let's start from importing the necessary DeepRank modules,
 
 >>> from deeprank.learn import Dataset, NeuralNet
 
-The ``Dataset`` module is used for preparing training/validation/test datasets, and the ``NeuralNet`` module for training and testing neural networks.
+The ``Dataset`` module is used for preparing training/validation/test datasets and the ``NeuralNet`` module for training and testing neural networks.
 
 Creating training/validation/test datasets
 ------------------------------------------
@@ -70,9 +70,9 @@ it will only selects the complexes whose IRMSD are lower than 4Å or larger than
 Creating neural network architecture
 ------------------------------------
 
-The architecture of the neural network has to be well defined before training. And DeepRank provides a very useful tool ``modelGenerator`` to facilitate this process.
+The architecture of the neural network has to be well defined before training and DeepRank provides a very useful tool ``modelGenerator`` to facilitate this process.
 
-Here is a simple example showing how to generate NN architecture,
+Here is a simple example showing how to generate NN architecture:
 
 >>> from deeprank.learn.modelGenerator import *
 >>>
@@ -139,7 +139,7 @@ Then we can start the training process,
 >>>             num_workers=1,
 >>>             hdf5='epoch_data_class.hdf5')
 
-We specify here the number of epoch, the fraction of data for training/validation/test sets, the batch size and the number of workers (CPU threads) in charge of batch preparation, and the output HDF5 file for training results. The model will be save to ``.pth.tar`` files, e.g. ``model_epoch_0001.pth.tar``.
+We specify here the number of epoch, the fraction of data for training/validation/test sets, the batch size and the number of workers (CPU threads) in charge of batch preparation, and the output HDF5 file for training results. The model will be saved to ``.pth.tar`` files, e.g. ``model_epoch_0001.pth.tar``.
 
 Regression with 3D CNN
 ^^^^^^^^^^^^^^^^^^^^^^
