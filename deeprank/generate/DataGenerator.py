@@ -1033,7 +1033,7 @@ class DataGenerator(object):
 
     def map_features(self, grid_info={},
                      cuda=False, gpu_block=None,
-                     cuda_kernel='/kernel_map.c',
+                     cuda_kernel='kernel_map.c',
                      cuda_func_name='gaussian',
                      try_sparse=True,
                      reset=False, use_tmpdir=False,
