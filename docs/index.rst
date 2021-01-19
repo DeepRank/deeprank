@@ -6,11 +6,13 @@
 DeepRank
 ========
 
-DeepRank is a general, configurable deep learning framework for data mining
+`DeepRank`_ is a general, configurable deep learning framework for data mining
 protein-protein interactions (PPIs) using 3D convolutional neural networks (CNNs).
 
 DeepRank contains useful APIs for pre-processing PPIs data, computing features and
 targets, as well as training and testing CNN models.
+
+.. _`DeepRank`: https://github.com/DeepRank/deeprank
 
 **DeepRank highlights**:
 

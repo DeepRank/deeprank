@@ -1,10 +1,6 @@
 Features
 ========
 
-
-.. automodule:: deeprank.features
-
-
 This module contains all the tools to compute feature values for molecular structure. Each submodule must be subclass ``deeprank.features.FeatureClass`` to inherit the export function. At the moment a few features have already been implemented. These are:
     - ``AtomicFeatures``:Coulomb, van der Waals interactions and atomic charges
     - ``BSA`` : Burried Surface area
@@ -22,22 +18,21 @@ Here are detailed the class in charge of feature calculations.
 Atomic Feature
 --------------
 
-.. automodule:: deeprank.features.AtomicFeature
+.. autoclass:: deeprank.features.AtomicFeature
     :members:
     :undoc-members:
 
-Burried Surface Area
---------------------
+Buried Surface Area
+-------------------
 
-.. automodule:: deeprank.features.BSA
+.. autoclass:: deeprank.features.BSA
     :members:
     :undoc-members:
-
 
 FullPSSM
 --------
 
-.. automodule:: deeprank.features.FullPSSM
+.. autoclass:: deeprank.features.FullPSSM
     :members:
     :undoc-members:
 
@@ -45,7 +40,7 @@ FullPSSM
 PSSM Information Content
 ------------------------
 
-.. automodule:: deeprank.features.PSSM_IC
+.. autoclass:: deeprank.features.PSSM_IC
     :members:
     :undoc-members:
 
@@ -53,7 +48,7 @@ PSSM Information Content
 Contact Residue Density
 -----------------------
 
-.. automodule:: deeprank.features.ResidueDensity
+.. autoclass:: deeprank.features.ResidueDensity
     :members:
     :undoc-members:
 
@@ -61,6 +56,6 @@ Contact Residue Density
 Generic Feature Class
 ---------------------
 
-.. automodule:: deeprank.features.FeatureClass
+.. autoclass:: deeprank.features.FeatureClass
     :members:
     :undoc-members:
