@@ -1,7 +1,7 @@
 import os
 import unittest
 from time import time
-
+import shutil
 from deeprank.generate import *
 
 
@@ -39,6 +39,8 @@ class TestGenerateData(unittest.TestCase):
         for h5, src in zip(self.h5file, self.pdb_source):
 
             database = DataGenerator(
+                chain1='C',
+                chain2='D',
                 pdb_source=src,
                 pdb_native=self.pdb_native,
                 pssm_source='./1AK4/pssm_new/',
@@ -105,6 +107,8 @@ class TestGenerateData(unittest.TestCase):
         # init the data assembler
 
         database = DataGenerator(
+            chain1='C',
+            chain2='D',
             pdb_source=src,
             pdb_native=self.pdb_native,
             pssm_source='./1AK4/pssm_new/',
@@ -131,7 +135,7 @@ class TestGenerateData(unittest.TestCase):
         for h5 in self.h5file:
 
             # init the data assembler
-            database = DataGenerator(
+            database = DataGenerator(chain1='C', chain2='D',
                 compute_targets=['deeprank.targets.binary_class'], hdf5=h5)
 
             t0 = time()
@@ -144,7 +148,7 @@ class TestGenerateData(unittest.TestCase):
     def test_3_add_unique_target(self):
         """"Add a unique target to all the confs."""
         for h5 in self.h5file:
-            database = DataGenerator(hdf5=h5)
+            database = DataGenerator(chain1='C', chain2='D', hdf5=h5)
             database.add_unique_target({'XX': 1.0})
 
     def test_4_add_feature(self):
@@ -154,6 +158,8 @@ class TestGenerateData(unittest.TestCase):
 
             # init the data assembler
             database = DataGenerator(
+                chain1='C',
+                chain2='D',
                 pdb_source=None,
                 pdb_native=None,
                 data_augmentation=None,
@@ -196,6 +202,8 @@ class TestGenerateData(unittest.TestCase):
                 os.remove(f)
 
         database = DataGenerator(
+            chain1='C',
+            chain2='D',
             pdb_source='./1AK4/decoys/',
             pdb_native=self.pdb_native,
             pssm_source='./1AK4/pssm_new/',
@@ -234,7 +242,9 @@ class TestGenerateData(unittest.TestCase):
             data_augmentation=1,
             compute_targets=['deeprank.targets.dockQ'],
             compute_features=['deeprank.features.AtomicFeature'],
-            hdf5='./1ak4_aligned_interface.hdf5')
+            hdf5='./1ak4_aligned_interface.hdf5',
+            chain1='C',
+            chain2='D')
 
         # create the database
         if not os.path.isfile(database.hdf5):
@@ -245,6 +255,39 @@ class TestGenerateData(unittest.TestCase):
         else:
             print('{:25s}'.format('Use existing database') + database.hdf5)
 
+    def test_7_realign(self):
+        '''Realign existing pdbs.'''
+
+        src_name = './1ak4.hdf5'
+        copy_name = './1ak4_aligned.hdf5'
+
+        os.remove(copy_name)
+        shutil.copy(src_name,copy_name)
+
+        database = DataGenerator(hdf5=copy_name, chain1='C', chain2='D')
+        database.realign_complexes(align={'axis':'z'})
+
+    def test_8_aug_data(self):
+
+        src_name = './1ak4.hdf5'
+        copy_name = './1ak4_aug.hdf5'
+
+        shutil.copy(src_name, copy_name)
+
+        database = DataGenerator(hdf5=copy_name, chain1='C', chain2='D')
+        database.aug_data(augmentation=2, keep_existing_aug=True)
+        grid_info = {
+            'number_of_points': [10, 10, 10],
+            'resolution': [3., 3., 3.],
+            'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
+            'feature': ['PSSM_ALA','RCD_total', 'bsa', 'charge',],
+        }
+        database.map_features(
+            grid_info,
+            try_sparse=True,
+            time=False,
+            prog_bar=False,
+        )
 
 if __name__ == "__main__":
 
@@ -256,3 +299,5 @@ if __name__ == "__main__":
     inst.test_4_add_feature()
     inst.test_5_align()
     inst.test_6_align_interface()
+    inst.test_7_realign()
+    inst.test_8_aug_data()

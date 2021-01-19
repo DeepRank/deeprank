@@ -3,22 +3,47 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to DeepRank's documentation!
-====================================
+DeepRank
+========
+
+DeepRank is a general, configurable deep learning framework for data mining
+protein-protein interactions (PPIs) using 3D convolutional neural networks (CNNs).
+
+DeepRank contains useful APIs for pre-processing PPIs data, computing features and
+targets, as well as training and testing CNN models.
+
+**DeepRank highlights**:
+
+- Predefined atom-level and residue-level PPI feature types
+   - *e.g. atomic density, vdw energy, residue contacts, PSSM, etc.*
+- Predefined target types
+   - *e.g. binary class, CAPRI categories, DockQ, RMSD, FNAT, etc.*
+- Flexible definition of both new features and targets
+- 3D grid feature mapping
+- Efficient data storage in HDF5 format
+- Support both classification and regression (based on PyTorch)
+
+Tutorial
+--------
 
 .. toctree::
    :maxdepth: 3
-   :caption: Contents:
 
-   intro
-   tutorial
-   tutorial_deeplearning
-   advTuto
+   tutorial1_installing
+   tutorial2_dataGeneration
+   tutorial3_learning
+   tutorial4_advanced
+
+API Reference
+-------------
+
+.. toctree::
+   :maxdepth: 3
+
    Documentation
 
-Indices and tables
-==================
+Indices
+-------
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`

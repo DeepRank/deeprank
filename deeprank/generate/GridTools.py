@@ -22,7 +22,7 @@ def logif(string, cond): return logger.info(string) if cond else None
 
 class GridTools(object):
 
-    def __init__(self, molgrp,
+    def __init__(self, molgrp, chain1, chain2,
                  number_of_points=30, resolution=1.,
                  atomic_densities=None, atomic_densities_mode='ind',
                  feature=None, feature_mode='ind',
@@ -33,6 +33,8 @@ class GridTools(object):
 
         Args:
             molgrp(str): name of the group of the molecule in the HDF5 file.
+            chain1 (str): First chain ID.
+            chain2 (str): Second chain ID.
             number_of_points(int, optional): number of points we want in
                 each direction of the grid.
             resolution(float, optional): distance(in Angs) between two points.
@@ -66,6 +68,10 @@ class GridTools(object):
         # mol and hdf5 file
         self.molgrp = molgrp
         self.mol_basename = molgrp.name
+
+        # chain IDs
+        self.chain1 = chain1
+        self.chain2 = chain2
 
         # hdf5 file to strore data
         self.hdf5 = self.molgrp.file
@@ -213,7 +219,7 @@ class GridTools(object):
         """Get the center of conact atoms."""
 
         contact_atoms = self.sqldb.get_contact_atoms(
-            cutoff=self.contact_distance)
+            cutoff=self.contact_distance, chain1=self.chain1, chain2=self.chain2)
 
         tmp = []
         for i in contact_atoms.values():
@@ -333,10 +339,11 @@ class GridTools(object):
 
         # get the contact atoms
         if only_contact:
-            index = self.sqldb.get_contact_atoms(cutoff=self.contact_distance)
+            index = self.sqldb.get_contact_atoms(cutoff=self.contact_distance,
+                chain1=self.chain1, chain2=self.chain2)
         else:
-            index = {"A": self.sqldb.get('rowID', chainID='A'),
-                     "B": self.sqldb.get('rowID', chainID='B')}
+            index = {self.chain1: self.sqldb.get('rowID', chainID=self.chain1),
+                     self.chain2: self.sqldb.get('rowID', chainID=self.chain2)}
 
         # loop over all the data we want
         for elementtype, vdw_rad in self.local_tqdm(
@@ -345,9 +352,9 @@ class GridTools(object):
             t0 = time()
 
             xyzA = np.array(self.sqldb.get(
-                'x,y,z', rowID=index["A"], element=elementtype))
+                'x,y,z', rowID=index[self.chain1], element=elementtype))
             xyzB = np.array(self.sqldb.get(
-                'x,y,z', rowID=index["B"], element=elementtype))
+                'x,y,z', rowID=index[self.chain2], element=elementtype))
 
             tprocess = time() - t0
 
@@ -406,8 +413,8 @@ class GridTools(object):
 
             # create the final grid : A and B
             elif mode == 'ind':
-                self.atdens[elementtype + '_chainA'] = atdensA
-                self.atdens[elementtype + '_chainB'] = atdensB
+                self.atdens[elementtype + '_chain1'] = atdensA
+                self.atdens[elementtype + '_chain2'] = atdensB
             else:
                 raise ValueError(f'Atomic density mode {mode} not recognized')
 
@@ -515,55 +522,51 @@ class GridTools(object):
             # xyz : 4 (chain x y z)
             # byte - residue : 3 (chain resSeq resName)
             # byte - atomic  : 4 (chain resSeq resName name)
-            # non xyz format deprecated?
-            if not isinstance(data[0], bytes):
-                feature_type = 'xyz'
-                ntext = 4
-            else:
-                try:
-                    float(data[0].split()[3])
-                    feature_type = 'residue'
-                    ntext = 3
-                except BaseException:
-                    feature_type = 'atomic'
-                    ntext = 4
+
+            # all the format are now xyz
+            feature_type = 'xyz'
+            ntext = 4
 
             # test if the transform is callable
             # and test it on the first line of the data
             # get the data on the first line
-            if feature_type != 'xyz':
-                data_test = data[0].split()
-                data_test = list(map(float, data_test[ntext:]))
-            else:
+            if data.shape[0] != 0:
+
                 data_test = data[0, ntext:]
 
-            # define the length of the output
-            if transform is None:
-                nFeat = len(data_test)
-            elif callable(transform):
-                nFeat = len(transform(data_test))
+                # define the length of the output
+                if transform is None:
+                    nFeat = len(data_test)
+                elif callable(transform):
+                    nFeat = len(transform(data_test))
+                else:
+                    print('Error transform in map_feature must be callable')
+                    return None
             else:
-                print('Error transform in map_feature must be callable')
-                return None
+                nFeat = 1
 
             # declare the dict
             # that will in fine holds all the data
             if nFeat == 1:
                 if self.feature_mode == 'ind':
-                    dict_data[feature_name + '_chainA'] = np.zeros(self.npts)
-                    dict_data[feature_name + '_chainB'] = np.zeros(self.npts)
+                    dict_data[feature_name + '_chain1'] = np.zeros(self.npts)
+                    dict_data[feature_name + '_chain2'] = np.zeros(self.npts)
                 else:
                     dict_data[feature_name] = np.zeros(self.npts)
-            else:
+            else: # do we need that ?!
                 for iF in range(nFeat):
                     if self.feature_mode == 'ind':
-                        dict_data[feature_name + '_chainA_%03d' %
+                        dict_data[feature_name + '_chain1_%03d' %
                                   iF] = np.zeros(self.npts)
-                        dict_data[feature_name + '_chainB_%03d' %
+                        dict_data[feature_name + '_chain2_%03d' %
                                   iF] = np.zeros(self.npts)
                     else:
                         dict_data[feature_name + '_%03d' %
                                   iF] = np.zeros(self.npts)
+
+            # skip empty features
+            if data.shape[0] == 0:
+                continue
 
             # rest the grid and get the x y z values
             if self.cuda:  # pragma: no cover
@@ -580,7 +583,7 @@ class GridTools(object):
                 # i.e chain x y z values
                 if feature_type == 'xyz':
 
-                    chain = ['A', 'B'][int(line[0])]
+                    chain = [self.chain1, self.chain2][int(line[0])]
                     pos = line[1:ntext]
                     feat_values = np.array(line[ntext:])
 
@@ -643,11 +646,12 @@ class GridTools(object):
                 # handle the mode
                 fname = feature_name
                 if self.feature_mode == "diff":
-                    coeff = {'A': 1, 'B': -1}[chain]
+                    coeff = {self.chain1: 1, self.chain2: -1}[chain]
                 else:
                     coeff = 1
                 if self.feature_mode == "ind":
-                    fname = feature_name + "_chain" + chain
+                    chain_name = {self.chain1: '1', self.chain2: '2'}[chain]
+                    fname = feature_name + "_chain" + chain_name
                 tprocess += time() - t0
 
                 t0 = time()

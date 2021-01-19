@@ -1,5 +1,5 @@
 Deep learning
-=======================
+=============
 
 .. automodule:: deeprank.learn
 
@@ -8,19 +8,21 @@ This module contains all the tools for deep learning in DeepRank. The two main m
 Example:
 
 >>> from deeprank.learn import *
->>> from model3d import cnn
+>>> from model3d import cnn_class
 >>>
 >>> database = '1ak4.hdf5'
 >>>
 >>> # declare the dataset instance
 >>> data_set = DataSet(database,
+>>>                    chain1='C',
+>>>                    chain2='D',
 >>>                    select_feature='all',
 >>>                    select_target='IRMSD',
 >>>                    dict_filter={'IRMSD':'<4. or >10.'})
 >>>
 >>>
 >>> # create the network
->>> model = NeuralNet(data_set, cnn, model_type='3d', task='class')
+>>> model = NeuralNet(data_set, cnn_class, model_type='3d', task='class')
 >>>
 >>> # start the training
 >>> model.train(nepoch = 250,divide_trainset=0.8, train_batch_size = 50, num_workers=8)
@@ -32,27 +34,24 @@ The details of the submodules are presented here. The two main ones are ``deepra
 
 :note: The module ``deeprank.learn.modelGenerator`` can automatically create the file defining the neural network architecture.
 
-DataSet : Create a torch dataset
----------------------------------
+DataSet: create a torch dataset
+-------------------------------
 
 .. automodule:: deeprank.learn.DataSet
     :members:
     :undoc-members:
 
 
-NeuralNet : perform deep learning
-----------------------------------
+NeuralNet: perform deep learning
+--------------------------------
 
 .. automodule:: deeprank.learn.NeuralNet
     :members:
     :undoc-members:
 
-modelGenerator : automatically generate NN file
-------------------------------------------------
+modelGenerator: generate NN architecture
+----------------------------------------
 
 .. automodule:: deeprank.learn.modelGenerator
     :members:
     :undoc-members:
-
-
-

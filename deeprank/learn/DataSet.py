@@ -25,6 +25,7 @@ from deeprank.tools import sparse
 class DataSet():
 
     def __init__(self, train_database, valid_database=None, test_database=None,
+                 chain1='A', chain2='B',
                  mapfly=True, grid_info=None,
                  use_rotation=None,
                  select_feature='all', select_target='DOCKQ',
@@ -52,6 +53,9 @@ class DataSet():
             test_database (list(str)): names of the hdf5 files used for
                 the test.
                 Example : ['7CEI.hdf5']
+
+            chain1 (str): first chain ID, defaults to 'A'
+            chain2 (str): second chain ID, defaults to 'B'
 
             mapfly (bool): do we compute the map in the batch
                 preparation or read them
@@ -123,6 +127,8 @@ class DataSet():
             >>> data_set = DataSet(train_database,
             >>>                    valid_database = None,
             >>>                    test_database = None,
+            >>>                    chain1='C',
+            >>>                    chain2='D',
             >>>                    grid_shape=(30,30,30),
             >>>                    select_feature = {
             >>>                       'AtomicDensities': 'all',
@@ -145,6 +151,10 @@ class DataSet():
 
         # allow for multiple database
         self.test_database = self._get_database_name(test_database)
+
+        # chainIDs
+        self.chain1 = chain1
+        self.chain2 = chain2
 
         # pdb selection
         self.use_rotation = use_rotation
@@ -254,10 +264,12 @@ class DataSet():
         self.check_hdf5_files(self.train_database)
 
         if self.valid_database:
-            self.valid_database = self.check_hdf5_files(self.valid_database)
+            self.valid_database = self.check_hdf5_files(
+                self.valid_database)
 
         if self.test_database:
-            self.test_database = self.check_hdf5_files(self.test_database)
+            self.test_database = self.check_hdf5_files(
+                self.test_database)
 
         # create the indexing system
         # alows to associate each mol to an index
@@ -288,13 +300,14 @@ class DataSet():
 
         logger.info('\n')
         logger.info("   Data Set Info:")
-        logger.info(f'   Training set        : {self.ntrain} conformations')
-        if self.data_augmentation is not None:
-            logger.info(
-                f'   Augmentation        : {self.data_augmentation} rotations')
-
-        logger.info(f'   Validation set      : {self.nvalid} conformations')
-        logger.info(f'   Test set            : {self.ntest} conformations')
+        logger.info(
+            f'   Augmentation        : {self.use_rotation} rotations')
+        logger.info(
+            f'   Training set        : {self.ntrain} conformations')
+        logger.info(
+            f'   Validation set      : {self.nvalid} conformations')
+        logger.info(
+            f'   Test set            : {self.ntest} conformations')
         logger.info(f'   Number of channels  : {self.input_shape[0]}')
         logger.info(f'   Grid Size           : {self.data_shape[1]}, '
                     f'{self.data_shape[2]}, {self.data_shape[3]}')
@@ -316,31 +329,36 @@ class DataSet():
         Returns:
             dict: {'mol':[fname,mol],'feature':feature,'target':target}
         """
-
         fname, mol, angle, axis = self.index_complexes[index]
-        print(fname, mol)
+        try:
 
-        if self.mapfly:
-            feature, target = self.map_one_molecule(fname, mol, angle, axis)
-        else:
-            feature, target = self.load_one_molecule(fname, mol)
+            if self.mapfly:
+                feature, target = self.map_one_molecule(
+                    fname, mol, angle, axis)
+            else:
+                feature, target = self.load_one_molecule(fname, mol)
 
-        if self.clip_features:
-            feature = self._clip_feature(feature)
+            if self.clip_features:
+                feature = self._clip_feature(feature)
 
-        if self.normalize_features:
-            feature = self._normalize_feature(feature)
+            if self.normalize_features:
+                feature = self._normalize_feature(feature)
 
-        if self.normalize_targets:
-            target = self._normalize_target(target)
+            if self.normalize_targets:
+                target = self._normalize_target(target)
 
-        if self.pair_chain_feature:
-            feature = self.make_feature_pair(feature, self.pair_chain_feature)
+            if self.pair_chain_feature:
+                feature = self.make_feature_pair(
+                    feature, self.pair_chain_feature)
 
-        if self.transform:
-            feature = self.convert2d(feature, self.proj2D)
+            if self.transform:
+                feature = self.convert2d(feature, self.proj2D)
 
-        return {'mol': [fname, mol], 'feature': feature, 'target': target}
+            return {'mol': [fname, mol], 'feature': feature, 'target': target}
+
+        except:
+            raise
+            print('Unable to load molecule %s from %s' % (mol, fname))
 
     @staticmethod
     def check_hdf5_files(database):
@@ -385,7 +403,8 @@ class DataSet():
         # Training dataset
         desc = '{:25s}'.format('   Train dataset')
         if self.tqdm:
-            data_tqdm = tqdm(self.train_database, desc=desc, file=sys.stdout)
+            data_tqdm = tqdm(self.train_database,
+                             desc=desc, file=sys.stdout)
         else:
             logger.info('   Train dataset')
             data_tqdm = self.train_database
@@ -400,11 +419,13 @@ class DataSet():
                 mol_names = self._select_pdb(mol_names)
                 for k in mol_names:
                     if self.filter(fh5[k]):
-                        self.index_complexes += [(fdata, k, None, None)]
+                        self.index_complexes += [(fdata,
+                                                  k, None, None)]
                         for irot in range(self.data_augmentation):
                             axis, angle = pdb2sql.transform.get_rot_axis_angle(
                                 self.rotation_seed)
-                            self.index_complexes += [(fdata, k, angle, axis)]
+                            self.index_complexes += [
+                                (fdata, k, angle, axis)]
                 fh5.close()
             except Exception:
                 logger.exception(f'Ignore file: {fdata}')
@@ -413,7 +434,8 @@ class DataSet():
         self.index_train = list(range(self.ntrain))
 
         if self.ntrain == 0:
-            raise ValueError('No avaiable training data after filtering')
+            raise ValueError(
+                'No avaiable training data after filtering')
 
         # Validation dataset
         if self.valid_database:
@@ -421,7 +443,7 @@ class DataSet():
             desc = '{:25s}'.format('   Validation dataset')
             if self.tqdm:
                 data_tqdm = tqdm(self.valid_database,
-                                desc=desc, file=sys.stdout)
+                                 desc=desc, file=sys.stdout)
             else:
                 data_tqdm = self.valid_database
                 logger.info('   Validation dataset')
@@ -470,7 +492,8 @@ class DataSet():
                     logger.exception(f'Ignore file: {fdata}')
 
         self.ntot = len(self.index_complexes)
-        self.index_test = list(range(self.ntrain + self.nvalid, self.ntot))
+        self.index_test = list(
+            range(self.ntrain + self.nvalid, self.ntot))
         self.ntest = self.ntot - self.ntrain - self.nvalid
 
     def _select_pdb(self, mol_names):
@@ -483,21 +506,25 @@ class DataSet():
             list: list of selected complexes
         """
 
+        fnames_original = list(
+            filter(lambda x: not re.search(r'_r\d+$', x), mol_names))
         if self.use_rotation is not None:
-            fnames_original = list(
-                filter(lambda x: not re.search(r'_r\d+$', x), mol_names))
             fnames_augmented = []
             # TODO if there is no augmentation data in dataaset,
             # the fnames_augmented should be 0, should report it.
             if self.use_rotation > 0:
                 for i in range(self.use_rotation):
                     fnames_augmented += list(filter(lambda x:
-                        re.search('_r%03d$' % (i + 1), x), mol_names))
+                                                    re.search('_r%03d$' % (i + 1), x), mol_names))
                 selected_mol_names = fnames_original + fnames_augmented
             else:
                 selected_mol_names = fnames_original
         else:
             selected_mol_names = mol_names
+            sample_id = fnames_original[0]
+            num_rotations = len(list((filter(lambda x:
+                                re.search(sample_id + '_r', x), mol_names))))
+            self.use_rotation = num_rotations
 
         return selected_mol_names
 
@@ -532,11 +559,13 @@ class DataSet():
                 ops = ['>', '<', '==', '<=', '>=']
                 new_cond_vals = cond_vals
                 for o in ops:
-                    new_cond_vals = new_cond_vals.replace(o, 'val' + o)
+                    new_cond_vals = new_cond_vals.replace(
+                        o, 'val' + o)
                 if not eval(new_cond_vals):
                     return False
             else:
-                raise ValueError('Conditions not supported', cond_vals)
+                raise ValueError(
+                    'Conditions not supported', cond_vals)
 
         return True
 
@@ -560,7 +589,7 @@ class DataSet():
         f5 = h5py.File(self.train_database[0], 'r')
         mol_name = list(f5.keys())[0]
         mapped_data = f5.get(mol_name + '/mapped_features/')
-        chain_tags = ['_chainA', '_chainB']
+        chain_tags = ['_chain1', '_chain2']
 
         # if we select all the features
         if self.select_feature == "all":
@@ -570,7 +599,8 @@ class DataSet():
 
             # loop over the feat types and add all the feat_names
             for feat_type, feat_names in mapped_data.items():
-                self.select_feature[feat_type] = [name for name in feat_names]
+                self.select_feature[feat_type] = [
+                    name for name in feat_names]
 
         # if a selection was made
         else:
@@ -630,7 +660,8 @@ class DataSet():
                         # (we probably relaod a pretrained model)
                         # and we simply append the feaature name
                         else:
-                            self.select_feature[feat_type].append(name)
+                            self.select_feature[feat_type].append(
+                                name)
 
         f5.close()
 
@@ -672,7 +703,8 @@ class DataSet():
                         self.select_feature['AtomicDensities'] = \
                             config.atom_vdw_radius_noH
                     elif feat_type == 'Features':
-                        self.select_feature[feat_type] = list(raw_data.keys())
+                        self.select_feature[feat_type] = list(
+                            raw_data.keys())
                     else:
                         raise KeyError(
                             f'Wrong feature type {feat_type}. '
@@ -719,7 +751,8 @@ class DataSet():
             logger.info('\nYour selection was:')
             for feat_type, feat in self.select_feature.items():
                 if feat_type not in list(mapgrp.keys()):
-                    logger.info('== \x1b[0;37;41m' + feat_type + '\x1b[0m')
+                    logger.info(
+                        '== \x1b[0;37;41m' + feat_type + '\x1b[0m')
                 else:
                     logger.info('== %s' % feat_type)
                     if isinstance(feat, str):
@@ -729,7 +762,7 @@ class DataSet():
                             logger.info('  -- %s' % f)
 
         logger.info("You don't need to specify _chainA _chainB for each feature. " +
-              "The code will append it automatically")
+                    "The code will append it automatically")
 
     def get_pairing_feature(self):
         """Creates the index of paired features."""
@@ -766,7 +799,8 @@ class DataSet():
         self.data_shape = feature.shape
 
         if self.pair_chain_feature:
-            feature = self.make_feature_pair(feature, self.pair_chain_feature)
+            feature = self.make_feature_pair(
+                feature, self.pair_chain_feature)
 
         if self.transform:
             feature = self.convert2d(feature, self.proj2D)
@@ -826,9 +860,11 @@ class DataSet():
 
             # get the feature/target
             if self.mapfly:
-                feature, target = self.map_one_molecule(fname, mol=molname)
+                feature, target = self.map_one_molecule(
+                    fname, mol=molname)
             else:
-                feature, target = self.load_one_molecule(fname, mol=molname)
+                feature, target = self.load_one_molecule(
+                    fname, mol=molname)
 
             # create the norm isntances at the first passage
             if first:
@@ -857,8 +893,10 @@ class DataSet():
                 self.param_norm['features'][ifeat].std = 1
 
             # store as array for fast access
-            self.feature_mean.append(self.param_norm['features'][ifeat].mean)
-            self.feature_std.append(self.param_norm['features'][ifeat].std)
+            self.feature_mean.append(
+                self.param_norm['features'][ifeat].mean)
+            self.feature_std.append(
+                self.param_norm['features'][ifeat].std)
 
         self.target_min = self.param_norm['targets'].min[0]
         self.target_max = self.param_norm['targets'].max[0]
@@ -876,7 +914,8 @@ class DataSet():
         for feat_type, feat_names in self.select_feature.items():
             self.param_norm['features'][feat_type] = {}
             for name in feat_names:
-                self.param_norm['features'][feat_type][name] = NormParam()
+                self.param_norm['features'][feat_type][name] = NormParam(
+                )
         self.param_norm['targets'][self.select_target] = MinMaxParam()
 
         # read the normalization
@@ -917,20 +956,25 @@ class DataSet():
                     mean = data['features'][feat_type][name].mean
                     var = data['features'][feat_type][name].var
                     if var == 0:
-                        logger.info('  : STD is null for %s in %s' % (name, f5))
-                    self.param_norm['features'][feat_type][name].add(mean, var)
+                        logger.info(
+                            '  : STD is null for %s in %s' % (name, f5))
+                    self.param_norm['features'][feat_type][name].add(
+                        mean, var)
 
             # handle the target
             minv = data['targets'][self.select_target].min
             maxv = data['targets'][self.select_target].max
-            self.param_norm['targets'][self.select_target].update(minv)
-            self.param_norm['targets'][self.select_target].update(maxv)
+            self.param_norm['targets'][self.select_target].update(
+                minv)
+            self.param_norm['targets'][self.select_target].update(
+                maxv)
 
         # process the std
         nfile = len(self.train_database)
         for feat_types, feat_dict in self.param_norm['features'].items():
             for feat in feat_dict:
-                self.param_norm['features'][feat_types][feat].process(nfile)
+                self.param_norm['features'][feat_types][feat].process(
+                    nfile)
                 if self.param_norm['features'][feat_types][feat].std == 0:
                     logger.info(
                         '  Final STD Null for %s/%s. Changed it to 1' %
@@ -958,7 +1002,8 @@ class DataSet():
             elif self.select_target in NA_list:
                 self.target_ordering = None
             else:
-                warnings.warn('  Target ordering unidentified. lower assumed')
+                warnings.warn(
+                    '  Target ordering unidentified. lower assumed')
                 self.target_ordering = 'lower'
 
     def backtransform_target(self, data):
@@ -1071,20 +1116,28 @@ class DataSet():
         # get the mol
         mol_data = fh5.get(mol)
 
+        # xue:
+        if 'mapped_features' not in mol_data.keys():
+            logger.error(f"xue: Error: mol: {mol} in {fname} does not have mapped_features ")
+            fh5.close()
+            sys.exit()
+
         # get the features
         feature = []
         for feat_type, feat_names in self.select_feature.items():
 
             # see if the feature exists
             if 'mapped_features/' + feat_type in mol_data.keys():
-                feat_dict = mol_data.get('mapped_features/' + feat_type)
+                feat_dict = mol_data.get(
+                    'mapped_features/' + feat_type)
             else:
                 logger.error(
                     f'Feature type {feat_type} not found in file {fname} '
                     f'for molecule {mol}.\n'
                     f'Possible feature types are :\n\t' +
-                    '\n\t'.join(list(mol_data['mapped_features'].keys()))
-                    )
+                    '\n\t'.join(
+                        list(mol_data['mapped_features'].keys()))
+                )
                 raise ValueError(feat_type, ' not supported')
 
             # loop through all the desired feat names
@@ -1099,9 +1152,10 @@ class DataSet():
                         f'{mol} and feature type {feat_type}.\n'
                         f'Possible feature are :\n\t' +
                         '\n\t'.join(list(
-                            mol_data['mapped_features/' + feat_type].keys()
-                            ))
-                        )
+                            mol_data['mapped_features/' +
+                                     feat_type].keys()
+                        ))
+                    )
 
                 # check its sparse attribute
                 # if true get a FLAN
@@ -1215,12 +1269,14 @@ class DataSet():
             raise ValueError('Operation not callable', op)
 
         nFeat = len(feature)
-        pair_indexes = list(np.arange(nFeat).reshape(int(nFeat / 2), 2))
+        pair_indexes = list(
+            np.arange(nFeat).reshape(int(nFeat / 2), 2))
 
         outtype = feature.dtype
         new_feat = []
         for ind in pair_indexes:
-            new_feat.append(op(feature[ind[0], ...], feature[ind[1], ...]))
+            new_feat.append(
+                op(feature[ind[0], ...], feature[ind[1], ...]))
 
         return np.array(new_feat).astype(outtype)
 
@@ -1247,7 +1303,8 @@ class DataSet():
 
             except BaseException:
 
-                raise ValueError("Grid points not found in the data file")
+                raise ValueError(
+                    "Grid points not found in the data file")
 
         else:
 
@@ -1289,7 +1346,7 @@ class DataSet():
         """
 
         sql = pdb2sql.interface(mol_data['complex'][()])
-        index = sql.get_contact_atoms()
+        index = sql.get_contact_atoms(chain1=self.chain1, chain2=self.chain2)
 
         if angle is not None:
             center = [np.mean(g) for g in grid]
@@ -1299,17 +1356,19 @@ class DataSet():
 
             # get pos of the contact atoms of correct type
             xyzA = np.array(sql.get(
-                'x,y,z', rowID=index['A'], element=elementtype))
+                'x,y,z', rowID=index[self.chain1], element=elementtype))
             xyzB = np.array(sql.get(
-                'x,y,z', rowID=index['B'], element=elementtype))
+                'x,y,z', rowID=index[self.chain2], element=elementtype))
 
             # rotate if necessary
             if angle is not None:
                 if xyzA != np.array([]):
-                    xyzA = pdb2sql.transform.rot_xyz_around_axis(xyzA, axis, angle, center)
+                    xyzA = pdb2sql.transform.rot_xyz_around_axis(
+                        xyzA, axis, angle, center)
 
                 if xyzB != np.array([]):
-                    xyzB = pdb2sql.transform.rot_xyz_around_axis(xyzB, axis, angle, center)
+                    xyzB = pdb2sql.transform.rot_xyz_around_axis(
+                        xyzB, axis, angle, center)
 
             # init the grid
             atdensA = np.zeros(npts)
@@ -1345,7 +1404,8 @@ class DataSet():
         """
 
         x0, y0, z0 = center
-        dd = np.sqrt((grid[0] - x0)**2 + (grid[1] - y0)**2 + (grid[2] - z0)**2)
+        dd = np.sqrt((grid[0] - x0)**2 +
+                     (grid[1] - y0)**2 + (grid[2] - z0)**2)
         dgrid = np.zeros(npts)
 
         dgrid[dd < vdw_radius] = np.exp(
@@ -1361,7 +1421,6 @@ class DataSet():
     def map_feature(self, feat_names, mol_data, grid, npts, angle, axis):
 
         __vectorize__ = False
-
 
         if angle is not None:
             center = [np.mean(g) for g in grid]
@@ -1382,14 +1441,15 @@ class DataSet():
             feat_value = data[:, 4]
 
             if angle is not None:
-                pos = pdb2sql.transform.rot_xyz_around_axis(pos, axis, angle, center)
+                pos = pdb2sql.transform.rot_xyz_around_axis(
+                    pos, axis, angle, center)
 
             if __vectorize__ or __vectorize__ == 'both':
 
                 for chainID in [0, 1]:
                     tmp_feat_vect[chainID] = np.sum(
-                        vmap(pos[chain == chainID,:],
-                        feat_value[chain == chainID]),
+                        vmap(pos[chain == chainID, :],
+                             feat_value[chain == chainID]),
                         0)
 
             if not __vectorize__ or __vectorize__ == 'both':
@@ -1431,7 +1491,8 @@ class DataSet():
         beta = 0.5 / (sigma**2)
         cutoff = 5. * beta
 
-        dd = np.sqrt((grid[0] - x0)**2 + (grid[1] - y0)**2 + (grid[2] - z0)**2)
+        dd = np.sqrt((grid[0] - x0)**2 +
+                     (grid[1] - y0)**2 + (grid[2] - z0)**2)
 
         dd[dd < cutoff] = value * np.exp(-beta * dd[dd < cutoff])
         dd[dd > cutoff] = 0
