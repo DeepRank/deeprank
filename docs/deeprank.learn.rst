@@ -1,5 +1,5 @@
-Deep learning
-=============
+Learning
+========
 
 .. automodule:: deeprank.learn
 
