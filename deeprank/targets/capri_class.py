@@ -7,7 +7,7 @@ from deeprank.targets import rmsd_fnat
 
 
 def __compute_target__(decoy, targrp):
-    """calculate CAPRI class.
+    """Calculate CAPRI class.
 
         CAPRI class name and ID:
             - 'high': 0

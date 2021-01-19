@@ -29,6 +29,8 @@ class Mock(MagicMock):
 
 
 MOCK_MODULES = [
+    'pdb2sql',
+    'pdb2sql.align',
     'numpy',
     'scipy',
     'h5py',
@@ -38,8 +40,10 @@ MOCK_MODULES = [
     'torch.utils.data',
     'matplotlib',
     'matplotlib.pyplot',
+    'matplotlib.ticker',
     'torch.autograd',
     'torch.nn',
+    'torch.nn.functional',
     'torch.optim',
     'torch.cuda',
     'tqdm']
@@ -135,7 +139,7 @@ else:
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.

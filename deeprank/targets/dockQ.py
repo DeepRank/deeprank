@@ -7,7 +7,7 @@ from deeprank.targets import rmsd_fnat
 
 
 def __compute_target__(decoy, targrp):
-    """calculate DOCKQ.
+    """Calculate DOCKQ.
 
     Args:
         decoy(bytes): pdb data of the decoy

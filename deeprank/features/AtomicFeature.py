@@ -44,28 +44,28 @@ class AtomicFeature(FeatureClass):
             verbose (bool): print or not.
 
         Examples:
-        >>> pdb = '1AK4_100w.pdb'
-        >>>
-        >>> # get the force field included in deeprank
-        >>> # if another FF has been used to compute the ref
-        >>> # change also this path to the correct one
-        >>> FF = pkg_resources.resource_filename(
-        >>>     'deeprank.features','') + '/forcefield/'
-        >>>
-        >>> # declare the feature calculator instance
-        >>> atfeat = AtomicFeature(pdb,
-        >>>    param_charge = FF + 'protein-allhdg5-4_new.top',
-        >>>    param_vdw    = FF + 'protein-allhdg5-4_new.param',
-        >>>    patch_file   = FF + 'patch.top')
-        >>>
-        >>> # assign parameters
-        >>> atfeat.assign_parameters()
-        >>>
-        >>> # only compute the pair interactions here
-        >>> atfeat.evaluate_pair_interaction(save_interactions=test_name)
-        >>>
-        >>> # close the db
-        >>> atfeat.sqldb._close()
+            >>> pdb = '1AK4_100w.pdb'
+            >>>
+            >>> # get the force field included in deeprank
+            >>> # if another FF has been used to compute the ref
+            >>> # change also this path to the correct one
+            >>> FF = pkg_resources.resource_filename(
+            >>>     'deeprank.features','') + '/forcefield/'
+            >>>
+            >>> # declare the feature calculator instance
+            >>> atfeat = AtomicFeature(pdb,
+            >>>    param_charge = FF + 'protein-allhdg5-4_new.top',
+            >>>    param_vdw    = FF + 'protein-allhdg5-4_new.param',
+            >>>    patch_file   = FF + 'patch.top')
+            >>>
+            >>> # assign parameters
+            >>> atfeat.assign_parameters()
+            >>>
+            >>> # only compute the pair interactions here
+            >>> atfeat.evaluate_pair_interaction(save_interactions=test_name)
+            >>>
+            >>> # close the db
+            >>> atfeat.sqldb._close()
         """
 
         super().__init__("Atomic")
@@ -975,7 +975,7 @@ if __name__ == '__main__':
     atfeat.assign_parameters()
     atfeat.evaluate_pair_interaction()
     atfeat.evaluate_charges(extend_contact_to_residue=True)
-    atfeat.sqldb.close()
+    atfeat.sqldb._close()
 
     # export in the hdf5 file
     pprint(atfeat.feature_data)

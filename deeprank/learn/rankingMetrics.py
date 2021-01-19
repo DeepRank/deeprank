@@ -35,9 +35,9 @@ def success(rs):
     """Success for positions ≤ k.
 
     Example:
-    >>> rs = [0, 0, 1, 0, 1, 0]
-    >>> success(rs)
-    [0, 0, 1, 1, 1, 1]
+        >>> rs = [0, 0, 1, 0, 1, 0]
+        >>> success(rs)
+        [0, 0, 1, 1, 1, 1]
 
     Args:
         rs (array): binary relevance array

@@ -25,8 +25,8 @@ class NormalizeData(object):
 
         Example:
 
-        >>> norm = NormalizeData('1ak4.hdf5')
-        >>> norm.get()
+            >>> norm = NormalizeData('1ak4.hdf5')
+            >>> norm.get()
         """
         self.fname = fname
         self.parameters = {'features': {}, 'targets': {}}

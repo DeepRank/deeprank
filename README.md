@@ -19,12 +19,17 @@ The documentation of the module can be found on readthedocs :
 
 Minimal information to install the module
 
+Installation with pypi:
 
--   clone the repository `git clone https://github.com/DeepRank/deeprank.git`
--   go there             `cd deeprank`
--   install the module   `pip install -e ./`
--   go int the test dir `cd test`
--   run the test suite `pytest`
+-   Install the module `pip install deeprank`
+
+Installation from GitHub repository:
+
+-   Clone the repository `git clone https://github.com/DeepRank/deeprank.git`
+-   Go there             `cd deeprank`
+-   Install the module   `pip install -e ./`
+-   Go into the test dir `cd test`
+-   Run the test suite `pytest`
 
 
 ## 2 . Tutorial
@@ -39,46 +44,64 @@ We give here the tutorial like introduction to the DeepRank machinery. More info
 The generation of the data require only require PDBs files of decoys and their native and the PSSM if needed. All the features/targets and mapped features onto grid points will be auomatically calculated and store in a HDF5 file.
 
 ```python
-from deeprank.generate import *
-from mpi4py import MPI
+from deeprank.generate import * 
+from mpi4py import MPI 
+ 
+comm = MPI.COMM_WORLD 
+ 
+# let's put this sample script in the test folder, so the working path will be deeprank/test/
+# name of the hdf5 to generate 
+h5file = './hdf5/1ak4.hdf5' 
+ 
+# for each hdf5 file where to find the pdbs 
+pdb_source = ['./1AK4/decoys/'] 
 
-comm = MPI.COMM_WORLD
 
-# adress of the BM4 folder
-BM4 = '/path/to/BM4/data/'
-
-# sources to assemble the data base
-pdb_source     = ['./1AK4/decoys/']
-pdb_native     = ['./1AK4/native/']
-pssm_source    = ['./1AK4/pssm_new/']
-
-# output file
-h5file = './1ak4.hdf5'
-
-#init the data assembler
-database = DataGenerator(pdb_source=pdb_source,
-                         pdb_native=pdb_native,
-                         pssm_source=pssm_source,
-                         data_augmentation = 1,
-                         compute_targets  = ['deeprank.targets.dockQ','deeprank.targets.binary_class'],
-                         compute_features = ['deeprank.features.AtomicFeature',
-                                             'deeprank.features.FullPSSM',
-                                             'deeprank.features.PSSM_IC',
-                                             'deeprank.features.BSA',
-                                             'deeprank.features.ResidueDensity'],
-                         hdf5=h5file,mpi_comm=comm)
-
-#create new files
-database.create_database(prog_bar=True)
-
-# map the features
-grid_info = {
-  'number_of_points' : [30,30,30],
-  'resolution' : [1.,1.,1.],
-  'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
-}
-
- database.map_features(grid_info,try_sparse=True,time=False,prog_bar=True)
+# where to find the native conformations 
+# pdb_native is only used to calculate i-RMSD, dockQ and so on. 
+# The native pdb files will not be saved in the hdf5 file 
+pdb_native = ['./1AK4/native/'] 
+ 
+ 
+# where to find the pssm 
+pssm_source = './1AK4/pssm_new/' 
+ 
+ 
+# initialize the database 
+database = DataGenerator(
+    chain1='C', chain2='D', 
+    pdb_source=pdb_source, 
+    pdb_native=pdb_native, 
+    pssm_source=pssm_source, 
+    data_augmentation=0, 
+    compute_targets=[ 
+        'deeprank.targets.dockQ', 
+        'deeprank.targets.binary_class'], 
+    compute_features=[ 
+        'deeprank.features.AtomicFeature', 
+        'deeprank.features.FullPSSM', 
+        'deeprank.features.PSSM_IC', 
+        'deeprank.features.BSA', 
+        'deeprank.features.ResidueDensity'], 
+    hdf5=h5file, 
+    mpi_comm=comm) 
+ 
+ 
+# create the database 
+# compute features/targets for all complexes 
+database.create_database(prog_bar=True) 
+ 
+ 
+# define the 3D grid 
+ grid_info = { 
+   'number_of_points' : [30,30,30], 
+   'resolution' : [1.,1.,1.], 
+   'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8}, 
+ } 
+ 
+# Map the features 
+database.map_features(grid_info,try_sparse=True, time=False, prog_bar=True) 
+ 
 ```
 
 This script can be exectuted using for example 4 MPI processes with the command:
@@ -116,25 +139,34 @@ The HDF5 files generated above can be used as input for deep learning experiment
 
 ```python
 from deeprank.learn import *
-from deeprank.learn.model3d import cnn as cnn3d
+from deeprank.learn.model3d import cnn_reg
 import torch.optim as optim
+import numpy as np
 
 # input database
 database = '1ak4.hdf5'
 
+# output directory
+out = './my_DL_test/'
+
 # declare the dataset instance
 data_set = DataSet(database,
-            grid_shape=(30,30,30),
-            select_feature={'AtomicDensities_ind' : 'all',
-                            'Feature_ind' : ['coulomb','vdwaals','charge','pssm'] },
+            chain1='C',
+            chain2='D',
+            grid_info={
+                'number_of_points': (10, 10, 10),
+                'resolution': (3, 3, 3)},
+            select_feature={
+                'AtomicDensities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
+                'Features': ['coulomb', 'vdwaals', 'charge', 'PSSM_*']},
             select_target='DOCKQ',
             normalize_features = True, normalize_targets=True,
             pair_chain_feature=np.add,
-            dict_filter={'IRMSD':'<4. or >10.'})
+            dict_filter={'DOCKQ':'<1'})
 
 
-# create the networkt
-model = NeuralNet(data_set,cnn3d,model_type='3d',task='reg',
+# create the network
+model = NeuralNet(data_set,cnn_reg,model_type='3d',task='reg',
                   cuda=False,plot=True,outdir=out)
 
 # change the optimizer (optional)

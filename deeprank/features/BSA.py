@@ -22,16 +22,16 @@ class BSA(FeatureClass):
         as a separate module. They can be installed using
         >>> pip install freesasa
 
-        Args :
+        Args:
             pdb_data (list(byte) or str): pdb data or pdb filename
             chain1 (str, optional): name of the first chain
             chain2 (str, optional): name of the second chain
 
-        Example :
-        >>> bsa = BSA('1AK4.pdb')
-        >>> bsa.get_structure()
-        >>> bsa.get_contact_residue_sasa()
-        >>> bsa.sql._close()
+        Example:
+            >>> bsa = BSA('1AK4.pdb')
+            >>> bsa.get_structure()
+            >>> bsa.get_contact_residue_sasa()
+            >>> bsa.sql._close()
         """
         self.pdb_data = pdb_data
         self.sql = pdb2sql.interface(pdb_data)
