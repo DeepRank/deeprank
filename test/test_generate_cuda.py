@@ -59,15 +59,15 @@ class TestGenerateCUDA(unittest.TestCase):
             # create new files
             if not os.path.isfile(database.hdf5):
                 t0 = time()
-                print('\nCreate new database : %s' % database.hdf5)
+                print('\nCreate new database: %s' % database.hdf5)
                 database.create_database()
                 print('--> Done in %f s.' % (time() - t0))
             else:
-                print('\nUse existing database : %s' % database.hdf5)
+                print('\nUse existing database: %s' % database.hdf5)
 
             # map these data
             t0 = time()
-            print('\nMap features in database : %s' % database.hdf5)
+            print('\nMap features in database: %s' % database.hdf5)
             database.map_features(
                 grid_info,
                 try_sparse=True,

@@ -8,47 +8,41 @@ class FeatureClass(object):
         Arguments
             feature_type(str): 'Atomic' or 'Residue'
 
-        Notes:
+        Note:
             Each subclass must compute:
 
-            - self.feature_data: dictionary of features in
-                human readable format, e.g.
-
-                for atomic features:
-                {'coulomb': data_dict_clb, 'vdwaals': data_dict_vdw}
-                    data_dict_clb = {atom_info: [values]}
-                        atom_info = (chainID, resSeq, resName, name)
-
-                for residue features:
-                {'PSSM_ALA': data_dict_pssmALA, ...}
-                    data_dict_pssmALA = {residue_info: [values]}
-                        residue_info = (chainID, resSeq, resName, name)
-
-            - self.feature_data_xyz: dictionary of features in
-                xyz-val format, e.g.
-
-                {'coulomb': data_dict_clb, 'vdwaals': data_dict_vdw}
-                    data_dict_clb = {xyz_info: [values]}
-                        xyz_info = (chainNum, x, y, z)
+            - self.feature_data: dictionary of features in human readable format, e.g.
+                - for atomic features:
+                    - {'coulomb': data_dict_clb, 'vdwaals': data_dict_vdw}
+                    - data_dict_clb = {atom_info: [values]}
+                    - atom_info = (chainID, resSeq, resName, name)
+                - for residue features:
+                    - {'PSSM_ALA': data_dict_pssmALA, ...}
+                    - data_dict_pssmALA = {residue_info: [values]}
+                    - residue_info = (chainID, resSeq, resName, name)
+            - self.feature_data_xyz: dictionary of features in xyz-val format, e.g.
+                - {'coulomb': data_dict_clb, 'vdwaals': data_dict_vdw}
+                - data_dict_clb = {xyz_info: [values]}
+                - xyz_info = (chainNum, x, y, z)
         """
-        
+
         self.type = feature_type
         self.feature_data = {}
         self.feature_data_xyz = {}
 
     def export_data_hdf5(self, featgrp):
         """Export the data in xyz-val format in an HDF5 file group.
-        
+
         Arguments:
             featgrp {[hdf5_group]} -- The hdf5 group of the feature
-        
-        Notes:
+
+        Note:
             - For atomic features, the format of the data must be:
                 {(chainID, resSeq, resName, name): [values]}
             - For residue features, the format must be:
                 {(chainID, resSeq, resName): [values]}
         """
-    
+
         # loop through the datadict and name
         for name, data in self.feature_data.items():
 
@@ -89,14 +83,14 @@ class FeatureClass(object):
             else:
                 featgrp.create_dataset(name + '_raw', data=ds)
 
-    
+
     def export_dataxyz_hdf5(self, featgrp):
         """Export the data in xyz-val format in an HDF5 file group.
-        
+
         Arguments:
             featgrp {[hdf5_group]} -- The hdf5 group of the feature
         """
-        
+
         # loop through the datadict and name
         for name, data in self.feature_data_xyz.items():
 
@@ -113,17 +107,17 @@ class FeatureClass(object):
     @staticmethod
     def get_residue_center(sql, centers=['CB','CA','mean'], res=None):
         """Computes the center of each residue by trying different options
-        
+
         Arguments:
             sql {pdb2sql} -- The pdb2sql instance
-        
+
         Keyword Arguments:
             centers {list} -- list of strings (default: {['CB','CA','mean']})
             res {list} -- list of residue to be considered ([[chainID, resSeq, resName]])
-        
+
         Raises:
             ValueError: [description]
-        
+
         Returns:
             [type] -- list(res), list(xyz)
         """
@@ -133,27 +127,27 @@ class FeatureClass(object):
         if res is None:
             res = [tuple(x) for x in sql.get('chainID,resSeq,resName')]
             res = sorted(set(res), key=res.index)
-            
-            
+
+
         # make sure that we have a list of res
         # even if ony 1 res was provided
         # res=[chainID, resSeq, resName] -> res=[[chainID, resSeq, resName]]
         elif not isinstance(res[0],list):
-            res = [res]            
-            
+            res = [res]
+
         # make sure that we have a list of possible centers
         if not isinstance(centers,list):
             centers = list(centers)
-        
+
         xyz = []
-        
+
         for r in res:
-            
+
             for ctr in centers:
-                
+
                 if ctr in ['CB','CA']:
-                    
-                    xyz_res = sql.get('x,y,z', 
+
+                    xyz_res = sql.get('x,y,z',
                                       chainID=r[0],
                                       resSeq=r[1],
                                       resName=r[2],
@@ -177,9 +171,8 @@ class FeatureClass(object):
 
                 else:
                     raise ValueError('Residue center not found')
-        
+
         if len(xyz) == 0:
             raise ValueError('Center not found')
 
         return res, xyz
-

@@ -11,7 +11,7 @@ class ResidueDensity(FeatureClass):
     def __init__(self, pdb_data, chain1='A', chain2='B'):
         """Compute the residue contacts between polar/apolar/charged residues.
 
-        Args :
+        Args:
             pdb_data (list(byte) or str): pdb data or pdb filename
             chain1 (str): First chain ID. Defaults to 'A'
             chain2 (str): Second chain ID. Defaults to 'B'

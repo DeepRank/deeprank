@@ -236,7 +236,7 @@ def plot_boxplot(dataFL, figname=None):
         Test	1PPE	1PPE_ranair-it0_2999	0	0.56486	50.17506
     """
 
-    print('\n --> Box Plot : ', figname, '\n')
+    print('\n --> Box Plot: ', figname, '\n')
 
     command = f'Rscript boxplot.R {dataFL} {figname}'
     print(command)
@@ -613,7 +613,7 @@ def plot_boxplot_r2py(df, figname=None, inverse=False):
 
     pandas2ri.activate()
 
-    print('\n --> Box Plot : ', figname, '\n')
+    print('\n --> Box Plot: ', figname, '\n')
 
     data = df
 

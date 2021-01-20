@@ -72,7 +72,7 @@ def visualize3Ddata(hdf5=None, mol_name=None, out=None):
     # loop through all the features
     for data_name in mapgrp.keys():
 
-        # create a dict of the feature {name : value}
+        # create a dict of the feature {name: value}
         featgrp = mapgrp[data_name]
         data_dict = {}
         for ff in featgrp.keys():

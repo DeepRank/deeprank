@@ -5,8 +5,8 @@ Tools
 
 This module contains a series of core tools used for the feature calculations in DeepRank. These tools are at the moment:
 
-    - sasa : a simple solvent surface area calculator
-    - sparse : a 3D sparse matrix engine
+    - sasa: a simple solvent surface area calculator
+    - sparse: a 3D sparse matrix engine
 
 
 

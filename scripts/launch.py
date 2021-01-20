@@ -58,9 +58,9 @@ def generate(LIST_NAME, clean=False):
 
         # map the features
         # grid_info = {
-        #     'number_of_points' : [30,30,30],
-        #     'resolution' : [1.,1.,1.],
-        #     'atomic_densities' : {'CA':3.5,'CB':3.5,'N':3.5,'O':3.5,'C':3.5},
+        #     'number_of_points': [30,30,30],
+        #     'resolution': [1.,1.,1.],
+        #     'atomic_densities': {'CA':3.5,'CB':3.5,'N':3.5,'O':3.5,'C':3.5},
         # }
 
         # t0 =time()

@@ -55,9 +55,9 @@ Example:
 >>>
 >>> # map the features
 >>> grid_info = {
->>>     'number_of_points' : [30,30,30],
->>>     'resolution' : [1.,1.,1.],
->>>     'atomic_densities' : {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
+>>>     'number_of_points': [30,30,30],
+>>>     'resolution': [1.,1.,1.],
+>>>     'atomic_densities': {'CA':3.5,'N':3.5,'O':3.5,'C':3.5},
 >>> }
 >>> database.map_features(grid_info,try_sparse=True,time=False,prog_bar=True)
 >>>
@@ -83,23 +83,23 @@ All the complexes contained in the dataset can be aligned similarly to facilitat
 >>>                          compute_targets=[ ... ], compute_features=[ ... ], ... )
 
 
-Other options are possbile, for example if you would like to have the alignement done only using a subpart of the complex, say the chains A and B you can use :
+Other options are possbile, for example if you would like to have the alignement done only using a subpart of the complex, say the chains A and B you can use:
 
 >>> database = DataGenerator(chain1='C',chain2='D',
 >>>                          pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
 >>>                          align={"axis":'z', "selection": {"chainID":["A","B"]} }, data_augmentation=2,
 >>>                          compute_targets=[ ... ], compute_features=[ ... ], ... )
 
-All the selection offered by `pdb2sql` can be used in the `align` dictionnary e.g. : "resId":[1,2,3], "resName":['VAL','LEU'], ... Only the atoms selected will be aligned in the give direction.
+All the selection offered by `pdb2sql` can be used in the `align` dictionnary e.g.: "resId":[1,2,3], "resName":['VAL','LEU'], ... Only the atoms selected will be aligned in the give direction.
 
-You can also try to align the interface between two chains in a given plane. This can be done using :
+You can also try to align the interface between two chains in a given plane. This can be done using:
 
 >>> database = DataGenerator(chain1='C',chain2='D',
 >>>                          pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,
 >>>                          align={"plane":'xy', "selection":"interface"}, data_augmentation=2,
 >>>                          compute_targets=[ ... ], compute_features=[ ... ], ... )
 
-which by default will use the interface between the first two chains. If you have more than two chains in the complex and want to specify which chains are forming the interface to be aligned you can use :
+which by default will use the interface between the first two chains. If you have more than two chains in the complex and want to specify which chains are forming the interface to be aligned you can use:
 
 >>> database = DataGenerator(chain1='C',chain2='D',
 >>>                          pdb_source=pdb_source, pdb_native=pdb_native, pssm_source=pssm_source,

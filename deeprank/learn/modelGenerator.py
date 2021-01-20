@@ -325,7 +325,7 @@ class conv(object):
             kernel_size (int, optional): kernel size
             post (str, optional): post process of the data
 
-        Example :
+        Example:
 
         >>> conv_layers.append(conv(output_size=4,kernel_size=2,post='relu'))
         """
@@ -385,7 +385,7 @@ class pool(object):
             kernel_size (int, optional): kernel size
             post (str, optional): post process of the data
 
-        Example :
+        Example:
 
         >>> conv_layers.append(pool(kernel_size=2))
         """
@@ -434,7 +434,7 @@ class dropout(object):
         Args:
             percent (float): percent of dropout
 
-        Example :
+        Example:
 
         >>> fc_layers.append(dropout(precent=0.25))
         """
@@ -477,7 +477,7 @@ class fc(object):
             output_size (int, optional): output size
             post (str, optional): post process of the data
 
-        Example :
+        Example:
 
         >>> fc_layers.append(fc(output_size=84,post='relu'))
         """

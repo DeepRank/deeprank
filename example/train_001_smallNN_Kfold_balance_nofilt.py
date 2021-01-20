@@ -101,10 +101,10 @@ def n_split(array, n, random = True):
     np.random.shuffle(array)
 
     n_cases = len(array)
-    n_test = floor(n_cases/10) # 10% of the cases for testing 
+    n_test = floor(n_cases/10) # 10% of the cases for testing
     n_valid = floor(n_cases/10) # 10% of the cases for validation
     n_train = n_cases - n_test - n_valid # the rest for training
-    n = int(n) 
+    n = int(n)
     test  = array[(n-1)*n_test: n*n_test] # the set of test cases will iterate through the 10 loops
     before_test = array[:(n-1)*n_test] # the cases before the test cases
     after_test = array[n*n_test:] # the cases after the test cases
@@ -114,7 +114,7 @@ def n_split(array, n, random = True):
     before_valid = train_valid[:start_val*n_valid]
     after_valid = train_valid[(start_val+1)*n_valid:]
     train = np.concatenate((before_valid, after_valid))
-    
+
     return train, valid, test
 
 def write_train_valid_testFLs (train_database, valid_database, test_database, outDIR):
@@ -157,10 +157,10 @@ def main():
                 test_database = test_database,
                 mapfly=False,
                 use_rotation=0,
-                #grid_info = {'number_of_points':[6, 6, 6], 'resolution' : [5,5,5]},
+                #grid_info = {'number_of_points':[6, 6, 6], 'resolution': [5,5,5]},
 
-                #            select_feature={'AtomicDensities' : {'CA':1.7, 'C':1.7, 'N':1.55, 'O':1.52},
-    #                			'Features'        : ['coulomb','vdwaals','charge','PSSM_*'] },
+                #            select_feature={'AtomicDensities': {'CA':1.7, 'C':1.7, 'N':1.55, 'O':1.52},
+    #                			'Features'       : ['coulomb','vdwaals','charge','PSSM_*'] },
                 select_feature = 'all',
                 #select_feature = {'Feature_ind':['coulomb']},
                 select_target='BIN_CLASS',
@@ -170,13 +170,13 @@ def main():
                 clip_features=False,
                 pair_chain_feature=np.add)
                 #dict_filter={'DOCKQ':'>0.01', 'IRMSD':'<=4 or >10'}
-    
+
     weights = [1.0/(3343981-237480), 1.0/237480]
     class_weights = torch.FloatTensor(weights).cuda()
     # create the network
     model = NeuralNet(data_set=data_set,
                     model=cnn3d,
-                    class_weights = class_weights,  
+                    class_weights = class_weights,
                     model_type='3d',
                     task='class',
                     pretrained_model=None,

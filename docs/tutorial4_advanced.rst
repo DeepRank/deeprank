@@ -40,11 +40,11 @@ We then have to define the class and its initialization. Here we will simply ini
 >>>         for key,xyz in zip(ca_keys,ca_xyz):
 >>>
 >>>             # human readable
->>>             # { (chainID,resName,resSeq,name) : [val] }
+>>>             # { (chainID,resName,resSeq,name): [val] }
 >>>             hread[tuple(key)] = [1.0]
 >>>
 >>>             # xyz-val
->>>             # { (0|1,x,y,z) : [val] }
+>>>             # { (0|1,x,y,z): [val] }
 >>>             chain = [{'A':0,'B':1}[key[0]]]
 >>>             k = tuple( chain + xyz)
 >>>             xyzval[k] = [1.0]

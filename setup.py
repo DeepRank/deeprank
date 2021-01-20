@@ -31,11 +31,11 @@ setup(
     license="Apache Software License 2.0",
     keywords='deeprank',
     classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: Apache Software License',
-        'Natural Language :: English',
-        'Programming Language :: Python :: 3.7',
+        'Development Status:: 3 - Alpha',
+        'Intended Audience:: Science/Research',
+        'License:: OSI Approved:: Apache Software License',
+        'Natural Language:: English',
+        'Programming Language:: Python:: 3.7',
     ],
     install_requires=[
         'numpy >= 1.13',

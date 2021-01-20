@@ -7,7 +7,7 @@ class SASA(object):
     def __init__(self, pdbfile):
         """Simple class that computes Surface Accessible Solvent Area.
 
-        The method follows some of the approaches presented in :
+        The method follows some of the approaches presented in:
 
         Solvent accessible surface area approximations for rapid and
         accurate protein structure prediction
