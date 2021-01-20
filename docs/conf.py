@@ -29,6 +29,7 @@ class Mock(MagicMock):
 
 
 MOCK_MODULES = [
+    'freesasa',
     'pdb2sql',
     'pdb2sql.align',
     'numpy',
@@ -38,6 +39,7 @@ MOCK_MODULES = [
     'torch',
     'torch.utils',
     'torch.utils.data',
+    'torchsummary',
     'matplotlib',
     'matplotlib.pyplot',
     'matplotlib.ticker',

@@ -403,15 +403,15 @@ class GridTools(object):
                 for pos in xyzB:
                     atdensB += self.densgrid(pos, vdw_rad)
 
-            # create the final grid : A - B
+            # create the final grid: A - B
             if mode == 'diff':
                 self.atdens[elementtype] = atdensA - atdensB
 
-            # create the final grid : A + B
+            # create the final grid: A + B
             elif mode == 'sum':
                 self.atdens[elementtype] = atdensA + atdensB
 
-            # create the final grid : A and B
+            # create the final grid: A and B
             elif mode == 'ind':
                 self.atdens[elementtype + '_chain1'] = atdensA
                 self.atdens[elementtype + '_chain2'] = atdensB
@@ -510,7 +510,7 @@ class GridTools(object):
             if feature_name in featgrp.keys():
                 data = featgrp[feature_name][:]
             else:
-                print('Error Feature not found \n\tPossible features : ' +
+                print('Error Feature not found \n\tPossible features: ' +
                       ' | '.join(featgrp.keys()))
                 raise ValueError(
                     'feature %s  not found in the file' % (feature_name))
@@ -519,9 +519,9 @@ class GridTools(object):
             # or a byte format
             # define how many elements (ntext)
             # are present before the feature values
-            # xyz : 4 (chain x y z)
-            # byte - residue : 3 (chain resSeq resName)
-            # byte - atomic  : 4 (chain resSeq resName name)
+            # xyz: 4 (chain x y z)
+            # byte - residue: 3 (chain resSeq resName)
+            # byte - atomic: 4 (chain resSeq resName name)
 
             # all the format are now xyz
             feature_type = 'xyz'
@@ -620,9 +620,9 @@ class GridTools(object):
 
                     # check if  the resname correspond
                     if len(sql_resName) == 0:
-                        print('Error : SQL query returned empty list')
-                        print('Tip   : Make sure the parameter file ')
-                        print('Tip   : corresponds to the pdb file %s' %
+                        print('Error: SQL query returned empty list')
+                        print('Tip  : Make sure the parameter file ')
+                        print('Tip  : corresponds to the pdb file %s' %
                               (self.sqldb.pdbfile))
                         sys.exit()
                     else:
@@ -630,9 +630,9 @@ class GridTools(object):
 
                     if resName != sql_resName:
                         print('Residue Name Error in the Feature file ')
-                        print('Feature File : chain %s resNum %s  resName %s' %
+                        print('Feature File: chain %s resNum %s  resName %s' %
                               (chain, resNum, resName))
-                        print('SQL data     : chain %s resNum %s  resName %s' %
+                        print('SQL data    : chain %s resNum %s  resName %s' %
                               (chain, resNum, sql_resName))
                         sys.exit()
 

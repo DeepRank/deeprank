@@ -18,44 +18,59 @@ Here are detailed the class in charge of feature calculations.
 Atomic Feature
 --------------
 
-.. autoclass:: deeprank.features.AtomicFeature
+.. automodule:: deeprank.features.AtomicFeature
     :members:
     :undoc-members:
+    :private-members:
+
+.. autofunction:: deeprank.features.AtomicFeature.__compute_feature__
 
 Buried Surface Area
 -------------------
 
-.. autoclass:: deeprank.features.BSA
+.. automodule:: deeprank.features.BSA
     :members:
     :undoc-members:
+    :private-members:
+
+.. autofunction:: deeprank.features.BSA.__compute_feature__
 
 FullPSSM
 --------
 
-.. autoclass:: deeprank.features.FullPSSM
+.. automodule:: deeprank.features.FullPSSM
     :members:
     :undoc-members:
+    :private-members:
+
+.. autofunction:: deeprank.features.FullPSSM.__compute_feature__
 
 
 PSSM Information Content
 ------------------------
 
-.. autoclass:: deeprank.features.PSSM_IC
+.. automodule:: deeprank.features.PSSM_IC
     :members:
     :undoc-members:
+    :private-members:
+
+.. autofunction:: deeprank.features.PSSM_IC.__compute_feature__
 
 
 Contact Residue Density
 -----------------------
 
-.. autoclass:: deeprank.features.ResidueDensity
+.. automodule:: deeprank.features.ResidueDensity
     :members:
     :undoc-members:
+    :private-members:
 
+.. autofunction:: deeprank.features.ResidueDensity.__compute_feature__
 
 Generic Feature Class
 ---------------------
 
-.. autoclass:: deeprank.features.FeatureClass
+.. automodule:: deeprank.features.FeatureClass
     :members:
     :undoc-members:
+    :private-members:

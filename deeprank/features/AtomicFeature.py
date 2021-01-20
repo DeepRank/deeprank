@@ -24,14 +24,14 @@ class AtomicFeature(FeatureClass):
             param_charge (str): file name of the force field file
                 containing the charges e.g. protein-allhdg5.4_new.top.
                 Must be of the format:
-                    * CYM  atom O   type=O      charge=-0.500 end
-                    * ALA    atom N   type=NH1     charge=-0.570 end
+                * CYM  atom O   type=O      charge=-0.500 end
+                * ALA    atom N   type=NH1     charge=-0.570 end
 
             param_vdw (str): file name of the force field containing
                 vdw parameters e.g. protein-allhdg5.4_new.param.
                 Must be of the format:
-                    * NONBonded  CYAA    0.105   3.750       0.013    3.750
-                    * NONBonded  CCIS    0.105   3.750       0.013    3.750
+                * NONBonded  CYAA    0.105   3.750       0.013    3.750
+                * NONBonded  CCIS    0.105   3.750       0.013    3.750
 
             patch_file (str): file name of a valid patch file for
                 the parameters e.g. patch.top.
@@ -112,11 +112,11 @@ class AtomicFeature(FeatureClass):
     def read_charge_file(self):
         """Read the .top file given in entry.
 
-        This function creates :
+        This function creates:
 
-        - self.charge : dictionary  {(resname,atname):charge}
-        - self.valid_resnames : list ['VAL','ALP', .....]
-        - self.at_name_type_convertor : dict {(resname,atname):attype}
+        - self.charge: dictionary  {(resname,atname):charge}
+        - self.valid_resnames: list ['VAL','ALP', .....]
+        - self.at_name_type_convertor: dict {(resname,atname):attype}
         """
 
         with open(self.param_charge) as f:
@@ -159,8 +159,8 @@ class AtomicFeature(FeatureClass):
 
         This function creates
 
-            - self.patch_charge : Dict {(resName,atName) : charge}
-            - self.patch_type   : Dict {(resName,atName) : type}
+            - self.patch_charge: Dict {(resName,atName): charge}
+            - self.patch_type : Dict {(resName,atName): type}
         """
 
         with open(self.patch_file) as f:
@@ -197,7 +197,7 @@ class AtomicFeature(FeatureClass):
 
         This function creates
 
-            - self.vdw : dictionary {attype:[E1,S1]}
+            - self.vdw: dictionary {attype:[E1,S1]}
         """
 
         with open(self.param_vdw) as f:

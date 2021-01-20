@@ -60,12 +60,12 @@ class DataGenerator(object):
             compute_features (list(str), optional): List of python files computing the features
             data_augmentation (int, optional): Number of rotation performed one each complex
             hdf5 (str, optional): name of the hdf5 file where the data is saved, default to 'database.h5'
-            mpi_comm (MPI_COMM) : MPI COMMUNICATOR
+            mpi_comm (MPI_COMM): MPI COMMUNICATOR
 
         Raises:
             NotADirectoryError: if the source are not found
 
-        Example :
+        Example:
 
             >>> from deeprank.generate import *
             >>> # sources to assemble the data base
@@ -189,7 +189,7 @@ class DataGenerator(object):
         Raises:
             ValueError: If creation of the group errored.
 
-        Example :
+        Example:
 
         >>> # sources to assemble the data base
         >>> pdb_source     = ['./1AK4/decoys/']
@@ -551,9 +551,9 @@ class DataGenerator(object):
             >>> database = DataGenerator(h5='database.h5')
             >>> database.aug_data(augmentation=3, append=True)
             >>> grid_info = {
-            >>>     'number_of_points' : [30,30,30],
-            >>>     'resolution' : [1.,1.,1.],
-            >>>     'atomic_densities' : {'C':1.7, 'N':1.55, 'O':1.52, 'S':1.8},
+            >>>     'number_of_points': [30,30,30],
+            >>>     'resolution': [1.,1.,1.],
+            >>>     'atomic_densities': {'C':1.7, 'N':1.55, 'O':1.52, 'S':1.8},
             >>>     }
             >>> database.map_features(grid_info)
         """
@@ -783,7 +783,7 @@ class DataGenerator(object):
         created from decoys or natives
 
         Args:
-            targdict (dict): Example : {'DOCKQ':1.0}
+            targdict (dict): Example: {'DOCKQ':1.0}
 
         >>> database = DataGenerator(hdf5='1ak4.hdf5')
         >>> database.add_unique_target({'DOCKQ':1.0})
@@ -807,7 +807,7 @@ class DataGenerator(object):
         Args:
             prog_bar (bool, optional): Use tqdm
 
-        Example :
+        Example:
 
         >>> h5file = '1ak4.hdf5'
         >>>
@@ -889,7 +889,7 @@ class DataGenerator(object):
         Raises:
             ValueError: If no PSSM detected
 
-        Example :
+        Example:
 
         >>> database = DataGenerator(hdf5='1ak4.hdf5')
         >>> # if comute_features and pssm_source are not specified
@@ -1061,16 +1061,16 @@ class DataGenerator(object):
             grid_prog_bar (bool, optional): use tqdm for each grid
             remove_error (bool, optional): remove the data that errored
 
-        Example :
+        Example:
 
         >>> #init the data assembler
         >>> database = DataGenerator(hdf5='1ak4.hdf5')
         >>>
         >>> # map the features
         >>> grid_info = {
-        >>>     'number_of_points' : [30,30,30],
-        >>>     'resolution' : [1.,1.,1.],
-        >>>     'atomic_densities' : {'C':1.7, 'N':1.55, 'O':1.52, 'S':1.8},
+        >>>     'number_of_points': [30,30,30],
+        >>>     'resolution': [1.,1.,1.],
+        >>>     'atomic_densities': {'C':1.7, 'N':1.55, 'O':1.52, 'S':1.8},
         >>> }
         >>>
         >>> database.map_features(grid_info,try_sparse=True,time=False,prog_bar=True)
@@ -1101,7 +1101,7 @@ class DataGenerator(object):
         ################################################################
         # Check grid_info
         ################################################################
-        # fills in the grid data if not provided : default = NONE
+        # fills in the grid data if not provided: default = NONE
         grid_info_ref = copy.deepcopy(grid_info)
         grinfo = ['number_of_points', 'resolution']
         for gr in grinfo:
@@ -1112,7 +1112,7 @@ class DataGenerator(object):
         if 'atomic_densities' not in grid_info:
             grid_info['atomic_densities'] = None
 
-        # fills in the features mode if somes are missing : default = IND
+        # fills in the features mode if somes are missing: default = IND
         modes = ['atomic_densities_mode', 'feature_mode']
         for m in modes:
             if m not in grid_info:
@@ -1150,7 +1150,7 @@ class DataGenerator(object):
         mol_tqdm = tqdm(mol_names, desc=desc, disable=not prog_bar)
 
         if not prog_bar:
-            self.logger.info(f'{desc} : {self.hdf5}')
+            self.logger.info(f'{desc}: {self.hdf5}')
 
         # loop over the data files
         for mol in mol_tqdm:
@@ -1295,10 +1295,10 @@ class DataGenerator(object):
             from kernel_tuner import tune_kernel
         except BaseException:
             print(
-                'Install the Kernel Tuner : \n \t\t pip install kernel_tuner')
+                'Install the Kernel Tuner: \n \t\t pip install kernel_tuner')
             print('http://benvanwerkhoven.github.io/kernel_tuner/')
 
-        # fills in the grid data if not provided : default = NONE
+        # fills in the grid data if not provided: default = NONE
         grinfo = ['number_of_points', 'resolution']
         for gr in grinfo:
             if gr not in grid_info:
@@ -1369,7 +1369,7 @@ class DataGenerator(object):
 
         from time import time
 
-        # fills in the grid data if not provided : default = NONE
+        # fills in the grid data if not provided: default = NONE
         grinfo = ['number_of_points', 'resolution']
         for gr in grinfo:
             if gr not in grid_info:
@@ -1406,8 +1406,8 @@ class DataGenerator(object):
         #  get the grid
         gpu_grid = [int(np.ceil(n / b))
                     for b, n in zip(gpu_block, grid_info['number_of_points'])]
-        print('GPU BLOCK :', gpu_block)
-        print('GPU GRID  :', gpu_grid)
+        print('GPU BLOCK:', gpu_block)
+        print('GPU GRID :', gpu_grid)
 
         xyz_center = np.random.rand(500, 3).astype(np.float32)
         alpha = np.float32(1)
@@ -1417,7 +1417,7 @@ class DataGenerator(object):
             cuda_func(alpha, x0, y0, z0, x_gpu, y_gpu, z_gpu, grid_gpu,
                       block=tuple(gpu_block), grid=tuple(gpu_grid))
 
-        print('Done in : %f ms' % ((time() - t0) * 1000))
+        print('Done in: %f ms' % ((time() - t0) * 1000))
 
 # ====================================================================================
 #
@@ -1518,9 +1518,9 @@ class DataGenerator(object):
         """Compute the features.
 
         Args:
-            feat_list (list(str)): list of function name,
-                    e.g., ['deeprank.features.ResidueDensity',
-                            'deeprank.features.PSSM_IC']
+            feat_list (list(str)): list of function name, e.g.,
+                ['deeprank.features.ResidueDensity',
+                'deeprank.features.PSSM_IC']
             pdb_data (bytes): PDB translated in bytes
             featgrp (str): name of the group where to store the xyz feature
             featgrp_raw (str): name of the group where to store the raw feature
@@ -1685,7 +1685,7 @@ class DataGenerator(object):
             name (str): name of the dataset
             axis (list(float)): axis of rotation
             angle (float): angle of rotation
-            dict_align (dict) : dict for alignement of the original pdb
+            dict_align (dict): dict for alignement of the original pdb
 
         Returns:
             list(float): center of the molecule
@@ -1724,7 +1724,7 @@ class DataGenerator(object):
             axis (list(float)): axis of rotation
             angle (float): angle of rotation
             center (list(float)): center of rotation
-            feat_name (str) : name of the feature to rotate or 'all'
+            feat_name (str): name of the feature to rotate or 'all'
         """
         if feat_name == 'all':
             feat = list(molgrp['features'].keys())

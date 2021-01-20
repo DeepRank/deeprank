@@ -119,7 +119,7 @@ class MetaQNN(object):
     #########################################
     def get_new_random_model(self):
 
-        print('QNN : Generate new model')
+        print('QNN: Generate new model')
         # number of conv/fc layers
         nconv = np.random.choice(self.num_conv_layers)
         nfc = np.random.choice(self.num_fc_layers)
@@ -224,7 +224,7 @@ class MetaQNN(object):
     # load the data set in memory only once
     def load_dataset(self, database, feature='all', target='DOCKQ'):
 
-        print('QNN : Load data set')
+        print('QNN: Load data set')
         self.data_set = DataSet(database,
                                 select_feature=feature,
                                 select_target=target,
@@ -235,7 +235,7 @@ class MetaQNN(object):
 
     def train_model(self, cuda=False, ngpu=0):
 
-        print('QNN : Train model')
+        print('QNN: Train model')
         from .model3d import cnn
 
         # create the ConvNet

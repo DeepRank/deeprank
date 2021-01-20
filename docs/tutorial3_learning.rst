@@ -95,7 +95,7 @@ Here is a simple example showing how to generate NN architecture:
 
 It will print out the human readable summary of the architecture,
 
-.. code-block::
+.. code-block:: python
 
     #----------------------------------------------------------------------
     # Network Structure

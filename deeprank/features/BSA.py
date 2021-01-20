@@ -116,7 +116,7 @@ class BSA(FeatureClass):
             # define the bsa
             bsa = asa_unbound - asa_complex
 
-            # define the xyz key : (chain,x,y,z)
+            # define the xyz key: (chain,x,y,z)
             chain = {self.chain1: 0, self.chain2: 1}[res[0]]
 
             # get the center
