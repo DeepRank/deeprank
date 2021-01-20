@@ -39,7 +39,7 @@ API Reference
 .. toctree::
    :maxdepth: 3
 
-   documentation
+   Documentation
 
 Indices
 -------
