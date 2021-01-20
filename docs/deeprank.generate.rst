@@ -113,6 +113,7 @@ DataGenerator
     :members:
     :undoc-members:
     :show-inheritance:
+    :private-members:
 
 NormalizeData
 ----------------------------------------
@@ -120,6 +121,7 @@ NormalizeData
 .. automodule:: deeprank.generate.NormalizeData
     :members:
     :undoc-members:
+    :private-members:
 
 GridTools
 ------------------------------------
@@ -127,3 +129,4 @@ GridTools
 .. automodule:: deeprank.generate.GridTools
     :members:
     :undoc-members:
+    :private-members:

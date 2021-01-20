@@ -18,6 +18,7 @@ Solvent Accessible Surface Area
 .. automodule:: deeprank.tools.sasa
     :members:
     :undoc-members:
+    :private-members:
 
 
 Sparse 3D Matrix
@@ -26,3 +27,4 @@ Sparse 3D Matrix
 .. automodule:: deeprank.tools.sparse
     :members:
     :undoc-members:
+    :private-members:

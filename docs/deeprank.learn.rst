@@ -40,6 +40,7 @@ DataSet: create a torch dataset
 .. automodule:: deeprank.learn.DataSet
     :members:
     :undoc-members:
+    :private-members:
 
 
 NeuralNet: perform deep learning
@@ -48,6 +49,7 @@ NeuralNet: perform deep learning
 .. automodule:: deeprank.learn.NeuralNet
     :members:
     :undoc-members:
+    :private-members:
 
 modelGenerator: generate NN architecture
 ----------------------------------------
@@ -55,3 +57,4 @@ modelGenerator: generate NN architecture
 .. automodule:: deeprank.learn.modelGenerator
     :members:
     :undoc-members:
+    :private-members:
