@@ -24,8 +24,7 @@ class TestGenerateCUDA(unittest.TestCase):
     pdb_native = ['./1AK4/native/']
 
     @unittest.skipIf(skip, "torch fails on Travis")
-    @staticmethod
-    def test_generate_cuda():
+    def test_generate_cuda(self):
 
         # init the data assembler
         database = DataGenerator(
@@ -33,6 +32,7 @@ class TestGenerateCUDA(unittest.TestCase):
             chain2='D',
             pdb_source=self.pdb_source,
             pdb_native=self.pdb_native,
+            pssm_source='./1AK4/pssm_new/',
             compute_targets=['deeprank.targets.dockQ'],
             compute_features=[
                 'deeprank.features.AtomicFeature',
