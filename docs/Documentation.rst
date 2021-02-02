@@ -1,13 +1,11 @@
-Documentation
-**************
-
-All the prototypes of the class/methods are here specified
+API Reference
+=============
 
 .. toctree::
-   :maxdepth: 4
-   :caption: Documentation:
+   :maxdepth: 3
 
    deeprank.generate
    deeprank.learn
    deeprank.features
+   deeprank.targets
    deeprank.tools

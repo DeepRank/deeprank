@@ -7,7 +7,7 @@ Byte-compiled / optimized
 deeprank.egg-info
 database*
 dist
-build 
+build
 
 # specific architure files
 deeprank/learn/arch_*
@@ -44,19 +44,22 @@ test/*.pdb
 *.ref_pairs
 
 # docs
-#docs/_build
-#docs/_static
+docs/_build
+# docs/_static
 #docs/_templates
 
 
 # vscode setting
 .vscode
 
-.DS_Store
 test/1AK4/atomic_features/test_1AK4_100w.dat
 test/2OUL/atomic_features/test_2OUL_1.dat
 test/atomic_pair_interaction.dat
 
 # Mac OSX files
-.DS_Store
+*.DS_Store
 
+# test coverage
+htmlcov
+coverage.xml
+.coverage

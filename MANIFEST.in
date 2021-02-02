@@ -5,3 +5,9 @@ graft test/1AK4
 prune deeprank/utils
 include deeprank/utils/logger_helper.py
 exclude test/test_hitrate_successrate.py
+include CHANGELOG.md
+include CODE_OF_CONDUCT.rst
+include CONTRIBUTING.rst
+include NOTICE
+include developer_guideline.md
+include deeprank/generate/kernel_map.c

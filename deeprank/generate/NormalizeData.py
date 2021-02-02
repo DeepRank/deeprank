@@ -25,8 +25,8 @@ class NormalizeData(object):
 
         Example:
 
-        >>> norm = NormalizeData('1ak4.hdf5')
-        >>> norm.get()
+            >>> norm = NormalizeData('1ak4.hdf5')
+            >>> norm.get()
         """
         self.fname = fname
         self.parameters = {'features': {}, 'targets': {}}
@@ -172,13 +172,13 @@ class NormParam(object):
         https://stats.stackexchange.com/questions/25848/how-to-sum-a-standard-deviation:
 
         .. math::
-
             \\sigma_{tot}=\\sqrt{\\frac{1}{N}\\sum_i \\sigma_i^2+\\frac{1}{N}\\sum_i\\mu_i^2-(\\frac{1}{N}\\sum_i\\mu_i)^2}
+
         Args:
             std (float, optional): standard deviation
-            mean (float,optional) : mean value
-            var (float,optional) : variance
-            sqmean (float, optional) : square roo of the variance
+            mean (float,optional): mean value
+            var (float,optional): variance
+            sqmean (float, optional): square roo of the variance
         """
 
         self.std = std

@@ -24,6 +24,8 @@ pssm_source = '../test/1AK4/pssm_new/'
 
 # initialize the database
 database = DataGenerator(
+    chain1='C',
+    chain2='D',
     pdb_source=pdb_source,
     pdb_native=pdb_native,
     pssm_source=pssm_source,
@@ -49,8 +51,8 @@ database.create_database(prog_bar=True)
 
 #define the 3D grid
 grid_info = {
-  'number_of_points' : [30,30,30],
-  'resolution' : [1.,1.,1.],
+  'number_of_points': [30,30,30],
+  'resolution': [1.,1.,1.],
   'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
 }
 

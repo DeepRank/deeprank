@@ -16,8 +16,8 @@ from deeprank.features import FeatureClass
 
 class FullPSSM(FeatureClass):
 
-    def __init__(self, mol_name=None, pdb_file=None, pssm_path=None,
-                 pssm_format='new', out_type='pssmvalue'):
+    def __init__(self, mol_name=None, pdb_file=None, chain1='A', chain2='B',
+                pssm_path=None, pssm_format='new', out_type='pssmvalue'):
         """Compute all the PSSM data.
 
             Simply extracts all the PSSM information and
@@ -26,6 +26,8 @@ class FullPSSM(FeatureClass):
         Args:
             mol_name (str): name of the molecule. Defaults to None.
             pdb_file (str): name of the pdb_file. Defaults to None.
+            chain1 (str): First chain ID. Defaults to 'A'
+            chain2 (str): Second chain ID. Defaults to 'B'
             pssm_path (str): path to the pssm data. Defaults to None.
             pssm_format (str): "old" or "new" pssm format.
                 Defaults to 'new'.
@@ -50,6 +52,8 @@ class FullPSSM(FeatureClass):
         self.pssm_path = pssm_path
         self.pssm_format = pssm_format
         self.out_type = out_type.lower()
+        self.chain1 = chain1
+        self.chain2 = chain2
 
         if isinstance(pdb_file, str) and mol_name is None:
             self.mol_name = os.path.basename(pdb_file).split('.')[0]
@@ -174,9 +178,10 @@ class FullPSSM(FeatureClass):
 
         # get interface contact residues
         # ctc_res = {"A":[chain 1 residues], "B": [chain2 residues]}
-        ctc_res = sql.get_contact_residues(cutoff=cutoff)
+        ctc_res = sql.get_contact_residues(cutoff=cutoff,
+                            chain1=self.chain1, chain2=self.chain2)
         sql._close()
-        ctc_res = ctc_res["A"] + ctc_res["B"]
+        ctc_res = ctc_res[self.chain1] + ctc_res[self.chain2]
 
         # handle with small interface or no interface
         total_res = len(ctc_res)
@@ -213,7 +218,7 @@ class FullPSSM(FeatureClass):
 
         # get feature values
         for res in ctc_res_with_pssm:
-            chain = {'A': 0, 'B': 1}[res[0]]
+            chain = {self.chain1: 0, self.chain2: 1}[res[0]]
             key = tuple([chain] + xyz_dict[res])
             for name, value in zip(self.feature_names, self.pssm[res]):
                 # Make sure the feature_names and pssm[res] have
@@ -233,7 +238,17 @@ class FullPSSM(FeatureClass):
 ########################################################################
 
 
-def __compute_feature__(pdb_data, featgrp, featgrp_raw, out_type='pssmvalue'):
+def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2, out_type='pssmvalue'):
+    """Main function called in deeprank for the feature calculations.
+
+    Args:
+        pdb_data (list(bytes)): pdb information
+        featgrp (str): name of the group where to save xyz-val data
+        featgrp_raw (str): name of the group where to save human readable data
+        chain1 (str): First chain ID
+        chain2 (str): Second chain ID
+        out_type (str): which feature to generate, 'pssmvalue' or 'pssmic'.
+    """
 
     if config.PATH_PSSM_SOURCE is None:
         raise FileExistsError(f"No available PSSM source, "
@@ -244,7 +259,8 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw, out_type='pssmvalue'):
     mol_name = os.path.split(featgrp.name)[0]
     mol_name = mol_name.lstrip('/')
 
-    pssm = FullPSSM(mol_name, pdb_data, path, out_type=out_type)
+    pssm = FullPSSM(mol_name, pdb_data, chain1=chain1, chain2=chain2,
+                    pssm_path=path, out_type=out_type)
 
     # read the raw data
     pssm.read_PSSM_data()

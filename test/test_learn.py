@@ -40,6 +40,8 @@ class TestLearn(unittest.TestCase):
         data_set = DataSet(
             database,
             test_database=None,
+            chain1='C',
+            chain2='D',
             mapfly=True,
             use_rotation=2,
             grid_info={
@@ -93,6 +95,8 @@ class TestLearn(unittest.TestCase):
             train_database=train_database,
             valid_database=None,
             test_database=None,
+            chain1='C',
+            chain2='D',
             mapfly=False,
             use_rotation=2,
             grid_shape=(30, 30, 30),
@@ -141,6 +145,8 @@ class TestLearn(unittest.TestCase):
             train_database=database,
             valid_database=None,
             test_database=None,
+            chain1='C',
+            chain2='D',
             mapfly=False,
             grid_shape=( 30, 30, 30),
             select_feature={
@@ -189,6 +195,8 @@ class TestLearn(unittest.TestCase):
             train_database=database,
             valid_database=None,
             test_database=None,
+            chain1='C',
+            chain2='D',
             mapfly=False,
             select_feature={
                 'AtomicDensities_ind': 'all',
@@ -237,6 +245,8 @@ class TestLearn(unittest.TestCase):
             database,
             cnn3d,
             pretrained_model=model_name,
+            chain1='C',
+            chain2='D',
             outdir=out)
         model.test()
 

@@ -36,6 +36,7 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
     install_requires=[
         'numpy >= 1.13',
@@ -47,7 +48,7 @@ setup(
         'matplotlib',
         'torchsummary',
         'torch',
-        'pdb2sql >= 0.3.0',
+        'pdb2sql >= 0.5.0',
         'freesasa==2.0.3.post7;platform_system=="Linux"',
         'freesasa==2.0.5;platform_system=="Darwin"'
         ],

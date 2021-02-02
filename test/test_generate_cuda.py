@@ -24,13 +24,15 @@ class TestGenerateCUDA(unittest.TestCase):
     pdb_native = ['./1AK4/native/']
 
     @unittest.skipIf(skip, "torch fails on Travis")
-    @staticmethod
-    def test_generate_cuda():
+    def test_generate_cuda(self):
 
         # init the data assembler
         database = DataGenerator(
+            chain1='C',
+            chain2='D',
             pdb_source=self.pdb_source,
             pdb_native=self.pdb_native,
+            pssm_source='./1AK4/pssm_new/',
             compute_targets=['deeprank.targets.dockQ'],
             compute_features=[
                 'deeprank.features.AtomicFeature',
@@ -57,15 +59,15 @@ class TestGenerateCUDA(unittest.TestCase):
             # create new files
             if not os.path.isfile(database.hdf5):
                 t0 = time()
-                print('\nCreate new database : %s' % database.hdf5)
+                print('\nCreate new database: %s' % database.hdf5)
                 database.create_database()
                 print('--> Done in %f s.' % (time() - t0))
             else:
-                print('\nUse existing database : %s' % database.hdf5)
+                print('\nUse existing database: %s' % database.hdf5)
 
             # map these data
             t0 = time()
-            print('\nMap features in database : %s' % database.hdf5)
+            print('\nMap features in database: %s' % database.hdf5)
             database.map_features(
                 grid_info,
                 try_sparse=True,

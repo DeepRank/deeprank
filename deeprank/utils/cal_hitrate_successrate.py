@@ -73,7 +73,7 @@ def evaluate(data):
     out_df: a data frame.
     success: binary variable, indicating whether this case is a success when evaluating its top N models.
 
-        out_df :
+        out_df:
              label  caseID   success_DR   hitRate_DR   success_HS   hitRate_HS
              train  1ZHI     1            0.1          0            0.01
              train  1ZHI     1            0.2          1            0.3
@@ -288,4 +288,3 @@ def add_perc(df, groupby = ['label', 'caseID']):
     new_df = pd.concat(frames)
 
     return new_df
-

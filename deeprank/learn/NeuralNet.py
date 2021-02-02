@@ -31,6 +31,8 @@ class NeuralNet():
                  model_type='3d', proj2d=0, task='reg',
                  class_weights = None,
                  pretrained_model=None,
+                 chain1='A',
+                 chain2='B',
                  cuda=False, ngpu=0,
                  plot=True,
                  save_hitrate=True,
@@ -43,16 +45,20 @@ class NeuralNet():
                 training or testing.
                 - deeprank.DataSet for training;
                 - str or list(str), e.g. 'x.hdf5', ['x1.hdf5', 'x2.hdf5'],
-                    for testing when pretrained model is loaded.
+                for testing when pretrained model is loaded.
 
             model (nn.Module): Definition of the NN to use.
                 Must subclass nn.Module.
                 See examples in model2d.py and model3d.py
 
-            model_type (srt): Type of model we want to use.
+            model_type (str): Type of model we want to use.
                 Must be '2d' or '3d'.
                 If we specify a 2d model, the data set is automatically
                 converted to the correct format.
+
+            proj2d (int): Defines how to slice the 3D volumetric data to generate
+                2D data. Allowed values are 0, 1 and 2, which are to slice along
+                the YZ, XZ or XY plane, respectively.
 
             task (str 'reg' or 'class'): Task to perform.
                 - 'reg' for regression
@@ -65,7 +71,11 @@ class NeuralNet():
                 Only applicable on 'class' task.
 
             pretrained_model (str): Saved model to be used for further
-                training or testing.
+                training or testing. When using pretrained model,
+                remember to set the following 'chain1' and 'chain2' for
+                the new data.
+            chain1 (str): first chain ID of new data when using pretrained model
+            chain2 (str): second chain ID of new data when using pretrained model
 
             cuda (bool): Use CUDA.
 
@@ -77,7 +87,9 @@ class NeuralNet():
 
             save_classmetrics (bool): Save and plot classification metrics.
                 Classification metrics include:
-                    accuracy(ACC), sensitivity(TPR) and specificity(TNR)
+                - accuracy(ACC)
+                - sensitivity(TPR)
+                - specificity(TNR)
 
             outdir (str): output directory
 
@@ -132,7 +144,8 @@ class NeuralNet():
             # create the dataset if required
             # but don't process it yet
             if isinstance(self.data_set, (str, list)):
-                self.data_set = DataSet(self.data_set, process=False)
+                self.data_set = DataSet(self.data_set, chain1=chain1,
+                                    chain2=chain2, process=False)
 
             # load the model and
             # change dataset parameters
@@ -260,26 +273,26 @@ class NeuralNet():
         logger.info('\n')
         logger.info('=' * 40)
         logger.info('=\t Convolution Neural Network')
-        logger.info(f'=\t model    : {model_type}')
-        logger.info(f'=\t CNN       : {model.__name__}')
+        logger.info(f'=\t model   : {model_type}')
+        logger.info(f'=\t CNN      : {model.__name__}')
 
         for feat_type, feat_names in self.data_set.select_feature.items():
-            logger.info(f'=\t features  : {feat_type}')
+            logger.info(f'=\t features : {feat_type}')
             for name in feat_names:
                 logger.info(f'=\t\t     {name}')
         if self.data_set.pair_chain_feature is not None:
-            logger.info(f'=\t Pair      : '
+            logger.info(f'=\t Pair     : '
                         f'{self.data_set.pair_chain_feature.__name__}')
-        logger.info(f'=\t targets   : {self.data_set.select_target}')
-        logger.info(f'=\t CUDA      : {str(self.cuda)}')
+        logger.info(f'=\t targets  : {self.data_set.select_target}')
+        logger.info(f'=\t CUDA     : {str(self.cuda)}')
         if self.cuda:
-            logger.info(f'=\t nGPU      : {self.ngpu}')
+            logger.info(f'=\t nGPU     : {self.ngpu}')
         logger.info('=' * 40 + '\n')
 
         # check if CUDA works
         if self.cuda and not torch.cuda.is_available():
             logger.error(
-                f' --> CUDA not deteceted : Make sure that CUDA is installed '
+                f' --> CUDA not deteceted: Make sure that CUDA is installed '
                 f'and that you are running on GPUs.\n'
                 f' --> To turn CUDA of set cuda=False in NeuralNet.\n'
                 f' --> Aborting the experiment \n\n')
@@ -327,9 +340,9 @@ class NeuralNet():
                 save the epochs data to HDF5.
 
         """
-        logger.info(f'\n: Batch Size : {train_batch_size}')
+        logger.info(f'\n: Batch Size: {train_batch_size}')
         if self.cuda:
-            logger.info(f': NGPU       : {self.ngpu}')
+            logger.info(f': NGPU      : {self.ngpu}')
 
         # hdf5 support
         fname = os.path.join(self.outdir, hdf5)
@@ -523,10 +536,10 @@ class NeuralNet():
         # if user provided 3 number and testset
         if len(divide_set) == 3 and self.data_set.test_database is not None:
             divide_set = [divide_set[0], 1. - divide_set[0]]
-            logger.info(f'   : test data set AND test in training set detected\n'
-                        f'   : Divide training set as '
+            logger.info(f'  : test data set AND test in training set detected\n'
+                        f'  : Divide training set as '
                         f'{divide_set[0]} train {divide_set[1]} valid.\n'
-                        f'   : Keep test set for testing')
+                        f'  : Keep test set for testing')
 
         # preshuffle
         if preshuffle:
@@ -681,22 +694,22 @@ class NeuralNet():
                             self.data['test'][i])
 
             # talk a bit about losse
-            logger.info(f'\n  train loss       : {train_loss:1.3e}')
+            logger.info(f'\n  train loss      : {train_loss:1.3e}')
             if _valid_:
-                logger.info(f'  valid loss       : {valid_loss:1.3e}')
+                logger.info(f'  valid loss      : {valid_loss:1.3e}')
             if _test_:
-                logger.info(f'  test loss        : {test_loss:1.3e}')
+                logger.info(f'  test loss       : {test_loss:1.3e}')
 
             # timer
             elapsed = time.time() - t0
             logger.info(
-                f'  epoch done in    : {self.convertSeconds2Days(elapsed)}')
+                f'  epoch done in   : {self.convertSeconds2Days(elapsed)}')
 
             # remaining time
             av_time += elapsed
             nremain = nepoch - (epoch + 1)
             remaining_time = av_time / (epoch + 1) * nremain
-            logger.info(f"  remaining time   : "
+            logger.info(f"  remaining time  : "
                 f"{time.strftime('%H:%M:%S', time.gmtime(remaining_time))}")
 
             # save the best model
@@ -951,7 +964,7 @@ class NeuralNet():
         if self.plot is False:
             return
 
-        logger.info(f'\n  --> Scatter Plot : {figname}')
+        logger.info(f'\n  --> Scatter Plot: {figname}')
 
         color_plot = {'train': 'red', 'valid': 'blue', 'test': 'green'}
         labels = ['train', 'valid', 'test']
@@ -998,7 +1011,7 @@ class NeuralNet():
         if not self.plot:
             return
 
-        logger.info(f'\n  --> Box Plot : {figname}')
+        logger.info(f'\n  --> Box Plot: {figname}')
 
         color_plot = {'train': 'red', 'valid': 'blue', 'test': 'green'}
         labels = ['train', 'valid', 'test']
@@ -1204,7 +1217,7 @@ class NeuralNet():
         grp.attrs['type'] = 'epoch'
         grp.attrs['task'] = self.task
 
-        # loop over the pass_type : train/valid/test
+        # loop over the pass_type: train/valid/test
         for pass_type, pass_data in data.items():
 
             # we don't want to breack the process in case of issue
@@ -1213,7 +1226,7 @@ class NeuralNet():
                 # create subgroup for the pass
                 sg = grp.create_group(pass_type)
 
-                # loop over the data : target/output/molname
+                # loop over the data: target/output/molname
                 for data_name, data_value in pass_data.items():
 
                     # mol name is a bit different

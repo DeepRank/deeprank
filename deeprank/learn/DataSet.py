@@ -25,6 +25,7 @@ from deeprank.tools import sparse
 class DataSet():
 
     def __init__(self, train_database, valid_database=None, test_database=None,
+                 chain1='A', chain2='B',
                  mapfly=True, grid_info=None,
                  use_rotation=None,
                  select_feature='all', select_target='DOCKQ',
@@ -45,18 +46,21 @@ class DataSet():
         Args:
             train_database (list(str)): names of the hdf5 files used for
                 the training/validation.
-                Example : ['1AK4.hdf5','1B7W.hdf5',...]
+                Example: ['1AK4.hdf5','1B7W.hdf5',...]
             valid_database (list(str)): names of the hdf5 files used for
                 the validation.
-                Example : ['1ACB.hdf5','4JHF.hdf5',...]
+                Example: ['1ACB.hdf5','4JHF.hdf5',...]
             test_database (list(str)): names of the hdf5 files used for
                 the test.
-                Example : ['7CEI.hdf5']
+                Example: ['7CEI.hdf5']
+
+            chain1 (str): first chain ID, defaults to 'A'
+            chain2 (str): second chain ID, defaults to 'B'
 
             mapfly (bool): do we compute the map in the batch
                 preparation or read them
 
-            grid_info(dict) : grid information to map the feature on the
+            grid_info(dict): grid information to map the feature on the
                 fly. if None the original grid points are used.
                 Example:
                     {'number_of_points': [X,Y,Z], 'resolution': [X,Y,Z]}
@@ -68,39 +72,38 @@ class DataSet():
             select_feature (dict or 'all', optional):
                     Select the features used in the learning.
                     if mapfly is True:
-                        {'AtomDensities': 'all', 'Features': 'all'}
-                        {'AtomicDensities': config.atom_vdw_radius_noH,
-                            'Features': ['PSSM_*', 'pssm_ic_*']}
+                    - {'AtomDensities': 'all', 'Features': 'all'}
+                    - {'AtomicDensities': config.atom_vdw_radius_noH,
+                    'Features': ['PSSM_*', 'pssm_ic_*']}
                     if mapfly is False:
-                        {'AtomDensities_ind': 'all',
-                            'Feature_ind': 'all'}
-                        {'Feature_ind': ['PSSM_*', 'pssm_ic_*']}
-                    Default : 'all'
+                    - {'AtomDensities_ind': 'all', 'Feature_ind': 'all'}
+                    - {'Feature_ind': ['PSSM_*', 'pssm_ic_*']}
+                    Default: 'all'
             select_target (str,optional): Specify required target.
-                Default : 'DOCKQ'
+                Default: 'DOCKQ'
 
             normalize_features (Bool, optional): normalize features or not
-                Default : True
+                Default: True
             normalize_targets (Bool, optional): normalize targets or not
-                Default : True
+                Default: True
             target_ordering (str): 'lower' (the lower the better) or
                 'higher' (the higher the better)
                 By default is not specified (None) and the code tries
                 to identify it. If identification fails 'lower' is used.
 
             dict_filter (None or dict, optional): Specify if we filter
-                the complexes based on target values
-                Example : {'IRMSD' : '<4. or >10'}
-                    (select complexes with IRMSD lower than 4 or larger than 10)
-                Default : None
+                the complexes based on target values,
+                Example: {'IRMSD': '<4. or >10'}
+                (select complexes with IRMSD lower than 4 or larger than 10)
+                Default: None
             pair_chain_feature (None or callable, optional):
                 method to pair features of chainA and chainB
-                Example : np.sum (sum the chainA and chainB features)
+                Example: np.sum (sum the chainA and chainB features)
             transform_to_2D (bool, optional):
                 Boolean to use 2d maps instead of full 3d
-                Default : False
+                Default: False
             projection (int): Projection axis from 3D to 2D:
-                Mapping : 0 -> yz, 1 -> xz, 2 -> xy
+                Mapping: 0 -> yz, 1 -> xz, 2 -> xy
                 Default = 0
             grid_shape (None or tuple(int), optional):
                 Shape of the grid in the hdf5 file. Is not necessary
@@ -123,10 +126,12 @@ class DataSet():
             >>> data_set = DataSet(train_database,
             >>>                    valid_database = None,
             >>>                    test_database = None,
+            >>>                    chain1='C',
+            >>>                    chain2='D',
             >>>                    grid_shape=(30,30,30),
             >>>                    select_feature = {
             >>>                       'AtomicDensities': 'all',
-            >>>                       'Features' : [
+            >>>                       'Features': [
             >>>                            'PSSM_*', 'pssm_ic_*' ]
             >>>                    },
             >>>                    select_target='IRMSD',
@@ -145,6 +150,10 @@ class DataSet():
 
         # allow for multiple database
         self.test_database = self._get_database_name(test_database)
+
+        # chainIDs
+        self.chain1 = chain1
+        self.chain2 = chain2
 
         # pdb selection
         self.use_rotation = use_rotation
@@ -291,15 +300,15 @@ class DataSet():
         logger.info('\n')
         logger.info("   Data Set Info:")
         logger.info(
-            f'   Augmentation        : {self.use_rotation} rotations')
+            f'   Augmentation       : {self.use_rotation} rotations')
         logger.info(
-            f'   Training set        : {self.ntrain} conformations')
+            f'   Training set       : {self.ntrain} conformations')
         logger.info(
-            f'   Validation set      : {self.nvalid} conformations')
+            f'   Validation set     : {self.nvalid} conformations')
         logger.info(
-            f'   Test set            : {self.ntest} conformations')
-        logger.info(f'   Number of channels  : {self.input_shape[0]}')
-        logger.info(f'   Grid Size           : {self.data_shape[1]}, '
+            f'   Test set           : {self.ntest} conformations')
+        logger.info(f'   Number of channels : {self.input_shape[0]}')
+        logger.info(f'   Grid Size          : {self.data_shape[1]}, '
                     f'{self.data_shape[2]}, {self.data_shape[3]}')
         sys.stdout.flush()
 
@@ -523,7 +532,7 @@ class DataSet():
         dict_filter={'DOCKQ':'>0.1', 'IRMSD':'<=4 or >10'}).
 
         The filter is based on the attribute self.dict_filter
-        that must be either of the form: { 'name' : cond } or None
+        that must be either of the form: { 'name': cond } or None
 
         Args:
             molgrp (str): group name of the molecule in the hdf5 file
@@ -563,12 +572,11 @@ class DataSet():
         """Get actual mapped feature names for feature selections.
 
         Note:
-            class parameter self.select_feature examples:
-            - 'all'
-            - {'AtomicDensities_ind': 'all', 'Feature_ind':all}
-            - {'Feature_ind': ['PSSM_*', 'pssm_ic_*']}
-
-            Feature type must be: 'AtomicDensities_ind' or 'Feature_ind'.
+            - class parameter self.select_feature examples:
+                - 'all'
+                - {'AtomicDensities_ind': 'all', 'Feature_ind':all}
+                - {'Feature_ind': ['PSSM_*', 'pssm_ic_*']}
+            - Feature type must be: 'AtomicDensities_ind' or 'Feature_ind'.
 
         Raises:
             KeyError: Wrong feature type.
@@ -579,7 +587,7 @@ class DataSet():
         f5 = h5py.File(self.train_database[0], 'r')
         mol_name = list(f5.keys())[0]
         mapped_data = f5.get(mol_name + '/mapped_features/')
-        chain_tags = ['_chainA', '_chainB']
+        chain_tags = ['_chain1', '_chain2']
 
         # if we select all the features
         if self.select_feature == "all":
@@ -659,13 +667,12 @@ class DataSet():
         """Get actual raw feature names for feature selections.
 
         Note:
-            class parameter self.select_feature examples:
-            - 'all'
-            - {'AtomicDensities': 'all', 'Features':all}
-            - {'AtomicDensities': config.atom_vaw_radius_noH,
-               'Features': ['PSSM_*', 'pssm_ic_*']}
+            - class parameter self.select_feature examples:
+                - 'all'
+                - {'AtomicDensities': 'all', 'Features':all}
+                - {'AtomicDensities': config.atom_vaw_radius_noH, 'Features': ['PSSM_*', 'pssm_ic_*']}
+            - Feature type must be: 'AtomicDensities' or 'Features'.
 
-            Feature type must be: 'AtomicDensities' or 'Features'.
         Raises:
             KeyError: Wrong feature type.
             KeyError: Wrong feature type.
@@ -775,9 +782,8 @@ class DataSet():
         """Get the size of the data and input.
 
         Note:
-            self.data_shape : shape of the raw 3d data set
-            self.input_shape: input size of the CNN
-                              (potentially after 2d transformation)
+            - self.data_shape: shape of the raw 3d data set
+            - self.input_shape: input size of the CNN. Potentially after 2d transformation.
         """
 
         fname = self.train_database[0]
@@ -841,7 +847,7 @@ class DataSet():
     def compute_norm(self):
         """compute the normalization factors."""
 
-        # logger.info("   Normalization factor :")
+        # logger.info("   Normalization factor:")
 
         # loop over all the complexes in the database
         first = True
@@ -896,7 +902,7 @@ class DataSet():
     def get_norm(self):
         """Get the normalization values for the features."""
 
-        # logger.info("   Normalization factor :")
+        # logger.info("   Normalization factor:")
 
         # declare the dict of class instance
         # where we'll store the normalization parameter
@@ -947,7 +953,7 @@ class DataSet():
                     var = data['features'][feat_type][name].var
                     if var == 0:
                         logger.info(
-                            '  : STD is null for %s in %s' % (name, f5))
+                            ' : STD is null for %s in %s' % (name, f5))
                     self.param_norm['features'][feat_type][name].add(
                         mean, var)
 
@@ -1124,7 +1130,7 @@ class DataSet():
                 logger.error(
                     f'Feature type {feat_type} not found in file {fname} '
                     f'for molecule {mol}.\n'
-                    f'Possible feature types are :\n\t' +
+                    f'Possible feature types are:\n\t' +
                     '\n\t'.join(
                         list(mol_data['mapped_features'].keys()))
                 )
@@ -1140,7 +1146,7 @@ class DataSet():
                     logger.error(
                         f'Feature {name} not found in file {fname} for mol '
                         f'{mol} and feature type {feat_type}.\n'
-                        f'Possible feature are :\n\t' +
+                        f'Possible feature are:\n\t' +
                         '\n\t'.join(list(
                             mol_data['mapped_features/' +
                                      feat_type].keys()
@@ -1332,11 +1338,11 @@ class DataSet():
             axis(list): rotation axis
 
         Returns:
-            list : atomic densities of each atom type on each chain
+            list: atomic densities of each atom type on each chain
         """
 
         sql = pdb2sql.interface(mol_data['complex'][()])
-        index = sql.get_contact_atoms()
+        index = sql.get_contact_atoms(chain1=self.chain1, chain2=self.chain2)
 
         if angle is not None:
             center = [np.mean(g) for g in grid]
@@ -1346,9 +1352,9 @@ class DataSet():
 
             # get pos of the contact atoms of correct type
             xyzA = np.array(sql.get(
-                'x,y,z', rowID=index['A'], element=elementtype))
+                'x,y,z', rowID=index[self.chain1], element=elementtype))
             xyzB = np.array(sql.get(
-                'x,y,z', rowID=index['B'], element=elementtype))
+                'x,y,z', rowID=index[self.chain2], element=elementtype))
 
             # rotate if necessary
             if angle is not None:

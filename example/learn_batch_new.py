@@ -161,8 +161,8 @@ def main():
                                6, 6, 6], 'resolution': [
                                5, 5, 5]},
 
-                       #            select_feature={'AtomicDensities' : {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
-                       #                			'Features'        : ['coulomb','vdwaals','charge','PSSM_*'] },
+                       #            select_feature={'AtomicDensities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
+                       #                			'Features'       : ['coulomb','vdwaals','charge','PSSM_*'] },
                        #select_feature = 'all',
                        select_feature={'Feature_ind': ['coulomb']},
                        select_target='BIN_CLASS',
