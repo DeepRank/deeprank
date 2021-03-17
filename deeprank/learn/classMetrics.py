@@ -43,7 +43,7 @@ def specificity(yp, yt):
     if n == 0:
         warnings.warn(
             f'Number of negative cases is 0, '
-            f'TNR or sepcificity is assigned as inf')
+            f'TNR or specificity is assigned as inf')
         tnr = float('inf')
     else:
         tnr = tn / n
@@ -62,6 +62,7 @@ def precision(yp, yt):
     """
     tp = true_positive(yp, yt)
     fp = false_positive(yp, yt)
+    tp, fp = map(np.float64, [tp, fp])
     if tp + fp == 0:
         warnings.warn(
             f'Total number of true positive and false positive cases is 0, '
@@ -86,6 +87,7 @@ def accuracy(yp, yt):
     tn = true_negative(yp, yt)
     p = positive(yt)
     n = negative(yt)
+    tp, tn, p, n = map(np.float64, [tp, tn, p, n])
     acc = (tp + tn) / (p + n)
     return acc
 
@@ -103,6 +105,7 @@ def F1(yp, yt):
     tp = true_positive(yp, yt)
     fp = false_positive(yp, yt)
     fn = false_negative(yp, yt)
+    tp, fp, fn = map(np.float64, [tp, fp, fn])
     f1 = 2 * tp / (2 * tp + fp + fn)
     return f1
 
@@ -120,6 +123,7 @@ def mcc(yp, yt):
     tn = true_negative(yp, yt)
     fp = false_positive(yp, yt)
     fn = false_negative(yp, yt)
+    tp, tn, fp, fn = map(np.float64, [tp, tn, fp, fn])
     mcc = (tp * tn - fp * fn) / np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
     return mcc
 
