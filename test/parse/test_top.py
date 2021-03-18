@@ -1,9 +1,13 @@
+import pkg_resources
+import os
+
 from nose.tools import eq_, ok_
 
 from deeprank.parse.top import TopParser
 
 
-_top_path = "deeprank/features/forcefield/protein-allhdg5-4_new.top"
+_top_path = os.path.join(pkg_resources.resource_filename('deeprank.features', ''),
+                         'forcefield/protein-allhdg5-4_new.top')
 
 
 def test_parse():
