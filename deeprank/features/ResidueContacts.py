@@ -91,7 +91,7 @@ class ResidueContacts(FeatureClass):
         elif distance < ResidueContacts.VANDERWAALS_DISTANCE_ON:
             prefactor = 1.0
 
-        return 4.0 * average_epsilon * (pow(average_sigma / distance, 12) - pow(average_sigma / distance6)) * prefactor
+        return 4.0 * average_epsilon * (pow(average_sigma / distance, 12) - pow(average_sigma / distance, 6)) * prefactor
 
 
     @staticmethod
@@ -171,17 +171,21 @@ class ResidueContacts(FeatureClass):
             for residue_atom in self._residue_atoms:
                 residue_atom_position = atomic_postions[residue_atom]
                 if get_squared_distance(position, residue_atom_position) < squared_max_distance:
-
                     self._contact_atoms.add(atom)
                     break
 
     def _extend_contact_to_residues(self):
         per_chain = {}
         for chain_id, residue_number in self.sqldb.get("chainID,resSeq", rowID=list(self._contact_atoms)):
-            per_chain.get(chain_id, set([])).add(residue_number)
+            if chain_id not in per_chain:
+                per_chain[chain_id] = set([])
+            per_chain[chain_id].add(residue_number)
 
-        self._contact_atoms = {self.sqldb.get("rowID", chainID=chain_id, resSeq=residue_numbers)
-                               for chain_id, residue_numbers in per_chain.items()}
+        # list the new contact atoms, per residue
+        self._contact_atoms = set([])
+        for chain_id, residue_numbers in per_chain.items():
+            for atom in self.sqldb.get("rowID", chainID=chain_id, resSeq=list(residue_numbers)):
+                self._contact_atoms.add(atom)
 
     def _get_atom_type(self, residue_name, alternative_residue_name, atom_name):
         if (alternative_residue_name, atom_name) in self._patch_type:
@@ -287,8 +291,8 @@ class ResidueContacts(FeatureClass):
 
             contact_epsilon, contact_sigma = vanderwaals_data[contact_atom]
             contact_charge = charge_data[contact_atom]
-            contact_atom_key = atom_info[contact_atom]
-            contact_position_key = [0] + atom_positions[contact_atom]
+            contact_atom_key = tuple(atom_info[contact_atom])
+            contact_position_key = tuple([0] + atom_positions[contact_atom])
 
             # set charge
             charge_per_atom[contact_atom_key] = contact_charge
@@ -298,14 +302,14 @@ class ResidueContacts(FeatureClass):
 
                 residue_epsilon, residue_sigma = vanderwaals_data[residue_atom]
                 residue_charge = charge_data[residue_atom]
-                residue_atom_key = atom_info[residue_atom]
-                residue_position_key = [1] + atom_info[residue_atom]
+                residue_atom_key = tuple(atom_info[residue_atom])
+                residue_position_key = tuple([1] + atom_positions[residue_atom])
 
                 # set charge
                 charge_per_atom[residue_atom_key] = residue_charge
                 charge_per_position[residue_position_key] = residue_charge
 
-                distance = get_distance(contact_atom, residue_atom)
+                distance = get_distance(atom_positions[contact_atom], atom_positions[residue_atom])
                 if distance == 0.0:
                     distance = 3.0
 
@@ -314,16 +318,16 @@ class ResidueContacts(FeatureClass):
 
                 vanderwaals_per_atom[contact_atom_key] = vanderwaals_per_atom.get(contact_atom_key, 0.0) + vanderwaals_energy
                 vanderwaals_per_atom[residue_atom_key] = vanderwaals_per_atom.get(residue_atom_key, 0.0) + vanderwaals_energy
-                vanderwaals_per_position[contact_position_key] = vanderwaals_per_postion.get(contact_position_key, 0.0) + vanderwaals_energy
-                vanderwaals_per_position[residue_position_key] = vanderwaals_per_postion.get(residue_position_key, 0.0) + vanderwaals_energy
+                vanderwaals_per_position[contact_position_key] = vanderwaals_per_position.get(contact_position_key, 0.0) + vanderwaals_energy
+                vanderwaals_per_position[residue_position_key] = vanderwaals_per_position.get(residue_position_key, 0.0) + vanderwaals_energy
 
                 # add on coulomb energy
                 coulomb_energy = ResidueContacts.get_coulomb_energy(contact_charge, residue_charge, distance, self.max_contact_distance)
 
                 coulomb_per_atom[contact_atom_key] = coulomb_per_atom.get(contact_atom_key, 0.0) + coulomb_energy
                 coulomb_per_atom[residue_atom_key] = coulomb_per_atom.get(residue_atom_key, 0.0) + coulomb_energy
-                coulomb_per_position[contact_position_key] = coulomb_per_postion.get(contact_position_key, 0.0) + coulomb_energy
-                coulomb_per_position[residue_position_key] = coulomb_per_postion.get(residue_position_key, 0.0) + coulomb_energy
+                coulomb_per_position[contact_position_key] = coulomb_per_position.get(contact_position_key, 0.0) + coulomb_energy
+                coulomb_per_position[residue_position_key] = coulomb_per_position.get(residue_position_key, 0.0) + coulomb_energy
 
         # add to feature data (in list form)
         self.feature_data['vdwaals'] = wrap_values_in_lists(vanderwaals_per_atom)
