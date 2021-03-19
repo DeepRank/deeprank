@@ -18,8 +18,6 @@ class ParamParser:
     def parse(file_):
         result = {}
         for line in file_:
-            _log.debug("param line {}".format(repr(line)))
-
             if line.startswith('#') or len(line.strip()) == 0:
                 continue
 

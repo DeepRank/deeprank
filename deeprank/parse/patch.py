@@ -1,7 +1,11 @@
 import re
+import logging
 from enum import Enum
 
-from deeprank.models.patch import PatchActionType, PatchResidueSelectionType
+from deeprank.models.patch import PatchActionType
+
+
+_log = logging.getLogger(__name__)
 
 
 class PatchSelection:
@@ -23,14 +27,6 @@ class PatchParser:
     ACTION_PATTERN = re.compile(r"^([A-Z]{3,4})\s+([A-Z]+)\s+ATOM\s+([A-Z0-9]{1,3})\s+(.*)$")
 
     @staticmethod
-    def _parse_residue_type(s):
-        for type_ in PatchResidueSelectionType:
-            if type_.name == s:
-                return type_
-
-        raise ValueError("unmatched residue selection: {}".format(repr(s)))
-
-    @staticmethod
     def _parse_action_type(s):
         for type_ in PatchActionType:
             if type_.name == s:
@@ -49,7 +45,7 @@ class PatchParser:
             if not m:
                 raise ValueError("Unmatched patch action: {}".format(repr(line)))
 
-            residue_type = PatchParser._parse_residue_type(m.group(1))
+            residue_type = m.group(1)
             action_type = PatchParser._parse_action_type(m.group(2))
             atom_name = m.group(3)
 

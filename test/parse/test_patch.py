@@ -17,3 +17,6 @@ def test_parse():
     ok_(len(result) > 0)
     for obj in result:
         eq_(type(obj.kwargs['CHARGE']), float)
+
+    ok_(any([obj.selection.residue_type == "NTER" and obj.selection.atom_name == "HT1"
+             for obj in result]))
