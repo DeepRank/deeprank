@@ -310,7 +310,7 @@ class ResidueContacts(FeatureClass):
                     distance = 3.0
 
                 # add on vanderwaals energy
-                vanderwaals_energy = ResidueContacts.get_vandderwaals_energy(contact_epsilon, contact_sigma, residue_epsilon, residue_sigma, distance)
+                vanderwaals_energy = ResidueContacts.get_vanderwaals_energy(contact_epsilon, contact_sigma, residue_epsilon, residue_sigma, distance)
 
                 vanderwaals_per_atom[contact_atom_key] = vanderwaals_per_atom.get(contact_atom_key, 0.0) + vanderwaals_energy
                 vanderwaals_per_atom[residue_atom_key] = vanderwaals_per_atom.get(residue_atom_key, 0.0) + vanderwaals_energy
