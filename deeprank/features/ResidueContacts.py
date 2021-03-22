@@ -44,19 +44,8 @@ def get_distance(pos1, pos2):
 def wrap_values_in_lists(dict_):
     return {key: [value] for key,value in dict_.items()}
 
-class ResidueContacts(FeatureClass):
-
-    RESIDUE_SYNONYMS = {'PROP': ResidueSynonymCriteria('PRO', ['HT1', 'HT2'], []),
-                        'NTER': ResidueSynonymCriteria('all', ['HT1', 'HT2', 'HT3'], []),
-                        'CTER': ResidueSynonymCriteria('all', ['OXT'], []),
-                        'CTN': ResidueSynonymCriteria('all', ['NT', 'HT1', 'HT2'], []),
-                        'CYNH': ResidueSynonymCriteria('CYS', ['1SG'], ['2SG']),
-                        'DISU': ResidueSynonymCriteria('CYS', ['1SG', '2SG'], []),
-                        'HISE': ResidueSynonymCriteria('HIS', ['ND1', 'CE1', 'CD2', 'NE2', 'HE2'], ['HD1']),
-                        'HISD': ResidueSynonymCriteria('HIS', ['ND1', 'CE1', 'CD2', 'NE2', 'HD1'], ['HE2'])}
-
+class _PhysicsStorage:
     ATOM_KEY = ["chainID", "resSeq", "resName", "name"]
-    RESIDUE_KEY = ["chainID", "resSeq", "resName"]
 
     EPSILON0 = 1.0
     COULOMB_CONSTANT = 332.0636
@@ -68,12 +57,11 @@ class ResidueContacts(FeatureClass):
     SQUARED_VANDERWAALS_DISTANCE_ON = numpy.square(VANDERWAALS_DISTANCE_ON)
 
     @staticmethod
-    def get_alternative_residue_name(residue_name, atom_names):
-        for name, crit in ResidueContacts.RESIDUE_SYNONYMS.items():
-            if crit.matches(residue_name, atom_names):
-                return name
+    def _sum_up(dict_, key, value_to_add):
+        if key not in dict_:
+            dict_[key] = 0.0
 
-        return None
+        dict_[key] += value_to_add
 
     @staticmethod
     def get_vanderwaals_energy(epsilon1, sigma1, epsilon2, sigma2, distance):
@@ -81,23 +69,103 @@ class ResidueContacts(FeatureClass):
         average_sigma = 0.5 * (sigma1 + sigma2)
 
         squared_distance = numpy.square(distance)
-        prefactor = (pow(ResidueContacts.SQUARED_VANDERWAALS_DISTANCE_OFF - squared_distance, 2) *
-                     (ResidueContacts.SQUARED_VANDERWAALS_DISTANCE_OFF - squared_distance - 3 * (ResidueContacts.SQUARED_VANDERWAALS_DISTANCE_ON - squared_distance)) /
-                     pow(ResidueContacts.SQUARED_VANDERWAALS_DISTANCE_OFF - ResidueContacts.SQUARED_VANDERWAALS_DISTANCE_ON, 3))
+        prefactor = (pow(_PhysicsStorage.SQUARED_VANDERWAALS_DISTANCE_OFF - squared_distance, 2) *
+                     (_PhysicsStorage.SQUARED_VANDERWAALS_DISTANCE_OFF - squared_distance - 3 * (_PhysicsStorage.SQUARED_VANDERWAALS_DISTANCE_ON - squared_distance)) /
+                     pow(_PhysicsStorage.SQUARED_VANDERWAALS_DISTANCE_OFF - _PhysicsStorage.SQUARED_VANDERWAALS_DISTANCE_ON, 3))
 
-        if distance > ResidueContacts.VANDERWAALS_DISTANCE_OFF:
+        if distance > _PhysicsStorage.VANDERWAALS_DISTANCE_OFF:
             prefactor = 0.0
 
-        elif distance < ResidueContacts.VANDERWAALS_DISTANCE_ON:
+        elif distance < _PhysicsStorage.VANDERWAALS_DISTANCE_ON:
             prefactor = 1.0
 
         return 4.0 * average_epsilon * (pow(average_sigma / distance, 12) - pow(average_sigma / distance, 6)) * prefactor
 
-
     @staticmethod
     def get_coulomb_energy(charge1, charge2, distance, max_distance):
-        return (charge1 * charge2 * ResidueContacts.COULOMB_CONSTANT /
-                (ResidueContacts.EPSILON0 * distance) * pow(1 - pow(distance / max_distance, 2), 2))
+        return (charge1 * charge2 * _PhysicsStorage.COULOMB_CONSTANT /
+                (_PhysicsStorage.EPSILON0 * distance) * pow(1 - pow(distance / max_distance, 2), 2))
+
+    def __init__(self, sqldb, max_distance):
+
+        self._vanderwaals_parameters = sqldb.get('eps,sig')
+        self._charges = sqldb.get('CHARGE')
+        self._atom_info = sqldb.get(",".join(_PhysicsStorage.ATOM_KEY))
+        self._positions = sqldb.get('x,y,z')
+
+        self._max_distance = max_distance
+
+        self._vanderwaals_per_atom = {}
+        self._vanderwaals_per_position = {}
+        self._charge_per_atom = {}
+        self._charge_per_position = {}
+        self._coulomb_per_atom = {}
+        self._coulomb_per_position = {}
+
+    def include_pair(self, atom1, atom2):
+        position1 = tuple(self._positions[atom1])
+        position2 = tuple(self._positions[atom2])
+
+        epsilon1, sigma1 = self._vanderwaals_parameters[atom1]
+        epsilon2, sigma2 = self._vanderwaals_parameters[atom2]
+
+        charge1 = self._charges[atom1]
+        charge2 = self._charges[atom2]
+
+        distance = get_distance(position1, position2)
+        if distance == 0.0:
+            distance = 3.0
+
+        vanderwaals_energy = _PhysicsStorage.get_vanderwaals_energy(epsilon1, sigma1, epsilon2, sigma2, distance)
+        coulomb_energy = _PhysicsStorage.get_coulomb_energy(charge1, charge2, distance, self._max_distance)
+
+        atom1_key = tuple(self._atom_info[atom1])
+        atom2_key = tuple(self._atom_info[atom2])
+
+        self._charge_per_atom[atom1_key] = charge1
+        self._charge_per_atom[atom2_key] = charge2
+
+        _PhysicsStorage._sum_up(self._vanderwaals_per_atom, atom1_key, vanderwaals_energy)
+        _PhysicsStorage._sum_up(self._vanderwaals_per_atom, atom2_key, vanderwaals_energy)
+
+        _PhysicsStorage._sum_up(self._coulomb_per_atom, atom1_key, coulomb_energy)
+        _PhysicsStorage._sum_up(self._coulomb_per_atom, atom2_key, coulomb_energy)
+
+        _PhysicsStorage._sum_up(self._vanderwaals_per_position, position1, vanderwaals_energy)
+        _PhysicsStorage._sum_up(self._vanderwaals_per_position, position2, vanderwaals_energy)
+
+        _PhysicsStorage._sum_up(self._coulomb_per_position, position1, coulomb_energy)
+        _PhysicsStorage._sum_up(self._coulomb_per_position, position2, coulomb_energy)
+
+    def add_to_features(self, feature_data, feature_data_xyz):
+        feature_data['vdwaals'] = wrap_values_in_lists(self._vanderwaals_per_atom)
+        feature_data_xyz['vdwaals'] = wrap_values_in_lists(self._vanderwaals_per_position)
+        feature_data['coulomb'] = wrap_values_in_lists(self._coulomb_per_atom)
+        feature_data_xyz['coulomb'] = wrap_values_in_lists(self._coulomb_per_position)
+        feature_data['charge'] = wrap_values_in_lists(self._charge_per_atom)
+        feature_data_xyz['charge'] = wrap_values_in_lists(self._charge_per_position)
+
+
+class ResidueContacts(FeatureClass):
+
+    RESIDUE_SYNONYMS = {'PROP': ResidueSynonymCriteria('PRO', ['HT1', 'HT2'], []),
+                        'NTER': ResidueSynonymCriteria('all', ['HT1', 'HT2', 'HT3'], []),
+                        'CTER': ResidueSynonymCriteria('all', ['OXT'], []),
+                        'CTN': ResidueSynonymCriteria('all', ['NT', 'HT1', 'HT2'], []),
+                        'CYNH': ResidueSynonymCriteria('CYS', ['1SG'], ['2SG']),
+                        'DISU': ResidueSynonymCriteria('CYS', ['1SG', '2SG'], []),
+                        'HISE': ResidueSynonymCriteria('HIS', ['ND1', 'CE1', 'CD2', 'NE2', 'HE2'], ['HD1']),
+                        'HISD': ResidueSynonymCriteria('HIS', ['ND1', 'CE1', 'CD2', 'NE2', 'HD1'], ['HE2'])}
+
+    RESIDUE_KEY = ["chainID", "resSeq", "resName"]
+
+    @staticmethod
+    def get_alternative_residue_name(residue_name, atom_names):
+        for name, crit in ResidueContacts.RESIDUE_SYNONYMS.items():
+            if crit.matches(residue_name, atom_names):
+                return name
+
+        return None
 
     def __init__(self, pdb_path, chain_id, residue_number,
                  top_path, param_path, patch_path,
@@ -275,67 +343,15 @@ class ResidueContacts(FeatureClass):
         self.sqldb.update_column('altRes', atomic_alternative_residue_names)
 
     def _evaluate_physics(self):
-        vanderwaals_data = self.sqldb.get('eps,sig')
-        charge_data = self.sqldb.get('CHARGE')
-        atom_info = self.sqldb.get(",".join(ResidueContacts.ATOM_KEY))
-        atom_positions = self.sqldb.get('x,y,z')
-
-        vanderwaals_per_atom = {}
-        vanderwaals_per_position = {}
-        coulomb_per_atom = {}
-        coulomb_per_position = {}
-        charge_per_atom = {}
-        charge_per_position = {}
+        physics_storage = _PhysicsStorage(self.sqldb, self.max_contact_distance)
 
         for contact_atom in self._contact_atoms:  # loop over atoms that contact the residue of interest
 
-            contact_epsilon, contact_sigma = vanderwaals_data[contact_atom]
-            contact_charge = charge_data[contact_atom]
-            contact_atom_key = tuple(atom_info[contact_atom])
-            contact_position_key = tuple([0] + atom_positions[contact_atom])
-
-            # set charge
-            charge_per_atom[contact_atom_key] = contact_charge
-            charge_per_position[contact_position_key] = contact_charge
-
             for residue_atom in self._residue_atoms:  # loop over atoms in the residue of iterest
 
-                residue_epsilon, residue_sigma = vanderwaals_data[residue_atom]
-                residue_charge = charge_data[residue_atom]
-                residue_atom_key = tuple(atom_info[residue_atom])
-                residue_position_key = tuple([1] + atom_positions[residue_atom])
+                physics_storage.include_pair(contact_atom, residue_atom)
 
-                # set charge
-                charge_per_atom[residue_atom_key] = residue_charge
-                charge_per_position[residue_position_key] = residue_charge
-
-                distance = get_distance(atom_positions[contact_atom], atom_positions[residue_atom])
-                if distance == 0.0:
-                    distance = 3.0
-
-                # add on vanderwaals energy
-                vanderwaals_energy = ResidueContacts.get_vanderwaals_energy(contact_epsilon, contact_sigma, residue_epsilon, residue_sigma, distance)
-
-                vanderwaals_per_atom[contact_atom_key] = vanderwaals_per_atom.get(contact_atom_key, 0.0) + vanderwaals_energy
-                vanderwaals_per_atom[residue_atom_key] = vanderwaals_per_atom.get(residue_atom_key, 0.0) + vanderwaals_energy
-                vanderwaals_per_position[contact_position_key] = vanderwaals_per_position.get(contact_position_key, 0.0) + vanderwaals_energy
-                vanderwaals_per_position[residue_position_key] = vanderwaals_per_position.get(residue_position_key, 0.0) + vanderwaals_energy
-
-                # add on coulomb energy
-                coulomb_energy = ResidueContacts.get_coulomb_energy(contact_charge, residue_charge, distance, self.max_contact_distance)
-
-                coulomb_per_atom[contact_atom_key] = coulomb_per_atom.get(contact_atom_key, 0.0) + coulomb_energy
-                coulomb_per_atom[residue_atom_key] = coulomb_per_atom.get(residue_atom_key, 0.0) + coulomb_energy
-                coulomb_per_position[contact_position_key] = coulomb_per_position.get(contact_position_key, 0.0) + coulomb_energy
-                coulomb_per_position[residue_position_key] = coulomb_per_position.get(residue_position_key, 0.0) + coulomb_energy
-
-        # add to feature data (in list form)
-        self.feature_data['vdwaals'] = wrap_values_in_lists(vanderwaals_per_atom)
-        self.feature_data_xyz['vdwaals'] = wrap_values_in_lists(vanderwaals_per_position)
-        self.feature_data['coulomb'] = wrap_values_in_lists(coulomb_per_atom)
-        self.feature_data_xyz['coulomb'] = wrap_values_in_lists(coulomb_per_position)
-        self.feature_data['charge'] = wrap_values_in_lists(charge_per_atom)
-        self.feature_data_xyz['charge'] = wrap_values_in_lists(charge_per_position)
+        physics_storage.add_to_features(self.feature_data, self.feature_data_xyz)
 
     def evaluate(self):
         self._read_top()
