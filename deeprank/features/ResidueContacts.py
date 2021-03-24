@@ -36,7 +36,7 @@ class ResidueSynonymCriteria:
 
 
 def get_squared_distance(pos1, pos2):
-    return numpy.sum([numpy.square(pos1[i] - pos2[i]) for i in range(3)])
+    return numpy.sum(numpy.square(pos1 - pos2))
 
 def get_distance(pos1, pos2):
     return numpy.sqrt(get_squared_distance(pos1, pos2))
