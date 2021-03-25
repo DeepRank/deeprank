@@ -22,9 +22,10 @@ class ResidueSynonymCriteria:
     def __init__(self, residue_name, atoms_present, atoms_absent):
         """Build new criteria
 
-        residue_name (string): the name of the residue
-        atoms_present (list of strings): the names of the atoms that should be present in the residue
-        atoms_absent (list of strings) the names of the atoms that should be absent in the residue
+        Args:
+            residue_name (string): the name of the residue
+            atoms_present (list of strings): the names of the atoms that should be present in the residue
+            atoms_absent (list of strings) the names of the atoms that should be absent in the residue
         """
 
         self.residue_name = residue_name
@@ -34,8 +35,9 @@ class ResidueSynonymCriteria:
     def matches(self, residue_name, atom_names):
         """Check whether the given residue matches this set of criteria
 
-           residue_name (string): the name of the residue to match
-           atom_names (list of strings): the names of the atoms in the residue
+        Args:
+            residue_name (string): the name of the residue to match
+            atom_names (list of strings): the names of the atoms in the residue
         """
 
         if self.residue_name != 'all' and residue_name != self.residue_name:
@@ -58,8 +60,9 @@ def get_squared_distance(pos1, pos2):
        and should be used if one does not necessarily need
        the normal distance for a large set of coordinates.
 
-       pos1 (array of 3): the xyz coords of position 1
-       pos2 (array of 3): the xyz coords of position 2
+    Args:
+        pos1 (array of 3): the xyz coords of position 1
+        pos2 (array of 3): the xyz coords of position 2
     """
 
     return numpy.sum(numpy.square(pos1 - pos2))
@@ -69,8 +72,9 @@ def get_distance(pos1, pos2):
        This is more computationally expensive than the squared distance
        and should only be used when one really needs this distance.
 
-       pos1 (array of 3): the xyz coords of position 1
-       pos2 (array of 3): the xyz coords of position 2
+    Args:
+        pos1 (array of 3): the xyz coords of position 1
+        pos2 (array of 3): the xyz coords of position 2
     """
 
     return numpy.sqrt(get_squared_distance(pos1, pos2))
@@ -79,7 +83,8 @@ def wrap_values_in_lists(dict_):
     """Wrap the dictionary's values in lists. This
        appears to be necessary for the exported features to work.
 
-       dict_(dictionary): the dictionary that should be converted
+    Args:
+        dict_(dictionary): the dictionary that should be converted
     """
 
     return {key: [value] for key,value in dict_.items()}
@@ -102,9 +107,10 @@ class _PhysicsStorage:
     def _sum_up(dict_, key, value_to_add):
         """A helper function to sum the values of a dictionary.
 
-           dict_(dictionary): the dictionary to store the value in
-           key(hashable object): the key under which the value should be stored in dict_
-           value_to_add: the value to add onto the dictionary value
+        Args:
+            dict_(dictionary): the dictionary to store the value in
+            key(hashable object): the key under which the value should be stored in dict_
+            value_to_add: the value to add onto the dictionary value
         """
 
         if key not in dict_:
@@ -116,11 +122,12 @@ class _PhysicsStorage:
     def get_vanderwaals_energy(epsilon1, sigma1, epsilon2, sigma2, distance):
         """The formula to calculate the vanderwaals energy for two atoms (atom 1 and atom 2)
 
-           epsilon1 (float): the vanderwaals epsilon parameter of atom 1
-           sigma1 (float): the vanderwaals sigma parameter of atom 1
-           epsilon2 (float): the vanderwaals epsilon parameter of atom 2
-           sigma2 (float): the vanderwaals sigma parameter of atom 2
-           distance (float): the vanderwaals distance between atom 1 and atom 2
+        Args:
+            epsilon1 (float): the vanderwaals epsilon parameter of atom 1
+            sigma1 (float): the vanderwaals sigma parameter of atom 1
+            epsilon2 (float): the vanderwaals epsilon parameter of atom 2
+            sigma2 (float): the vanderwaals sigma parameter of atom 2
+            distance (float): the vanderwaals distance between atom 1 and atom 2
         """
 
         average_epsilon = numpy.sqrt(epsilon1 * epsilon2)
@@ -143,10 +150,11 @@ class _PhysicsStorage:
     def get_coulomb_energy(charge1, charge2, distance, max_distance):
         """The formula to calculate the coulomb energy for two atoms (atom 1 and atom 2)
 
-           charge1 (float): the charge of atom 1
-           charge2 (float): the charge of atom 2
-           distance (float): the vanderwaals distance between atom 1 and atom 2
-           max_distance (float): the max distance that was used to find atoms 1 and 2
+        Args:
+            charge1 (float): the charge of atom 1
+            charge2 (float): the charge of atom 2
+            distance (float): the vanderwaals distance between atom 1 and atom 2
+            max_distance (float): the max distance that was used to find atoms 1 and 2
         """
 
         return (charge1 * charge2 * _PhysicsStorage.COULOMB_CONSTANT /
@@ -155,7 +163,11 @@ class _PhysicsStorage:
     def __init__(self, sqldb):
         """Build a new set of physical parameters
 
-           sqldb (pdb2sql): interface to the contents of a PDB file, with charges and vanderwaals parameters included.
+        Args:
+            sqldb (pdb2sql): interface to the contents of a PDB file, with charges and vanderwaals parameters included.
+
+        Raises:
+            RuntimeError: if features are missing from sqldb
         """
 
         self._vanderwaals_parameters = sqldb.get('eps,sig')
@@ -185,9 +197,13 @@ class _PhysicsStorage:
     def include_pair(self, atom1, atom2, max_distance):
         """Add a pair of atoms to the sum
 
-           atom1 (int): number of atom 1
-           atom2 (int): number of atom 2
-           max_distance (float): the max distance that was used to find the atoms
+        Args:
+            atom1 (int): number of atom 1
+            atom2 (int): number of atom 2
+            max_distance (float): the max distance that was used to find the atoms
+
+        Raises:
+            ValueError: if atom1 and atom2 are at the same position
         """
 
         position1 = self._positions[atom1]
@@ -230,8 +246,9 @@ class _PhysicsStorage:
     def add_to_features(self, feature_data, feature_data_xyz):
         """Convert the summed interactions to deeprank features and store them in the corresponding dictionaries
 
-           feature_data (dictionary): where the per atom features should be stored
-           feature_data_xyz (dictionary): where the per position features should be stored
+        Args:
+            feature_data (dictionary): where the per atom features should be stored
+            feature_data_xyz (dictionary): where the per position features should be stored
         """
 
         feature_data['vdwaals'] = wrap_values_in_lists(self._vanderwaals_per_atom)
@@ -259,8 +276,9 @@ class ResidueContacts(FeatureClass):
     def get_alternative_residue_name(residue_name, atom_names):
         """Get the alternative residue name, according to the static dictionary in this class
 
-        residue_name (string): the name of the residue
-        atom_names (list of strings): the names of the atoms in the residue
+        Args:
+            residue_name (string): the name of the residue
+            atom_names (list of strings): the names of the atoms in the residue
         """
 
         for name, crit in ResidueContacts.RESIDUE_SYNONYMS.items():
@@ -274,13 +292,14 @@ class ResidueContacts(FeatureClass):
                  max_contact_distance=8.5):
         """Build a new residue contacts feature object
 
-           pdb_path (string): where the pdb file is located on disk
-           chain_id (string): identifier of the residue's protein chain within the pdb file
-           residue_number (int): identifier of the residue within the protein chain
-           top_path (string): location of the top file on disk
-           param_path (string): location of the param file on disk
-           patch_path (string): location of the patch file on disk
-           max_contact_distance (float): the maximum distance allowed for two atoms to be considered a contact pair
+        Args:
+            pdb_path (string): where the pdb file is located on disk
+            chain_id (string): identifier of the residue's protein chain within the pdb file
+            residue_number (int): identifier of the residue within the protein chain
+            top_path (string): location of the top file on disk
+            param_path (string): location of the param file on disk
+            patch_path (string): location of the patch file on disk
+            max_contact_distance (float): the maximum distance allowed for two atoms to be considered a contact pair
         """
 
         super().__init__("Atomic")
@@ -384,9 +403,10 @@ class ResidueContacts(FeatureClass):
     def _get_atom_type(self, residue_name, alternative_residue_name, atom_name):
         """Find the type name of the given atom, according to top and patch data
 
-           residue_name (string): the name of the residue that the atom is in
-           alternative_residue_name (string): the name of the residue, outputted from 'get_alternative_residue_name'
-           atom_name (string): the name of the atom itself
+        Args:
+            residue_name (string): the name of the residue that the atom is in
+            alternative_residue_name (string): the name of the residue, outputted from 'get_alternative_residue_name'
+            atom_name (string): the name of the atom itself
         """
 
         if (alternative_residue_name, atom_name) in self._patch_type:
@@ -401,9 +421,10 @@ class ResidueContacts(FeatureClass):
     def _get_charge(self, residue_name, alternative_residue_name, atom_name):
         """Find the charge of the atom, according to top and patch data
 
-           residue_name (string): the name of the residue that the atom is in
-           alternative_residue_name (string): the name of the residue, outputted from 'get_alternative_residue_name'
-           atom_name (string): the name of the atom itself
+        Args:
+            residue_name (string): the name of the residue that the atom is in
+            alternative_residue_name (string): the name of the residue, outputted from 'get_alternative_residue_name'
+            atom_name (string): the name of the atom itself
         """
 
         if residue_name not in self._valid_residue_names:
@@ -424,10 +445,11 @@ class ResidueContacts(FeatureClass):
     def _get_vanderwaals_parameters(self, residue_name, alternative_residue_name, atom_name, atom_type):
         """Find the vanderwaals parameters of the atom, according to param data
 
-           residue_name (string): the name of the residue that the atom is in
-           alternative_residue_name (string): the name of the residue, outputted from 'get_alternative_residue_name'
-           atom_name (string): the name of the atom itself
-           atom_type (string): output from '_get_atom_type'
+        Args:
+            residue_name (string): the name of the residue that the atom is in
+            alternative_residue_name (string): the name of the residue, outputted from 'get_alternative_residue_name'
+            atom_name (string): the name of the atom itself
+            atom_type (string): output from '_get_atom_type'
         """
 
         if residue_name not in self._valid_residue_names:
