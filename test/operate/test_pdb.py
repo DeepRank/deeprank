@@ -1,5 +1,7 @@
 import numpy
 import logging
+import pkg_resources
+import os
 
 from pdb2sql import pdb2sql
 from nose.tools import ok_
@@ -10,7 +12,9 @@ from deeprank.operate.pdb import get_residue_contact_atom_pairs
 _log = logging.getLogger(__name__)
 
 def test_residue_contact_atoms():
-    pdb_path = "test/1AK4/native/1AK4.pdb"
+
+    pdb_path = os.path.join(pkg_resources.resource_filename(__name__, ''),
+                            "../1AK4/native/1AK4.pdb")
 
     try:
         pdb = pdb2sql(pdb_path)
