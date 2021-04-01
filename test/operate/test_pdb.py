@@ -21,17 +21,24 @@ def test_residue_contact_atoms():
 
         contact_atom_pairs = get_residue_contact_atom_pairs(pdb, 'C', 145, 8.5)
 
+        # List all the atoms in the pairs that we found:
         contact_atoms = set([])
         for atom1, atom2 in contact_atom_pairs:
             contact_atoms.add(atom1)
             contact_atoms.add(atom2)
 
+        # Ask pdb2sql for the residue identifiers & atom names:
         contact_atom_names = [tuple(x) for x in pdb.get("chainID,resSeq,name", rowID=list(contact_atoms))]
     finally:
         pdb._close()
 
-    neighbour = ('C', 144, 'CA')
-    distant = ('B', 134, 'OE2')
+    # Now, we need to verify that the function "get_residue_contact_atom_pairs" returned the right pairs.
+    # We do so by selecting one close residue and one distant residue.
+
+    neighbour = ('C', 144, 'CA')  # this residue sits right next to the selected residue
+    distant = ('B', 134, 'OE2')  # this residue is very far away
+
+    # Check that the close residue is present in the list and that the distant residue is absent.
 
     ok_(neighbour in contact_atom_names)
 
