@@ -1,10 +1,10 @@
 
 
 class Residue:
-    def __init__(self, number, name, atoms=[]):
+    def __init__(self, number, name):
         self.number = number
         self.name = name
-        self.atoms = atoms
+        self.atoms = []
 
     @property
     def chain_id(self):

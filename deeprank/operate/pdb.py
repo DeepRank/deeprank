@@ -8,18 +8,6 @@ from deeprank.models.residue import Residue
 
 _log = logging.getLogger(__name__)
 
-def get_squared_distance(position1, position2):
-    """Get squared euclidean distance, this is computationally cheaper that the euclidean distance
-
-        Args:
-            position1 (numpy vector): first position
-            position2 (numpy vector): second position
-
-        Returns (float): the squared distance
-    """
-
-    return numpy.sum(numpy.square(position1 - position2))
-
 
 def get_distance(position1, position2):
     """ Get euclidean distance between two positions in space.
@@ -31,7 +19,7 @@ def get_distance(position1, position2):
         Returns (float): the distance
     """
 
-    return numpy.sqrt(get_squared_distance(position1, position2))
+    return numpy.sqrt(numpy.sum(numpy.square(position1 - position2)))
 
 
 def get_atoms(pdb2sql):
@@ -81,9 +69,6 @@ def get_residue_contact_atom_pairs(pdb2sql, chain_id, residue_number, max_intera
         Returns ([Pair(int, int)]): pairs of atom numbers that contact each other
     """
 
-    # Square the max distance, so that we can compare it to the squared euclidean distance between each atom pair.
-    squared_max_interatomic_distance = numpy.square(max_interatomic_distance)
-
     # get all the atoms in the pdb file:
     atoms = get_atoms(pdb2sql)
 
@@ -97,12 +82,15 @@ def get_residue_contact_atom_pairs(pdb2sql, chain_id, residue_number, max_intera
     contact_atom_pairs = set([])
     for atom in atoms:
 
+        # Check that the atom is not one of the residue's own atoms:
+        if atom.chain_id == chain_id and atom.residue.number == residue_number:
+            continue
+
         # Within the atom iteration, iterate over the atoms in the residue:
         for residue_atom in residue_atoms:
 
-            # Check that the two atom numbers are not the same and check their distance:
-            if atom != residue_atom and \
-                    get_squared_distance(atom.position, residue_atom.position) < squared_max_interatomic_distance:
+            # Check that the atom is close enough:
+            if get_distance(atom.position, residue_atom.position) < max_interatomic_distance:
 
                 contact_atom_pairs.add(Pair(residue_atom, atom))
 

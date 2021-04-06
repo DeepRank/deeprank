@@ -18,5 +18,5 @@ class Atom:
         return self.id < other.id
 
     def __repr__(self):
-        return "Atom {} ({} {} {}) at {}".format(self.id, self.chain_id, self.residue, self.name, self.position)
+        return "Atom {} ({}) from {} {} at {}".format(self.id, self.chain_id, self.residue, self.name, self.position)
 
