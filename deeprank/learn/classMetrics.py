@@ -106,6 +106,22 @@ def F1(yp, yt):
     f1 = 2 * tp / (2 * tp + fp + fn)
     return f1
 
+def mcc(yp, yt):
+    """Matthews correlation coefficient (MCC)
+
+    Args:
+        yp (array): predictions
+        yt (array): targets
+
+    Returns:
+        float: MCC value
+    """
+    tp = true_positive(yp, yt)
+    tn = true_negative(yp, yt)
+    fp = false_positive(yp, yt)
+    fn = false_negative(yp, yt)
+    mcc = (tp * tn - fp * fn) / np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+    return mcc
 
 def true_positive(yp, yt):
     """number of true positive cases.
