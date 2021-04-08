@@ -1,4 +1,5 @@
 
+import logging
 import itertools
 import sys
 from time import time
@@ -9,6 +10,7 @@ import pdb2sql
 
 from deeprank.config import logger
 from deeprank.tools import sparse
+from deeprank.operate.pdb import get_atoms, get_residue_contact_atom_pairs
 
 try:
     from tqdm import tqdm
@@ -17,12 +19,15 @@ except ImportError:
         return x
 
 
+_log = logging.getLogger(__name__)
+
+
 def logif(string, cond): return logger.info(string) if cond else None
 
 
 class GridTools(object):
 
-    def __init__(self, molgrp, chain1, chain2,
+    def __init__(self, molgrp, mutant,
                  number_of_points=30, resolution=1.,
                  atomic_densities=None, atomic_densities_mode='ind',
                  feature=None, feature_mode='ind',
@@ -33,8 +38,7 @@ class GridTools(object):
 
         Args:
             molgrp(str): name of the group of the molecule in the HDF5 file.
-            chain1 (str): First chain ID.
-            chain2 (str): Second chain ID.
+            mutant (PdbMutantSelection): The mutant
             number_of_points(int, optional): number of points we want in
                 each direction of the grid.
             resolution(float, optional): distance(in Angs) between two points.
@@ -69,9 +73,8 @@ class GridTools(object):
         self.molgrp = molgrp
         self.mol_basename = molgrp.name
 
-        # chain IDs
-        self.chain1 = chain1
-        self.chain2 = chain2
+        # mutant query
+        self.mutant = mutant
 
         # hdf5 file to strore data
         self.hdf5 = self.molgrp.file
@@ -218,17 +221,17 @@ class GridTools(object):
     def get_contact_center(self):
         """Get the center of conact atoms."""
 
-        contact_atoms = self.sqldb.get_contact_atoms(
-            cutoff=self.contact_distance, chain1=self.chain1, chain2=self.chain2)
-
-        tmp = []
-        for i in contact_atoms.values():
-            tmp.extend(i)
-        contact_atoms = list(set(tmp))
+        contact_atom_pairs = get_residue_contact_atom_pairs(self.sqldb,
+                                                            self.mutant.chain_id, self.mutant.residue_number,
+                                                            self.contact_distance)
+        contact_atom_ids = set([])
+        for atom1, atom2 in contact_atom_pairs:
+            contact_atom_ids.add(atom1.id)
+            contact_atom_ids.add(atom2.id)
 
         # get interface center
         self.center_contact = np.mean(
-            np.array(self.sqldb.get('x,y,z', rowID=contact_atoms)), 0)
+            np.array(self.sqldb.get('x,y,z', rowID=list(contact_atom_ids))), 0)
 
     ################################################################
     # shortcut to add all the feature a
@@ -316,6 +319,7 @@ class GridTools(object):
 
         Raises:
             ImportError: Description
+            ValueError: if an unsupported mode is used
         """
         mode = self.atomic_densities_mode
         logif('-- Map atomic densities on %dx%dx%d grid (mode=%s)' %
@@ -338,89 +342,63 @@ class GridTools(object):
             grid_gpu = gpuarray.zeros(self.npts, np.float32)
 
         # get the contact atoms
+        atoms_by_chain = {}
         if only_contact:
-            index = self.sqldb.get_contact_atoms(cutoff=self.contact_distance,
-                chain1=self.chain1, chain2=self.chain2)
+            contact_atom_pairs = get_residue_contact_atom_pairs(self.sqldb, self.mutant.chain_id, self.mutant.residue_number, self.contact_distance)
+
+            for atom1, atom2 in contact_atom_pairs:
+                atoms_by_chain[atom1.chain_id] = atoms_by_chain.get(atom1.chain_id, []) + [atom1]
+                atoms_by_chain[atom2.chain_id] = atoms_by_chain.get(atom2.chain_id, []) + [atom2]
         else:
-            index = {self.chain1: self.sqldb.get('rowID', chainID=self.chain1),
-                     self.chain2: self.sqldb.get('rowID', chainID=self.chain2)}
+            for atom in get_atoms(self.sqldb):
+                atoms_by_chain[atom.chain_id] = atoms_by_chain.get(atom.chain_id, []) + [atom]
 
-        # loop over all the data we want
-        for elementtype, vdw_rad in self.local_tqdm(
-                self.atomic_densities.items()):
+        _log.debug("atoms: {}".format(atoms_by_chain))
 
-            t0 = time()
-
-            xyzA = np.array(self.sqldb.get(
-                'x,y,z', rowID=index[self.chain1], element=elementtype))
-            xyzB = np.array(self.sqldb.get(
-                'x,y,z', rowID=index[self.chain2], element=elementtype))
-
-            tprocess = time() - t0
+        # Loop over the atom types:
+        for element_type, vdw_rad in self.local_tqdm(self.atomic_densities.items()):
 
             t0 = time()
-            # if we use CUDA
-            if self.cuda:  # pragma: no cover
 
-                # reset the grid
-                grid_gpu *= 0
+            _log.debug("investigate {}".format(element_type))
 
-                # get the atomic densities of chain A
-                for pos in xyzA:
-                    x0, y0, z0 = pos.astype(np.float32)
-                    vdw = np.float32(vdw_rad)
-                    self.cuda_atomic(
-                        vdw, x0, y0, z0, x_gpu, y_gpu, z_gpu, grid_gpu, block=tuple(
-                            self.gpu_block), grid=tuple(
-                            self.gpu_grid))
-                    atdensA = grid_gpu.get()
+            # Loop over the atoms:
+            for chain_id, atoms in atoms_by_chain.items():
+                if self.cuda:  # if we use CUDA
+                    # reset the grid
+                    grid_gpu *= 0
 
-                # reset the grid
-                grid_gpu *= 0
+                    # get the atomic densities
+                    for atom in atoms:
+                        if atom.element == element_type:
+                            x0, y0, z0 = atom.position.astype(np.float32)
+                            vdw = np.float32(vdw_rad)
+                            self.cuda_atomic(vdw, x0, y0, z0,
+                                             x_gpu, y_gpu, z_gpu, grid_gpu,
+                                             block=tuple(self.gpu_block),
+                                             grid=tuple(self.gpu_grid))
+                            atdens = grid_gpu.get()
 
-                # get the atomic densities of chain B
-                for pos in xyzB:
-                    x0, y0, z0 = pos.astype(np.float32)
-                    vdw = np.float32(vdw_rad)
-                    self.cuda_atomic(
-                        vdw, x0, y0, z0, x_gpu, y_gpu, z_gpu, grid_gpu, block=tuple(
-                            self.gpu_block), grid=tuple(
-                            self.gpu_grid))
-                    atdensB = grid_gpu.get()
+                else:  # if we don't use CUDA
 
-            # if we don't use CUDA
-            else:
+                    # init the grid
+                    atdens = np.zeros(self.npts)
 
-                # init the grid
-                atdensA = np.zeros(self.npts)
-                atdensB = np.zeros(self.npts)
+                    # run on the atoms
+                    for atom in atoms:
+                        if atom.element == element_type:
+                            atdens += self.densgrid(atom.position, vdw_rad)
 
-                # run on the atoms
-                for pos in xyzA:
-                    atdensA += self.densgrid(pos, vdw_rad)
-
-                # run on the atoms
-                for pos in xyzB:
-                    atdensB += self.densgrid(pos, vdw_rad)
-
-            # create the final grid: A - B
-            if mode == 'diff':
-                self.atdens[elementtype] = atdensA - atdensB
-
-            # create the final grid: A + B
-            elif mode == 'sum':
-                self.atdens[elementtype] = atdensA + atdensB
-
-            # create the final grid: A and B
-            elif mode == 'ind':
-                self.atdens[elementtype + '_chain1'] = atdensA
-                self.atdens[elementtype + '_chain2'] = atdensB
-            else:
-                raise ValueError(f'Atomic density mode {mode} not recognized')
+                # create the final grid: A and B
+                if mode == 'ind':
+                    key = '%s_%s' % (element_type, chain_id)
+                    self.atdens[key] = atdens
+                else:
+                    raise ValueError('Unsupported atomic density mode {}'.format(mode))
 
             tgrid = time() - t0
-            logif('     Process time %f ms' % (tprocess * 1000), self.time)
             logif('     Grid    time %f ms' % (tgrid * 1000), self.time)
+
 
     # compute the atomic denisties on the grid
     def densgrid(self, center, vdw_radius):
@@ -457,6 +435,39 @@ class GridTools(object):
     # and map it on the grid
     ################################################################
 
+    @staticmethod
+    def _get_feature_row_chain_position_values(row):
+        """ Extract metadata from an input xyz feature row.
+            The row format is: chain_number x y z [values]
+
+            Returns (triple): chain number(float), position(float list of length 3) and values(float list)
+        """
+
+        position_dimension = 3
+
+        chain_number = row[0]
+        position = row[1: 1 + position_dimension]
+        values = row[1 + position_dimension:]
+
+        return chain_number, position, values
+
+    @staticmethod
+    def _get_indicative_feature_key(feature_type_name, chain_number=None, value_number=None):
+        """ Creates a key to be used within the grid feature group.
+            The format is: [type name]_[chain number as int]_[value number]
+
+            Returns (str): the key
+        """
+
+        feature_name = feature_type_name
+        if chain_number is not None:
+            feature_name += "_%03d" % chain_number
+
+        if value_number is not None:
+            feature_name += "_%03d" % value_number
+
+        return feature_name
+
     # map residue a feature on the grid
     def map_features(self, featlist, transform=None):
         """Map individual feature to the grid.
@@ -476,7 +487,7 @@ class GridTools(object):
 
         Raises:
             ImportError: Description
-            ValueError: Description
+            ValueError: if an unsupported mode is used
         """
 
         # declare the total dictionary
@@ -510,29 +521,14 @@ class GridTools(object):
             if feature_name in featgrp.keys():
                 data = featgrp[feature_name][:]
             else:
-                print('Error Feature not found \n\tPossible features: ' +
-                      ' | '.join(featgrp.keys()))
-                raise ValueError(
-                    'feature %s  not found in the file' % (feature_name))
-
-            # detect if we have a xyz format
-            # or a byte format
-            # define how many elements (ntext)
-            # are present before the feature values
-            # xyz: 4 (chain x y z)
-            # byte - residue: 3 (chain resSeq resName)
-            # byte - atomic: 4 (chain resSeq resName name)
-
-            # all the format are now xyz
-            feature_type = 'xyz'
-            ntext = 4
+                raise ValueError('feature %s not found in the file' % (feature_name))
 
             # test if the transform is callable
             # and test it on the first line of the data
             # get the data on the first line
+            position_dimension = 3
             if data.shape[0] != 0:
-
-                data_test = data[0, ntext:]
+                chain_numbers, position, data_test = GridTools._get_feature_row_chain_position_values(data[0])
 
                 # define the length of the output
                 if transform is None:
@@ -545,24 +541,29 @@ class GridTools(object):
             else:
                 nFeat = 1
 
-            # declare the dict
-            # that will in fine holds all the data
+            # Initialize the dict that will eventually hold all the data:
+            present_chain_numbers = {GridTools._get_feature_row_chain_position_values(row)[0] for row in data}
+
             if nFeat == 1:
+
                 if self.feature_mode == 'ind':
-                    dict_data[feature_name + '_chain1'] = np.zeros(self.npts)
-                    dict_data[feature_name + '_chain2'] = np.zeros(self.npts)
+                    for chain_number in present_chain_numbers:
+                        fname = GridTools._get_indicative_feature_key(feature_name, chain_number)
+                        dict_data[fname] = np.zeros(self.npts)
                 else:
-                    dict_data[feature_name] = np.zeros(self.npts)
+                    fname = GridTools._get_indicative_feature_key(feature_name)
+                    dict_data[fname] = np.zeros(self.npts)
+
             else: # do we need that ?!
+
                 for iF in range(nFeat):
                     if self.feature_mode == 'ind':
-                        dict_data[feature_name + '_chain1_%03d' %
-                                  iF] = np.zeros(self.npts)
-                        dict_data[feature_name + '_chain2_%03d' %
-                                  iF] = np.zeros(self.npts)
+                        for chain_number in present_chain_numbers:
+                            fname = GridTools._get_indicative_feature_key(feature_name, chain_number, iF)
+                            dict_data[fname] = np.zeros(self.npts)
                     else:
-                        dict_data[feature_name + '_%03d' %
-                                  iF] = np.zeros(self.npts)
+                        fname = GridTools._get_indicative_feature_key(feature_name, value_number=iF)
+                        dict_data[fname] = np.zeros(self.npts)
 
             # skip empty features
             if data.shape[0] == 0:
@@ -577,93 +578,36 @@ class GridTools(object):
             tgrid = 0
 
             # map all the features
-            for line in self.local_tqdm(data):
+            for row in self.local_tqdm(data):
                 t0 = time()
-                # if the feature was written with xyz data
-                # i.e chain x y z values
-                if feature_type == 'xyz':
 
-                    chain = [self.chain1, self.chain2][int(line[0])]
-                    pos = line[1:ntext]
-                    feat_values = np.array(line[ntext:])
-
-                # if the feature was written with bytes
-                # i.e chain resSeq resName (name) values
-                # TODO deprecated?
-                else:
-
-                    # decode the line
-                    line = line.decode('utf-8').split()
-
-                    # get the position of the resnumber
-                    chain, resName, resNum = line[0], line[1], line[2]
-
-                    # get the atom name for atomic data
-                    if feature_type == 'atomic':
-                        atName = line[3]
-
-                    # get the position
-                    # TODO deprecated? the definition of center postion is
-                    #  different from that in features e.g. BSA.py
-                    if feature_type == 'residue':
-                        pos = np.mean(np.array(self.sqldb.get(
-                            'x,y,z', chainID=chain, resSeq=resNum)), 0)
-                        sql_resName = list(set(self.sqldb.get(
-                            'resName', chainID=chain, resSeq=resNum)))
-                    else:
-                        pos = np.array(self.sqldb.get(
-                            'x,y,z', chainID=chain,
-                            resSeq=resNum, name=atName))[0]
-                        sql_resName = list(set(self.sqldb.get(
-                            'resName', chainID=chain,
-                            resSeq=resNum, name=atName)))
-
-                    # check if  the resname correspond
-                    if len(sql_resName) == 0:
-                        print('Error: SQL query returned empty list')
-                        print('Tip  : Make sure the parameter file ')
-                        print('Tip  : corresponds to the pdb file %s' %
-                              (self.sqldb.pdbfile))
-                        sys.exit()
-                    else:
-                        sql_resName = sql_resName[0]
-
-                    if resName != sql_resName:
-                        print('Residue Name Error in the Feature file ')
-                        print('Feature File: chain %s resNum %s  resName %s' %
-                              (chain, resNum, resName))
-                        print('SQL data    : chain %s resNum %s  resName %s' %
-                              (chain, resNum, sql_resName))
-                        sys.exit()
-
-                    # get the values of the feature(s) for thsi residue
-                    feat_values = np.array(list(map(float, line[ntext:])))
+                # parse the row
+                chain_number, pos, feat_values = GridTools._get_feature_row_chain_position_values(row)
 
                 # postporcess the data
                 if callable(transform):
                     feat_values = transform(feat_values)
 
                 # handle the mode
-                fname = feature_name
                 if self.feature_mode == "diff":
-                    coeff = {self.chain1: 1, self.chain2: -1}[chain]
+                    raise ValueError("Unsupported feature mode {}".format(self.feature_mode))
                 else:
-                    coeff = 1
-                if self.feature_mode == "ind":
-                    chain_name = {self.chain1: '1', self.chain2: '2'}[chain]
-                    fname = feature_name + "_chain" + chain_name
+                    coeff = 1.0
+
                 tprocess += time() - t0
 
                 t0 = time()
                 # map this feature(s) on the grid(s)
                 if not self.cuda:
                     if nFeat == 1:
-                        dict_data[fname] += coeff * \
-                            self.featgrid(pos, feat_values)
+                        fname = GridTools._get_indicative_feature_key(feature_name, chain_number)
+
+                        dict_data[fname] += coeff * self.featgrid(pos, feat_values)
                     else:
                         for iF in range(nFeat):
-                            dict_data[fname + '_%03d' % iF] += coeff * \
-                                self.featgrid(pos, feat_values[iF])
+                            fname = GridTools._get_indicative_feature_key(feature_name, chain_number, iF)
+
+                            dict_data[fname] += coeff * self.featgrid(pos, feat_values[iF])
 
                 # try to use cuda to speed it up
                 else:  # pragma: no cover
@@ -677,14 +621,16 @@ class GridTools(object):
                                        block=tuple(self.gpu_block),
                                        grid=tuple(self.gpu_grid))
                     else:
-                        raise ValueError(
-                            'CUDA only possible for single-valued features')
+                        raise ValueError('CUDA only possible for single-valued features')
 
                 tgrid += time() - t0
 
             if self.cuda:  # pragma: no cover
-                dict_data[fname] = grid_gpu.get()
-                driver.Context.synchronize()
+                for chain_number in chain_numbers:
+                    fname = GridTools._get_indicative_feature_key(feature_name, chain_number)
+
+                    dict_data[fname] = grid_gpu.get()
+                    driver.Context.synchronize()
 
             logif('     Process time %f ms' % (tprocess * 1000), self.time)
             logif('     Grid    time %f ms' % (tgrid * 1000), self.time)
@@ -815,7 +761,7 @@ class GridTools(object):
             dict_data(dict): feature values stored as a dict
             data_name(str): feature name
         """
-        # get the group og the feature
+        # get the group of the feature
         feat_group = self.hdf5.require_group(
             self.mol_basename + '/mapped_features/' + data_name)
 

@@ -1,9 +1,10 @@
 
 
 class Atom:
-    def __init__(self, id_, position, chain_id, name, residue=None):
+    def __init__(self, id_, position, chain_id, name, element, residue=None):
         self.id = id_
         self.name = name
+        self.element = element
         self.chain_id = chain_id
         self.position = position
         self.residue = residue
