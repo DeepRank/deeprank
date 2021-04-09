@@ -461,10 +461,10 @@ class GridTools(object):
 
         feature_name = feature_type_name
         if chain_number is not None:
-            feature_name += "_%03d" % chain_number
+            feature_name += "_chain%03d" % chain_number
 
         if value_number is not None:
-            feature_name += "_%03d" % value_number
+            feature_name += "_value%03d" % value_number
 
         return feature_name
 
