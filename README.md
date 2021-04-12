@@ -4,7 +4,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3735042.svg)](https://doi.org/10.5281/zenodo.3735042)
 ![Build](https://github.com/DeepRank/deeprank/workflows/Build/badge.svg)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/4254dd4798bf4cfa9f8f6fe0079de144)](https://www.codacy.com/gh/DeepRank/deeprank/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=DeepRank/deeprank&amp;utm_campaign=Badge_Grade)
-[![Coverage Status](https://coveralls.io/repos/github/DeepRank/deeprank/badge.svg?branch=master)](https://coveralls.io/github/DeepRank/deeprank?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/DeepRank/deeprank/badge.png?branch=master)](https://coveralls.io/github/DeepRank/deeprank?branch=master)
 
 
 ### Contents
