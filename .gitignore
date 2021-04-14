@@ -1,7 +1,8 @@
 Byte-compiled / optimized
 *__pycache__*
 
-
+# editor swap files
+*.swp
 
 # distribution
 deeprank.egg-info
