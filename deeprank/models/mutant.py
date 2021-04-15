@@ -8,17 +8,24 @@ class PdbMutantSelection:
         chain_id (str): chain within the pdb file, where the mutant is
         residue_number (int): the identifying number of the residue within the protein chain
         mutant_amino_acid (str): one letter code of the amino acid to place at this position
+        pssm_path (str, optional): the pssm file, associated with the pdb file
     """
 
-    def __init__(self, pdb_path, chain_id, residue_number, mutant_amino_acid):
+    def __init__(self, pdb_path, chain_id, residue_number, mutant_amino_acid,
+                 pssm_path=None):
         self._pdb_path = pdb_path
         self._chain_id = chain_id
         self._residue_number = residue_number
         self._mutant_amino_acid = mutant_amino_acid
+        self._pssm_path = pssm_path
 
     @property
     def pdb_path(self):
         return self._pdb_path
+
+    @property
+    def pssm_path(self):
+        return self._pssm_path
 
     @property
     def chain_id(self):

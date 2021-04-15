@@ -35,30 +35,20 @@ def _printif(string, cond): return print(string) if cond else None
 
 class DataGenerator(object):
 
-    def __init__(self, chain1, chain2,
-                 pdb_select=None, pdb_source=None,
-                 pdb_native=None, pssm_source=None, align=None,
+    def __init__(self, mutants,
                  compute_targets=None, compute_features=None,
                  data_augmentation=None, hdf5='database.h5',
                  mpi_comm=None):
         """Generate the data (features/targets/maps) required for deeprank.
 
         Args:
-            chain1 (str): First chain ID
-            chain2 (str): Second chain ID
-            pdb_select (list(str), optional): List of individual conformation for mapping
-            pdb_source (list(str), optional): List of folders where to find the pdbs for mapping
-            pdb_native (list(str), optional): List of folders where to find the native comformations,
-                nust set it if having targets to compute in parameter "compute_targets".
-            pssm_source (list(str), optional): List of folders where to find the PSSM files
-            align (dict, optional): Dicitionary to align the compexes,
-                                    e.g. align = {"selection":{"chainID":["A","B"]},"axis":"z"}}
-                                    e.g. align = {"selection":"interface","plane":"xy"}
-                                    if "selection" is not specified the entire complex is used for alignement
+            mutants (list(PdbMutantSelection)): the selected mutants
+            pdb_path (str): file path where to find the pdb for mapping
+            pssm_path (str, optional): path where to find the PSSM file
             compute_targets (list(str), optional): List of python files computing the targets,
                 "pdb_native" must be set if having targets to compute.
             compute_features (list(str), optional): List of python files computing the features
-            data_augmentation (int, optional): Number of rotation performed one each complex
+            data_augmentation (int, optional): Number of rotations performed one each pdb
             hdf5 (str, optional): name of the hdf5 file where the data is saved, default to 'database.h5'
             mpi_comm (MPI_COMM): MPI COMMUNICATOR
 
@@ -68,19 +58,15 @@ class DataGenerator(object):
         Example:
 
             >>> from deeprank.generate import *
+            >>> from deeprank.models.mutant import PdbMutantSelection
             >>> # sources to assemble the data base
-            >>> pdb_source     = ['./1AK4/decoys/']
-            >>> pdb_native     = ['./1AK4/native/']
-            >>> pssm_source    = ['./1AK4/pssm_new/']
+            >>> pdb_path = "1AK4.pdb"
+            >>> pssm_path = "1AK4.pssm"
+            >>> mutant = PdbMutantSelection("C", 450, "A")
             >>> h5file = '1ak4.hdf5'
             >>>
             >>> #init the data assembler
-            >>> database = DataGenerator(chain1='C',
-            >>>                          chain2='D',
-            >>>                          pdb_source=pdb_source,
-            >>>                          pdb_native=pdb_native,
-            >>>                          pssm_source=pssm_source,
-            >>>                          data_augmentation=None,
+            >>> database = DataGenerator(mutant, pdb_path, pssm_path,
             >>>                          compute_targets=['deeprank.targets.dockQ'],
             >>>                          compute_features=['deeprank.features.AtomicFeature',
             >>>                                            'deeprank.features.PSSM_IC',
@@ -88,17 +74,7 @@ class DataGenerator(object):
             >>>                          hdf5=h5file)
         """
 
-        self.chain1 = chain1
-        self.chain2 = chain2
-
-        self.pdb_select = pdb_select or []
-        self.pdb_source = pdb_source or []
-        self.pdb_native = pdb_native or []
-        self.pssm_source = pssm_source
-        self.align = align
-
-        if self.pssm_source is not None:
-            config.PATH_PSSM_SOURCE = self.pssm_source
+        self.mutants = mutants
 
         self.compute_targets = compute_targets
         self.compute_features = compute_features
@@ -109,24 +85,11 @@ class DataGenerator(object):
 
         self.mpi_comm = mpi_comm
 
-        # set helper attributes
-        self.all_pdb = []
-        self.all_native = []
-        self.pdb_path = []
-
         self.feature_error = []
         self.grid_error = []
         self.map_error = []
 
         self.logger = logger
-
-        # handle the pdb_select
-        if not isinstance(self.pdb_select, list):
-            self.pdb_select = [self.pdb_select]
-
-        # handle the sources
-        if not isinstance(self.pdb_source, list):
-            self.pdb_source = [self.pdb_source]
 
         # handle pssm source
         pssm_features = ('deeprank.features.FullPSSM',
@@ -136,33 +99,6 @@ class DataGenerator(object):
             if config.PATH_PSSM_SOURCE is None:
                 raise ValueError(
                     'You must provide "pssm_source" to compute PSSM features.')
-
-        # get all the conformation path
-        for src in self.pdb_source:
-            if os.path.isdir(src):
-                self.all_pdb += [os.path.join(src, fname)
-                                 for fname in os.listdir(src) if fname.endswith('.pdb')]
-            elif os.path.isfile(src):
-                self.all_pdb.append(src)
-
-        # handle the native
-        if not isinstance(self.pdb_native, list):
-            self.pdb_native = [self.pdb_native]
-
-        for src in self.pdb_native:
-            if os.path.isdir(src):
-                self.all_native += [os.path.join(src, fname)
-                                    for fname in os.listdir(src)]
-            if os.path.isfile(src):
-                self.all_native.append(src)
-
-        # filter the cplx if required
-        if self.pdb_select:
-            for i in self.pdb_select:
-                self.pdb_path += list(filter(lambda x: i in x,
-                                             self.all_pdb))
-        else:
-            self.pdb_path = self.all_pdb
 
 # ====================================================================================
 #
@@ -192,17 +128,12 @@ class DataGenerator(object):
         Example:
 
         >>> # sources to assemble the data base
-        >>> pdb_source     = ['./1AK4/decoys/']
-        >>> pdb_native     = ['./1AK4/native/']
-        >>> pssm_source    = ['./1AK4/pssm_new/']
+        >>> pdb_path = "1AK4.pdb"
         >>> h5file = '1ak4.hdf5'
+        >>> mutant = PdbMutantSelection("C", 450, "A")
         >>>
         >>> #init the data assembler
-        >>> database = DataGenerator(chain1='C',
-        >>>                          chain2='D',
-        >>>                          pdb_source=pdb_source,
-        >>>                          pdb_native=pdb_native,
-        >>>                          pssm_source=pssm_source,
+        >>> database = DataGenerator(mutant, pdb_path, pssm_path,
         >>>                          data_augmentation=None,
         >>>                          compute_targets  = ['deeprank.targets.dockQ'],
         >>>                          compute_features = ['deeprank.features.AtomicFeature',
@@ -215,11 +146,9 @@ class DataGenerator(object):
         """
         # check decoy pdb files
         if not self.pdb_path:
-            raise ValueError(f"Decoy pdb files not found. Check class "
-                             f"parameters 'pdb_source' and 'pdb_select'.")
+            raise ValueError(f"no pdb file. Check class parameter 'pdb_path'")
 
-        # deals with the parallelization
-        self.local_pdbs = self.pdb_path
+        self.local_mutants = self.mutants
 
         if self.mpi_comm is not None:
             rank = self.mpi_comm.Get_rank()
@@ -229,14 +158,14 @@ class DataGenerator(object):
 
         if size > 1:
             if rank == 0:
-                pdbs = [self.pdb_path[i::size] for i in range(size)]
-                self.local_pdbs = pdbs[0]
+                mutants_divided = [self.mutants[i::size] for i in range(size)]
+                self.local_mutants = mutant_divided[0]
                 # send to other procs
                 for iP in range(1, size):
-                    self.mpi_comm.send(pdbs[iP], dest=iP, tag=11)
+                    self.mpi_comm.send(mutants_divided[iP], dest=iP, tag=11)
             else:
                 # receive procs
-                self.local_pdbs = self.mpi_comm.recv(source=0, tag=11)
+                self.local_mutants = self.mpi_comm.recv(source=0, tag=11)
             # change hdf5 name
             h5path, h5name = os.path.split(self.hdf5)
             self.hdf5 = os.path.join(h5path, f"{rank:03d}_{h5name}")
@@ -246,12 +175,6 @@ class DataGenerator(object):
 
         # set metadata to hdf5 file
         self.f5.attrs['DeepRank_version'] = deeprank.__version__
-        self.f5.attrs['pdb_source'] = [
-            os.path.abspath(f) for f in self.pdb_source]
-        self.f5.attrs['pdb_native'] = [
-            os.path.abspath(f) for f in self.pdb_native]
-        self.f5.attrs['pssm_source'] = os.path.abspath(
-            self.pssm_source)
         if self.compute_features is not None:
             self.f5.attrs['features'] = self.compute_features
         if self.compute_targets is not None:
@@ -265,16 +188,17 @@ class DataGenerator(object):
 
         # get the local progress bar
         desc = '{:25s}'.format('Creating database')
-        cplx_tqdm = tqdm(self.local_pdbs, desc=desc,
+        mutant_tqdm = tqdm(self.local_mutants,
+                         desc=desc,
                          disable=not prog_bar)
 
-        for cplx in cplx_tqdm:
+        for mutant in mutant_tqdm:
 
-            cplx_tqdm.set_postfix(mol=os.path.basename(cplx))
-            self.logger.info(f'\nProcessing PDB file: {cplx}')
+            mutant_tqdm.set_postfix(mol=os.path.basename(mutant.pdb_path))
+            self.logger.info('\nProcessing PDB file: {}'.format(mutant.pdb_path))
 
             # names of the molecule
-            mol_name = os.path.splitext(os.path.basename(cplx))[0]
+            mol_name = os.path.splitext(os.path.basename(mutant.pdb_path))[0]
             mol_aug_name_list = []
 
             try:
@@ -290,49 +214,18 @@ class DataGenerator(object):
                         f'\nStart generating top HDF5 group "{mol_name}"...'
                         f'\n{"":4s}Reading PDB data into database...')
 
-                # get the bare name of the molecule
-                # and define the name of the native
-                # i.e. 1AK4_100w -> 1AK4
-                bare_mol_name = mol_name.split('_')[0]
-                ref_name = bare_mol_name + '.pdb'
-
-                # check if we have a decoy or native
-                # and find the reference
-                if mol_name == bare_mol_name:
-                    ref = cplx
-                else:
-                    if len(self.all_native) > 0:
-                        ref = list(
-                            filter(lambda x: ref_name in x, self.all_native))
-                        if len(ref) == 0:
-                            raise ValueError('Native not found')
-                        else:
-                            if len(ref) > 1:
-                                warnings.warn(
-                                    f'Multiple native reference found, here used {ref[0]}')
-                            ref = ref[0]
-                        if ref == '':
-                            ref = None
-                    else:
-                        ref = None
-
                 # crete a subgroup for the molecule
                 molgrp = self.f5.require_group(mol_name)
                 molgrp.attrs['type'] = 'molecule'
 
-                # add the ref and the complex
-                self._add_pdb(molgrp, cplx, 'complex')
-                if ref is not None:
-                    self._add_pdb(molgrp, ref, 'native')
+                self._add_pdb(molgrp, mutant.pdb_path, "pdb")
+                if mutant.pssm_path is not None:
+                    self._add_pssm(molgrp, mutant.pssm_path, "pssm")
 
                 if verbose:
                     self.logger.info(
-                        f'{"":4s}Generated subgroup "complex"'
+                        f'{"":4s}Generated subgroup "pdb"'
                         f' to store pdb data of the current model.')
-                    if ref:
-                        self.logger.info(
-                            f'{"":4s}Generated subgroup "native"'
-                            f' to store pdb data of the reference molecule.')
 
                 ################################################
                 #   add the features
@@ -348,7 +241,7 @@ class DataGenerator(object):
                     molgrp.require_group('features_raw')
 
                     feature_error_flag = self._compute_features(self.compute_features,
-                                                                molgrp['complex'][(
+                                                                molgrp['pdb'][(
                                                                 )],
                                                                 molgrp['features'],
                                                                 molgrp['features_raw'],
@@ -383,7 +276,7 @@ class DataGenerator(object):
                     molgrp.require_group('targets')
 
                     self._compute_targets(self.compute_targets,
-                                          molgrp['complex'][()],
+                                          molgrp['pdb'][()],
                                           molgrp['targets'])
 
                     if verbose:
@@ -403,7 +296,7 @@ class DataGenerator(object):
 
                 try:
                     center = self._get_grid_center(
-                        molgrp['complex'][()], contact_distance)
+                        molgrp['pdb'][()], contact_distance)
                     molgrp['grid_points'].create_dataset(
                         'center', data=center)
                     if verbose:
@@ -440,26 +333,19 @@ class DataGenerator(object):
                 # loop over the complexes
                 for mol_aug_name in mol_aug_name_list:
 
-                    # crete a subgroup for the molecule
+                    # create a subgroup for the molecule
                     molgrp = self.f5.require_group(mol_aug_name)
                     molgrp.attrs['type'] = 'molecule'
 
-                    # copy the ref into it
-                    if ref is not None:
-                        self._add_pdb(molgrp, ref, 'native')
-
                     # get the rotation axis and angle
                     if self.align is None:
-                        axis, angle = pdb2sql.transform.get_rot_axis_angle(
-                            random_seed)
+                        axis, angle = pdb2sql.transform.get_rot_axis_angle(random_seed)
                     else:
-                        axis, angle = self._get_aligned_rotation_axis_angle(random_seed,
-                                                                            self.align)
+                        axis, angle = self._get_aligned_rotation_axis_angle(random_seed, self.align)
 
                     # create the new pdb and get molecule center
                     # molecule center is the origin of rotation)
-                    mol_center = self._add_aug_pdb(
-                        molgrp, cplx, 'complex', axis, angle)
+                    mol_center = self._add_aug_pdb(molgrp, mutant.pdb_path, 'pdb', axis, angle)
 
                     # copy the targets/features
                     if 'targets' in self.f5[mol_name]:
@@ -472,12 +358,10 @@ class DataGenerator(object):
 
                     # grid center used to create grid box
                     molgrp.require_group('grid_points')
-                    center = pdb2sql.transform.rot_xyz_around_axis(
-                        self.f5[mol_name + '/grid_points/center'],
-                        axis, angle, mol_center)
+                    center = pdb2sql.transform.rot_xyz_around_axis(self.f5[mol_name + '/grid_points/center'],
+                                                                   axis, angle, mol_center)
 
-                    molgrp['grid_points'].create_dataset(
-                        'center', data=center)
+                    molgrp['grid_points'].create_dataset('center', data=center)
 
                     # store the rotation axis/angl/center as attriutes
                     # in case we need them later
@@ -594,7 +478,7 @@ class DataGenerator(object):
                 mol_name + '_r%03d' % (idir + 1) for idir in
                 range(aug_id_start, aug_id_start + augmentation)]
 
-            # loop over the complexes
+            # loop over the pdbs
             for mol_aug_name in mol_aug_name_list:
 
                 # crete a subgroup for the molecule
@@ -616,7 +500,7 @@ class DataGenerator(object):
                 # create the new pdb and get molecule center
                 # molecule center is the origin of rotation)
                 mol_center = self._add_aug_pdb(
-                    molgrp, f5[mol_name + '/complex'][()], 'complex', axis, angle)
+                    molgrp, f5[mol_name + '/pdb'][()], 'pdb', axis, angle)
 
                 # copy the targets/features
                 if 'targets' in f5[mol_name]:
@@ -708,7 +592,7 @@ class DataGenerator(object):
                 molgrp.require_group('features_raw')
 
                 error_flag = self._compute_features(self.compute_features,
-                                                    molgrp['complex'][()],
+                                                    molgrp['pdb'][()],
                                                     molgrp['features'],
                                                     molgrp['features_raw'],
                                                     self.chain1,
@@ -777,9 +661,9 @@ class DataGenerator(object):
 # ====================================================================================
 
     def add_unique_target(self, targdict):
-        """Add identical targets for all the complexes in the datafile.
+        """Add identical targets for all the pdbs in the datafile.
 
-        This is usefull if you want to add the binary class of all the complexes
+        This is usefull if you want to add the binary class of all the pdbs
         created from decoys or natives
 
         Args:
@@ -849,7 +733,7 @@ class DataGenerator(object):
 
                 molgrp.require_group('targets')
                 self._compute_targets(self.compute_targets,
-                                      molgrp['complex'][()],
+                                      molgrp['pdb'][()],
                                       molgrp['targets'])
 
         # copy the targets of the original to the rotated
@@ -873,8 +757,8 @@ class DataGenerator(object):
         # close the file
         f5.close()
 
-    def realign_complexes(self, align, compute_features=None, pssm_source=None):
-        """Align all the complexes already present in the HDF5.
+    def realign_pdbs(self, align, compute_features=None, pssm_source=None):
+        """Align all the pdbs already present in the HDF5.
 
         Arguments:
             align {dict} -- alignement dictionary (see __init__)
@@ -925,19 +809,19 @@ class DataGenerator(object):
         else:
             raise ValueError('No pssm source detected')
 
-        # loop over the complexes
+        # loop over the pdbs
         desc = '{:25s}'.format('Add features')
         for mol in tqdm(mol_names, desc=desc, ncols=100):
 
             # align the pdb
             molgrp = f5[mol]
-            pdb = molgrp['complex'][()]
+            pdb = molgrp['pdb'][()]
 
             sqldb = self._get_aligned_sqldb(pdb, align)
             data = sqldb.sql2pdb()
 
             data = np.array(data).astype('|S78')
-            molgrp['complex'][...] = data
+            molgrp['pdb'][...] = data
 
             # remove prexisting features
             old_dir = ['features', 'features_raw', 'mapped_features']
@@ -951,7 +835,7 @@ class DataGenerator(object):
 
             # compute features
             error_flag = self._compute_features(self.compute_features,
-                                                molgrp['complex'][()],
+                                                molgrp['pdb'][()],
                                                 molgrp['features'],
                                                 molgrp['features_raw'],
                                                 self.chain1,
@@ -1256,9 +1140,8 @@ class DataGenerator(object):
             if feature and 'features' in mol_grp:
                 del mol_grp['features']
                 del mol_grp['features_raw']
-            if pdb and 'complex' in mol_grp and 'native' in mol_grp:
-                del mol_grp['complex']
-                del mol_grp['native']
+            if pdb and 'pdb' in mol_grp:
+                del mol_grp['pdb']
             if points and 'grid_points' in mol_grp:
                 del mol_grp['grid_points']
             if grid and 'mapped_features' in mol_grp:
@@ -1581,22 +1464,31 @@ class DataGenerator(object):
             name (str): dataset name in the hdf5 molgroup
         """
 
-        # no alignement
-        if self.align is None:
-            # read the pdb and extract the ATOM lines
-            with open(pdbfile, 'r') as fi:
-                data = [line.split('\n')[0]
-                        for line in fi if line.startswith('ATOM')]
-
-        # some alignement
-        elif isinstance(self.align, dict):
-
-            sqldb = self._get_aligned_sqldb(pdbfile, self.align)
-            data = sqldb.sql2pdb()
+        # read the pdb and extract the ATOM lines
+        with open(pdbfile, 'rt') as fi:
+            data = [line.split('\n')[0]
+                    for line in fi if line.startswith('ATOM')]
 
         #  PDB default line length is 80
         #  http://www.wwpdb.org/documentation/file-format
         data = np.array(data).astype('|S78')
+        molgrp.create_dataset(name, data=data)
+
+
+    def _add_pssm(self, molgrp, pssm_path, name):
+        """ Add a pssm to a molgrp
+
+        Args:
+            molgrp (str): mopl group where tp add the pdb
+            pssm_file (str): pssm file to add
+            name (str): dataset name in the hdf5 molgroup
+        """
+
+        with open(pssm_path, 'rt') as f:
+            lines = [line.strip() for line in f if line.startswith('ATOM')]
+
+        # We expect the PSSM line length not to go over 200
+        data = np.array(lines).astype('|S200')
         molgrp.create_dataset(name, data=data)
 
     # @staticmethod
