@@ -214,7 +214,7 @@ class DataGenerator(object):
                         f'\nStart generating top HDF5 group "{mol_name}"...'
                         f'\n{"":4s}Reading PDB data into database...')
 
-                # crete a subgroup for the molecule
+                # create a subgroup for the molecule
                 molgrp = self.f5.require_group(mol_name)
                 molgrp.attrs['type'] = 'molecule'
 
@@ -245,8 +245,7 @@ class DataGenerator(object):
                                                                 )],
                                                                 molgrp['features'],
                                                                 molgrp['features_raw'],
-                                                                self.chain1,
-                                                                self.chain2,
+                                                                self.mutant,
                                                                 self.logger)
                     if feature_error_flag:
                         self.feature_error += [mol_name]
@@ -595,8 +594,7 @@ class DataGenerator(object):
                                                     molgrp['pdb'][()],
                                                     molgrp['features'],
                                                     molgrp['features_raw'],
-                                                    self.chain1,
-                                                    self.chain2,
+                                                    self.mutant,
                                                     self.logger)
 
                 if error_flag:
@@ -838,35 +836,28 @@ class DataGenerator(object):
                                                 molgrp['pdb'][()],
                                                 molgrp['features'],
                                                 molgrp['features_raw'],
-                                                self.chain1,
-                                                self.chain2,
+                                                self.mutant,
                                                 self.logger)
 
         f5.close()
 
 # ====================================================================================
 #
-#       PRECOMPUTE TEH GRID POINTS
+#       PRECOMPUTE THE GRID POINTS
 #
 # ====================================================================================
 
     def _get_grid_center(self, pdb, contact_distance):
 
         sqldb = pdb2sql.interface(pdb)
-        contact_atoms = sqldb.get_contact_atoms(cutoff=contact_distance,
-            chain1=self.chain1, chain2=self.chain2)
-
-        tmp = []
-        for i in contact_atoms.values():
-            tmp.extend(i)
-        contact_atoms = list(set(tmp))
-
-        center_contact = np.mean(
-            np.array(sqldb.get('x,y,z', rowID=contact_atoms)), 0)
+        # Get the position of the C-alpha
+        center_pos = sqldb.get('x,y,z', resSeq=self.mutant.residue_number,
+                                        chainID=self.mutant.chain_id,
+                                        name="CA")
 
         sqldb._close()
 
-        return center_contact
+        return center_pos
 
     def precompute_grid(self,
                         grid_info,
@@ -896,8 +887,7 @@ class DataGenerator(object):
 
             # compute the data we want on the grid
             gt.GridTools(molgrp=f5[mol],
-                         chain1=self.chain1,
-                         chain2=self.chain2,
+                         mutant=self.mutant,
                          number_of_points=grid_info['number_of_points'],
                          resolution=grid_info['resolution'],
                          contact_distance=contact_distance,
@@ -1069,8 +1059,7 @@ class DataGenerator(object):
                 # compute the data we want on the grid
                 gt.GridTools(
                     molgrp=f5[mol],
-                    chain1=self.chain1,
-                    chain2=self.chain2,
+                    mutant=self.mutant,
                     number_of_points=grid_info['number_of_points'],
                     resolution=grid_info['resolution'],
                     atomic_densities=grid_info['atomic_densities'],
@@ -1397,7 +1386,7 @@ class DataGenerator(object):
 # ====================================================================================
 
     @staticmethod
-    def _compute_features(feat_list, pdb_data, featgrp, featgrp_raw, chain1, chain2, logger):
+    def _compute_features(feat_list, pdb_data, featgrp, featgrp_raw, mutant, logger):
         """Compute the features.
 
         Args:
@@ -1407,8 +1396,7 @@ class DataGenerator(object):
             pdb_data (bytes): PDB translated in bytes
             featgrp (str): name of the group where to store the xyz feature
             featgrp_raw (str): name of the group where to store the raw feature
-            chain1 (str): First chain ID
-            chain2 (str): Second chain ID
+            mutant (PdbMutantSelection): the selected mutant
             logger (logger): name of logger object
 
         Return:
@@ -1418,8 +1406,7 @@ class DataGenerator(object):
         for feat in feat_list:
             try:
                 feat_module = importlib.import_module(feat, package=None)
-                feat_module.__compute_feature__(pdb_data, featgrp, featgrp_raw,
-                    chain1, chain2)
+                feat_module.__compute_feature__(pdb_data, featgrp, featgrp_raw, mutant)
             except Exception as ex:
                 logger.exception(ex)
                 error_flag = True
@@ -1506,9 +1493,7 @@ class DataGenerator(object):
             dict_align['export'] = False
 
         if dict_align['selection'] == 'interface':
-            sqldb = align_interface(pdbfile, plane=dict_align['plane'],
-                                    export=dict_align['export'],
-                                    chain1=self.chain1, chain2=self.chain2)
+            raise ValueError("interface alignment is not supported")
 
         else:
 
@@ -1583,10 +1568,7 @@ class DataGenerator(object):
             list(float): center of the molecule
         """
         # create the sqldb and extract positions
-        if self.align is None:
-            sqldb = pdb2sql.pdb2sql(pdbfile)
-        else:
-            sqldb = self._get_aligned_sqldb(pdbfile, self.align)
+        sqldb = pdb2sql.pdb2sql(pdbfile)
 
         # rotate the positions
         pdb2sql.transform.rot_axis(sqldb, axis, angle)
