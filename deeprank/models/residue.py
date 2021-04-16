@@ -1,18 +1,11 @@
 
 
 class Residue:
-    def __init__(self, number, name):
+    def __init__(self, number, name, chain_id):
         self.number = number
         self.name = name
+        self.chain_id = chain_id
         self.atoms = []
-
-    @property
-    def chain_id(self):
-        chain_ids = set([atom.chain_id for atom in self.atoms])
-        if len(chain_ids) > 1:
-            raise ValueError("residue {} {} contains atoms of different chains: {}".format(self.name, self.number, self.atoms))
-
-        return list(chain_ids)[0]
 
     def __hash__(self):
         return hash((self.chain_id, self.number))
