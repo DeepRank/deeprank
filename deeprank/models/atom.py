@@ -1,9 +1,10 @@
 
 
 class Atom:
-    def __init__(self, id_, position, chain_id, name, residue=None):
+    def __init__(self, id_, position, chain_id, name, element, residue=None):
         self.id = id_
         self.name = name
+        self.element = element
         self.chain_id = chain_id
         self.position = position
         self.residue = residue
@@ -18,5 +19,5 @@ class Atom:
         return self.id < other.id
 
     def __repr__(self):
-        return "Atom {} ({}) from {} {} at {}".format(self.id, self.chain_id, self.residue, self.name, self.position)
+        return "Atom {} ({}) from {} {} at {}".format(self.id, self.name, self.chain_id, self.residue, self.position)
 

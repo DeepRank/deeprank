@@ -38,8 +38,8 @@ def get_atoms(pdb2sql):
     atoms = []
 
     # Iterate over the atom output from pdb2sql
-    for x, y, z, atom_number, atom_name, chain_id, residue_number, residue_name in \
-            pdb2sql.get("x,y,z,rowID,name,chainID,resSeq,resName"):
+    for x, y, z, atom_number, atom_name, element, chain_id, residue_number, residue_name in \
+            pdb2sql.get("x,y,z,rowID,name,element,chainID,resSeq,resName"):
 
         # Make sure that the residue is in the working directory:
         residue_id = (chain_id, residue_number)
@@ -50,7 +50,7 @@ def get_atoms(pdb2sql):
         atom_position = numpy.array([x, y, z])
 
         # Create the atom object and link it to the residue:
-        atom = Atom(atom_number, atom_position, chain_id, atom_name, residues[residue_id])
+        atom = Atom(atom_number, atom_position, chain_id, atom_name, element, residues[residue_id])
         residues[residue_id].atoms.append(atom)
         atoms.append(atom)
 

@@ -59,6 +59,18 @@ def test_residue_contact_atoms():
 
         contact_atom_pairs = get_residue_contact_atom_pairs(pdb, chain_id, residue_number, 8.5)
 
+        # Check for redundancy (we shouldn't see the same set of atoms twice)
+        atom_pairs_encountered = []
+        for atom1, atom2 in contact_atom_pairs:
+
+            # Check that it was not seen before:
+            assert (atom1.id, atom2.id) not in atom_pairs_encountered, \
+                "Atomic pair {} - {} encountered twice".format(atom1, atom2)
+
+            # Remember this pair, as well as its reverse:
+            atom_pairs_encountered.extend([(atom1.id, atom2.id), (atom2.id, atom1.id)])
+
+
         # List all the atoms in the pairs that we found:
         contact_atoms = set([])
         for atom1, atom2 in contact_atom_pairs:
