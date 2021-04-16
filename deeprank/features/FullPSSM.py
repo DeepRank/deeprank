@@ -6,6 +6,7 @@ import pdb2sql
 
 from deeprank import config
 from deeprank.features import FeatureClass
+from deeprank.operate.pdb import get_residue_contact_atom_pairs
 
 ########################################################################
 #
@@ -16,8 +17,8 @@ from deeprank.features import FeatureClass
 
 class FullPSSM(FeatureClass):
 
-    def __init__(self, mol_name=None, pdb_file=None, chain1='A', chain2='B',
-                pssm_path=None, pssm_format='new', out_type='pssmvalue'):
+    def __init__(self, mol_name=None, mutant,
+                 pssm_format='new', out_type='pssmvalue'):
         """Compute all the PSSM data.
 
             Simply extracts all the PSSM information and
@@ -25,10 +26,7 @@ class FullPSSM(FeatureClass):
 
         Args:
             mol_name (str): name of the molecule. Defaults to None.
-            pdb_file (str): name of the pdb_file. Defaults to None.
-            chain1 (str): First chain ID. Defaults to 'A'
-            chain2 (str): Second chain ID. Defaults to 'B'
-            pssm_path (str): path to the pssm data. Defaults to None.
+            mutant (PdbMutantSelection): the selected mutant
             pssm_format (str): "old" or "new" pssm format.
                 Defaults to 'new'.
             out_type (str): which feature to generate, 'pssmvalue' or
@@ -36,10 +34,9 @@ class FullPSSM(FeatureClass):
                 'pssm_format' must be 'new' when set type is 'pssmic'.
 
         Examples:
-            >>> path = '/home/test/PSSM_newformat/'
             >>> pssm = FullPSSM(mol_name='2ABZ',
-            >>>                pdb_file='2ABZ_1w.pdb',
-            >>>                pssm_path=path)
+            >>>                 mutant=PdbMutantSelection("2ABZ.pdb", "A", 10, "W", "2ABZ.pssm"),
+            >>>                 pssm_path=path)
             >>> pssm.read_PSSM_data()
             >>> pssm.get_feature_value()
             >>> print(pssm.feature_data_xyz)
@@ -48,12 +45,11 @@ class FullPSSM(FeatureClass):
         super().__init__("Residue")
 
         self.mol_name = mol_name
-        self.pdb_file = pdb_file
-        self.pssm_path = pssm_path
+        self.pdb_file = mutant.pdb_path
+        self.pssm_path = mutant.pssm_path
         self.pssm_format = pssm_format
         self.out_type = out_type.lower()
-        self.chain1 = chain1
-        self.chain2 = chain2
+        self.mutant = mutant
 
         if isinstance(pdb_file, str) and mol_name is None:
             self.mol_name = os.path.basename(pdb_file).split('.')[0]
@@ -118,7 +114,7 @@ class FullPSSM(FeatureClass):
             # pssm_res_id: [('B', 573, 'HIS'), (...)]
             # pssm_data: [[...], [...]]
             self.pssm_res_id = np.array(raw_data)[:, :3]
-            self.pssm_res_id = [(r[0], int(r[1]), r[2])
+            self.pssm_res_id = [Residue(int(r[1]), r[2], r[0])
                                 for r in self.pssm_res_id]
             self.pssm_data = np.array(raw_data)[:, 3:].astype(np.float)
 
@@ -153,13 +149,15 @@ class FullPSSM(FeatureClass):
                     pd = np.array(raw_data)[1:, -1].astype(np.float)
                     pd = pd.reshape(pd.shape[0], -1)
 
+                residues = [Residue(r[1], r[2], r[0]) for r in rd]
+
                 if iiter == 0:
-                    self.pssm_res_id = rd
+                    self.pssm_res_id = residues
                     self.pssm_data = pd
                     iiter = 1
 
                 else:
-                    self.pssm_res_id += rd
+                    self.pssm_res_id += residues
                     self.pssm_data = np.vstack((self.pssm_data, pd))
 
         self.pssm = dict(zip(self.pssm_res_id, self.pssm_data))
@@ -176,12 +174,13 @@ class FullPSSM(FeatureClass):
         for pos, info in zip(xyz, xyz_info):
             xyz_dict[tuple(info)] = pos
 
-        # get interface contact residues
-        # ctc_res = {"A":[chain 1 residues], "B": [chain2 residues]}
-        ctc_res = sql.get_contact_residues(cutoff=cutoff,
-                            chain1=self.chain1, chain2=self.chain2)
+        # get mutant contact residues
+        ctc_res_set = set([])
+        for atom1, atom2 in get_residue_contact_atom_pairs(sql, self.mutant.chain_id,
+                                                           self.mutant.residue_number, cutoff):
+            ctc_res_set.add(atom1.residue)
+            ctc_res_set.add(atom2.residue)
         sql._close()
-        ctc_res = ctc_res[self.chain1] + ctc_res[self.chain2]
 
         # handle with small interface or no interface
         total_res = len(ctc_res)
@@ -197,7 +196,6 @@ class FullPSSM(FeatureClass):
                 f" using the features FullPSSM/PSSM_IC")
 
         # check if interface residues have pssm values
-        ctc_res_set = set(ctc_res)
         pssm_res_set = set(self.pssm.keys())
         if len(ctc_res_set.intersection(pssm_res_set)) == 0:
             raise ValueError(
@@ -238,7 +236,7 @@ class FullPSSM(FeatureClass):
 ########################################################################
 
 
-def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2, out_type='pssmvalue'):
+def __compute_feature__(pdb_data, featgrp, featgrp_raw, mutant, out_type='pssmvalue'):
     """Main function called in deeprank for the feature calculations.
 
     Args:
@@ -252,15 +250,15 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2, out_type
 
     if config.PATH_PSSM_SOURCE is None:
         raise FileExistsError(f"No available PSSM source, "
-                    f"check 'config.PATH_PSSM_SOURCE'")
+                              f"check 'config.PATH_PSSM_SOURCE'")
     else:
         path = config.PATH_PSSM_SOURCE
 
     mol_name = os.path.split(featgrp.name)[0]
     mol_name = mol_name.lstrip('/')
 
-    pssm = FullPSSM(mol_name, pdb_data, chain1=chain1, chain2=chain2,
-                    pssm_path=path, out_type=out_type)
+    pssm = FullPSSM(mol_name, mutant,
+                    out_type=out_type)
 
     # read the raw data
     pssm.read_PSSM_data()
@@ -287,12 +285,11 @@ if __name__ == '__main__':
         os.path.realpath(__file__))))
     # pdb_file = os.path.join(base_path, "test/1AK4/native/1AK4.pdb")
     pdb_file = os.path.join(base_path, "test/1AK4/decoys/1AK4_cm-itw_238w.pdb")
-    path = os.path.join(base_path, "test/1AK4/pssm_new")
+    pssm_path = os.path.join(base_path, "test/1AK4/pssm_new", "1AK4.C.pssm")
 
-    # pssm = FullPSSM(mol_name='1AK4', pdb_file=pdb_file, pssm_path=path,
-    #                 pssm_format='new', out_type='pssmic')
-    pssm = FullPSSM(pdb_file=pdb_file, pssm_path=path,
-                    pssm_format='new', out_type='pssmvalue')
+    pssm = FullPSSM(mol_name='1AK4',
+                    mutant=PdbMutantSelection(pdb_file, "C", 10, "W", pssm_path)
+                    pssm_format='new', out_type='pssmic')
 
     # get the pssm smoothed sum score
     pssm.read_PSSM_data()
