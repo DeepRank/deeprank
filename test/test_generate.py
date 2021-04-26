@@ -4,6 +4,7 @@ from time import time
 import shutil
 from tempfile import mkdtemp
 import logging
+import pkg_resources
 
 import numpy
 import h5py
@@ -38,7 +39,8 @@ def test_generate():
     feature_names = ["test.feature.feature1", "test.feature.feature2"]
     target_names = ["test.target.target1"]
 
-    mutants = [PdbMutantSelection("test/101m.pdb", 'A', 25, 'A')]
+    pdb_path = os.path.join(pkg_resources.resource_filename("test", ''), "101m.pdb")
+    mutants = [PdbMutantSelection(pdb_path, 'A', 25, 'A')]
 
     tmp_dir = mkdtemp()
     try:
