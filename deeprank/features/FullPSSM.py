@@ -17,7 +17,7 @@ from deeprank.operate.pdb import get_residue_contact_atom_pairs
 
 class FullPSSM(FeatureClass):
 
-    def __init__(self, mol_name=None, mutant,
+    def __init__(self, mol_name, mutant,
                  pssm_format='new', out_type='pssmvalue'):
         """Compute all the PSSM data.
 
