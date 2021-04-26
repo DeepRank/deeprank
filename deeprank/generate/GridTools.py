@@ -215,7 +215,7 @@ class GridTools(object):
     def read_pdb(self):
         """Create a sql databse for the pdb."""
 
-        self.sqldb = pdb2sql.interface(self.molgrp['complex'][()])
+        self.sqldb = pdb2sql.interface(self.molgrp.attrs['pdb_path'])
 
     # get the contact atoms and interface center
     def get_contact_center(self):
@@ -353,14 +353,10 @@ class GridTools(object):
             for atom in get_atoms(self.sqldb):
                 atoms_by_chain[atom.chain_id] = atoms_by_chain.get(atom.chain_id, []) + [atom]
 
-        _log.debug("atoms: {}".format(atoms_by_chain))
-
         # Loop over the atom types:
         for element_type, vdw_rad in self.local_tqdm(self.atomic_densities.items()):
 
             t0 = time()
-
-            _log.debug("investigate {}".format(element_type))
 
             # Loop over the atoms:
             for chain_id, atoms in atoms_by_chain.items():
@@ -749,7 +745,8 @@ class GridTools(object):
         # add center or update it when the old value is different
         if 'center' not in grd:
             grd.create_dataset('center', data=self.center_contact)
-        elif not all(grd['center'][()] == self.center_contact):
+
+        else:
             grd['center'][...] = self.center_contact
 
     # save the data in the hdf5 file

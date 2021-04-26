@@ -4,12 +4,14 @@ import os
 import re
 import sys
 import warnings
+import logging
 from collections import OrderedDict
 
 import h5py
 import numpy as np
 
 import deeprank
+from deeprank.models.mutant import PdbMutantSelection
 from deeprank import config
 from deeprank.config import logger
 from deeprank.generate import GridTools as gt
@@ -33,9 +35,12 @@ except ImportError:
 def _printif(string, cond): return print(string) if cond else None
 
 
+_log = logging.getLogger(__name__)
+
+
 class DataGenerator(object):
 
-    def __init__(self, mutants,
+    def __init__(self, mutants, align=None,
                  compute_targets=None, compute_features=None,
                  data_augmentation=None, hdf5='database.h5',
                  mpi_comm=None):
@@ -66,7 +71,7 @@ class DataGenerator(object):
             >>> h5file = '1ak4.hdf5'
             >>>
             >>> #init the data assembler
-            >>> database = DataGenerator(mutant, pdb_path, pssm_path,
+            >>> database = DataGenerator(mutants,
             >>>                          compute_targets=['deeprank.targets.dockQ'],
             >>>                          compute_features=['deeprank.features.AtomicFeature',
             >>>                                            'deeprank.features.PSSM_IC',
@@ -75,6 +80,8 @@ class DataGenerator(object):
         """
 
         self.mutants = mutants
+
+        self.align = align
 
         self.compute_targets = compute_targets
         self.compute_features = compute_features
@@ -133,7 +140,7 @@ class DataGenerator(object):
         >>> mutant = PdbMutantSelection("C", 450, "A")
         >>>
         >>> #init the data assembler
-        >>> database = DataGenerator(mutant, pdb_path, pssm_path,
+        >>> database = DataGenerator(mutants,
         >>>                          data_augmentation=None,
         >>>                          compute_targets  = ['deeprank.targets.dockQ'],
         >>>                          compute_features = ['deeprank.features.AtomicFeature',
@@ -144,9 +151,6 @@ class DataGenerator(object):
         >>> #create new files
         >>> database.create_database(prog_bar=True)
         """
-        # check decoy pdb files
-        if not self.pdb_path:
-            raise ValueError(f"no pdb file. Check class parameter 'pdb_path'")
 
         self.local_mutants = self.mutants
 
@@ -217,6 +221,7 @@ class DataGenerator(object):
                 # create a subgroup for the molecule
                 molgrp = self.f5.require_group(mol_name)
                 molgrp.attrs['type'] = 'molecule'
+                DataGenerator._store_mutant(molgrp, mutant)
 
                 self._add_pdb(molgrp, mutant.pdb_path, "pdb")
                 if mutant.pssm_path is not None:
@@ -245,7 +250,7 @@ class DataGenerator(object):
                                                                 )],
                                                                 molgrp['features'],
                                                                 molgrp['features_raw'],
-                                                                self.mutant,
+                                                                mutant,
                                                                 self.logger)
                     if feature_error_flag:
                         self.feature_error += [mol_name]
@@ -294,8 +299,7 @@ class DataGenerator(object):
                 molgrp.require_group('grid_points')
 
                 try:
-                    center = self._get_grid_center(
-                        molgrp['pdb'][()], contact_distance)
+                    center = self._get_grid_center(mutant, contact_distance)
                     molgrp['grid_points'].create_dataset(
                         'center', data=center)
                     if verbose:
@@ -335,6 +339,7 @@ class DataGenerator(object):
                     # create a subgroup for the molecule
                     molgrp = self.f5.require_group(mol_aug_name)
                     molgrp.attrs['type'] = 'molecule'
+                    DataGenerator._store_mutant(molgrp, mutant)
 
                     # get the rotation axis and angle
                     if self.align is None:
@@ -477,12 +482,15 @@ class DataGenerator(object):
                 mol_name + '_r%03d' % (idir + 1) for idir in
                 range(aug_id_start, aug_id_start + augmentation)]
 
+            mutant = DataGenerator._load_mutant(f5[mol_name])
+
             # loop over the pdbs
             for mol_aug_name in mol_aug_name_list:
 
                 # crete a subgroup for the molecule
                 molgrp = f5.require_group(mol_aug_name)
                 molgrp.attrs['type'] = 'molecule'
+                DataGenerator._store_mutant(molgrp, mutant)
 
                 # copy the ref into it
                 if 'native' in f5[mol_name]:
@@ -583,6 +591,8 @@ class DataGenerator(object):
             # molgrp
             molgrp = f5[cplx_name]
 
+            mutant = DataGenerator._load_mutant(molgrp)
+
             error_flag = False
             if self.compute_features is not None:
 
@@ -594,7 +604,7 @@ class DataGenerator(object):
                                                     molgrp['pdb'][()],
                                                     molgrp['features'],
                                                     molgrp['features_raw'],
-                                                    self.mutant,
+                                                    mutant,
                                                     self.logger)
 
                 if error_flag:
@@ -813,7 +823,8 @@ class DataGenerator(object):
 
             # align the pdb
             molgrp = f5[mol]
-            pdb = molgrp['pdb'][()]
+
+            mutant = DataGenerator._load_mutant(molgrp)
 
             sqldb = self._get_aligned_sqldb(pdb, align)
             data = sqldb.sql2pdb()
@@ -836,10 +847,43 @@ class DataGenerator(object):
                                                 molgrp['pdb'][()],
                                                 molgrp['features'],
                                                 molgrp['features_raw'],
-                                                self.mutant,
+                                                mutant,
                                                 self.logger)
 
         f5.close()
+
+
+# ====================================================================================
+#
+#       STORE/LOAD THE MUTANT IN HDF5 FORMAT
+#
+# ====================================================================================
+
+    @staticmethod
+    def _store_mutant(molecule_group, mutant):
+        _log.debug("storing mutant in {}".format(molecule_group))
+
+        molecule_group.attrs['pdb_path'] = mutant.pdb_path
+        if mutant.pssm_path is not None:
+            molecule_group.attrs['pssm_path'] = mutant.pssm_path
+        molecule_group.attrs['mutant_chain_id'] = mutant.chain_id
+        molecule_group.attrs['mutant_residue_number'] = mutant.residue_number
+        molecule_group.attrs['mutant_amino_acid'] = mutant.mutant_amino_acid
+
+    @staticmethod
+    def _load_mutant(molecule_group):
+        _log.debug("loading mutant from {}".format(molecule_group))
+
+        pdb_path = molecule_group.attrs['pdb_path']
+        pssm_path = None
+        if 'pssm_path' in molecule_group.attrs:
+            pssm_path = molecule_group.attrs['pssm_path']
+        chain_id = molecule_group.attrs['mutant_chain_id']
+        residue_number = molecule_group.attrs['mutant_residue_number']
+        amino_acid = molecule_group.attrs['mutant_amino_acid']
+
+        mutant = PdbMutantSelection(pdb_path, chain_id, residue_number, amino_acid, pssm_path)
+        return mutant
 
 # ====================================================================================
 #
@@ -847,12 +891,12 @@ class DataGenerator(object):
 #
 # ====================================================================================
 
-    def _get_grid_center(self, pdb, contact_distance):
+    def _get_grid_center(self, mutant, contact_distance):
 
-        sqldb = pdb2sql.interface(pdb)
+        sqldb = pdb2sql.interface(mutant.pdb_path)
         # Get the position of the C-alpha
-        center_pos = sqldb.get('x,y,z', resSeq=self.mutant.residue_number,
-                                        chainID=self.mutant.chain_id,
+        center_pos = sqldb.get('x,y,z', resSeq=mutant.residue_number,
+                                        chainID=mutant.chain_id,
                                         name="CA")
 
         sqldb._close()
@@ -887,7 +931,6 @@ class DataGenerator(object):
 
             # compute the data we want on the grid
             gt.GridTools(molgrp=f5[mol],
-                         mutant=self.mutant,
                          number_of_points=grid_info['number_of_points'],
                          resolution=grid_info['resolution'],
                          contact_distance=contact_distance,
@@ -1030,6 +1073,8 @@ class DataGenerator(object):
         for mol in mol_tqdm:
             mol_tqdm.set_postfix(mol=mol)
 
+            mutant = DataGenerator._load_mutant(f5[mol])
+
             # Determine which feature to map
             # if feature not given, then determine it for each molecule
             if 'feature' not in grid_info_ref:
@@ -1058,8 +1103,7 @@ class DataGenerator(object):
             try:
                 # compute the data we want on the grid
                 gt.GridTools(
-                    molgrp=f5[mol],
-                    mutant=self.mutant,
+                    molgrp=f5[mol], mutant=mutant,
                     number_of_points=grid_info['number_of_points'],
                     resolution=grid_info['resolution'],
                     atomic_densities=grid_info['atomic_densities'],
@@ -1396,7 +1440,6 @@ class DataGenerator(object):
             pdb_data (bytes): PDB translated in bytes
             featgrp (str): name of the group where to store the xyz feature
             featgrp_raw (str): name of the group where to store the raw feature
-            mutant (PdbMutantSelection): the selected mutant
             logger (logger): name of logger object
 
         Return:
@@ -1452,9 +1495,13 @@ class DataGenerator(object):
         """
 
         # read the pdb and extract the ATOM lines
-        with open(pdbfile, 'rt') as fi:
-            data = [line.split('\n')[0]
-                    for line in fi if line.startswith('ATOM')]
+        if self.align is None:
+            with open(pdbfile, 'rt') as fi:
+                data = [line.split('\n')[0]
+                        for line in fi if line.startswith('ATOM')]
+        elif isinstance(self.align, dict):
+            sqldb = self._get_aligned_sqldb(pdbfile, self.align)
+            data = sqldb.sql2pdb()
 
         #  PDB default line length is 80
         #  http://www.wwpdb.org/documentation/file-format
@@ -1568,7 +1615,10 @@ class DataGenerator(object):
             list(float): center of the molecule
         """
         # create the sqldb and extract positions
-        sqldb = pdb2sql.pdb2sql(pdbfile)
+        if self.align is None:
+            sqldb = pdb2sql.pdb2sql(pdbfile)
+        else:
+            sqldb = self._get_aligned_sqldb(pdbfile, self.align)
 
         # rotate the positions
         pdb2sql.transform.rot_axis(sqldb, axis, angle)
