@@ -288,7 +288,7 @@ if __name__ == '__main__':
     pssm_path = os.path.join(base_path, "test/1AK4/pssm_new", "1AK4.C.pssm")
 
     pssm = FullPSSM(mol_name='1AK4',
-                    mutant=PdbMutantSelection(pdb_file, "C", 10, "W", pssm_path)
+                    mutant=PdbMutantSelection(pdb_file, "C", 10, "W", pssm_path),
                     pssm_format='new', out_type='pssmic')
 
     # get the pssm smoothed sum score
