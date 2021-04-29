@@ -35,8 +35,7 @@ class FullPSSM(FeatureClass):
 
         Examples:
             >>> pssm = FullPSSM(mol_name='2ABZ',
-            >>>                 mutant=PdbMutantSelection("2ABZ.pdb", "A", 10, "W", "2ABZ.pssm"),
-            >>>                 pssm_path=path)
+            >>>                 mutant=PdbMutantSelection("2ABZ.pdb", "A", 10, "W", "2ABZ.pssm"))
             >>> pssm.read_PSSM_data()
             >>> pssm.get_feature_value()
             >>> print(pssm.feature_data_xyz)
@@ -45,14 +44,12 @@ class FullPSSM(FeatureClass):
         super().__init__("Residue")
 
         self.mol_name = mol_name
-        self.pdb_file = mutant.pdb_path
-        self.pssm_path = mutant.pssm_path
         self.pssm_format = pssm_format
         self.out_type = out_type.lower()
         self.mutant = mutant
 
-        if isinstance(pdb_file, str) and mol_name is None:
-            self.mol_name = os.path.basename(pdb_file).split('.')[0]
+        if isinstance(self.mutant.pdb_path, str) and mol_name is None:
+            self.mol_name = os.path.basename(self.mutant.pdb_path).split('.')[0]
 
         self.ref_mol_name = self.get_ref_mol_name(self.mol_name)
 
@@ -84,7 +81,7 @@ class FullPSSM(FeatureClass):
     def read_PSSM_data(self):
         """Read the PSSM data into a dictionary."""
 
-        names = os.listdir(self.pssm_path)
+        names = os.listdir(self.mutant.pssm_path)
         fnames = list(filter(lambda x: self.mol_name in x, names))
         # if decoy pssm files not exist, use reference pssm files
         if not fnames:
@@ -94,7 +91,7 @@ class FullPSSM(FeatureClass):
         if num_pssm_files == 0:
             raise FileNotFoundError(
                 f'No PSSM file found for '
-                f'{self.mol_name} in {self.pssm_path}')
+                f'{self.mol_name} in {self.mutant.pssm_path}')
 
         # old format with one file for all chains
         # and only pssm data
@@ -103,11 +100,11 @@ class FullPSSM(FeatureClass):
             if num_pssm_files > 1:
                 raise ValueError(
                     f'Multiple PSSM files found for '
-                    f'{self.mol_name} in {self.pssm_path}')
+                    f'{self.mol_name} in {self.mutant.pssm_path}')
             else:
                 fname = fnames[0]
 
-            with open(os.path.join(self.pssm_path, fname), 'rb') as f:
+            with open(os.path.join(self.mutant.pssm_path, fname), 'rb') as f:
                 data = f.readlines()
             raw_data = list(map(lambda x: x.decode('utf-8').split(), data))
 
@@ -125,7 +122,7 @@ class FullPSSM(FeatureClass):
             if num_pssm_files < 2:
                 raise FileNotFoundError(
                     f'Only one PSSM file found for '
-                    f'{self.mol_name} in {self.pssm_path}')
+                    f'{self.mol_name} in {self.mutant.pssm_path}')
 
             # get chain name
             fnames.sort()
@@ -136,7 +133,7 @@ class FullPSSM(FeatureClass):
             iiter = 0
             for chainID, fn in zip(chain_names, fnames):
 
-                with open(os.path.join(self.pssm_path, fn), 'rb') as f:
+                with open(os.path.join(self.mutant.pssm_path, fn), 'rb') as f:
                     data = f.readlines()
                 raw_data = list(
                     map(lambda x: x.decode('utf-8').split(), data))
@@ -165,7 +162,7 @@ class FullPSSM(FeatureClass):
     def get_feature_value(self, cutoff=5.5):
         """get the feature value."""
 
-        sql = pdb2sql.interface(self.pdb_file)
+        sql = pdb2sql.interface(self.mutant.pdb_path)
 
         # set achors for all residues and get their xyz
         xyz_info, xyz = self.get_residue_center(sql)
