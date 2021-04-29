@@ -80,8 +80,7 @@ class TestLearn(unittest.TestCase):
         train_database = '1ak4.hdf5'
         if not os.path.isfile(train_database):
             raise FileNotFoundError(
-                'Database %s not found. Make sure to run test_generate before',
-                train_database)
+                'Database %s not found. Make sure to run test_generate before' % train_database)
 
         # clean the output dir
         out = './out_3d_reg'
