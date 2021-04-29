@@ -38,7 +38,7 @@ def test_generate():
     feature_names = ["test.feature.feature1", "test.feature.feature2"]
     target_names = ["test.target.target1"]
 
-    pdb_path = os.path.join(os.path.dirname(__file__), "101m.pdb")
+    pdb_path = "test/101m.pdb"
     mutants = [PdbMutantSelection(pdb_path, 'A', 25, 'A')]
 
     tmp_dir = mkdtemp()

@@ -32,10 +32,8 @@ jobs:
         pip install -e .[test]
     - name: Test with pytest
       run: |
-        cd test/
         pytest --cov=deeprank --cov-report xml:coverage.xml
-        mv coverage.xml .coverage ..
-        cd ../
+        mv coverage.xml .coverage
     - name: Coveralls
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
