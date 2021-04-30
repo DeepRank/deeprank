@@ -48,8 +48,9 @@ class DataGenerator(object):
 
         Args:
             mutants (list(PdbMutantSelection)): the selected mutants
-            pdb_path (str): file path where to find the pdb for mapping
-            pssm_path (str, optional): path where to find the PSSM file
+            align (dict, optional): Dicitionary to align the compexes,
+                                    e.g. align = {"axis":"z"}}
+                                    e.g. align = {"plane":"xy"}
             compute_targets (list(str), optional): List of python files computing the targets,
                 "pdb_native" must be set if having targets to compute.
             compute_features (list(str), optional): List of python files computing the features
@@ -65,9 +66,7 @@ class DataGenerator(object):
             >>> from deeprank.generate import *
             >>> from deeprank.models.mutant import PdbMutantSelection
             >>> # sources to assemble the data base
-            >>> pdb_path = "1AK4.pdb"
-            >>> pssm_path = "1AK4.pssm"
-            >>> mutant = PdbMutantSelection("C", 450, "A")
+            >>> mutant = PdbMutantSelection("1AK4.pdb", "C", 450, "A", {'C': "1AK4.pssm"})
             >>> h5file = '1ak4.hdf5'
             >>>
             >>> #init the data assembler
@@ -97,15 +96,6 @@ class DataGenerator(object):
         self.map_error = []
 
         self.logger = logger
-
-        # handle pssm source
-        pssm_features = ('deeprank.features.FullPSSM',
-                         'deeprank.features.PSSM_IC')
-        if self.compute_features and \
-                set.intersection(set(pssm_features), set(self.compute_features)):
-            if config.PATH_PSSM_SOURCE is None:
-                raise ValueError(
-                    'You must provide "pssm_source" to compute PSSM features.')
 
 # ====================================================================================
 #
@@ -224,8 +214,8 @@ class DataGenerator(object):
                 DataGenerator._store_mutant(molgrp, mutant)
 
                 self._add_pdb(molgrp, mutant.pdb_path, "pdb")
-                if mutant.pssm_path is not None:
-                    self._add_pssm(molgrp, mutant.pssm_path, "pssm")
+                if mutant.has_pssm():
+                    self._add_pssm(molgrp, mutant, "pssm")
 
                 if verbose:
                     self.logger.info(
@@ -864,8 +854,8 @@ class DataGenerator(object):
         _log.debug("storing mutant in {}".format(molecule_group))
 
         molecule_group.attrs['pdb_path'] = mutant.pdb_path
-        if mutant.pssm_path is not None:
-            molecule_group.attrs['pssm_path'] = mutant.pssm_path
+        for chain_id in mutant.get_pssm_chains():
+            molecule_group.attrs['pssm_path_%s' % chain_id] = mutant.get_pssm_path(chain_id)
         molecule_group.attrs['mutant_chain_id'] = mutant.chain_id
         molecule_group.attrs['mutant_residue_number'] = mutant.residue_number
         molecule_group.attrs['mutant_amino_acid'] = mutant.mutant_amino_acid
@@ -875,14 +865,17 @@ class DataGenerator(object):
         _log.debug("loading mutant from {}".format(molecule_group))
 
         pdb_path = molecule_group.attrs['pdb_path']
-        pssm_path = None
-        if 'pssm_path' in molecule_group.attrs:
-            pssm_path = molecule_group.attrs['pssm_path']
+        pssm_paths_by_chain = {}
+        for attr_name in molecule_group.attrs:
+            if attr_name.startswith("pssm_path_"):
+                chain_id = attr_name.split('_')[-1]
+                pssm_paths_by_chain[chain_id] = molecule_group.attrs[attr_name]
+
         chain_id = molecule_group.attrs['mutant_chain_id']
         residue_number = molecule_group.attrs['mutant_residue_number']
         amino_acid = molecule_group.attrs['mutant_amino_acid']
 
-        mutant = PdbMutantSelection(pdb_path, chain_id, residue_number, amino_acid, pssm_path)
+        mutant = PdbMutantSelection(pdb_path, chain_id, residue_number, amino_acid, pssm_paths_by_chain)
         return mutant
 
 # ====================================================================================
@@ -1509,17 +1502,20 @@ class DataGenerator(object):
         molgrp.create_dataset(name, data=data)
 
 
-    def _add_pssm(self, molgrp, pssm_path, name):
+    def _add_pssm(self, molgrp, mutant, name):
         """ Add a pssm to a molgrp
 
         Args:
-            molgrp (str): mopl group where tp add the pdb
-            pssm_file (str): pssm file to add
+            molgrp (str): mol group where tp add the pdb
+            mutant (PdbMutantSelection): mutant object, to take the pdb paths from
             name (str): dataset name in the hdf5 molgroup
         """
 
-        with open(pssm_path, 'rt') as f:
-            lines = [line.strip() for line in f if line.startswith('ATOM')]
+        lines = []
+        for chain_id in mutant.get_pssm_chains():
+            pssm_path = mutant.get_pssm_path(chain_id)
+            with open(pssm_path, 'rt') as f:
+                lines.extend([line.strip() for line in f if line.startswith('ATOM')])
 
         # We expect the PSSM line length not to go over 200
         data = np.array(lines).astype('|S200')
