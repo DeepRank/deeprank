@@ -14,4 +14,4 @@ class Residue:
         return self.chain_id == other.chain_id and self.number == other.number
 
     def __repr__(self):
-        return "Residue {} {}".format(self.name, self.number)
+        return "Residue {} {} in {}".format(self.name, self.number, self.chain_id)
