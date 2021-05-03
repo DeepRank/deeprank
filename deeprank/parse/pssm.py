@@ -32,3 +32,16 @@ def parse_new_pssm(file_, chain_id):
 
         pssm.set_residue_value(residue, float(record['IC']))
     return pssm
+
+
+def parse_pssm(file_, chain_id=None):
+    first_line = file_.readline()
+    file_.seek(0)
+
+    if 'pdbresi' in first_line:
+        if chain_id is None:
+            raise ValueError("chain id is mandatory for new formatted pssm file")
+
+        return parse_new_pssm(file_, chain_id)
+    else:
+        return parse_old_pssm(file_)
