@@ -40,7 +40,7 @@ _log = logging.getLogger(__name__)
 
 class DataGenerator(object):
 
-    def __init__(self, mutants, align=None,
+    def __init__(self, mutants,
                  compute_targets=None, compute_features=None,
                  data_augmentation=None, hdf5='database.h5',
                  mpi_comm=None):
@@ -48,9 +48,6 @@ class DataGenerator(object):
 
         Args:
             mutants (list(PdbMutantSelection)): the selected mutants
-            align (dict, optional): Dicitionary to align the compexes,
-                                    e.g. align = {"axis":"z"}}
-                                    e.g. align = {"plane":"xy"}
             compute_targets (list(str), optional): List of python files computing the targets,
                 "pdb_native" must be set if having targets to compute.
             compute_features (list(str), optional): List of python files computing the features
@@ -79,8 +76,6 @@ class DataGenerator(object):
         """
 
         self.mutants = mutants
-
-        self.align = align
 
         self.compute_targets = compute_targets
         self.compute_features = compute_features
@@ -332,10 +327,7 @@ class DataGenerator(object):
                     DataGenerator._store_mutant(molgrp, mutant)
 
                     # get the rotation axis and angle
-                    if self.align is None:
-                        axis, angle = pdb2sql.transform.get_rot_axis_angle(random_seed)
-                    else:
-                        axis, angle = self._get_aligned_rotation_axis_angle(random_seed, self.align)
+                    axis, angle = pdb2sql.transform.get_rot_axis_angle(random_seed)
 
                     # create the new pdb and get molecule center
                     # molecule center is the origin of rotation)
@@ -487,12 +479,7 @@ class DataGenerator(object):
                     f5.copy(mol_name + '/native', molgrp)
 
                 # get the rotation axis and angle
-                if self.align is None:
-                    axis, angle = pdb2sql.transform.get_rot_axis_angle(
-                        random_seed)
-                else:
-                    axis, angle = self._get_aligned_rotation_axis_angle(random_seed,
-                                                                        self.align)
+                axis, angle = pdb2sql.transform.get_rot_axis_angle(random_seed)
 
                 # create the new pdb and get molecule center
                 # molecule center is the origin of rotation)
@@ -1488,13 +1475,9 @@ class DataGenerator(object):
         """
 
         # read the pdb and extract the ATOM lines
-        if self.align is None:
-            with open(pdbfile, 'rt') as fi:
-                data = [line.split('\n')[0]
-                        for line in fi if line.startswith('ATOM')]
-        elif isinstance(self.align, dict):
-            sqldb = self._get_aligned_sqldb(pdbfile, self.align)
-            data = sqldb.sql2pdb()
+        with open(pdbfile, 'rt') as fi:
+            data = [line.split('\n')[0]
+                    for line in fi if line.startswith('ATOM')]
 
         #  PDB default line length is 80
         #  http://www.wwpdb.org/documentation/file-format
@@ -1611,10 +1594,7 @@ class DataGenerator(object):
             list(float): center of the molecule
         """
         # create the sqldb and extract positions
-        if self.align is None:
-            sqldb = pdb2sql.pdb2sql(pdbfile)
-        else:
-            sqldb = self._get_aligned_sqldb(pdbfile, self.align)
+        sqldb = pdb2sql.pdb2sql(pdbfile)
 
         # rotate the positions
         pdb2sql.transform.rot_axis(sqldb, axis, angle)
