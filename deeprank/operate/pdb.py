@@ -44,7 +44,7 @@ def get_atoms(pdb2sql):
         # Make sure that the residue is in the working directory:
         residue_id = (chain_id, residue_number)
         if residue_id not in residues:
-            residues[residue_id] = Residue(residue_number, residue_name)
+            residues[residue_id] = Residue(residue_number, residue_name, chain_id)
 
         # Turn the x,y,z into a vector:
         atom_position = numpy.array([x, y, z])
