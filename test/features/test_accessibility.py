@@ -21,6 +21,13 @@ def test_compute_feature():
 
             __compute_feature__(mutant.pdb_path, feature_group, raw_feature_group, mutant)
 
+            # Did the feature get stored:
             ok_(len(feature_group.get(FEATURE_NAME)) > 0)
+
+            # There must be buried atoms:
+            ok_(any([key_value[-1] == 0.0 for key_value in feature_group.get(FEATURE_NAME)]))
+
+            # There must be accessible atoms:
+            ok_(any([key_value[-1] > 0.0 for key_value in feature_group.get(FEATURE_NAME)]))
     finally:
         rmtree(tmp_dir_path)
