@@ -46,8 +46,8 @@ class DataGenerator(object):
         Args:
             mutant (list(PdbMutantSelection)): the selected mutants
             align (dict, optional): Dicitionary to align the compexes,
-                                    e.g. align = {"axis":"z"}
-                                    e.g. align = {"plane":"xy"}
+                                    e.g. align = {"selection":{"chainID":["A","B"]}, "axis":"z"}
+                                    e.g. align = {"selection":{"chainID":["A","B"]}, "plane":"xy"}
                                     if "selection" is not specified the entire complex is used for alignement
             compute_targets (list(str), optional): List of python files computing the targets,
                 "pdb_native" must be set if having targets to compute.
