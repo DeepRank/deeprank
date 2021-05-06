@@ -29,10 +29,16 @@ class PdbMutantSelection:
 
     def get_pssm_chains(self):
         "returns the chain ids for which pssm files are available"
-        return self._pssm_paths_by_chain.keys()
+        if self._pssm_paths_by_chain is not None:
+            return self._pssm_paths_by_chain.keys()
+        else:
+            return set([])
 
     def get_pssm_path(self, chain_id):
         "returns the pssm path for the given chain id"
+        if self._pssm_paths_by_chain is None:
+            raise ValueError("pssm paths are not set in this mutant selection")
+
         return self._pssm_paths_by_chain[chain_id]
 
     @property
