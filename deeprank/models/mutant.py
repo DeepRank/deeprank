@@ -10,11 +10,12 @@ class PdbMutantSelection:
         mutant_amino_acid (str): one letter code of the amino acid to place at this position
     """
 
-    def __init__(self, pdb_path, chain_id, residue_number, mutant_amino_acid):
+    def __init__(self, pdb_path, chain_id, residue_number, mutant_amino_acid, pssm_paths_by_chain={}):
         self._pdb_path = pdb_path
         self._chain_id = chain_id
         self._residue_number = residue_number
         self._mutant_amino_acid = mutant_amino_acid
+        self._pssm_paths_by_chain = pssm_paths_by_chain
 
     @property
     def pdb_path(self):
@@ -31,3 +32,6 @@ class PdbMutantSelection:
     @property
     def mutant_amino_acid(self):
         return self._mutant_amino_acid
+
+    def get_pssm_path(self, chain_id):
+        return self._pssm_paths_by_chain[chain_id]
