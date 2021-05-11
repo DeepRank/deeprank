@@ -27,7 +27,7 @@ class TestLearn(unittest.TestCase):
         database = '1ak4_mapfly.hdf5'
         if not os.path.isfile(database):
             raise FileNotFoundError(
-                'Database %s not found. Make sure to run test_generate before' % database)
+                'Database %s not found. Make sure to run test_generate before')
 
         # clean the output dir
         out = './out_3d_fly'
@@ -80,7 +80,8 @@ class TestLearn(unittest.TestCase):
         train_database = '1ak4.hdf5'
         if not os.path.isfile(train_database):
             raise FileNotFoundError(
-                'Database %s not found. Make sure to run test_generate before' % train_database)
+                'Database %s not found. Make sure to run test_generate before',
+                train_database)
 
         # clean the output dir
         out = './out_3d_reg'
@@ -187,7 +188,7 @@ class TestLearn(unittest.TestCase):
 
         if not os.path.isfile(database):
             raise FileNotFoundError(
-                'Database %s not found. Make sure to run test_generate before' % database)
+                'Database %s not found. Make sure to run test_generate before')
 
         # declare the dataset instance
         data_set = DataSet(
@@ -229,7 +230,7 @@ class TestLearn(unittest.TestCase):
 
         if not os.path.isfile(database):
             raise FileNotFoundError(
-                'Database %s not found. Make sure to run test_generate before' % database)
+                'Database %s not found. Make sure to run test_generate before')
 
         # clean the output dir
         out = './out_test/'
