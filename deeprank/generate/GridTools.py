@@ -10,6 +10,7 @@ import pdb2sql
 from deeprank.config import logger
 from deeprank.tools import sparse
 from deeprank.operate.pdb import get_atoms, get_residue_contact_atom_pairs
+from deeprank.operate import hdf5data
 
 try:
     from tqdm import tqdm
@@ -23,7 +24,7 @@ def logif(string, cond): return logger.info(string) if cond else None
 
 class GridTools(object):
 
-    def __init__(self, molgrp, mutant,
+    def __init__(self, mutant_group, mutant,
                  number_of_points=30, resolution=1.,
                  atomic_densities=None, atomic_densities_mode='ind',
                  feature=None, feature_mode='ind',
@@ -33,7 +34,7 @@ class GridTools(object):
         """Map the feature of a complex on the grid.
 
         Args:
-            molgrp(str): name of the group of the molecule in the HDF5 file.
+            mutant_group(str): name of the group of the mutant in the HDF5 file.
             mutant (PdbMutantSelection): The mutant
             number_of_points(int, optional): number of points we want in
                 each direction of the grid.
@@ -44,7 +45,7 @@ class GridTools(object):
                 (deprecated must be 'ind').
             feature(None, optional): Name of the features to be mapped.
                 By default all the features present in
-                hdf5_file['< molgrp > /features/] will be mapped.
+                hdf5_file['< mutant_group > /features/] will be mapped.
             feature_mode(str, optional): Mode for mapping
                 (deprecated must be 'ind').
             contact_distance(float, optional): the dmaximum distance
@@ -65,15 +66,15 @@ class GridTools(object):
                 sparse format (default True).
         """
 
-        # mol and hdf5 file
-        self.molgrp = molgrp
-        self.mol_basename = molgrp.name
+        # mutant and hdf5 file
+        self.mutant_group = mutant_group
+        self.mutant_basename = mutant_group.name
 
         # mutant query
         self.mutant = mutant
 
         # hdf5 file to strore data
-        self.hdf5 = self.molgrp.file
+        self.hdf5 = self.mutant_group.file
         self.try_sparse = try_sparse
 
         # parameter of the grid
@@ -137,15 +138,15 @@ class GridTools(object):
         # if we already have an output containing the grid
         # we update the existing features
         _update_ = False
-        if self.mol_basename + '/grid_points/x' in self.hdf5:
+        if self.mutant_basename + '/grid_points/x' in self.hdf5:
             _update_ = True
 
         if _update_:
-            logif(f'\n=Updating grid data for {self.mol_basename}.',
+            logif(f'\n=Updating grid data for {self.mutant_basename}.',
                   self.time)
             self.update_feature()
         else:
-            logif(f'\n= Creating grid and grid data for {self.mol_basename}.',
+            logif(f'\n= Creating grid and grid data for {self.mutant_basename}.',
                   self.time)
             self.create_new_data()
 
@@ -185,7 +186,7 @@ class GridTools(object):
         self.read_pdb()
 
         # read the grid from the hdf5
-        grid = self.hdf5.get(self.mol_basename + '/grid_points/')
+        grid = self.hdf5.get(self.mutant_basename + '/grid_points/')
         self.x, self.y, self.z = grid['x'][()], grid['y'][()], grid['z'][()]
 
         # create the grid
@@ -211,7 +212,7 @@ class GridTools(object):
     def read_pdb(self):
         """Create a sql databse for the pdb."""
 
-        self.sqldb = pdb2sql.interface(self.molgrp.attrs['pdb_path'])
+        self.sqldb = pdb2sql.interface(self.mutant_group.attrs['pdb_path'])
 
     # get the contact atoms and interface center
     def get_contact_center(self):
@@ -237,7 +238,7 @@ class GridTools(object):
     # add all the residue features to the data
 
     def add_all_features(self):
-        """Add all the features toa given molecule."""
+        """Add all the features toa given mutant."""
 
         # map the features
         if self.feature is not None:
@@ -509,7 +510,7 @@ class GridTools(object):
                      self.npts[1], self.npts[2]), self.time)
 
             # read the data
-            featgrp = self.molgrp['features']
+            featgrp = self.mutant_group['features']
             if feature_name in featgrp.keys():
                 data = featgrp[feature_name][:]
             else:
@@ -733,17 +734,8 @@ class GridTools(object):
     def export_grid_points(self):
         """export the grid points to the hdf5 file."""
 
-        grd = self.hdf5.require_group(self.mol_basename + '/grid_points')
-        grd.create_dataset('x', data=self.x)
-        grd.create_dataset('y', data=self.y)
-        grd.create_dataset('z', data=self.z)
-
-        # add center or update it when the old value is different
-        if 'center' not in grd:
-            grd.create_dataset('center', data=self.center_contact)
-
-        else:
-            grd['center'][...] = self.center_contact
+        hdf5data.store_grid_points(self.mutant_group, self.x, self.y, self.z)
+        hdf5data.store_grid_center(self.mutant_group, self.center_contact)
 
     # save the data in the hdf5 file
 
@@ -754,53 +746,7 @@ class GridTools(object):
             dict_data(dict): feature values stored as a dict
             data_name(str): feature name
         """
-        # get the group of the feature
-        feat_group = self.hdf5.require_group(
-            self.mol_basename + '/mapped_features/' + data_name)
 
-        # gothrough all the feature elements
-        for key, value in dict_data.items():
-
-            # remove only subgroup
-            if key in feat_group:
-                del feat_group[key]
-
-            # create new one
-            sub_feat_group = feat_group.create_group(key)
-
-            # try  a sparse representation
-            if self.try_sparse:
-
-                # check if the grid is sparse or not
-                t0 = time()
-                spg = sparse.FLANgrid()
-                spg.from_dense(value, beta=1E-2)
-                if self.time:
-                    print('      Sparsing time %f ms' % ((time() - t0) * 1000))
-
-                # if we have a sparse matrix
-                if spg.sparse:
-                    sub_feat_group.attrs['sparse'] = spg.sparse
-                    sub_feat_group.attrs['type'] = 'sparse_matrix'
-                    sub_feat_group.create_dataset(
-                        'index', data=spg.index,
-                        compression='gzip', compression_opts=9)
-                    sub_feat_group.create_dataset(
-                        'value', data=spg.value,
-                        compression='gzip', compression_opts=9)
-
-                else:
-                    sub_feat_group.attrs['sparse'] = spg.sparse
-                    sub_feat_group.attrs['type'] = 'dense_matrix'
-                    sub_feat_group.create_dataset(
-                        'value', data=spg.value,
-                        compression='gzip', compression_opts=9)
-
-            else:
-                sub_feat_group.attrs['sparse'] = False
-                sub_feat_group.attrs['type'] = 'dense_matrix'
-                sub_feat_group.create_dataset(
-                    'value', data=value,
-                    compression='gzip', compression_opts=9)
+        hdf5data.store_grid_data(self.mutant_group, data_name, dict_data, try_sparse=self.try_sparse)
 
 ########################################################################
