@@ -6,20 +6,20 @@
 DeepRank
 ========
 
-`DeepRank`_ is a general, configurable deep learning framework for data mining
-protein-protein interactions (PPIs) using 3D convolutional neural networks (CNNs).
+`DeepRank v.2.0`_ is a configurable deep learning framework to predict 
+pathogenicity of missense variants using 3D convolutional neural networks (CNNs).
 
-DeepRank contains useful APIs for pre-processing PPIs data, computing features and
+DeepRank contains useful APIs for pre-processing protein structural data, computing features and
 targets, as well as training and testing CNN models.
 
-.. _`DeepRank`: https://github.com/DeepRank/deeprank
+.. _`DeepRank v.2.0`: https://github.com/DeepRank/deeprank/tree/efro-project
 
 **DeepRank highlights**:
 
-- Predefined atom-level and residue-level PPI feature types
-   - *e.g. atomic density, vdw energy, residue contacts, PSSM, etc.*
+- Predefined atom-level and residue-level structural feature types
+   - *e.g. residue contacts, atomic density, vdw energy, solvent accessibility, PSSM.*
 - Predefined target types
-   - *e.g. binary class, CAPRI categories, DockQ, RMSD, FNAT, etc.*
+   - *e.g. damaging, benign, likely damaging, likely benign*
 - Flexible definition of both new features and targets
 - 3D grid feature mapping
 - Efficient data storage in HDF5 format

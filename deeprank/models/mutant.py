@@ -11,8 +11,7 @@ class PdbMutantSelection:
         pssm_paths_by_chain (dict(str, str), optional): the paths of the pssm files per chain id, associated with the pdb file
     """
 
-    def __init__(self, pdb_path, chain_id, residue_number, mutant_amino_acid,
-                 pssm_paths_by_chain=None):
+    def __init__(self, pdb_path, chain_id, residue_number, mutant_amino_acid, pssm_paths_by_chain=None):
         self._pdb_path = pdb_path
         self._chain_id = chain_id
         self._residue_number = residue_number
@@ -52,3 +51,13 @@ class PdbMutantSelection:
     @property
     def mutant_amino_acid(self):
         return self._mutant_amino_acid
+
+    def get_pssm_path(self, chain_id):
+        return self._pssm_paths_by_chain[chain_id]
+
+    def __eq__(self, other):
+        return self._pdb_path == other._pdb_path and \
+               self._chain_id == other._chain_id and \
+               self._residue_number == other._residue_number and \
+               self._mutant_amino_acid == other._mutant_amino_acid and \
+               self._pssm_paths_by_chain == other._pssm_paths_by_chain
