@@ -30,7 +30,7 @@ def parse_new_pssm(file_, chain_id):
 
             pssm.set_amino_acid_value(residue, code, value)
 
-        pssm.set_residue_value(residue, float(record['IC']))
+        pssm.set_information_content(residue, float(record['IC']))
     return pssm
 
 
