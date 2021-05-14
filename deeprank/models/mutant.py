@@ -61,3 +61,15 @@ class PdbMutantSelection:
                self._residue_number == other._residue_number and \
                self._mutant_amino_acid == other._mutant_amino_acid and \
                self._pssm_paths_by_chain == other._pssm_paths_by_chain
+
+    def __hash__(self):
+        s = "pdb=%s;" % self._pdb_path + \
+            "chain=%s;" % self._chain_id + \
+            "residue_number=%s;" % self._residue_number + \
+            "mutant_amino_acid=%s;" % self._mutant_amino_acid
+
+        if self._pssm_paths_by_chain is not None:
+            for chain_id, path in self._pssm_paths_by_chain.items():
+                s += "pssm_%s=%s;" % (chain_id, path)
+
+        return hash(s)
