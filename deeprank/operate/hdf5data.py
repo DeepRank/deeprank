@@ -76,6 +76,9 @@ def store_grid_center(mutant_group, center):
 
     grid_group = mutant_group.require_group("grid_points")
 
+    if 'center' in grid_group:
+        del(grid_group['center'])
+
     grid_group.create_dataset('center', data=center)
 
 
@@ -105,6 +108,10 @@ def store_grid_points(mutant_group, x_coords, y_coords, z_coords):
 
     grid_group = mutant_group.require_group("grid_points")
 
+    for coord in ['x', 'y', 'z']:
+        if coord in grid_group:
+            del(grid_group[coord])
+
     grid_group.create_dataset('x', data=x_coords)
     grid_group.create_dataset('y', data=y_coords)
     grid_group.create_dataset('z', data=z_coords)
@@ -128,7 +135,7 @@ def load_grid_points(mutant_group):
     return (x_coords, y_coords, z_coords)
 
 
-def store_grid_data(mutant_group, feature_name, feature_dict):
+def store_grid_data(mutant_group, feature_name, feature_dict, try_sparse=True):
     """ Store 3D grid data in a mutant group.
 
         Args:
@@ -148,10 +155,11 @@ def store_grid_data(mutant_group, feature_name, feature_dict):
         # Create the subfeature group anew.
         subfeature_group = feature_group.create_group(subfeature_name)
 
-        spg = sparse.FLANgrid()
-        spg.from_dense(subfeature_data, beta=1E-2)
+        if try_sparse:
+            spg = sparse.FLANgrid()
+            spg.from_dense(subfeature_data, beta=1E-2)
 
-        if spg.sparse:
+        if try_sparse and spg.sparse:
             subfeature_group.attrs['sparse'] = True
             subfeature_group.attrs['type'] = 'sparse_matrix'
             subfeature_group.create_dataset('index', data=spg.index, compression='gzip', compression_opts=9)
