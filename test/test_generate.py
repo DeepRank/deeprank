@@ -11,6 +11,7 @@ from nose.tools import eq_, ok_
 from deeprank.generate import *
 from deeprank.models.mutant import PdbMutantSelection
 from deeprank.tools.sparse import FLANgrid
+from deeprank.operate import hdf5data
 
 
 def test_generate():
@@ -52,16 +53,16 @@ def test_generate():
             eq_(list(f5.attrs['features']), feature_names)
 
             for mutant in mutants:
-                molecule_name = os.path.basename(os.path.splitext(mutant.pdb_path)[0])
+                mutant_name = hdf5data.get_mutant_group_name(mutant)
 
                 # Check that the right number of grid point coordinates have been stored and are equally away from each other:
                 for coord in ['x', 'y', 'z']:
-                    coords = f5["%s/grid_points/%s" % (molecule_name, coord)]
+                    coords = f5["%s/grid_points/%s" % (mutant_name, coord)]
                     for i in range(number_of_points - 1):
                         eq_(coords[i + 1] - coords[i], resolution)
 
                 # Check for mapped features in the HDF5 file:
-                feature_path = "%s/mapped_features/Feature_ind" % molecule_name
+                feature_path = "%s/mapped_features/Feature_ind" % mutant_name
                 feature_keys = f5[feature_path].keys()
                 for feature_name in feature_names:
                     feature_name = feature_name.split('.')[-1]
@@ -70,13 +71,13 @@ def test_generate():
 
                 # Check that the atomic densities are present in the HDF5 file:
                 for element_name in atomic_densities:
-                    density_path = "%s/mapped_features/AtomicDensities_ind/%s_%s" % (molecule_name, element_name, mutant.chain_id)
+                    density_path = "%s/mapped_features/AtomicDensities_ind/%s_%s" % (mutant_name, element_name, mutant.chain_id)
                     ok_(len(f5[density_path]) > 0)
 
                 # Check that the target values have been placed in the HDF5 file:
                 for target_name in target_names:
                     target_name = target_name.split('.')[-1]
-                    target_path = "%s/targets" % molecule_name
+                    target_path = "%s/targets" % mutant_name
                     ok_(target_name in f5[target_path])
     finally:
         shutil.rmtree(tmp_dir)
