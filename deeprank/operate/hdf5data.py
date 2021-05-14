@@ -1,7 +1,21 @@
+import os
+
 import numpy
 
 from deeprank.models.mutant import PdbMutantSelection
 from deeprank.tools import sparse
+
+
+def get_mutant_group_name(mutant):
+    """
+        Args:
+            mutant (PdbMutantSelection): a mutant object
+        Returns (str): an unique name for a given mutant object
+    """
+
+    mol_name = os.path.splitext(os.path.basename(mutant.pdb_path))[0]
+
+    return "%s_%s" % (mol_name, str(hash(mutant)).replace('-', 'm'))
 
 
 def store_mutant(mutant_group, mutant):

@@ -4,10 +4,20 @@ import os
 
 import numpy
 import h5py
-from nose.tools import eq_
+from nose.tools import eq_, ok_
 
 from deeprank.models.mutant import PdbMutantSelection
 from deeprank.operate import hdf5data
+
+
+def test_group_name():
+    mutant1 = PdbMutantSelection("not/existent/pdb.1", 'A', 111, 'M', {'A': 'not/existent/pssm.A.1'})
+    mutant2 = PdbMutantSelection("not/existent/pdb.2", 'A', 22, 'W', {'A': 'not/existent/pssm.A.2'})
+
+    ok_(hdf5data.get_mutant_group_name(mutant1) != hdf5data.get_mutant_group_name(mutant2))
+    eq_(hdf5data.get_mutant_group_name(mutant1), hdf5data.get_mutant_group_name(mutant1))
+    eq_(hdf5data.get_mutant_group_name(mutant2), hdf5data.get_mutant_group_name(mutant2))
+
 
 def test_mutant():
     start_mutant = PdbMutantSelection("not/existent/pdb", 'A', 111, 'M', {'A': 'not/existent/pssm.A'})
