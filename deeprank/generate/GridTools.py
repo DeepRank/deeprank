@@ -1,5 +1,4 @@
 
-import logging
 import itertools
 import sys
 from time import time
@@ -17,9 +16,6 @@ try:
 except ImportError:
     def tqdm(x):
         return x
-
-
-_log = logging.getLogger(__name__)
 
 
 def logif(string, cond): return logger.info(string) if cond else None

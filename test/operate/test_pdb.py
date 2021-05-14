@@ -1,5 +1,4 @@
 import numpy
-import logging
 import pkg_resources
 import os
 
@@ -7,9 +6,6 @@ from pdb2sql import pdb2sql
 from nose.tools import ok_
 
 from deeprank.operate.pdb import get_residue_contact_atom_pairs, get_atoms
-
-
-_log = logging.getLogger(__name__)
 
 
 def test_get_atoms():

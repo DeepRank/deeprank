@@ -3,7 +3,6 @@ import unittest
 from time import time
 import shutil
 from tempfile import mkdtemp
-import logging
 
 import numpy
 import h5py
@@ -12,9 +11,6 @@ from nose.tools import eq_, ok_
 from deeprank.generate import *
 from deeprank.models.mutant import PdbMutantSelection
 from deeprank.tools.sparse import FLANgrid
-
-
-_log = logging.getLogger(__name__)
 
 
 def test_generate():

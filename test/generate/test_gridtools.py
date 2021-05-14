@@ -1,5 +1,4 @@
 import os
-import logging
 import pkg_resources
 from tempfile import mkdtemp
 import shutil
@@ -10,9 +9,6 @@ from nose.tools import ok_, eq_
 
 from deeprank.generate.GridTools import GridTools
 from deeprank.models.mutant import PdbMutantSelection
-
-
-_log = logging.getLogger(__name__)
 
 
 def _get_feature_grid(hdf5, feature_group_name, feature_name, points_count):
