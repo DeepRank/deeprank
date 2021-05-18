@@ -2,302 +2,82 @@ import os
 import unittest
 from time import time
 import shutil
+from tempfile import mkdtemp
+
+import numpy
+import h5py
+from nose.tools import eq_, ok_
+
 from deeprank.generate import *
+from deeprank.models.mutant import PdbMutantSelection
+from deeprank.tools.sparse import FLANgrid
+from deeprank.operate import hdf5data
 
 
-"""
-Some requirement of the naming of the files:
-    1. case ID canNOT have underscore '_', e.g., '1ACB_CD'
-    2. decoy file name should have this format: 2w83-AB_20.pdb (caseID_xxx.pdb)
-    3. pssm file name should have this format: 2w83-AB.A.pssm (caseID.chainID.pssm or caseID.chainID.pdb.pssm)
-"""
+def test_generate():
+    """ This unit test checks that the HDF5 preprocessing code generates the correct data.
+        It doesn't use any of the actual feature classes, but instead uses some simple test classes
+        that have been created for this purpose.
 
+        Data is expected to be mapped onto a 3D grid.
+    """
 
-class TestGenerateData(unittest.TestCase):
-    """Test the data generation process."""
+    number_of_points = 30
+    resolution = 1.0
+    atomic_densities = {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8}
+    grid_info = {
+        'number_of_points': [number_of_points, number_of_points, number_of_points],
+        'resolution': [resolution, resolution, resolution],
+        'atomic_densities': atomic_densities,
+    }
 
-    h5file = ['./1ak4.hdf5', 'native.hdf5']
-    pdb_source = ['./1AK4/decoys/', './1AK4/native/']
-    # pdb_native is only used to calculate i-RMSD, dockQ and so on. The native
-    # pdb files will not be saved in the hdf5 file
-    pdb_native = ['./1AK4/native/']
+    # These classes are made for testing, they give meaningless numbers.
+    feature_names = ["test.feature.feature1", "test.feature.feature2"]
+    target_names = ["test.target.target1"]
 
-    def test_1_generate(self):
-        """Generate the database."""
+    pdb_path = "test/101m.pdb"
+    mutants = [PdbMutantSelection(pdb_path, 'A', 25, 'A')]
 
-        # clean old files
-        files = [
-            '1ak4.hdf5',
-            '1ak4_norm.pckl',
-            'native.hdf5',
-            'native_norm.pckl']
-        for f in files:
-            if os.path.isfile(f):
-                os.remove(f)
+    tmp_dir = mkdtemp()
+    try:
+        hdf5_path = os.path.join(tmp_dir, "data.hdf5")
 
-        # init the data assembler
-        for h5, src in zip(self.h5file, self.pdb_source):
+        # Make the class put the data in the HDF5 file:
+        data_generator = DataGenerator(mutants, None, target_names, feature_names, 1, hdf5_path)
+        data_generator.create_database()
+        data_generator.map_features(grid_info)
 
-            database = DataGenerator(
-                chain1='C',
-                chain2='D',
-                pdb_source=src,
-                pdb_native=self.pdb_native,
-                pssm_source='./1AK4/pssm_new/',
-                data_augmentation=1,
-                compute_targets=[
-                    'deeprank.targets.dockQ',
-                    'deeprank.targets.binary_class',
-                    'deeprank.targets.capri_class'],
-                compute_features=[
-                    'deeprank.features.AtomicFeature',
-                    'deeprank.features.FullPSSM',
-                    'deeprank.features.PSSM_IC',
-                    'deeprank.features.BSA',
-                    'deeprank.features.ResidueDensity'],
-                hdf5=h5)
+        # Read the resulting HDF5 file and check for all mutant data.
+        with h5py.File(hdf5_path, 'r') as f5:
+            eq_(list(f5.attrs['targets']), target_names)
+            eq_(list(f5.attrs['features']), feature_names)
 
-            # create new files
-            if not os.path.isfile(database.hdf5):
-                t0 = time()
-                print('{:25s}'.format('Create new database') + database.hdf5)
-                database.create_database(prog_bar=True, random_seed=2019)
-                print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
-            else:
-                print('{:25s}'.format('Use existing database') + database.hdf5)
+            for mutant in mutants:
+                mutant_name = hdf5data.get_mutant_group_name(mutant)
 
-            # map the features
-            grid_info = {
-                'number_of_points': [10, 10, 10],
-                'resolution': [3., 3., 3.],
-                'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
-            }
+                # Check that the right number of grid point coordinates have been stored and are equally away from each other:
+                for coord in ['x', 'y', 'z']:
+                    coords = f5["%s/grid_points/%s" % (mutant_name, coord)]
+                    for i in range(number_of_points - 1):
+                        eq_(coords[i + 1] - coords[i], resolution)
 
-            t0 = time()
-            print('{:25s}'.format('Map features in database') + database.hdf5)
-            database.map_features(
-                grid_info,
-                try_sparse=True,
-                time=False,
-                prog_bar=True)
-            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
+                # Check for mapped features in the HDF5 file:
+                feature_path = "%s/mapped_features/Feature_ind" % mutant_name
+                feature_keys = f5[feature_path].keys()
+                for feature_name in feature_names:
+                    feature_name = feature_name.split('.')[-1]
+                    feature_key = [key for key in feature_keys if feature_name in key][0]
+                    ok_(len(f5["%s/%s" % (feature_path, feature_key)]['value']) > 0)
 
-            # get the normalization
-            t0 = time()
-            print('{:25s}'.format('Normalization') + database.hdf5)
-            norm = NormalizeData(h5)
-            norm.get()
-            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
+                # Check that the atomic densities are present in the HDF5 file:
+                for element_name in atomic_densities:
+                    density_path = "%s/mapped_features/AtomicDensities_ind/%s_%s" % (mutant_name, element_name, mutant.chain_id)
+                    ok_(len(f5[density_path]) > 0)
 
-    def test_1_generate_mapfly(self):
-        """Generate the database."""
-
-        # clean old files
-        files = [
-            '1ak4_mapfly.hdf5',
-            '1ak4_mapfly.pckl'
-            ]
-        for f in files:
-            if os.path.isfile(f):
-                os.remove(f)
-
-        h5 = "./1ak4_mapfly.hdf5"
-        src = self.pdb_source[0]
-
-        # init the data assembler
-
-        database = DataGenerator(
-            chain1='C',
-            chain2='D',
-            pdb_source=src,
-            pdb_native=self.pdb_native,
-            pssm_source='./1AK4/pssm_new/',
-            # data_augmentation=1,
-            compute_targets=[
-                'deeprank.targets.dockQ',
-                'deeprank.targets.binary_class',
-                'deeprank.targets.capri_class'],
-            compute_features=[
-                'deeprank.features.AtomicFeature',
-                'deeprank.features.FullPSSM',
-                'deeprank.features.PSSM_IC',
-                'deeprank.features.BSA',
-                'deeprank.features.ResidueDensity'],
-            hdf5=h5)
-
-        # create new files
-        print('{:25s}'.format('Create new database') + database.hdf5)
-        database.create_database(prog_bar=True)
-
-    def test_2_add_target(self):
-        """Add a target (e.g., class labels) to the database."""
-
-        for h5 in self.h5file:
-
-            # init the data assembler
-            database = DataGenerator(chain1='C', chain2='D',
-                compute_targets=['deeprank.targets.binary_class'], hdf5=h5)
-
-            t0 = time()
-            print(
-                '{:25s}'.format('Add new target in database') +
-                database.hdf5)
-            database.add_target(prog_bar=True)
-            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
-
-    def test_3_add_unique_target(self):
-        """"Add a unique target to all the confs."""
-        for h5 in self.h5file:
-            database = DataGenerator(chain1='C', chain2='D', hdf5=h5)
-            database.add_unique_target({'XX': 1.0})
-
-    def test_4_add_feature(self):
-        """Add a feature to the database."""
-
-        for h5 in self.h5file:
-
-            # init the data assembler
-            database = DataGenerator(
-                chain1='C',
-                chain2='D',
-                pdb_source=None,
-                pdb_native=None,
-                data_augmentation=None,
-                pssm_source='./1AK4/pssm_new/',
-                compute_features=['deeprank.features.FullPSSM'],
-                hdf5=h5)
-
-            t0 = time()
-            print(
-                '{:25s}'.format('Add new feature in database') +
-                database.hdf5)
-            database.add_feature(prog_bar=True)
-            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
-
-            t0 = time()
-            print(
-                '{:25s}'.format('Map new feature in database') +
-                database.hdf5)
-            database.map_features(try_sparse=True, time=False, prog_bar=True)
-            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
-
-            # get the normalization
-            t0 = time()
-            print('{:25s}'.format('Normalization') + database.hdf5)
-            norm = NormalizeData(h5)
-            norm.get()
-            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
-
-
-    def test_5_align(self):
-        """create a database where all the complex are aligned in the z direction."""
-
-        # clean old files
-        files = [
-            '1ak4_aligned.hdf5',
-            '1ak4_aligned_norm.pckl']
-
-        for f in files:
-            if os.path.isfile(f):
-                os.remove(f)
-
-        database = DataGenerator(
-            chain1='C',
-            chain2='D',
-            pdb_source='./1AK4/decoys/',
-            pdb_native=self.pdb_native,
-            pssm_source='./1AK4/pssm_new/',
-            align={"axis":'z'},
-            data_augmentation=1,
-            compute_targets=['deeprank.targets.dockQ'],
-            compute_features=['deeprank.features.AtomicFeature'],
-            hdf5='./1ak4_aligned.hdf5')
-
-        # create the database
-        if not os.path.isfile(database.hdf5):
-            t0 = time()
-            print('{:25s}'.format('Create new database') + database.hdf5)
-            database.create_database(prog_bar=True, random_seed=2019)
-            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
-        else:
-            print('{:25s}'.format('Use existing database') + database.hdf5)
-
-    def test_6_align_interface(self):
-        """create a database where all the interface are aligned in the xy plane."""
-
-        # clean old files
-        files = [
-            '1ak4_aligned_interface.hdf5',
-            '1ak4_aligned_interface_norm.pckl']
-
-        for f in files:
-            if os.path.isfile(f):
-                os.remove(f)
-
-        database = DataGenerator(
-            pdb_source='./1AK4/decoys/',
-            pdb_native=self.pdb_native,
-            pssm_source='./1AK4/pssm_new/',
-            align={"plane":'xy', "selection":'interface'},
-            data_augmentation=1,
-            compute_targets=['deeprank.targets.dockQ'],
-            compute_features=['deeprank.features.AtomicFeature'],
-            hdf5='./1ak4_aligned_interface.hdf5',
-            chain1='C',
-            chain2='D')
-
-        # create the database
-        if not os.path.isfile(database.hdf5):
-            t0 = time()
-            print('{:25s}'.format('Create new database') + database.hdf5)
-            database.create_database(prog_bar=True, random_seed=2019)
-            print(' ' * 25 + '--> Done in %f s.' % (time() - t0))
-        else:
-            print('{:25s}'.format('Use existing database') + database.hdf5)
-
-    def test_7_realign(self):
-        '''Realign existing pdbs.'''
-
-        src_name = './1ak4.hdf5'
-        copy_name = './1ak4_aligned.hdf5'
-
-        os.remove(copy_name)
-        shutil.copy(src_name,copy_name)
-
-        database = DataGenerator(hdf5=copy_name, chain1='C', chain2='D')
-        database.realign_complexes(align={'axis':'z'})
-
-    def test_8_aug_data(self):
-
-        src_name = './1ak4.hdf5'
-        copy_name = './1ak4_aug.hdf5'
-
-        shutil.copy(src_name, copy_name)
-
-        database = DataGenerator(hdf5=copy_name, chain1='C', chain2='D')
-        database.aug_data(augmentation=2, keep_existing_aug=True)
-        grid_info = {
-            'number_of_points': [10, 10, 10],
-            'resolution': [3., 3., 3.],
-            'atomic_densities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
-            'feature': ['PSSM_ALA','RCD_total', 'bsa', 'charge',],
-        }
-        database.map_features(
-            grid_info,
-            try_sparse=True,
-            time=False,
-            prog_bar=False,
-        )
-
-if __name__ == "__main__":
-
-    # unittest.main()
-    inst = TestGenerateData()
-    inst.test_1_generate()
-    inst.test_1_generate_mapfly()
-    inst.test_3_add_unique_target()
-    inst.test_4_add_feature()
-    inst.test_5_align()
-    inst.test_6_align_interface()
-    inst.test_7_realign()
-    inst.test_8_aug_data()
+                # Check that the target values have been placed in the HDF5 file:
+                for target_name in target_names:
+                    target_name = target_name.split('.')[-1]
+                    target_path = "%s/targets" % mutant_name
+                    ok_(target_name in f5[target_path])
+    finally:
+        shutil.rmtree(tmp_dir)
