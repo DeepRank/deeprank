@@ -701,38 +701,3 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw, mutant):
 
     # close
     atfeat.sqldb._close()
-
-
-########################################################################
-#
-#  TEST THE CLASS
-#
-########################################################################
-
-# if __name__ == '__main__':
-
-#     from pprint import pprint
-#     base_path = os.path.dirname(os.path.dirname(os.path.dirname(
-#         os.path.realpath(__file__))))
-#     pdb_file = os.path.join(base_path, "test/1AK4/native/1AK4.pdb")
-#     FF = os.path.join(base_path, 'deeprank/features/forcefield/')
-
-#     atfeat = AtomicFeature(pdb_file,
-#                            param_charge=FF + 'protein-allhdg5-4_new.top',
-#                            param_vdw=FF + 'protein-allhdg5-4_new.param',
-#                            patch_file=FF + 'patch.top',
-#                            verbose=True)
-
-#     atfeat.assign_parameters()
-#     atfeat.evaluate_pair_interaction()
-#     atfeat.evaluate_charges(extend_contact_to_residue=True)
-#     atfeat.sqldb._close()
-
-#     # export in the hdf5 file
-#     pprint(atfeat.feature_data)
-#     print()
-#     pprint(atfeat.feature_data_xyz)
-
-
-
-
