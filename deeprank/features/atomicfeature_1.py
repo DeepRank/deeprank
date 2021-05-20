@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Spyder Editor
 
-This is a temporary script file.
-"""
 import os
 import warnings
 
@@ -26,7 +21,7 @@ class AtomicFeature(FeatureClass):
 
             pdbfile (str): pdb file of the molecule
 
-            mutant: mutant position
+            mutant (PdbMutantSelection) : mutant 
 
             param_charge (str): file name of the force field file
                 containing the charges e.g. protein-allhdg5.4_new.top.
@@ -107,8 +102,10 @@ class AtomicFeature(FeatureClass):
         
         # contact atoms to contact residues
         self.extend_contact_to_residue()
+        self.contact_atoms()
+        self.contact_atoms_id()
 
-        
+       
 
     ####################################################################
     #
