@@ -336,8 +336,7 @@ class AtomicFeature(FeatureClass):
     def _get_altResName(resName, atNames):
         """Apply the patch data.
 
-        This is adopted from preScan.pl
-        This is very static and I don't quite like it
+        This section is static and retained from DeepRank v.1.0
         The structure of the dictionary is as following
 
         { NEWRESTYPE: 'OLDRESTYPE',
