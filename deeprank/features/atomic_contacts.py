@@ -1,699 +1,565 @@
-
-import os
-import warnings
-
-import numpy as np
+import logging
 import pdb2sql
+import re
+import os
 
-from deeprank.features import FeatureClass
-from deeprank.config import logger
-from deeprank.operate.pdb import get_residue_contact_atom_pairs
+import numpy
 
-class AtomicFeature(FeatureClass):
+from deeprank.features.FeatureClass import FeatureClass
+from deeprank.parse.param import ParamParser
+from deeprank.parse.top import TopParser
+from deeprank.parse.patch import PatchParser
+from deeprank.models.patch import PatchActionType
 
-    def __init__(self, pdbfile, mutant, param_charge=None,
-                param_vdw=None, patch_file=None, contact_cutoff=8.5,
-                verbose=False):
-        """Compute the Coulomb, van der Waals interaction and charges around
-            the mutant position.
+_log = logging.getLogger(__name__)
+
+
+class ResidueSynonymCriteria:
+    """The ResidueSynonymCriteria is an object that holds the criteria
+       for a residue to have a certain synonym. It does not hold the synonym string itself however.
+    """
+
+    def __init__(self, residue_name, atoms_present, atoms_absent):
+        """Build new criteria
 
         Args:
-
-            pdbfile (str): pdb file of the molecule
-
-            mutant (PdbMutantSelection) : mutant 
-
-            param_charge (str): file name of the force field file
-                containing the charges e.g. protein-allhdg5.4_new.top.
-                Must be of the format:
-                * CYM  atom O   type=O      charge=-0.500 end
-                * ALA    atom N   type=NH1     charge=-0.570 end
-
-            param_vdw (str): file name of the force field containing
-                vdw parameters e.g. protein-allhdg5.4_new.param.
-                Must be of the format:
-                * NONBonded  CYAA    0.105   3.750       0.013    3.750
-                * NONBonded  CCIS    0.105   3.750       0.013    3.750
-
-            patch_file (str): file name of a valid patch file for
-                the parameters e.g. patch.top.
-                The way we handle the patching is very manual and
-                should be made more automatic.
-
-            contact_cutoff (float): the maximum distance in Å
-                between 2 contact atoms.
-
-            verbose (bool): print or not.
-
-        Examples:
-            >>> pdb = '1AK4_100w.pdb'
-            >>>
-            >>> # get the force field included in deeprank
-            >>> # if another FF has been used to compute the ref
-            >>> # change also this path to the correct one
-            >>> FF = pkg_resources.resource_filename(
-            >>>     'deeprank.features','') + '/forcefield/'
-            >>>
-            >>> # declare the feature calculator instance
-            >>> atfeat = AtomicFeature(pdb,
-            >>>    param_charge = FF + 'protein-allhdg5-4_new.top',
-            >>>    param_vdw    = FF + 'protein-allhdg5-4_new.param',
-            >>>    patch_file   = FF + 'patch.top')
-            >>>
-            >>> # assign parameters
-            >>> atfeat.assign_parameters()
-            >>>
-            >>> # only compute the pair interactions here
-            >>> atfeat.evaluate_pair_interaction(save_interactions=test_name)
-            >>>
-            >>> # close the db
-            >>> atfeat.sqldb._close()
-        """
-        super().__init__("Atomic")
-
-        # set a few things
-        self.pdbfile = pdbfile
-        self.mutant = mutant
-        self.param_charge = param_charge
-        self.param_vdw = param_vdw
-        self.patch_file = patch_file
-        self.contact_cutoff = contact_cutoff
-        self.verbose = verbose
-
-        # a few constant
-        self.eps0 = 1
-        self.c = 332.0636
-        self.residue_key = 'chainID, resSeq, resName'
-        self.atom_key = 'chainID, resSeq, resName, name'
-
-        # read the pdb as an sql
-        self.sqldb = pdb2sql.pdb2sql(self.pdbfile)
-
-        # read the force field
-        self.read_charge_file()
-
-        if patch_file is not None:
-            self.read_patch()
-        else:
-            self.patch_charge, self.patch_type = {}, {}
-
-        # read the vdw param file
-        self.read_vdw_file()
-        
-        # contact atoms to contact residues
-        self.extend_contact_to_residue()
-        self.contact_atoms()
-        self.contact_atoms_id()
-
-       
-
-    ####################################################################
-    #
-    #   READ INPUT FILES
-    #
-    ####################################################################
-
-    def read_charge_file(self):
-        """Read the .top file given in entry.
-
-        This function creates:
-
-        - self.charge: dictionary  {(resname,atname):charge}
-        - self.valid_resnames: list ['VAL','ALA', .....]
-        - self.at_name_type_convertor: dict {(resname,atname):attype}
+            residue_name (string): the name of the residue
+            atoms_present (list of strings): the names of the atoms that should be present in the residue
+            atoms_absent (list of strings) the names of the atoms that should be absent in the residue
         """
 
-        with open(self.param_charge) as f:
-            data = f.readlines()
+        self.residue_name = residue_name
+        self.atoms_present = atoms_present
+        self.atoms_absent = atoms_absent
 
-        # loop over all the data
-        self.charge = {}
-        self.at_name_type_convertor = {}
-        resnames = []
-
-        # loop over the file
-        for l in data:
-
-            # split the line
-            words = l.split()
-
-            # get the resname/atname
-            res, atname = words[0], words[2]
-
-            # get the charge
-            ind = l.find('charge=')
-            q = float(l[ind + 7:ind + 13])
-
-            # get the type
-            attype = words[3].split('=')[-1]
-
-            # store the charge
-            self.charge[(res, atname)] = q
-
-            # put the resname in a list so far
-            resnames.append(res)
-
-            # dictionary for conversion name/type
-            self.at_name_type_convertor[(res, atname)] = attype
-
-        self.valid_resnames = list(set(resnames))
-
-    def read_patch(self):
-        """Read the patchfile.
-
-        This function creates
-
-            - self.patch_charge: Dict {(resName,atName): charge}
-            - self.patch_type : Dict {(resName,atName): type}
-        """
-
-        with open(self.patch_file) as f:
-            data = f.readlines()
-
-        self.patch_charge, self.patch_type = {}, {}
-
-        for l in data:
-            # ignore comments
-            if l[0] != '#' and l[0] != '!' and len(l.split()) > 0:
-                words = l.split()
-
-                # get the new charge
-                ind = l.find('CHARGE=')
-                q = float(l[ind + 7:ind + 13])
-                self.patch_charge[(words[0], words[3])] = q
-
-                # get the new type if any
-                ind = l.find('TYPE=')
-                if ind != -1:
-                    type_ = l[ind + 5:ind + 9]
-                    self.patch_type[(words[0], words[3])] = type_.strip()
-
-    def read_vdw_file(self):
-        """Read the .param file.
-
-        The param file must be of the form:
-
-            NONBONDED ATNAME 0.10000 3.298765 0.100000 3.089222
-
-            - First two numbers are for inter-chain interations
-            - Last two nmbers are for intra-chain interactions
-              (We only compute the intrachain here)
-
-        This function creates
-
-            - self.vdw: dictionary {attype:[E1,S1]}
-        """
-
-        with open(self.param_vdw) as f:
-            data = f.readlines()
-
-        self.vdw_param = {}
-
-        for line in data:
-            # split the atom
-            line = line.split()
-
-            # empty line
-            if len(line) == 0:
-                continue
-
-            # comment
-            if line[0][0] == '#':
-                continue
-
-            self.vdw_param[line[1]] = list(map(float, line[4:]))
-    
-    
-
-    def extend_contact_to_residue(self):
-        """Extend the contact atoms around mutant position to entire residue 
-        where one atom is contacting."""
-
-        contact_atoms= get_residue_contact_atom_pairs(self.sqldb,
-                                                      self.mutant.chain_id, self.mutant.residue_number,
-                                                      self.contact_distance)
-        
-        contact_atom_ids = set([])
-        for atom1, atom2 in contact_atoms:
-            contact_atom_ids.add(atom1.id)
-            contact_atom_ids.add(atom2.id)
-        
-        # extract the data
-        contact_res = self.sqldb.get(self.residue_key,rowID=list(contact_atom_ids))
-        
-
-        # create tuple cause we want to hash through it
-        contact_res = [tuple(x) for x in contact_res]
-
-        # extract uniques
-        res = list(set(contact_res))
-
-        # init the list
-        index_contact_res= []
-
-        for resdata in res:
-            chainID, resSeq, resName = resdata
-            index_contact_res += self.sqldb.get('rowID', chainID=chainID,
-                                                 resName=resName, resSeq=resSeq)
-
-        index_contact_res = sorted(set(index_contact_res))
-
-        return index_contact_res
-
-    ####################################################################
-    #
-    #   Assign parameters
-    #
-    ####################################################################
-
-    def assign_parameters(self):
-        """Assign to each atom in the pdb its charge and vdw interchain
-        parameters.
-
-        Directly deals with the patch so that we don't loop over the
-        residues multiple times.
-        """
-
-        # get all the resnumbers
-        if self.verbose:
-            print('-- Assign force field parameters')
-
-        data = self.sqldb.get(self.residue_key)
-        natom = len(data)
-        data = np.unique(np.array(data), axis=0)
-
-        # declare the parameters for future insertion in SQL
-        atcharge = np.zeros(natom)
-        ateps = np.zeros(natom)
-        atsig = np.zeros(natom)
-
-        # check
-        attype = np.zeros(natom, dtype='<U5')
-        ataltResName = np.zeros(natom, dtype='<U5')
-
-        # loop over all the residues
-        for chain, resNum, resName in data:
-
-            # atom types of the residue
-            #query = "WHERE chainID='%s' AND resSeq=%s" %(chain,resNum)
-            atNames = np.array(self.sqldb.get(
-                'name', chainID=chain, resSeq=resNum))
-            rowID = np.array(self.sqldb.get(
-                'rowID', chainID=chain, resSeq=resNum))
-
-            # get the alternative resname
-            altResName = self._get_altResName(resName, atNames)
-
-            # get the charge of this residue
-            atcharge[rowID] = self._get_charge(resName, altResName, atNames)
-
-            # get the vdw parameters
-            eps, sigma, type_ = self._get_vdw(resName, altResName, atNames)
-            ateps[rowID] += eps
-            atsig[rowID] += sigma
-
-            ataltResName[rowID] = altResName
-            attype[rowID] = type_
-
-        # put the charge in SQL
-        self.sqldb.add_column('CHARGE')
-        self.sqldb.update_column('CHARGE', atcharge)
-
-        # put the VDW in SQL
-        self.sqldb.add_column('eps')
-        self.sqldb.update_column('eps', ateps)
-
-        self.sqldb.add_column('sig')
-        self.sqldb.update_column('sig', atsig)
-
-        self.sqldb.add_column('type', 'TEXT')
-        self.sqldb.update_column('type', attype)
-
-        self.sqldb.add_column('altRes', 'TEXT')
-        self.sqldb.update_column('altRes', ataltResName)
-
-    @staticmethod
-    def _get_altResName(resName, atNames):
-        """Apply the patch data.
-
-        This section is static and retained from DeepRank v.1.0
-        The structure of the dictionary is as following
-
-        { NEWRESTYPE: 'OLDRESTYPE',
-                       [atom types that must be present],
-                       [atom types that must NOT be present]]}
+    def matches(self, residue_name, atom_names):
+        """Check whether the given residue matches this set of criteria
 
         Args:
-            resName (str): name of the residue
-            atNames (list(str)): names of the atoms
+            residue_name (string): the name of the residue to match
+            atom_names (list of strings): the names of the atoms in the residue
         """
 
-        new_type = {
-            'PROP': ['all', ['HT1', 'HT2'], []],
-            'NTER': ['all', ['HT1', 'HT2', 'HT3'], []],
-            'CTER': ['all', ['OXT'], []],
-            'CTN': ['all', ['NT', 'HT1', 'HT2'], []],
-            'CYNH': ['CYS', ['1SG'], ['2SG']],
-            'DISU': ['CYS', ['1SG', '2SG'], []],
-            'HISE': ['HIS', ['ND1', 'CE1', 'CD2', 'NE2', 'HE2'], ['HD1']],
-            'HISD': ['HIS', ['ND1', 'CE1', 'CD2', 'NE2', 'HD1'], ['HE2']]
-        }
+        if self.residue_name != 'all' and residue_name != self.residue_name:
+            return False
 
-        # this works fine now
+        for atom_name in self.atoms_present:
+            if atom_name not in atom_names:
+                return False
 
-        altResName = resName
-        for key, values in new_type.items():
-            res, atpres, atabs = values
-            if res == resName or res == 'all':
-                if all(x in atNames for x in atpres) and all(
-                        x not in atNames for x in atabs):
-                    altResName = key
+        for atom_name in self.atoms_absent:
+            if atom_name in atom_names:
+                return False
 
-        return altResName
+        return True
 
-    def _get_vdw(self, resName, altResName, atNames):
-        """Get vdw itneraction terms.
 
-        Args:
-            resName (str): name of the residue
-            altResName (str): alternative name of the residue
-            atNames (list(str)): names of the atoms
-        """
-
-        # in case the resname is not valid
-        if resName not in self.valid_resnames:
-            vdw_eps = [0.00] * len(atNames)
-            vdw_sigma = [0.00] * len(atNames)
-            type_ = ['None'] * len(atNames)
-
-            return vdw_eps, vdw_sigma, type_
-
-        vdw_eps, vdw_sigma, type_ = [], [], []
-
-        for at in atNames:
-
-            if (altResName, at) in self.patch_type:
-                type_.append(self.patch_type[(altResName, at)])
-                vdw_data = self.vdw_param[self.patch_type[(altResName, at)]]
-                vdw_eps.append(vdw_data[0])
-                vdw_sigma.append(vdw_data[1])
-
-            elif (resName, at) in self.at_name_type_convertor:
-                type_.append(self.at_name_type_convertor[(resName, at)])
-                vdw_data = self.vdw_param[self.at_name_type_convertor[(
-                    resName, at)]]
-                vdw_eps.append(vdw_data[0])
-                vdw_sigma.append(vdw_data[1])
-
-            else:
-                type_.append('None')
-                vdw_eps.append(0.0)
-                vdw_sigma.append(0.0)
-                warnings.warn(f"Atom type {at} not found for "
-                              f"resType {resName} or patch type {altResName}. "
-                              f"Set vdw eps and sigma to 0.0.")
-
-        return vdw_eps, vdw_sigma, type_
-
-    def _get_charge(self, resName, altResName, atNames):
-        """Get the charge information.
-
-        Args:
-            resName (str): name of the residue
-            altResName (str): alternative name of the residue
-            atNames (list(str)): names of the atoms
-        """
-        # in case the resname is not valid
-        if resName not in self.valid_resnames:
-            q = [0.0] * len(atNames)
-            return q
-
-        # assign the charges
-        q = []
-        for at in atNames:
-            if (altResName, at) in self.patch_charge:
-                q.append(self.patch_charge[(altResName, at)])
-            elif (resName, at) in self.charge:
-                q.append(self.charge[(resName, at)])
-            else:
-                q.append(0.0)
-                warnings.warn(f"Atom type {at} not found for "
-                              f"resType {resName} or patch type {altResName}. "
-                              f"Set charge to 0.0.")
-        return q
-
-    ####################################################################
-    #
-    #   Simple charges
-    #
-    ####################################################################
-
-    def evaluate_charges(self, extend_contact_to_residue=False):
-        """Evaluate the charges.
-
-        Args:
-            extend_contact_to_residue (bool, optional): extend to res
-        """
-        if self.verbose:
-            print('-- Compute list charge for contact atoms only')
-
-        # extract information from the pdb2sq
-        xyz = np.array(self.sqldb.get('x,y,z'))
-        atinfo = self.sqldb.get(self.atom_key)
-
-        charge = np.array(self.sqldb.get('CHARGE'))
-
-        # define the dictionaries
-        charge_data = {}
-        charge_data_xyz = {}
-
-        # entire residue or not
-        if extend_contact_to_residue:
-            index_contact_atoms= self.extend_contact_to_residue()
-        else:
-            index_contact_atoms = self.contact_atom_ids
-
-        # loop over the protein
-        for i in index_contact_atoms:
-
-            # atinfo
-            key = tuple(atinfo[i])
-
-            # store in the dicts
-            charge_data[key] = [charge[i]]
-
-            # xyz format
-            chain_dict = [{self.mutant.chain_id: 0}[key[0]]]
-            key = tuple(chain_dict + xyz[i, :].tolist())
-            charge_data_xyz[key] = [charge[i]]
-
-        # add the electrostatic feature
-        self.feature_data['charge'] = charge_data
-        self.feature_data_xyz['charge'] = charge_data_xyz
-
-    ####################################################################
-    #
-    #   PAIR INTERACTIONS
-    #
-    ####################################################################
-
-    def evaluate_pair_interaction(self, print_interactions=False,
-                                  save_interactions=False):
-        """Evalaute the pair interactions (coulomb and vdw).
-
-        Args:
-            print_interactions (bool, optional): print data to screen
-            save_interactions (bool, optional): save the interactions to file.
-        """
-
-        if self.verbose:
-            print('-- Compute interaction energy for contact pairs only')
-
-        # extract information from the pdb2sq
-        xyz = np.array(self.sqldb.get('x,y,z'))
-        atinfo = self.sqldb.get(self.atom_key)
-
-        charge = np.array(self.sqldb.get('CHARGE'))
-        vdw = np.array(self.sqldb.get('eps,sig'))
-        eps, sig = vdw[:, 0], vdw[:, 1]
-
-        # define the dictionaries
-        # these holds data like chainID resname resSeq,name values
-        electro_data = {}
-        vdw_data = {}
-
-        # define the dict that hold
-        #  x y z values
-        electro_data_xyz = {}
-        vdw_data_xyz = {}
-
-        # define the matrices
-        nat = len(self.sqldb.get('x', chainID=self.mutant.chain_id))
-        matrix_elec = np.zeros(nat)
-        matrix_vdw = np.zeros(nat)
-
-        # handle the export of the interaction breakdown
-        _save_ = False
-        if save_interactions:
-            if save_interactions:
-                save_interactions = './'
-            if os.path.isdir(save_interactions):
-                fname = os.path.join(save_interactions,
-                                     'atomic_pair_interaction.dat')
-            else:
-                fname = save_interactions
-            f = open(fname, 'w')
-            _save_ = True
-
-        # total energy terms
-        ec_tot, evdw_tot = 0, 0
-
-        # loop over the given chain 
-        #for every contact pair A and B, note the order
-        for iA, iB in self.contact_atoms.items():
-
-            # coulomb terms
-            r = np.sqrt(np.sum((xyz[iB, :] - xyz[iA, :])**2, 1))
-            r[r == 0] = 3.0
-            q1q2 = charge[iA] * charge[iB]
-            ec = q1q2 * self.c / (self.eps0 * r) * \
-                (1 - (r / self.contact_cutoff)**2) ** 2
-
-            # coulomb terms
-            sigma_avg = 0.5 * (sig[iA] + sig[iB])
-            eps_avg = np.sqrt(eps[iA] * eps[iB])
-
-            # normal LJ potential
-            evdw = 4.0 * eps_avg * \
-                ((sigma_avg / r)**12 - (sigma_avg / r)**6) * self._prefactor_vdw(r)
-
-            # total energy terms
-            ec_tot += np.sum(ec)
-            evdw_tot += np.sum(evdw)
-
-            # atinfo
-            keyA = tuple(atinfo[iA])
-
-            # store in matrix form 
-            ind_matrix = [i - nat for i in iB]
-            matrix_elec[iA, ind_matrix] = ec
-            matrix_vdw[iA, ind_matrix] = evdw
-
-            # store in the dicts
-            electro_data[keyA] = [np.sum(ec)]
-            vdw_data[keyA] = [np.sum(evdw)]
-
-            # store in the xyz dict
-            key = tuple([0] + xyz[iA, :].tolist())
-            electro_data_xyz[key] = [np.sum(ec)]
-            vdw_data_xyz[key] = [np.sum(evdw)]
-
-            # print the result
-            if _save_ or print_interactions:
-
-                for iB, indexB in enumerate(iB):
-
-                    line = ''
-                    keyB = tuple(atinfo[indexB])
-
-                    line += '{:<3s}'.format(keyA[0])
-                    line += '\t{:>1d}'.format(keyA[1])
-                    line += '\t{:>4s}'.format(keyA[2])
-                    line += '\t{:^4s}'.format(keyA[3])
-
-                    line += '\t{:<3s}'.format(keyB[0])
-                    line += '\t{:>1d}'.format(keyB[1])
-                    line += '\t{:>4s}'.format(keyB[2])
-                    line += '\t{:^4s}'.format(keyB[3])
-
-                    line += '\t{: 6.3f}'.format(r[iB])
-                    line += '\t{: f}'.format(ec[iB])
-                    line += '\t{: e}'.format(evdw[iB])
-
-                    # print and/or save the interactions
-                    if print_interactions:
-                        print(line)
-
-                    if _save_:
-                        line += '\n'
-                        f.write(line)
-
-        # print the total interactions
-        if print_interactions or _save_:
-            line = '\n\n'
-            line += 'Total Evdw  = {:> 12.8f}\n'.format(evdw_tot)
-            line += 'Total Eelec = {:> 12.8f}\n'.format(ec_tot)
-            if print_interactions:
-                print(line)
-            if _save_:
-                f.write(line)
-
-        # close export file
-        if _save_:
-            f.close()
-            print(f'AtomicFeature coulomb and vdw exported to file {fname}')
-
-
-        # add the electrosatic feature
-        self.feature_data['coulomb'] = electro_data
-        self.feature_data_xyz['coulomb'] = electro_data_xyz
-
-        # add the vdw feature
-        self.feature_data['vdwaals'] = vdw_data
-        self.feature_data_xyz['vdwaals'] = vdw_data_xyz
-
-  
-
-    @staticmethod
-    def _prefactor_vdw(r):
-        """prefactor for vdw interactions."""
-
-        r_off, r_on = 8.5, 6.5
-        r2 = r**2
-        pref = (r_off**2 - r2)**2 * (r_off**2 - r2 - 3 *
-                                     (r_on**2 - r2)) / (r_off**2 - r_on**2)**3
-        pref[r > r_off] = 0.
-        pref[r < r_on] = 1.0
-        return pref
-
-
-########################################################################
-#
-#   THE MAIN FUNCTION CALLED IN THE INTERNAL FEATURE CALCULATOR
-#
-########################################################################
-
-def __compute_feature__(pdb_data, featgrp, featgrp_raw, mutant):
-    """Main function called in deeprank for the feature calculations.
+def get_squared_distance(pos1, pos2):
+    """Get the squared distance between two positions.
+       This is less computationally expensive than the normal distance
+       and should be used if one does not necessarily need
+       the normal distance for a large set of coordinates.
 
     Args:
-        pdb_data (list(bytes)): pdb information
-        featgrp (str): name of the group where to save xyz-val data
-        featgrp_raw (str): name of the group where to save human readable data
-        mutant: Mutant
+        pos1 (array of 3): the xyz coords of position 1
+        pos2 (array of 3): the xyz coords of position 2
     """
-    path = os.path.dirname(os.path.realpath(__file__))
-    FF = path + '/forcefield/'
 
-    atfeat = AtomicFeature(pdb_data,
-                           mutant=mutant,
-                           param_charge=FF + 'protein-allhdg5-4_new.top',
-                           param_vdw=FF + 'protein-allhdg5-4_new.param',
-                           patch_file=FF + 'patch.top')
+    return numpy.sum(numpy.square(pos1 - pos2))
 
-    atfeat.assign_parameters()
+def get_distance(pos1, pos2):
+    """Get the distance between two positions.
+       This is more computationally expensive than the squared distance
+       and should only be used when one really needs this distance.
 
-    # only compute the pair interactions here
-    atfeat.evaluate_pair_interaction(print_interactions=False)
+    Args:
+        pos1 (array of 3): the xyz coords of position 1
+        pos2 (array of 3): the xyz coords of position 2
+    """
 
-    # compute the charges
-    # here we extand the contact atoms to
-    # entire residue containing at least 1 contact atom
-    atfeat.evaluate_charges(extend_contact_to_residue=True)
+    return numpy.sqrt(get_squared_distance(pos1, pos2))
 
-    # export in the hdf5 file
-    atfeat.export_dataxyz_hdf5(featgrp)
-    atfeat.export_data_hdf5(featgrp_raw)
+def wrap_values_in_lists(dict_):
+    """Wrap the dictionary's values in lists. This
+       appears to be necessary for the exported features to work.
 
-    # close
-    atfeat.sqldb._close()
+    Args:
+        dict_(dictionary): the dictionary that should be converted
+    """
+
+    return {key: [value] for key,value in dict_.items()}
+
+class _PhysicsStorage:
+    "A helper object that holds the physics values while summing them"
+
+    ATOM_KEY = ["chainID", "resSeq", "resName", "name"]
+
+    EPSILON0 = 1.0
+    COULOMB_CONSTANT = 332.0636
+
+    VANDERWAALS_DISTANCE_OFF = 8.5
+    VANDERWAALS_DISTANCE_ON = 6.5
+
+    SQUARED_VANDERWAALS_DISTANCE_OFF = numpy.square(VANDERWAALS_DISTANCE_OFF)
+    SQUARED_VANDERWAALS_DISTANCE_ON = numpy.square(VANDERWAALS_DISTANCE_ON)
+
+    @staticmethod
+    def _sum_up(dict_, key, value_to_add):
+        """A helper function to sum the values of a dictionary.
+
+        Args:
+            dict_(dictionary): the dictionary to store the value in
+            key(hashable object): the key under which the value should be stored in dict_
+            value_to_add: the value to add onto the dictionary value
+        """
+
+        if key not in dict_:
+            dict_[key] = 0.0
+
+        dict_[key] += value_to_add
+
+    @staticmethod
+    def get_vanderwaals_energy(epsilon1, sigma1, epsilon2, sigma2, distance):
+        """The formula to calculate the vanderwaals energy for two atoms (atom 1 and atom 2)
+
+        Args:
+            epsilon1 (float): the vanderwaals epsilon parameter of atom 1
+            sigma1 (float): the vanderwaals sigma parameter of atom 1
+            epsilon2 (float): the vanderwaals epsilon parameter of atom 2
+            sigma2 (float): the vanderwaals sigma parameter of atom 2
+            distance (float): the vanderwaals distance between atom 1 and atom 2
+        """
+
+        average_epsilon = numpy.sqrt(epsilon1 * epsilon2)
+        average_sigma = 0.5 * (sigma1 + sigma2)
+
+        squared_distance = numpy.square(distance)
+        prefactor = (pow(_PhysicsStorage.SQUARED_VANDERWAALS_DISTANCE_OFF - squared_distance, 2) *
+                     (_PhysicsStorage.SQUARED_VANDERWAALS_DISTANCE_OFF - squared_distance - 3 * (_PhysicsStorage.SQUARED_VANDERWAALS_DISTANCE_ON - squared_distance)) /
+                     pow(_PhysicsStorage.SQUARED_VANDERWAALS_DISTANCE_OFF - _PhysicsStorage.SQUARED_VANDERWAALS_DISTANCE_ON, 3))
+
+        if distance > _PhysicsStorage.VANDERWAALS_DISTANCE_OFF:
+            prefactor = 0.0
+
+        elif distance < _PhysicsStorage.VANDERWAALS_DISTANCE_ON:
+            prefactor = 1.0
+
+        return 4.0 * average_epsilon * (pow(average_sigma / distance, 12) - pow(average_sigma / distance, 6)) * prefactor
+
+    @staticmethod
+    def get_coulomb_energy(charge1, charge2, distance, max_distance):
+        """The formula to calculate the coulomb energy for two atoms (atom 1 and atom 2)
+
+        Args:
+            charge1 (float): the charge of atom 1
+            charge2 (float): the charge of atom 2
+            distance (float): the vanderwaals distance between atom 1 and atom 2
+            max_distance (float): the max distance that was used to find atoms 1 and 2
+        """
+
+        return (charge1 * charge2 * _PhysicsStorage.COULOMB_CONSTANT /
+                (_PhysicsStorage.EPSILON0 * distance) * pow(1 - pow(distance / max_distance, 2), 2))
+
+    def __init__(self, sqldb):
+        """Build a new set of physical parameters
+
+        Args:
+            sqldb (pdb2sql): interface to the contents of a PDB file, with charges and vanderwaals parameters included.
+
+        Raises:
+            RuntimeError: if features are missing from sqldb
+        """
+
+        self._vanderwaals_parameters = sqldb.get('eps,sig')
+        self._charges = sqldb.get('CHARGE')
+        self._atom_info = sqldb.get(",".join(_PhysicsStorage.ATOM_KEY))
+        self._positions = numpy.array(sqldb.get('x,y,z'))
+
+        if len(self._vanderwaals_parameters) == 0:
+            raise RuntimeError("vanderwaals parameters are empty, please run '_assign_parameters' first")
+
+        if len(self._charges) == 0:
+            raise RuntimeError("vanderwaals parameters are empty, please run '_assign_parameters' first")
+
+        if len(self._atom_info) == 0:
+            raise RuntimeError("atom info is empty, please create a AtomicContacts object first")
+
+        if len(self._positions) == 0:
+            raise RuntimeError("positions are empty, please create a AtomicContacts object first")
+
+        self._vanderwaals_per_atom = {}
+        self._vanderwaals_per_position = {}
+        self._charge_per_atom = {}
+        self._charge_per_position = {}
+        self._coulomb_per_atom = {}
+        self._coulomb_per_position = {}
+
+    def include_pair(self, atom1, atom2, max_distance):
+        """Add a pair of atoms to the sum
+
+        Args:
+            atom1 (int): number of atom 1
+            atom2 (int): number of atom 2
+            max_distance (float): the max distance that was used to find the atoms
+
+        Raises:
+            ValueError: if atom1 and atom2 are at the same position
+        """
+
+        position1 = self._positions[atom1]
+        position2 = self._positions[atom2]
+
+        epsilon1, sigma1 = self._vanderwaals_parameters[atom1]
+        epsilon2, sigma2 = self._vanderwaals_parameters[atom2]
+
+        charge1 = self._charges[atom1]
+        charge2 = self._charges[atom2]
+
+        distance = get_distance(position1, position2)
+        if distance == 0.0:
+            raise ValueError("encountered two atoms {} and {} with distance zero".format(atom1, atom2))
+
+        vanderwaals_energy = _PhysicsStorage.get_vanderwaals_energy(epsilon1, sigma1, epsilon2, sigma2, distance)
+        coulomb_energy = _PhysicsStorage.get_coulomb_energy(charge1, charge2, distance, max_distance)
+
+        atom1_key = tuple(self._atom_info[atom1])
+        atom2_key = tuple(self._atom_info[atom2])
+
+        position1 = tuple(position1)
+        position2 = tuple(position2)
+
+        self._charge_per_atom[atom1_key] = charge1
+        self._charge_per_atom[atom2_key] = charge2
+
+        self._charge_per_position[position1] = charge1
+        self._charge_per_position[position2] = charge2
+
+        _PhysicsStorage._sum_up(self._vanderwaals_per_atom, atom1_key, vanderwaals_energy)
+        _PhysicsStorage._sum_up(self._vanderwaals_per_atom, atom2_key, vanderwaals_energy)
+
+        _PhysicsStorage._sum_up(self._coulomb_per_atom, atom1_key, coulomb_energy)
+        _PhysicsStorage._sum_up(self._coulomb_per_atom, atom2_key, coulomb_energy)
+
+        _PhysicsStorage._sum_up(self._vanderwaals_per_position, position1, vanderwaals_energy)
+        _PhysicsStorage._sum_up(self._vanderwaals_per_position, position2, vanderwaals_energy)
+
+        _PhysicsStorage._sum_up(self._coulomb_per_position, position1, coulomb_energy)
+        _PhysicsStorage._sum_up(self._coulomb_per_position, position2, coulomb_energy)
+
+    def add_to_features(self, feature_data, feature_data_xyz):
+        """Convert the summed interactions to deeprank features and store them in the corresponding dictionaries
+
+        Args:
+            feature_data (dictionary): where the per atom features should be stored
+            feature_data_xyz (dictionary): where the per position features should be stored
+        """
+
+        feature_data['vdwaals'] = wrap_values_in_lists(self._vanderwaals_per_atom)
+        feature_data_xyz['vdwaals'] = wrap_values_in_lists(self._vanderwaals_per_position)
+
+        feature_data['coulomb'] = wrap_values_in_lists(self._coulomb_per_atom)
+        feature_data_xyz['coulomb'] = wrap_values_in_lists(self._coulomb_per_position)
+
+        feature_data['charge'] = wrap_values_in_lists(self._charge_per_atom)
+        feature_data_xyz['charge'] = wrap_values_in_lists(self._charge_per_position)
+
+
+class AtomicContacts(FeatureClass):
+    "A class that collects features that involve contacts between a residue and its surrounding atoms"
+
+    # This dictionary holds the data used to find residue alternative names:
+    RESIDUE_SYNONYMS = {'PROP': ResidueSynonymCriteria('PRO', ['HT1', 'HT2'], []),
+                        'NTER': ResidueSynonymCriteria('all', ['HT1', 'HT2', 'HT3'], []),
+                        'CTER': ResidueSynonymCriteria('all', ['OXT'], []),
+                        'CTN': ResidueSynonymCriteria('all', ['NT', 'HT1', 'HT2'], []),
+                        'CYNH': ResidueSynonymCriteria('CYS', ['1SG'], ['2SG']),
+                        'DISU': ResidueSynonymCriteria('CYS', ['1SG', '2SG'], []),
+                        'HISE': ResidueSynonymCriteria('HIS', ['ND1', 'CE1', 'CD2', 'NE2', 'HE2'], ['HD1']),
+                        'HISD': ResidueSynonymCriteria('HIS', ['ND1', 'CE1', 'CD2', 'NE2', 'HD1'], ['HE2'])}
+
+    @staticmethod
+    def get_alternative_residue_name(residue_name, atom_names):
+        """Get the alternative residue name, according to the static dictionary in this class
+
+        Args:
+            residue_name (string): the name of the residue
+            atom_names (list of strings): the names of the atoms in the residue
+        """
+
+        for name, crit in AtomicContacts.RESIDUE_SYNONYMS.items():
+            if crit.matches(residue_name, atom_names):
+                return name
+
+        return None
+
+    def __init__(self, pdb_path, chain_id, residue_number,
+                 top_path, param_path, patch_path,
+                 max_contact_distance=8.5):
+        """Build a new residue contacts feature object
+
+        Args:
+            pdb_path (string): where the pdb file is located on disk
+            chain_id (string): identifier of the residue's protein chain within the pdb file
+            residue_number (int): identifier of the residue within the protein chain
+            top_path (string): location of the top file on disk
+            param_path (string): location of the param file on disk
+            patch_path (string): location of the patch file on disk
+            max_contact_distance (float): the maximum distance allowed for two atoms to be considered a contact pair
+        """
+
+        super().__init__("Atomic")
+
+        self.pdb_path = pdb_path
+        self.chain_id = chain_id
+        self.residue_number = residue_number
+        self.max_contact_distance = max_contact_distance
+
+        self.top_path = top_path
+        self.param_path = param_path
+        self.patch_path = patch_path
+
+    def __enter__(self):
+        "open the with-clause"
+
+        self.sqldb = pdb2sql.interface(self.pdb_path)
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        "close the with-clause"
+
+        self.sqldb._close()
+
+    def _read_top(self):
+        "read the top file and store its data in memory"
+
+        self._residue_charges = {}
+        self._residue_atom_types = {}
+        self._valid_residue_names = set([])
+
+        with open(self.top_path, 'rt') as f:
+            for obj in TopParser.parse(f):
+
+                # store the charge
+                self._residue_charges[(obj.residue_name, obj.atom_name)] = obj.kwargs['charge']
+
+                # put the resname in a list so far
+                self._valid_residue_names.add(obj.residue_name)
+
+                # dictionary for conversion name/type
+                self._residue_atom_types[(obj.residue_name, obj.atom_name)] = obj.kwargs['type']
+
+    def _read_param(self):
+        "read the param file and store its data in memory"
+
+        with open(self.param_path, 'rt') as f:
+            self._vanderwaals_parameters = ParamParser.parse(f)
+
+    def _read_patch(self):
+        "read the patch file and store its data in memory"
+
+        self._patch_charge = {}
+        self._patch_type = {}
+
+        with open(self.patch_path, 'rt') as f:
+            for action in PatchParser.parse(f):
+
+                # get the new charge
+                self._patch_charge[(action.selection.residue_type, action.selection.atom_name)] = action.kwargs['CHARGE']
+
+                # get the new type if any
+                if 'TYPE' in action.kwargs:
+                    self._patch_type[(action.selection.residue_type, action.selection.atom_name)] = action.kwargs['TYPE']
+
+    def _find_contact_atoms(self):
+        "find out which atoms of the pdb file lie within the max distance of the residue"
+
+        self._residue_atoms = set(self.sqldb.get("rowID", chainID=self.chain_id, resSeq=self.residue_number))
+
+        atomic_postions = {r[0]: numpy.array([r[1], r[2], r[3]]) for r in self.sqldb.get('rowID,x,y,z')}
+
+        squared_max_distance = numpy.square(self.max_contact_distance)
+
+        self._contact_atoms = set()
+        for atom, position in atomic_postions.items():
+            if atom in self._residue_atoms:
+                continue  # we don't pair a residue with itself
+
+            for residue_atom in self._residue_atoms:
+                residue_atom_position = atomic_postions[residue_atom]
+                if get_squared_distance(position, residue_atom_position) < squared_max_distance:
+                    self._contact_atoms.add(atom)
+                    break
+
+    def _extend_contact_to_residues(self):
+        "find out of which residues the contact atoms are a part"
+
+        per_chain = {}
+        for chain_id, residue_number in self.sqldb.get("chainID,resSeq", rowID=list(self._contact_atoms)):
+            if chain_id not in per_chain:
+                per_chain[chain_id] = set([])
+            per_chain[chain_id].add(residue_number)
+
+        # list the new contact atoms, per residue
+        self._contact_atoms = set([])
+        for chain_id, residue_numbers in per_chain.items():
+            for atom in self.sqldb.get("rowID", chainID=chain_id, resSeq=list(residue_numbers)):
+                self._contact_atoms.add(atom)
+
+    def _get_atom_type(self, residue_name, alternative_residue_name, atom_name):
+        """Find the type name of the given atom, according to top and patch data
+
+        Args:
+            residue_name (string): the name of the residue that the atom is in
+            alternative_residue_name (string): the name of the residue, outputted from 'get_alternative_residue_name'
+            atom_name (string): the name of the atom itself
+        """
+
+        if (alternative_residue_name, atom_name) in self._patch_type:
+            return self._patch_type[(alternative_residue_name, atom_name)]
+
+        elif (residue_name, atom_name) in self._residue_atom_types:
+            return self._residue_atom_types[(residue_name, atom_name)]
+
+        else:
+            return None
+
+    def _get_charge(self, residue_name, alternative_residue_name, atom_name):
+        """Find the charge of the atom, according to top and patch data
+
+        Args:
+            residue_name (string): the name of the residue that the atom is in
+            alternative_residue_name (string): the name of the residue, outputted from 'get_alternative_residue_name'
+            atom_name (string): the name of the atom itself
+        """
+
+        if residue_name not in self._valid_residue_names:
+            return 0.0
+
+        if (alternative_residue_name, atom_name) in self._patch_charge:
+            return self._patch_charge[(alternative_residue_name, atom_name)]
+
+        elif (residue_name, atom_name) in self._residue_charges:
+            return self._residue_charges[(residue_name, atom_name)]
+
+        else:
+            _log.warn("Atom type {} not found for {}/{}, set charge to 0.0"
+                      .format(atom_name, residue_name, alternative_residue_name))
+
+            return 0.0
+
+    def _get_vanderwaals_parameters(self, residue_name, alternative_residue_name, atom_name, atom_type):
+        """Find the vanderwaals parameters of the atom, according to param data
+
+        Args:
+            residue_name (string): the name of the residue that the atom is in
+            alternative_residue_name (string): the name of the residue, outputted from 'get_alternative_residue_name'
+            atom_name (string): the name of the atom itself
+            atom_type (string): output from '_get_atom_type'
+        """
+
+        if residue_name not in self._valid_residue_names:
+            return (0.0, 0.0)
+
+        if atom_type in self._vanderwaals_parameters:
+            o = self._vanderwaals_parameters[atom_type]
+            return (o.epsilon, o.sigma)
+        else:
+            return (0.0, 0.0)
+
+    def _assign_parameters(self):
+        "Get parameters from top, param and patch data and put them in the pdb2sql database"
+
+        atomic_data = self.sqldb.get("rowID,name,chainID,resSeq,resName")
+        count_atoms = len(atomic_data)
+
+        atomic_charges = numpy.zeros(count_atoms)
+        atomic_epsilon = numpy.zeros(count_atoms)
+        atomic_sigma = numpy.zeros(count_atoms)
+
+        atomic_types = numpy.zeros(count_atoms, dtype='<U5')
+        atomic_alternative_residue_names = numpy.zeros(count_atoms, dtype='<U5')
+
+        # here, we map the atom names per residue
+        residue_atom_names = {}
+        for atom_nr, atom_name, chain_id, residue_number, residue_name in atomic_data:
+            key = (chain_id, residue_number)
+            if key not in residue_atom_names:
+                residue_atom_names[key] = set([])
+            residue_atom_names[key].add(atom_name)
+
+        # loop over all atoms
+        for atom_nr, atom_name, chain_id, residue_number, residue_name in atomic_data:
+            atoms_in_residue = residue_atom_names[(chain_id, residue_number)]
+
+            alternative_residue_name = AtomicContacts.get_alternative_residue_name(residue_name, atoms_in_residue)
+            atomic_alternative_residue_names[atom_nr] = alternative_residue_name
+
+            atom_type = self._get_atom_type(residue_name, alternative_residue_name, atom_name)
+            atomic_types[atom_nr] = atom_type
+
+            atomic_charges[atom_nr] = self._get_charge(residue_name, alternative_residue_name, atom_name)
+
+            epsilon, sigma = self._get_vanderwaals_parameters(residue_name, alternative_residue_name, atom_name, atom_type)
+            atomic_epsilon[atom_nr] = epsilon
+            atomic_sigma[atom_nr] = sigma
+
+        # put in sql
+        self.sqldb.add_column('CHARGE')
+        self.sqldb.update_column('CHARGE', atomic_charges)
+
+        self.sqldb.add_column('eps')
+        self.sqldb.update_column('eps', atomic_epsilon)
+
+        self.sqldb.add_column('sig')
+        self.sqldb.update_column('sig', atomic_sigma)
+
+        self.sqldb.add_column('type', 'TEXT')
+        self.sqldb.update_column('type', atomic_types)
+
+        self.sqldb.add_column('altRes', 'TEXT')
+        self.sqldb.update_column('altRes', atomic_alternative_residue_names)
+
+    def _evaluate_physics(self):
+        """From the top, param and patch data,
+           calculate energies and charges per residue atom and surrounding atoms
+           and add them to the feature dictionaries"""
+
+        physics_storage = _PhysicsStorage(self.sqldb)
+
+        for contact_atom in self._contact_atoms:  # loop over atoms that contact the residue of interest
+
+            for residue_atom in self._residue_atoms:  # loop over atoms in the residue of iterest
+
+                physics_storage.include_pair(contact_atom, residue_atom, self.max_contact_distance)
+
+        physics_storage.add_to_features(self.feature_data, self.feature_data_xyz)
+
+    def evaluate(self):
+        "collect the features before calling 'export_dataxyz_hdf5' and 'export_data_hdf5' on this object"
+
+        self._read_top()
+        self._read_param()
+        self._read_patch()
+        self._assign_parameters()
+
+        self._find_contact_atoms()
+        self._extend_contact_to_residues()
+
+        self._evaluate_physics()
+
+
+def __compute_feature__(pdb_path, feature_group, raw_feature_group, mutant):
+
+    forcefield_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'forcefield')
+    top_path = os.path.join(forcefield_path, 'protein-allhdg5-4_new.top')
+    param_path = os.path.join(forcefield_path, 'protein-allhdg5-4_new.param')
+    patch_path = os.path.join(forcefield_path, 'patch.top')
+
+    with AtomicContacts(mutant.pdb_path, mutant.chain_id, mutant.residue_number,
+                         top_path, param_path, patch_path) as feature_object:
+
+        feature_object.evaluate()
+
+        # export in the hdf5 file
+        feature_object.export_dataxyz_hdf5(feature_group)
+        feature_object.export_data_hdf5(raw_feature_group)
