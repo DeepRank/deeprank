@@ -2,8 +2,8 @@
 
 class _PssmRecord:
     def __init__(self):
-        self.amino_acid_values = {}
-        self.residue_value = None  # could hold the information content of a residue
+        self.amino_acid_values = {}  # uses one-letter codes as keys
+        self.information_content = None
 
 
 class Pssm:
@@ -26,19 +26,18 @@ class Pssm:
 
         self._residue_records[residue_id].amino_acid_values[amino_acid] = value
 
-    def set_residue_value(self, residue_id, value):
-        """ Set data to the pssm object for one specific residue_position
-            (like the information content)
+    def set_information_content(self, residue_id, value):
+        """ Set information content to the pssm object for one specific residue_position
 
             Args:
                 residue_id (Residue, unique): identifier of the residue in the protein
-                value (float): specific for this position
+                value (float): information content, specific for this position
         """
 
         if residue_id not in self._residue_records:
             self._residue_records[residue_id] = _PssmRecord()
 
-        self._residue_records[residue_id].residue_value = value
+        self._residue_records[residue_id].information_content = value
 
     def merge_with(self, other):
         new = Pssm()
@@ -46,6 +45,31 @@ class Pssm:
         new._residue_records.update(other._residue_records)
 
         return new
+
+    def get_probability(self, residue_id, amino_acid_letter):
+        """ Get the pssm's probability value of the given amino acid at the given residue position
+
+            Args:
+                residue_id (Residue, unique): identifier of the residue in the protein
+                amino_acid_letter (str): one-letter code of the amino acid
+        """
+
+        if residue_id not in self._residue_records:
+            raise ValueError("No such residue: {}".format(residue_id))
+
+        return self._residue_records[residue_id].amino_acid_values[amino_acid_letter]
+
+    def get_information_content(self, residue_id):
+        """ Get the pssm's information content for a specific residue position
+
+            Args:
+                residue_id (Residue, unique): identifier of the residue in the protein
+        """
+
+        if residue_id not in self._residue_records:
+            raise ValueError("No such residue: {}".format(residue_id))
+
+        return self._residue_records[residue_id].information_content
 
     def items(self):
         return self._residue_records.items()
