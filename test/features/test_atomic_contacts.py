@@ -3,7 +3,8 @@ import h5py
 import tempfile
 import shutil
 
-from nose.tools import ok_
+import numpy
+from nose.tools import ok_, eq_
 
 from deeprank.features.atomic_contacts import __compute_feature__
 from deeprank.models.mutant import PdbMutantSelection
@@ -42,11 +43,11 @@ def test_compute_feature():
             charge_data_raw = raw_group['charge_raw']
 
             ok_(vdwaals_data_raw.size > 0)
-            ok_(type(vdwaals_data_raw), str)
+            eq_(type(vdwaals_data_raw[0]), numpy.bytes_)
             ok_(coulomb_data_raw.size > 0)
-            ok_(type(coulomb_data_raw), str)
+            eq_(type(coulomb_data_raw[0]), numpy.bytes_)
             ok_(charge_data_raw.size > 0)
-            ok_(type(charge_data_raw), str)
+            eq_(type(charge_data_raw[0]), numpy.bytes_)
 
     finally:
         shutil.rmtree(tmp_path)
