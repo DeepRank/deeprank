@@ -1,12 +1,9 @@
 import numpy
-import logging
 
 from deeprank.models.pair import Pair
 from deeprank.models.atom import Atom
 from deeprank.models.residue import Residue
-
-
-_log = logging.getLogger(__name__)
+from deeprank.config import logger
 
 
 def get_distance(position1, position2):

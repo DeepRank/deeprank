@@ -1,5 +1,4 @@
 import os
-import logging
 import pkg_resources
 from tempfile import mkdtemp
 import shutil
@@ -10,9 +9,6 @@ from nose.tools import ok_, eq_
 
 from deeprank.generate.GridTools import GridTools
 from deeprank.models.mutant import PdbMutantSelection
-
-
-_log = logging.getLogger(__name__)
 
 
 def _get_feature_grid(hdf5, feature_group_name, feature_name, points_count):
@@ -48,12 +44,25 @@ def test_feature_mapping():
 
     pdb_name = "1XXX"
 
-    mutant = PdbMutantSelection("1XXX.pdb", 'A', 1, 'V')
 
     # Build a temporary directory to store the test file.
     tmp_dir = mkdtemp()
 
     try:
+        pdb_path = os.path.join(tmp_dir, "%s" % pdb_name)
+
+        with open(pdb_path, 'wt') as f:
+            for line in [
+                "ATOM      1  C   XXX A   1       0.000   0.000   0.000  1.00  0.00      C   C\n",
+                "ATOM      2 CA   XXX A   2       1.000   1.000   1.000  1.00  0.00      C   C\n",
+                "ATOM      3  N   XXX A   2      -1.000  -1.000  -1.000  1.00  0.00      C   N\n",
+                "ATOM      4  N   XXX A   3      10.000  10.000  10.000  1.00  0.00      C   N\n",
+                "ATOM      5  C   XXX A   4     -10.000 -10.000 -10.000  1.00  0.00      C   C\n",
+            ]:
+               f.write(line) 
+
+        mutant = PdbMutantSelection(pdb_path, 'A', 1, 'V')
+
         tmp_path = os.path.join(tmp_dir, "test.hdf5")
 
         with h5py.File(tmp_path, 'w') as f5:
@@ -61,16 +70,7 @@ def test_feature_mapping():
             # Fill the HDF5 with data, before we give it to the grid.
             mol_group = f5.require_group(pdb_name)
             mol_group.attrs['type'] = 'molecule'
-
-            atom_lines = [
-                "ATOM      1  C   XXX A   1       0.000   0.000   0.000  1.00  0.00      C   C\n",
-                "ATOM      2 CA   XXX A   2       1.000   1.000   1.000  1.00  0.00      C   C\n",
-                "ATOM      3  N   XXX A   2      -1.000  -1.000  -1.000  1.00  0.00      C   N\n",
-                "ATOM      4  N   XXX A   3      10.000  10.000  10.000  1.00  0.00      C   N\n",
-                "ATOM      5  C   XXX A   4     -10.000 -10.000 -10.000  1.00  0.00      C   C\n",
-            ]
-            data = numpy.array(atom_lines).astype('|S78')
-            mol_group.create_dataset('complex', data=data)
+            mol_group.attrs['pdb_path'] = pdb_path
 
             feature_group = mol_group.require_group('features')
 
