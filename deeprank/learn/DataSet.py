@@ -25,8 +25,7 @@ from deeprank.tools import sparse
 class DataSet():
 
     def __init__(self, train_database, valid_database=None, test_database=None,
-                 chain1='A', chain2='B',
-                 mapfly=True, grid_info=None,
+                 grid_info=None,
                  use_rotation=None,
                  select_feature='all', select_target='DOCKQ',
                  normalize_features=True, normalize_targets=True,
@@ -54,12 +53,6 @@ class DataSet():
                 the test.
                 Example: ['7CEI.hdf5']
 
-            chain1 (str): first chain ID, defaults to 'A'
-            chain2 (str): second chain ID, defaults to 'B'
-
-            mapfly (bool): do we compute the map in the batch
-                preparation or read them
-
             grid_info(dict): grid information to map the feature on the
                 fly. if None the original grid points are used.
                 Example:
@@ -71,11 +64,6 @@ class DataSet():
 
             select_feature (dict or 'all', optional):
                     Select the features used in the learning.
-                    if mapfly is True:
-                    - {'AtomDensities': 'all', 'Features': 'all'}
-                    - {'AtomicDensities': config.atom_vdw_radius_noH,
-                    'Features': ['PSSM_*', 'pssm_ic_*']}
-                    if mapfly is False:
                     - {'AtomDensities_ind': 'all', 'Feature_ind': 'all'}
                     - {'Feature_ind': ['PSSM_*', 'pssm_ic_*']}
                     Default: 'all'
@@ -126,8 +114,6 @@ class DataSet():
             >>> data_set = DataSet(train_database,
             >>>                    valid_database = None,
             >>>                    test_database = None,
-            >>>                    chain1='C',
-            >>>                    chain2='D',
             >>>                    grid_shape=(30,30,30),
             >>>                    select_feature = {
             >>>                       'AtomicDensities': 'all',
@@ -151,10 +137,6 @@ class DataSet():
         # allow for multiple database
         self.test_database = self._get_database_name(test_database)
 
-        # chainIDs
-        self.chain1 = chain1
-        self.chain2 = chain2
-
         # pdb selection
         self.use_rotation = use_rotation
 
@@ -163,16 +145,10 @@ class DataSet():
         self.select_target = select_target
 
         # map generation
-        self.mapfly = mapfly
         self.grid_info = grid_info
 
         # data agumentation
-        if self.mapfly:
-            self.data_augmentation = use_rotation
-            if self.data_augmentation is None:
-                self.data_augmentation = 0
-        else:
-            self.data_augmentation = 0
+        self.data_augmentation = 0
 
         # normalization conditions
         self.normalize_features = normalize_features
@@ -276,10 +252,7 @@ class DataSet():
         self.create_index_molecules()
 
         # get the actual feature name
-        if self.mapfly:
-            self.get_raw_feature_name()
-        else:
-            self.get_mapped_feature_name()
+        self.get_mapped_feature_name()
 
         # get the pairing
         self.get_pairing_feature()
@@ -292,10 +265,7 @@ class DataSet():
 
         # get renormalization factor
         if self.normalize_features or self.normalize_targets:
-            if self.mapfly:
-                self.compute_norm()
-            else:
-                self.get_norm()
+            self.get_norm()
 
         logger.info('\n')
         logger.info("   Data Set Info:")
@@ -331,11 +301,7 @@ class DataSet():
         fname, mol, angle, axis = self.index_complexes[index]
         try:
 
-            if self.mapfly:
-                feature, target = self.map_one_molecule(
-                    fname, mol, angle, axis)
-            else:
-                feature, target = self.load_one_molecule(fname, mol)
+            feature, target = self.load_one_molecule(fname, mol)
 
             if self.clip_features:
                 feature = self._clip_feature(feature)
@@ -527,6 +493,29 @@ class DataSet():
 
         return selected_mol_names
 
+    @staticmethod
+    def _insert_before_operators(subject_string, inserting_string):
+        return_string = subject_string
+        for operator_string in ['>=', '<=', '==', '>', '<']:
+            search_index = 0
+            while search_index < len(return_string):
+                found_index = return_string.find(operator_string, search_index)
+
+                if found_index >= 0:
+                    # ATTENTION: we don't want to insert it twice!
+                    if return_string[:found_index].endswith(inserting_string):
+
+                        search_index = found_index + len(operator_string)
+                    else:
+                        return_string = return_string[:found_index] + inserting_string + return_string[found_index:]
+
+                        search_index = found_index + len(inserting_string) + len(operator_string)
+                else:
+                    # not found
+                    break
+
+        return return_string
+
     def filter(self, molgrp):
         """Filter the molecule according to a dictionary, e.g.,
         dict_filter={'DOCKQ':'>0.1', 'IRMSD':'<=4 or >10'}).
@@ -535,36 +524,35 @@ class DataSet():
         that must be either of the form: { 'name': cond } or None
 
         Args:
-            molgrp (str): group name of the molecule in the hdf5 file
+            molgrp (hdf5 group): group of the molecule in the hdf5 file
         Returns:
             bool: True if we keep the complex False otherwise
 
         Raises:
             ValueError: If an unsuported condition is provided
         """
+
+        logger.debug("filtering {}".format(molgrp.name))
+
         if self.dict_filter is None:
             return True
 
         for cond_name, cond_vals in self.dict_filter.items():
 
-            try:
-                val = molgrp['targets/' + cond_name][()]
-            except KeyError:
-                warnings.warn(f'Filter {cond_name} not found for mol '
-                              f'{molgrp.name}')
+            logger.debug("filter with condition {}: {}".format(cond_name, cond_vals))
+
+            if cond_name not in molgrp['targets']:
+                raise ValueError(f'Filter {cond_name} not found for mol {molgrp.name}')
+
+            val = molgrp['targets/' + cond_name][()]
 
             # if we have a string it's more complicated
             if isinstance(cond_vals, str):
-                ops = ['>', '<', '==', '<=', '>=']
-                new_cond_vals = cond_vals
-                for o in ops:
-                    new_cond_vals = new_cond_vals.replace(
-                        o, 'val' + o)
+                new_cond_vals = DataSet._insert_before_operators(cond_vals, 'val')
                 if not eval(new_cond_vals):
                     return False
             else:
-                raise ValueError(
-                    'Conditions not supported', cond_vals)
+                raise ValueError("Conditions not supported", cond_vals)
 
         return True
 
@@ -613,7 +601,7 @@ class DataSet():
                             mapped_data[feat_type].keys())
                     else:
                         self.print_possible_features()
-                        raise KeyError('Feature type %s not found')
+                        raise KeyError('Feature type %s not found' % feat_type)
 
                 # if we have stored the individual
                 # chainA chainB data we need to expand the feature list
@@ -624,7 +612,7 @@ class DataSet():
                     # TODO to refactor this part
                     if feat_type not in mapped_data:
                         self.print_possible_features()
-                        raise KeyError('Feature type %s not found')
+                        raise KeyError('Feature type %s not found' % feat_type)
 
                     self.select_feature[feat_type] = []
 
@@ -660,73 +648,6 @@ class DataSet():
                         else:
                             self.select_feature[feat_type].append(
                                 name)
-
-        f5.close()
-
-    def get_raw_feature_name(self):
-        """Get actual raw feature names for feature selections.
-
-        Note:
-            - class parameter self.select_feature examples:
-                - 'all'
-                - {'AtomicDensities': 'all', 'Features':all}
-                - {'AtomicDensities': config.atom_vaw_radius_noH, 'Features': ['PSSM_*', 'pssm_ic_*']}
-            - Feature type must be: 'AtomicDensities' or 'Features'.
-
-        Raises:
-            KeyError: Wrong feature type.
-            KeyError: Wrong feature type.
-        """
-        # open a h5 file in case we need it
-        f5 = h5py.File(self.train_database[0], 'r')
-        mol_name = list(f5.keys())[0]
-        raw_data = f5.get(mol_name + '/features/')
-
-        # if we select all the features
-        if self.select_feature == "all":
-            self.select_feature = {}
-            self.select_feature['AtomicDensities'] = config.atom_vdw_radius_noH
-            self.select_feature['Features'] = [
-                name for name in raw_data.keys()]
-
-        # if a selection was made
-        else:
-            # we loop over the input dict
-            for feat_type, feat_names in self.select_feature.items():
-
-                # if for a given type we need all the feature
-                if feat_names == 'all':
-                    if feat_type == 'AtomicDensities':
-                        self.select_feature['AtomicDensities'] = \
-                            config.atom_vdw_radius_noH
-                    elif feat_type == 'Features':
-                        self.select_feature[feat_type] = list(
-                            raw_data.keys())
-                    else:
-                        raise KeyError(
-                            f'Wrong feature type {feat_type}. '
-                            f'It should be "AtomicDensities" or "Features".')
-
-                else:
-                    if feat_type == 'AtomicDensities':
-                        assert isinstance(
-                            self.select_feature['AtomicDensities'], dict)
-                    elif feat_type == 'Features':
-                        self.select_feature[feat_type] = []
-                        for name in feat_names:
-                            if '*' in name:
-                                match = name.split('*')[0]
-                                possible_names = list(raw_data.keys())
-                                match_names = [
-                                    n for n in possible_names
-                                    if n.startswith(match)]
-                                self.select_feature[feat_type] += match_names
-                            else:
-                                self.select_feature[feat_type] += [name]
-                    else:
-                        raise KeyError(
-                            f'Wrong feature type {feat_type}. '
-                            f'It should be "AtomicDensities" or "Features".')
 
         f5.close()
 
@@ -787,10 +708,7 @@ class DataSet():
         """
 
         fname = self.train_database[0]
-        if self.mapfly:
-            feature, _ = self.map_one_molecule(fname)
-        else:
-            feature, _ = self.load_one_molecule(fname)
+        feature, _ = self.load_one_molecule(fname)
 
         self.data_shape = feature.shape
 
@@ -810,94 +728,29 @@ class DataSet():
             ValueError: If no grid shape is provided or is present in
                 the HDF5 file
         """
-        if self.mapfly is False:
 
-            fname = self.train_database[0]
-            fh5 = h5py.File(fname, 'r')
-            mol = list(fh5.keys())[0]
+        fname = self.train_database[0]
+        fh5 = h5py.File(fname, 'r')
+        mol = list(fh5.keys())[0]
 
-            # get the mol
-            mol_data = fh5.get(mol)
+        # get the mol
+        mol_data = fh5.get(mol)
 
-            # get the grid size
-            if self.grid_shape is None:
+        # get the grid size
+        if self.grid_shape is None:
 
-                if 'grid_points' in mol_data:
-                    nx = mol_data['grid_points']['x'].shape[0]
-                    ny = mol_data['grid_points']['y'].shape[0]
-                    nz = mol_data['grid_points']['z'].shape[0]
-                    self.grid_shape = (nx, ny, nz)
+            if 'grid_points' in mol_data:
+                nx = mol_data['grid_points']['x'].shape[0]
+                ny = mol_data['grid_points']['y'].shape[0]
+                nz = mol_data['grid_points']['z'].shape[0]
+                self.grid_shape = (nx, ny, nz)
 
-                else:
-                    raise ValueError(
-                        f'Impossible to determine sparse grid shape.\n '
-                        f'Specify argument grid_shape=(x,y,z)')
-
-                fh5.close()
-
-        elif self.grid_info is not None:
-            self.grid_shape = self.grid_info['number_of_points']
-
-        else:
-            raise ValueError(
-                f'Impossible to determine sparse grid shape.\n'
-                f'If you are not loading a pretrained model, '
-                f' specify grid_shape or grid_info')
-
-    def compute_norm(self):
-        """compute the normalization factors."""
-
-        # logger.info("   Normalization factor:")
-
-        # loop over all the complexes in the database
-        first = True
-        for comp in tqdm(self.index_complexes):
-            fname, molname = comp[0], comp[1]
-
-            # get the feature/target
-            if self.mapfly:
-                feature, target = self.map_one_molecule(
-                    fname, mol=molname)
             else:
-                feature, target = self.load_one_molecule(
-                    fname, mol=molname)
+                raise ValueError(
+                    f'Impossible to determine sparse grid shape.\n '
+                    f'Specify argument grid_shape=(x,y,z)')
 
-            # create the norm isntances at the first passage
-            if first:
-                self.param_norm = {'features': [], 'targets': None}
-                for ifeat in range(feature.shape[0]):
-                    self.param_norm['features'].append(NormParam())
-                self.param_norm['targets'] = MinMaxParam()
-                first = False
-
-            # update the norm instances
-            for ifeat, mat in enumerate(feature):
-                self.param_norm['features'][ifeat].add(
-                    np.mean(mat), np.var(mat))
-            self.param_norm['targets'].update(target)
-
-        # process the std of the features and make array for fast access
-        nfeat, ncomplex = len(
-            self.param_norm['features']), len(self.index_complexes)
-        self.feature_mean, self.feature_std = [], []
-        for ifeat in range(nfeat):
-
-            # process the std and check
-            self.param_norm['features'][ifeat].process(ncomplex)
-            if self.param_norm['features'][ifeat].std == 0:
-                logger.info('  Final STD Null. Changed it to 1')
-                self.param_norm['features'][ifeat].std = 1
-
-            # store as array for fast access
-            self.feature_mean.append(
-                self.param_norm['features'][ifeat].mean)
-            self.feature_std.append(
-                self.param_norm['features'][ifeat].std)
-
-        self.target_min = self.param_norm['targets'].min[0]
-        self.target_max = self.param_norm['targets'].max[0]
-
-        logger.info(self.target_min, self.target_max)
+            fh5.close()
 
     def get_norm(self):
         """Get the normalization values for the features."""
@@ -1179,52 +1032,6 @@ class DataSet():
         return (np.array(feature).astype(outtype),
                 np.array([target]).astype(outtype))
 
-    def map_one_molecule(self, fname, mol=None, angle=None, axis=None):
-        """Map the feature and load feature/target of a single molecule.
-
-        Args:
-            fname (str): hdf5 file name
-            mol (None or str, optional): name of the complex in the hdf5
-
-        Returns:
-            np.array,float: features, targets
-        """
-        outtype = 'float32'
-        fh5 = h5py.File(fname, 'r')
-
-        if mol is None:
-            mol = list(fh5.keys())[0]
-
-        # get the mol
-        mol_data = fh5.get(mol)
-        grid, npts = self.get_grid(mol_data)
-
-        # get the features
-        feature = []
-        for feat_type, feat_names in self.select_feature.items():
-
-            if feat_type == 'AtomicDensities':
-                densities = self.map_atomic_densities(
-                    feat_names, mol_data, grid, npts, angle, axis)
-                feature += densities
-
-            elif feat_type == 'Features':
-                data = self.map_feature(
-                    feat_names, mol_data, grid, npts, angle, axis)
-                feature += data
-
-        # get the target value
-        target = mol_data.get('targets/' + self.select_target)[()]
-
-        # close
-        fh5.close()
-
-        # make sure all the feature have exact same type
-        # if they don't  collate_fn in the creation of the minibatch will fail.
-        # Note returning torch.FloatTensor makes each epoch twice longer ...
-        return (np.array(feature).astype(outtype),
-                np.array([target]).astype(outtype))
-
     @staticmethod
     def convert2d(feature, proj2d):
         """Convert the 3D volumetric feature to a 2D planar data set.
@@ -1276,114 +1083,6 @@ class DataSet():
 
         return np.array(new_feat).astype(outtype)
 
-    def get_grid(self, mol_data):
-        """Get meshed grids and number of pointgs
-
-        Args:
-            mol_data(h5 group): HDF5 moleucle group
-
-        Raises:
-            ValueError: Grid points not found in mol_data.
-
-        Returns:
-            tuple, tuple: meshgrid, npts
-        """
-
-        if self.grid_info is None:
-
-            try:
-
-                x = mol_data['grid_points/x'][()]
-                y = mol_data['grid_points/y'][()]
-                z = mol_data['grid_points/z'][()]
-
-            except BaseException:
-
-                raise ValueError(
-                    "Grid points not found in the data file")
-
-        else:
-
-            center = mol_data['grid_points/center'][()]
-            npts = np.array(self.grid_info['number_of_points'])
-            res = np.array(self.grid_info['resolution'])
-
-            halfdim = 0.5 * (npts * res)
-
-            low_lim = center - halfdim
-            hgh_lim = low_lim + res * (npts - 1)
-
-            x = np.linspace(low_lim[0], hgh_lim[0], npts[0])
-            y = np.linspace(low_lim[1], hgh_lim[1], npts[1])
-            z = np.linspace(low_lim[2], hgh_lim[2], npts[2])
-
-        # there is stil something strange
-        # with the ordering of the grid
-        # also noted in GridTools define_grid_points()
-        y, x, z = np.meshgrid(y, x, z)
-        grid = (x, y, z)
-        npts = (len(x), len(y), len(z))
-        return grid, npts
-
-    def map_atomic_densities(
-            self, feat_names, mol_data, grid, npts, angle, axis):
-        """Map atomic densities.
-
-        Args:
-            feat_names(dict): Element type and vdw radius
-            mol_data(h5 group): HDF5 molecule group
-            grid(tuple): mesh grid of x,y,z
-            npts(tuple): number of points on axis x,y,z
-            angle(float): rotation angle
-            axis(list): rotation axis
-
-        Returns:
-            list: atomic densities of each atom type on each chain
-        """
-
-        sql = pdb2sql.interface(mol_data['complex'][()])
-        index = sql.get_contact_atoms(chain1=self.chain1, chain2=self.chain2)
-
-        if angle is not None:
-            center = [np.mean(g) for g in grid]
-
-        densities = []
-        for elementtype, vdw_rad in feat_names.items():
-
-            # get pos of the contact atoms of correct type
-            xyzA = np.array(sql.get(
-                'x,y,z', rowID=index[self.chain1], element=elementtype))
-            xyzB = np.array(sql.get(
-                'x,y,z', rowID=index[self.chain2], element=elementtype))
-
-            # rotate if necessary
-            if angle is not None:
-                if xyzA != np.array([]):
-                    xyzA = pdb2sql.transform.rot_xyz_around_axis(
-                        xyzA, axis, angle, center)
-
-                if xyzB != np.array([]):
-                    xyzB = pdb2sql.transform.rot_xyz_around_axis(
-                        xyzB, axis, angle, center)
-
-            # init the grid
-            atdensA = np.zeros(npts)
-            atdensB = np.zeros(npts)
-
-            # run on the atoms
-            for pos in xyzA:
-                atdensA += self._densgrid(pos, vdw_rad, grid, npts)
-
-            # run on the atoms
-            for pos in xyzB:
-                atdensB += self._densgrid(pos, vdw_rad, grid, npts)
-
-            densities += [atdensA, atdensB]
-
-        sql._close()
-
-        return densities
-
     @staticmethod
     def _densgrid(center, vdw_radius, grid, npts):
         """Function to map individual atomic density on the grid.
@@ -1413,56 +1112,6 @@ class DataSet():
                 12. / np.e**2 / vdw_radius * dd_tmp) + 9. / np.e**2
 
         return dgrid
-
-    def map_feature(self, feat_names, mol_data, grid, npts, angle, axis):
-
-        __vectorize__ = False
-
-        if angle is not None:
-            center = [np.mean(g) for g in grid]
-
-        if __vectorize__:
-            pfunc = partial(self._featgrid, grid=grid, npts=npts)
-            vmap = np.vectorize(pfunc, signature='(n),()->(p,p,p)')
-
-        feat = []
-        for name in feat_names:
-
-            tmp_feat_ser = [np.zeros(npts), np.zeros(npts)]
-            tmp_feat_vect = [np.zeros(npts), np.zeros(npts)]
-            data = np.array(mol_data['features/' + name][()])
-
-            chain = data[:, 0]
-            pos = data[:, 1:4]
-            feat_value = data[:, 4]
-
-            if angle is not None:
-                pos = pdb2sql.transform.rot_xyz_around_axis(
-                    pos, axis, angle, center)
-
-            if __vectorize__ or __vectorize__ == 'both':
-
-                for chainID in [0, 1]:
-                    tmp_feat_vect[chainID] = np.sum(
-                        vmap(pos[chain == chainID, :],
-                             feat_value[chain == chainID]),
-                        0)
-
-            if not __vectorize__ or __vectorize__ == 'both':
-
-                for chainID, xyz, val in zip(chain, pos, feat_value):
-                    tmp_feat_ser[int(chainID)] += \
-                        self._featgrid(xyz, val, grid, npts)
-
-            if __vectorize__ == 'both':
-                assert np.allclose(tmp_feat_ser, tmp_feat_vect)
-
-            if __vectorize__:
-                feat += tmp_feat_vect
-            else:
-                feat += tmp_feat_ser
-
-        return feat
 
     @staticmethod
     def _featgrid(center, value, grid, npts):

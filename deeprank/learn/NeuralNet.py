@@ -457,7 +457,6 @@ class NeuralNet():
                  'clip_factor': self.data_set.clip_factor,
                  'grid_shape': self.data_set.grid_shape,
                  'grid_info': self.data_set.grid_info,
-                 'mapfly': self.data_set.mapfly,
                  'task': self.task,
                  'criterion': self.criterion,
                  'cuda': self.cuda
@@ -510,7 +509,6 @@ class NeuralNet():
         self.data_set.clip_features = self.state['clip_features']
         self.data_set.clip_factor = self.state['clip_factor']
         self.data_set.grid_shape = self.state['grid_shape']
-        self.data_set.mapfly = self.state['mapfly']
         self.data_set.grid_info = self.state['grid_info']
 
     def _divide_dataset(self, divide_set, preshuffle, preshuffle_seed):
@@ -791,6 +789,7 @@ class NeuralNet():
         mini_batch = 0
 
         for d in data_loader:
+
             mini_batch = mini_batch + 1
 
             logger.info(f"\t\t-> mini-batch: {mini_batch} ")
@@ -991,6 +990,7 @@ class NeuralNet():
         ax.set_ylabel('Predictions')
 
         values = np.append(xvalues, yvalues)
+
         border = 0.1 * (values.max() - values.min())
         ax.plot([values.min() - border, values.max() + border],
                 [values.min() - border, values.max() + border])
