@@ -4,6 +4,9 @@ Byte-compiled / optimized
 # editor swap files
 *.swp
 
+# python intermediary
+*.pyc
+
 # distribution
 deeprank.egg-info
 database*
