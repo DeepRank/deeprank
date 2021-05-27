@@ -16,8 +16,8 @@ Some requirement of the naming of the files:
 class TestGenerateData(unittest.TestCase):
     """Test the calculation of hit rate and success rate."""
 
-    rawScoreFL = 'hitrate_successrate/scores_raw.tsv'
-    groundTruth_FL = 'hitrate_successrate/success_hitrate_ANS.tsv'
+    rawScoreFL = 'test/hitrate_successrate/scores_raw.tsv'
+    groundTruth_FL = 'test/hitrate_successrate/success_hitrate_ANS.tsv'
 
     def test_1_hitrate_success_averaged_over_cases(self):
 
