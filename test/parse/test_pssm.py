@@ -15,7 +15,7 @@ def test_parse_old():
         for aa, value in record.amino_acid_values.items():
             eq_(type(aa), str)
             eq_(type(value), float)
-        eq_(record.residue_value, None)
+        eq_(record.information_content, None)
 
 
 def test_parse_new():
@@ -30,4 +30,4 @@ def test_parse_new():
         for aa, value in record.amino_acid_values.items():
             eq_(type(aa), str)
             eq_(type(value), float)
-        eq_(type(record.residue_value), float)
+        eq_(type(record.information_content), float)
