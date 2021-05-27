@@ -6,7 +6,7 @@ import shutil
 import numpy
 from nose.tools import ok_, eq_
 
-from deeprank.features.atomic_contacts import __compute_feature__
+from deeprank.features.atomic_contacts import __compute_feature__, _PhysicsStorage
 from deeprank.models.mutant import PdbMutantSelection
 
 
@@ -51,3 +51,28 @@ def test_compute_feature():
 
     finally:
         shutil.rmtree(tmp_path)
+
+
+def test_physics():
+    eps = 0.3
+    sig = 1.0
+
+    vdw_short = _PhysicsStorage.get_vanderwaals_energy(eps, sig, eps, sig, 7.0)
+    vdw_long = _PhysicsStorage.get_vanderwaals_energy(eps, sig, eps, sig, 9.0)
+
+    ok_(vdw_short < vdw_long)
+
+    charge1 = -1.0
+    charge2 = 1.0
+    charge3 = 1.0
+    max_dist = 20.0
+
+    c_short = _PhysicsStorage.get_coulomb_energy(charge1, charge2, 5.0, max_dist)
+    c_long = _PhysicsStorage.get_coulomb_energy(charge1, charge2, 10.0, max_dist)
+
+    ok_(c_short < c_long)
+
+    c_short = _PhysicsStorage.get_coulomb_energy(charge3, charge2, 5.0, max_dist)
+    c_long = _PhysicsStorage.get_coulomb_energy(charge3, charge2, 10.0, max_dist)
+
+    ok_(c_short > c_long)
