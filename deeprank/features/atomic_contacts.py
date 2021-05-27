@@ -5,6 +5,8 @@ import os
 
 import numpy
 
+from deeprank.models.pair import Pair
+from deeprank.operate.pdb import get_residue_contact_atom_pairs, get_distance
 from deeprank.features.FeatureClass import FeatureClass
 from deeprank.parse.param import ParamParser
 from deeprank.parse.top import TopParser
@@ -53,31 +55,6 @@ class ResidueSynonymCriteria:
 
         return True
 
-
-def get_squared_distance(pos1, pos2):
-    """Get the squared distance between two positions.
-       This is less computationally expensive than the normal distance
-       and should be used if one does not necessarily need
-       the normal distance for a large set of coordinates.
-
-    Args:
-        pos1 (array of 3): the xyz coords of position 1
-        pos2 (array of 3): the xyz coords of position 2
-    """
-
-    return numpy.sum(numpy.square(pos1 - pos2))
-
-def get_distance(pos1, pos2):
-    """Get the distance between two positions.
-       This is more computationally expensive than the squared distance
-       and should only be used when one really needs this distance.
-
-    Args:
-        pos1 (array of 3): the xyz coords of position 1
-        pos2 (array of 3): the xyz coords of position 2
-    """
-
-    return numpy.sqrt(get_squared_distance(pos1, pos2))
 
 def wrap_values_in_lists(dict_):
     """Wrap the dictionary's values in lists. This
@@ -173,7 +150,6 @@ class _PhysicsStorage:
         self._vanderwaals_parameters = sqldb.get('eps,sig')
         self._charges = sqldb.get('CHARGE')
         self._atom_info = sqldb.get(",".join(_PhysicsStorage.ATOM_KEY))
-        self._positions = numpy.array(sqldb.get('x,y,z'))
 
         if len(self._vanderwaals_parameters) == 0:
             raise RuntimeError("vanderwaals parameters are empty, please run '_assign_parameters' first")
@@ -183,9 +159,6 @@ class _PhysicsStorage:
 
         if len(self._atom_info) == 0:
             raise RuntimeError("atom info is empty, please create a AtomicContacts object first")
-
-        if len(self._positions) == 0:
-            raise RuntimeError("positions are empty, please create a AtomicContacts object first")
 
         self._vanderwaals_per_atom = {}
         self._vanderwaals_per_position = {}
@@ -206,14 +179,14 @@ class _PhysicsStorage:
             ValueError: if atom1 and atom2 are at the same position
         """
 
-        position1 = self._positions[atom1]
-        position2 = self._positions[atom2]
+        position1 = atom1.position
+        position2 = atom2.position
 
-        epsilon1, sigma1 = self._vanderwaals_parameters[atom1]
-        epsilon2, sigma2 = self._vanderwaals_parameters[atom2]
+        epsilon1, sigma1 = self._vanderwaals_parameters[atom1.id]
+        epsilon2, sigma2 = self._vanderwaals_parameters[atom2.id]
 
-        charge1 = self._charges[atom1]
-        charge2 = self._charges[atom2]
+        charge1 = self._charges[atom1.id]
+        charge2 = self._charges[atom2.id]
 
         distance = get_distance(position1, position2)
         if distance == 0.0:
@@ -222,8 +195,8 @@ class _PhysicsStorage:
         vanderwaals_energy = _PhysicsStorage.get_vanderwaals_energy(epsilon1, sigma1, epsilon2, sigma2, distance)
         coulomb_energy = _PhysicsStorage.get_coulomb_energy(charge1, charge2, distance, max_distance)
 
-        atom1_key = tuple(self._atom_info[atom1])
-        atom2_key = tuple(self._atom_info[atom2])
+        atom1_key = tuple(self._atom_info[atom1.id])
+        atom2_key = tuple(self._atom_info[atom2.id])
 
         position1 = tuple(position1)
         position2 = tuple(position2)
@@ -292,7 +265,7 @@ class AtomicContacts(FeatureClass):
 
         return None
 
-    def __init__(self, pdb_path, chain_id, residue_number,
+    def __init__(self, mutant,
                  top_path, param_path, patch_path,
                  max_contact_distance=8.5):
         """Build a new residue contacts feature object
@@ -309,9 +282,7 @@ class AtomicContacts(FeatureClass):
 
         super().__init__("Atomic")
 
-        self.pdb_path = pdb_path
-        self.chain_id = chain_id
-        self.residue_number = residue_number
+        self.mutant = mutant
         self.max_contact_distance = max_contact_distance
 
         self.top_path = top_path
@@ -321,7 +292,7 @@ class AtomicContacts(FeatureClass):
     def __enter__(self):
         "open the with-clause"
 
-        self.sqldb = pdb2sql.interface(self.pdb_path)
+        self.sqldb = pdb2sql.interface(self.mutant.pdb_path)
         return self
 
     def __exit__(self, exc_type, exc, tb):
@@ -373,37 +344,20 @@ class AtomicContacts(FeatureClass):
     def _find_contact_atoms(self):
         "find out which atoms of the pdb file lie within the max distance of the residue"
 
-        self._residue_atoms = set(self.sqldb.get("rowID", chainID=self.chain_id, resSeq=self.residue_number))
-
-        atomic_postions = {r[0]: numpy.array([r[1], r[2], r[3]]) for r in self.sqldb.get('rowID,x,y,z')}
-
-        squared_max_distance = numpy.square(self.max_contact_distance)
-
-        self._contact_atoms = set()
-        for atom, position in atomic_postions.items():
-            if atom in self._residue_atoms:
-                continue  # we don't pair a residue with itself
-
-            for residue_atom in self._residue_atoms:
-                residue_atom_position = atomic_postions[residue_atom]
-                if get_squared_distance(position, residue_atom_position) < squared_max_distance:
-                    self._contact_atoms.add(atom)
-                    break
+        self._contact_atom_pairs = get_residue_contact_atom_pairs(self.sqldb,
+                                                                  self.mutant.chain_id,
+                                                                  self.mutant.residue_number,
+                                                                  self.max_contact_distance)
 
     def _extend_contact_to_residues(self):
-        "find out of which residues the contact atoms are a part"
+        "find out of which residues the contact atoms are a part, then include their atoms"
 
-        per_chain = {}
-        for chain_id, residue_number in self.sqldb.get("chainID,resSeq", rowID=list(self._contact_atoms)):
-            if chain_id not in per_chain:
-                per_chain[chain_id] = set([])
-            per_chain[chain_id].add(residue_number)
+        for atom1, atom2 in set(self._contact_atom_pairs):
+            for atom in atom1.residue.atoms:
+                self._contact_atom_pairs.add(Pair(atom, atom2))
 
-        # list the new contact atoms, per residue
-        self._contact_atoms = set([])
-        for chain_id, residue_numbers in per_chain.items():
-            for atom in self.sqldb.get("rowID", chainID=chain_id, resSeq=list(residue_numbers)):
-                self._contact_atoms.add(atom)
+            for atom in atom2.residue.atoms:
+                self._contact_atom_pairs.add(Pair(atom1, atom))
 
     def _get_atom_type(self, residue_name, alternative_residue_name, atom_name):
         """Find the type name of the given atom, according to top and patch data
@@ -526,11 +480,9 @@ class AtomicContacts(FeatureClass):
 
         physics_storage = _PhysicsStorage(self.sqldb)
 
-        for contact_atom in self._contact_atoms:  # loop over atoms that contact the residue of interest
+        for atom1, atom2 in self._contact_atom_pairs:  # loop over atoms pairs that involve the residue of interest
 
-            for residue_atom in self._residue_atoms:  # loop over atoms in the residue of iterest
-
-                physics_storage.include_pair(contact_atom, residue_atom, self.max_contact_distance)
+            physics_storage.include_pair(atom1, atom2, self.max_contact_distance)
 
         physics_storage.add_to_features(self.feature_data, self.feature_data_xyz)
 
@@ -555,8 +507,7 @@ def __compute_feature__(pdb_path, feature_group, raw_feature_group, mutant):
     param_path = os.path.join(forcefield_path, 'protein-allhdg5-4_new.param')
     patch_path = os.path.join(forcefield_path, 'patch.top')
 
-    with AtomicContacts(mutant.pdb_path, mutant.chain_id, mutant.residue_number,
-                         top_path, param_path, patch_path) as feature_object:
+    with AtomicContacts(mutant, top_path, param_path, patch_path) as feature_object:
 
         feature_object.evaluate()
 
