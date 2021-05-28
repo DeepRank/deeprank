@@ -147,7 +147,7 @@ class _PhysicsStorage:
             RuntimeError: if features are missing from sqldb
         """
 
-        self._vanderwaals_parameters = sqldb.get('eps,sig')
+        self._vanderwaals_parameters = sqldb.get('inter_epsilon,inter_sigma,intra_epsilon,intra_sigma')
         self._charges = sqldb.get('CHARGE')
         self._atom_info = sqldb.get(",".join(_PhysicsStorage.ATOM_KEY))
 
@@ -182,8 +182,14 @@ class _PhysicsStorage:
         position1 = atom1.position
         position2 = atom2.position
 
-        epsilon1, sigma1 = self._vanderwaals_parameters[atom1.id]
-        epsilon2, sigma2 = self._vanderwaals_parameters[atom2.id]
+        # Which epsilon and sigma we take from the atoms, depends on whether the contact
+        # is inter- or intra-chain.
+        if atom1.chain_id == atom2.chain_id:
+            epsilon1, sigma1 = self._vanderwaals_parameters[atom1.id][2:]
+            epsilon2, sigma2 = self._vanderwaals_parameters[atom2.id][2:]
+        else:
+            epsilon1, sigma1 = self._vanderwaals_parameters[atom1.id][:2]
+            epsilon2, sigma2 = self._vanderwaals_parameters[atom2.id][:2]
 
         charge1 = self._charges[atom1.id]
         charge2 = self._charges[atom2.id]
@@ -412,13 +418,13 @@ class AtomicContacts(FeatureClass):
         """
 
         if residue_name not in self._valid_residue_names:
-            return (0.0, 0.0)
+            return VanderwaalsParam(0.0, 0.0, 0.0, 0.0)
 
         if atom_type in self._vanderwaals_parameters:
             o = self._vanderwaals_parameters[atom_type]
-            return (o.epsilon, o.sigma)
+            return o
         else:
-            return (0.0, 0.0)
+            return VanderwaalsParam(0.0, 0.0, 0.0, 0.0)
 
     def _assign_parameters(self):
         "Get parameters from top, param and patch data and put them in the pdb2sql database"
@@ -427,8 +433,10 @@ class AtomicContacts(FeatureClass):
         count_atoms = len(atomic_data)
 
         atomic_charges = numpy.zeros(count_atoms)
-        atomic_epsilon = numpy.zeros(count_atoms)
-        atomic_sigma = numpy.zeros(count_atoms)
+        atomic_inter_epsilon = numpy.zeros(count_atoms)
+        atomic_inter_sigma = numpy.zeros(count_atoms)
+        atomic_intra_epsilon = numpy.zeros(count_atoms)
+        atomic_intra_sigma = numpy.zeros(count_atoms)
 
         atomic_types = numpy.zeros(count_atoms, dtype='<U5')
         atomic_alternative_residue_names = numpy.zeros(count_atoms, dtype='<U5')
@@ -453,19 +461,27 @@ class AtomicContacts(FeatureClass):
 
             atomic_charges[atom_nr] = self._get_charge(residue_name, alternative_residue_name, atom_name)
 
-            epsilon, sigma = self._get_vanderwaals_parameters(residue_name, alternative_residue_name, atom_name, atom_type)
-            atomic_epsilon[atom_nr] = epsilon
-            atomic_sigma[atom_nr] = sigma
+            params = self._get_vanderwaals_parameters(residue_name, alternative_residue_name, atom_name, atom_type)
+            atomic_inter_epsilon[atom_nr] = params.inter_epsilon
+            atomic_inter_sigma[atom_nr] = params.inter_sigma
+            atomic_intra_epsilon[atom_nr] = params.intra_epsilon
+            atomic_intra_sigma[atom_nr] = params.intra_sigma
 
         # put in sql
         self.sqldb.add_column('CHARGE')
         self.sqldb.update_column('CHARGE', atomic_charges)
 
-        self.sqldb.add_column('eps')
-        self.sqldb.update_column('eps', atomic_epsilon)
+        self.sqldb.add_column('inter_epsilon')
+        self.sqldb.update_column('inter_epsilon', atomic_inter_epsilon)
 
-        self.sqldb.add_column('sig')
-        self.sqldb.update_column('sig', atomic_sigma)
+        self.sqldb.add_column('inter_sigma')
+        self.sqldb.update_column('inter_sigma', atomic_inter_sigma)
+
+        self.sqldb.add_column('intra_epsilon')
+        self.sqldb.update_column('intra_epsilon', atomic_intra_epsilon)
+
+        self.sqldb.add_column('intra_sigma')
+        self.sqldb.update_column('intra_sigma', atomic_intra_sigma)
 
         self.sqldb.add_column('type', 'TEXT')
         self.sqldb.update_column('type', atomic_types)

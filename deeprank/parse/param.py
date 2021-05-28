@@ -1,13 +1,9 @@
 import re
 import logging
 
+from deeprank.models.param import VanderwaalsParam
 
 _log = logging.getLogger(__name__)
-
-class VanderwaalsParam:
-    def __init__(self, epsilon, sigma):
-        self.epsilon = epsilon
-        self.sigma = sigma
 
 
 class ParamParser:
@@ -30,8 +26,12 @@ class ParamParser:
                 raise ValueError("duplicate atom type: {}".format(repr(atom_type)))
 
             number_strings = m.group(2).split()
-            epsilon = float(number_strings[0])
-            sigma = float(number_strings[1])
 
-            result[atom_type] = VanderwaalsParam(epsilon, sigma)
+            inter_epsilon = float(number_strings[0])
+            inter_sigma = float(number_strings[1])
+            intra_epsilon = float(number_strings[2])
+            intra_sigma = float(number_strings[3])
+
+            result[atom_type] = VanderwaalsParam(inter_epsilon, inter_sigma,
+                                                 intra_epsilon, intra_sigma)
         return result
