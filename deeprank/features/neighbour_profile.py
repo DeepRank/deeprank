@@ -1,17 +1,16 @@
 from pdb2sql import pdb2sql
 
 from deeprank.features.FeatureClass import FeatureClass
-from deeprank.config.chemicals import AA_codes
+from deeprank.config.chemicals import AA_codes, AA_codes_3to1, AA_codes_1to3
 from deeprank.operate.pdb import get_residue_contact_atom_pairs
 from deeprank.parse.pssm import parse_pssm
 from deeprank.models.pssm import Pssm
+from deeprank.models.residue import Residue
 
 
 IC_FEATURE_NAME = "residue_information_content"
-
-def get_probability_feature_name(amino_acid_code):
-    return "residue_%s_probability" % amino_acid_code
-
+WT_FEATURE_NAME = "wild_type_probability"
+MUT_FEATURE_NAME = "mutant_probability"
 
 def get_neighbour_c_alphas(mutant, distance_cutoff):
     pdb = pdb2sql(mutant.pdb_path)
@@ -25,6 +24,26 @@ def get_neighbour_c_alphas(mutant, distance_cutoff):
                     atoms.add(atom1)
 
         return atoms
+    finally:
+        pdb._close()
+
+
+def get_c_alpha_pos(mutant):
+    pdb = pdb2sql(mutant.pdb_path)
+    try:
+        position = pdb.get("x,y,z", chainID=mutant.chain_id, resSeq=mutant.residue_number, name="CA")[0]
+
+        return position
+    finally:
+        pdb._close()
+
+
+def get_wild_type_amino_acid(mutant):
+    pdb = pdb2sql(mutant.pdb_path)
+    try:
+        amino_acid_code = pdb.get("resName", chainID=mutant.chain_id, resSeq=mutant.residue_number)[0]
+
+        return amino_acid_code
     finally:
         pdb._close()
 
@@ -51,19 +70,22 @@ def __compute_feature__(pdb_data, feature_group, raw_feature_group, mutant):
 
     # Initialize a feature object:
     feature_object = FeatureClass("Residue")
-    for code in AA_codes:
-        feature_object.feature_data_xyz[get_probability_feature_name(code)] = {}
-    feature_object.feature_data_xyz[IC_FEATURE_NAME] = {}
+
+    # Get mutant probability features and place them at the C-alpha xyz position:
+    c_alpha_position = get_c_alpha_pos(mutant)
+    wild_type_code = get_wild_type_amino_acid(mutant)
+    residue_id = Residue(mutant.residue_number, wild_type_code, mutant.chain_id)
+    wild_type_probability = pssm.get_probability(residue_id, wild_type_code)
+    mutant_probability = pssm.get_probability(residue_id, AA_codes_1to3[mutant.mutant_amino_acid])
+    xyz_key = tuple([chain_numbers[mutant.chain_id]] + c_alpha_position)
+
+    feature_object.feature_data_xyz[WT_FEATURE_NAME] = {xyz_key: [wild_type_probability]}
+    feature_object.feature_data_xyz[MUT_FEATURE_NAME] = {xyz_key: [mutant_probability]}
 
     # For each neighbouring C-alpha, get the residue's PSSM features:
+    feature_object.feature_data_xyz[IC_FEATURE_NAME] = {}
     for atom in neighbour_c_alphas:
         xyz_key = tuple([chain_numbers[atom.chain_id]] + atom.position)
-
-        for code in AA_codes:
-
-            feature_name = get_probability_feature_name(code)
-
-            feature_object.feature_data_xyz[feature_name][xyz_key] = [pssm.get_probability(atom.residue, code)]
 
         feature_object.feature_data_xyz[IC_FEATURE_NAME][xyz_key] = [pssm.get_information_content(atom.residue)]
 
