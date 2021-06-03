@@ -6,8 +6,7 @@ import h5py
 from nose.tools import ok_
 
 from deeprank.features.neighbour_profile import (__compute_feature__,
-                                                 IC_FEATURE_NAME,
-                                                 get_probability_feature_name)
+                                                 IC_FEATURE_NAME, WT_FEATURE_NAME, MUT_FEATURE_NAME)
 from deeprank.models.mutant import PdbMutantSelection
 
 
@@ -25,7 +24,8 @@ def test_feature():
             __compute_feature__(mutant.pdb_path, group, None, mutant)
 
             # Check that the features are present on the grid:
-            ok_(len(group.get(get_probability_feature_name("ALA"))) > 0)
+            ok_(len(group.get(WT_FEATURE_NAME)) > 0)
+            ok_(len(group.get(MUT_FEATURE_NAME)) > 0)
             ok_(len(group.get(IC_FEATURE_NAME)) > 0)
     finally:
         rmtree(tmp_dir_path)
