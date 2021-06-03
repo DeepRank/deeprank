@@ -495,6 +495,15 @@ class DataSet():
 
     @staticmethod
     def _insert_before_operators(subject_string, inserting_string):
+        """ This function is to insert a string into another string, wherever a '>=', '<=', '==', '>', '<' operator is encountered.
+
+            Args:
+                subject_string (str): the string to insert into
+                inserting_string (str): the string to insert
+
+            Returns (str): the string with insertions
+        """
+
         return_string = subject_string
         for operator_string in ['>=', '<=', '==', '>', '<']:
             search_index = 0
