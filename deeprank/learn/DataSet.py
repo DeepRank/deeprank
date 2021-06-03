@@ -301,7 +301,7 @@ class DataSet():
         fname, mol, angle, axis = self.index_complexes[index]
         try:
 
-            feature, target = self.load_one_molecule(fname, mol)
+            feature, target = self.load_one_variant(fname, mol)
 
             if self.clip_features:
                 feature = self._clip_feature(feature)
@@ -708,7 +708,7 @@ class DataSet():
         """
 
         fname = self.train_database[0]
-        feature, _ = self.load_one_molecule(fname)
+        feature, _ = self.load_one_variant(fname)
 
         self.data_shape = feature.shape
 
@@ -946,12 +946,12 @@ class DataSet():
 
         return points
 
-    def load_one_molecule(self, fname, mol=None):
-        """Load the feature/target of a single molecule.
+    def load_one_variant(self, fname, variant_name=None):
+        """Load the feature/target of a single variant.
 
         Args:
             fname (str): hdf5 file name
-            mol (None or str, optional): name of the complex in the hdf5
+            variant_name (None or str, optional): name of the variant in the hdf5
 
         Returns:
             np.array,float: features, targets
@@ -959,15 +959,15 @@ class DataSet():
         outtype = 'float32'
         fh5 = h5py.File(fname, 'r')
 
-        if mol is None:
-            mol = list(fh5.keys())[0]
+        if variant_name is None:
+            variant_name = list(fh5.keys())[0]
 
-        # get the mol
-        mol_data = fh5.get(mol)
+        # get the variant
+        variant_data = fh5.get(variant_name)
 
-        # xue:
-        if 'mapped_features' not in mol_data.keys():
-            logger.error(f"xue: Error: mol: {mol} in {fname} does not have mapped_features ")
+        # check for mapped features:
+        if 'mapped_features' not in variant_data.keys():
+            logger.error(f"Error: variant: {variant_name} in {fname} does not have mapped_features ")
             fh5.close()
             sys.exit()
 
@@ -976,16 +976,16 @@ class DataSet():
         for feat_type, feat_names in self.select_feature.items():
 
             # see if the feature exists
-            if 'mapped_features/' + feat_type in mol_data.keys():
-                feat_dict = mol_data.get(
+            if 'mapped_features/' + feat_type in variant_data.keys():
+                feat_dict = variant_data.get(
                     'mapped_features/' + feat_type)
             else:
                 logger.error(
                     f'Feature type {feat_type} not found in file {fname} '
-                    f'for molecule {mol}.\n'
+                    f'for variant {variant_name}.\n'
                     f'Possible feature types are:\n\t' +
                     '\n\t'.join(
-                        list(mol_data['mapped_features'].keys()))
+                        list(variant_data['mapped_features'].keys()))
                 )
                 raise ValueError(feat_type, ' not supported')
 
@@ -997,11 +997,11 @@ class DataSet():
                     data = feat_dict[name]
                 except KeyError:
                     logger.error(
-                        f'Feature {name} not found in file {fname} for mol '
-                        f'{mol} and feature type {feat_type}.\n'
+                        f'Feature {name} not found in file {fname} for variant '
+                        f'{variant_name} and feature type {feat_type}.\n'
                         f'Possible feature are:\n\t' +
                         '\n\t'.join(list(
-                            mol_data['mapped_features/' +
+                            variant_data['mapped_features/' +
                                      feat_type].keys()
                         ))
                     )
@@ -1021,7 +1021,7 @@ class DataSet():
                 feature.append(mat)
 
         # get the target value
-        target = mol_data.get('targets/' + self.select_target)[()]
+        target = variant_data.get('targets/' + self.select_target)[()]
 
         # close
         fh5.close()
