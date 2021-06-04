@@ -167,7 +167,7 @@ def store_grid_data(mutant_group, feature_name, feature_dict, try_sparse=True):
         else:
             subfeature_group.attrs['sparse'] = False
             subfeature_group.attrs['type'] = 'dense_matrix'
-            subfeature_group.create_dataset('value', data=spg.value, compression='gzip', compression_opts=9)
+            subfeature_group.create_dataset('value', data=subfeature_data, compression='gzip', compression_opts=9)
 
 
 def load_grid_data(mutant_group, feature_name):
