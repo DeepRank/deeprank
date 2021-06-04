@@ -191,8 +191,6 @@ class NeuralNet():
         elif self.task == 'class':
             self.criterion = nn.CrossEntropyLoss(weight = self.class_weights, reduction='mean')
             self._plot_scatter = self._plot_boxplot_class
-            self.data_set.normalize_targets = False
-
         else:
             raise ValueError(
                 f"Task {self.task} not recognized. Options are:\n\t "
@@ -444,7 +442,6 @@ class NeuralNet():
 
         state = {'state_dict': self.net.state_dict(),
                  'optimizer': self.optimizer.state_dict(),
-                 'normalize_targets': self.data_set.normalize_targets,
                  'normalize_features': self.data_set.normalize_features,
                  'select_feature': self.data_set.select_feature,
                  'select_target': self.data_set.select_target,
@@ -465,10 +462,6 @@ class NeuralNet():
         if self.data_set.normalize_features:
             state['feature_mean'] = self.data_set.feature_mean
             state['feature_std'] = self.data_set.feature_std
-
-        if self.data_set.normalize_targets:
-            state['target_min'] = self.data_set.target_min
-            state['target_max'] = self.data_set.target_max
 
         torch.save(state, filename)
 
@@ -492,11 +485,6 @@ class NeuralNet():
 
         self.data_set.pair_chain_feature = self.state['pair_chain_feature']
         self.data_set.dict_filter = self.state['dict_filter']
-
-        self.data_set.normalize_targets = self.state['normalize_targets']
-        if self.data_set.normalize_targets:
-            self.data_set.target_min = self.state['target_min']
-            self.data_set.target_max = self.state['target_max']
 
         self.data_set.normalize_features = self.state['normalize_features']
         if self.data_set.normalize_features:
@@ -836,14 +824,8 @@ class NeuralNet():
             data['mol'] += [(f, m) for f, m in zip(fname, molname)]
 
         # transform the output back
-        if self.data_set.normalize_targets:
-            data['outputs'] = self.data_set.backtransform_target(
-                np.array(data['outputs']))  # .flatten())
-            data['targets'] = self.data_set.backtransform_target(
-                np.array(data['targets']))  # .flatten())
-        else:
-            data['outputs'] = np.array(data['outputs'])  # .flatten()
-            data['targets'] = np.array(data['targets'])  # .flatten()
+        data['outputs'] = np.array(data['outputs'])  # .flatten()
+        data['targets'] = np.array(data['targets'])  # .flatten()
 
         # make np for export
         data['mol'] = np.array(data['mol'], dtype=object)
