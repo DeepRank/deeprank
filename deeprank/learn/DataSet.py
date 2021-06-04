@@ -28,7 +28,7 @@ class DataSet():
                  grid_info=None,
                  use_rotation=None,
                  select_feature='all', select_target='DOCKQ',
-                 normalize_features=True, normalize_targets=True,
+                 normalize_features=True,
                  target_ordering=None,
                  dict_filter=None, pair_chain_feature=None,
                  transform_to_2D=False, projection=0,
@@ -71,8 +71,6 @@ class DataSet():
                 Default: 'DOCKQ'
 
             normalize_features (Bool, optional): normalize features or not
-                Default: True
-            normalize_targets (Bool, optional): normalize targets or not
                 Default: True
             target_ordering (str): 'lower' (the lower the better) or
                 'higher' (the higher the better)
@@ -122,7 +120,6 @@ class DataSet():
             >>>                    },
             >>>                    select_target='IRMSD',
             >>>                    normalize_features = True,
-            >>>                    normalize_targets=True,
             >>>                    pair_chain_feature=np.add,
             >>>                    dict_filter={'IRMSD':'<4. or >10.'},
             >>>                    process = True)
@@ -152,7 +149,6 @@ class DataSet():
 
         # normalization conditions
         self.normalize_features = normalize_features
-        self.normalize_targets = normalize_targets
 
         # clip the data
         self.clip_features = clip_features
@@ -264,7 +260,7 @@ class DataSet():
         self.get_input_shape()
 
         # get renormalization factor
-        if self.normalize_features or self.normalize_targets:
+        if self.normalize_features:
             self.get_norm()
 
         logger.info('\n')
@@ -308,9 +304,6 @@ class DataSet():
 
             if self.normalize_features:
                 feature = self._normalize_feature(feature)
-
-            if self.normalize_targets:
-                target = self._normalize_target(target)
 
             if self.pair_chain_feature:
                 feature = self.make_feature_pair(
@@ -878,20 +871,6 @@ class DataSet():
         data *= self.target_max
         data += self.target_min
         return data  # .numpy()
-
-    def _normalize_target(self, target):
-        """Normalize the values of the targets.
-
-        Args:
-            target (list(float)): raw data
-        Returns:
-            list(float): normalized data
-        """
-
-        # TODO why define such normlised target?
-        target -= self.target_min
-        target /= self.target_max
-        return target
 
     def _normalize_feature(self, feature):
         """Normalize the values of the features.
