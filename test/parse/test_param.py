@@ -15,4 +15,4 @@ def test_parse():
         result = ParamParser.parse(f)
 
     ok_(len(result) > 0)
-    eq_(type(list(result.values())[0].epsilon), float)
+    eq_(type(list(result.values())[0].inter_epsilon), float)
