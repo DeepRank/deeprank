@@ -31,11 +31,9 @@ class NeuralNet():
                  model_type='3d', proj2d=0, task='reg',
                  class_weights = None,
                  pretrained_model=None,
-                 chain1='A',
-                 chain2='B',
                  cuda=False, ngpu=0,
                  plot=True,
-                 save_hitrate=True,
+                 save_hitrate=False,
                  save_classmetrics=False,
                  outdir='./'):
         """Train a Convolutional Neural Network for DeepRank.
@@ -71,11 +69,7 @@ class NeuralNet():
                 Only applicable on 'class' task.
 
             pretrained_model (str): Saved model to be used for further
-                training or testing. When using pretrained model,
-                remember to set the following 'chain1' and 'chain2' for
-                the new data.
-            chain1 (str): first chain ID of new data when using pretrained model
-            chain2 (str): second chain ID of new data when using pretrained model
+                training or testing.
 
             cuda (bool): Use CUDA.
 
@@ -144,8 +138,7 @@ class NeuralNet():
             # create the dataset if required
             # but don't process it yet
             if isinstance(self.data_set, (str, list)):
-                self.data_set = DataSet(self.data_set, chain1=chain1,
-                                    chain2=chain2, process=False)
+                self.data_set = DataSet(self.data_set, process=False)
 
             # load the model and
             # change dataset parameters
