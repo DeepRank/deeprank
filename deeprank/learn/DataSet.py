@@ -498,7 +498,7 @@ class DataSet():
         """
 
         return_string = subject_string
-        for operator_string in ['>=', '<=', '==', '>', '<']:
+        for operator_string in ['>=', '<=', '==', '!=', '>', '<']:
             search_index = 0
             while search_index < len(return_string):
                 found_index = return_string.find(operator_string, search_index)
