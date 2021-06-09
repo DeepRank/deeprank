@@ -58,7 +58,6 @@ def test_learn():
                           select_feature='all',
                           select_target='target1',
                           normalize_features=True,
-                          pair_chain_feature=numpy.add,
                           dict_filter={'target1':'>=1'})
 
         ok_(len(dataset) > 0)

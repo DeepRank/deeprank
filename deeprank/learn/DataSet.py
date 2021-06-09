@@ -30,7 +30,7 @@ class DataSet():
                  select_feature='all', select_target='DOCKQ',
                  normalize_features=True,
                  target_ordering=None,
-                 dict_filter=None, pair_chain_feature=None,
+                 dict_filter=None,
                  transform_to_2D=False, projection=0,
                  grid_shape=None,
                  clip_features=True, clip_factor=1.5,
@@ -82,9 +82,6 @@ class DataSet():
                 Example: {'IRMSD': '<4. or >10'}
                 (select complexes with IRMSD lower than 4 or larger than 10)
                 Default: None
-            pair_chain_feature (None or callable, optional):
-                method to pair features of chainA and chainB
-                Example: np.sum (sum the chainA and chainB features)
             transform_to_2D (bool, optional):
                 Boolean to use 2d maps instead of full 3d
                 Default: False
@@ -120,7 +117,6 @@ class DataSet():
             >>>                    },
             >>>                    select_target='IRMSD',
             >>>                    normalize_features = True,
-            >>>                    pair_chain_feature=np.add,
             >>>                    dict_filter={'IRMSD':'<4. or >10.'},
             >>>                    process = True)
         '''
@@ -158,9 +154,6 @@ class DataSet():
         self.input_shape = None
         self.data_shape = None
         self.grid_shape = grid_shape
-
-        # the possible pairing of the ind features
-        self.pair_chain_feature = pair_chain_feature
 
         # get the eventual projection
         self.transform = transform_to_2D
@@ -250,9 +243,6 @@ class DataSet():
         # get the actual feature name
         self.get_mapped_feature_name()
 
-        # get the pairing
-        self.get_pairing_feature()
-
         # get grid shape
         self.get_grid_shape()
 
@@ -304,10 +294,6 @@ class DataSet():
 
             if self.normalize_features:
                 feature = self._normalize_feature(feature)
-
-            if self.pair_chain_feature:
-                feature = self.make_feature_pair(
-                    feature, self.pair_chain_feature)
 
             if self.transform:
                 feature = self.convert2d(feature, self.proj2D)
@@ -577,7 +563,6 @@ class DataSet():
         f5 = h5py.File(self.train_database[0], 'r')
         mol_name = list(f5.keys())[0]
         mapped_data = f5.get(mol_name + '/mapped_features/')
-        chain_tags = ['_chain1', '_chain2']
 
         # if we select all the features
         if self.select_feature == "all":
@@ -605,11 +590,6 @@ class DataSet():
                         self.print_possible_features()
                         raise KeyError('Feature type %s not found' % feat_type)
 
-                # if we have stored the individual
-                # chainA chainB data we need to expand the feature list
-                # however when we reload a pretrained model we already
-                # come with _chainA, _chainB features.
-                # So then we shouldn't add the tags
                 else:
                     # TODO to refactor this part
                     if feat_type not in mapped_data:
@@ -621,35 +601,21 @@ class DataSet():
                     # loop over all the specified feature names
                     for name in feat_names:
 
-                        # check if there is not _chainA or _chainB in the name
-                        cond = [tag not in name for tag in chain_tags]
+                        # if we have a wild card e.g. PSSM_*
+                        # we check the matches and add them
+                        if '*' in name:
+                            match = name.split('*')[0]
+                            possible_names = list(
+                                mapped_data[feat_type].keys())
+                            match_names = [
+                                n for n in possible_names
+                                if n.startswith(match)]
+                            self.select_feature[feat_type] += match_names
 
-                        # if there is no chain tag in the name
-                        if np.all(cond):
-
-                            # if we have a wild card e.g. PSSM_*
-                            # we check the matches and add them
-                            if '*' in name:
-                                match = name.split('*')[0]
-                                possible_names = list(
-                                    mapped_data[feat_type].keys())
-                                match_names = [
-                                    n for n in possible_names
-                                    if n.startswith(match)]
-                                self.select_feature[feat_type] += match_names
-
-                            # if we don't have a wild card we append
-                            # <feature_name>_chainA and <feature_name>_chainB
-                            # to the list
-                            else:
-                                self.select_feature[feat_type] += [
-                                    name + tag for tag in chain_tags]
-                        # if there is a chain tag in the name
-                        # (we probably relaod a pretrained model)
-                        # and we simply append the feaature name
+                        # if we don't have a wild card we append
+                        # <feature_name> to the list
                         else:
-                            self.select_feature[feat_type].append(
-                                name)
+                            self.select_feature[feat_type] += [name]
 
         f5.close()
 
@@ -681,26 +647,6 @@ class DataSet():
                         for f in feat:
                             logger.info('  -- %s' % f)
 
-        logger.info("You don't need to specify _chainA _chainB for each feature. " +
-                    "The code will append it automatically")
-
-    def get_pairing_feature(self):
-        """Creates the index of paired features."""
-
-        if self.pair_chain_feature:
-
-            self.pair_indexes = []
-            start = 0
-            for feat_type, feat_names in self.select_feature.items():
-                nfeat = len(feat_names)
-                if '_ind' in feat_type:
-                    self.pair_indexes += [
-                        [i, i + 1] for i in range(start, start + nfeat, 2)]
-                else:
-                    self.pair_indexes += [
-                        [i] for i in range(start, start + nfeat)]
-                start += nfeat
-
     def get_input_shape(self):
         """Get the size of the data and input.
 
@@ -713,10 +659,6 @@ class DataSet():
         feature, _ = self.load_one_variant(fname)
 
         self.data_shape = feature.shape
-
-        if self.pair_chain_feature:
-            feature = self.make_feature_pair(
-                feature, self.pair_chain_feature)
 
         if self.transform:
             feature = self.convert2d(feature, self.proj2D)
@@ -1042,34 +984,6 @@ class DataSet():
             feature = feature.reshape(-1, nx, ny, 1).squeeze()
 
         return feature
-
-    @staticmethod
-    def make_feature_pair(feature, op):
-        """Pair the features of both chains.
-
-        Args:
-            feature (np.array): raw features
-            op (callable): function to combine the features
-        Returns:
-            np.array: combined features
-        Raises:
-            ValueError: if op is not callable
-        """
-
-        if not callable(op):
-            raise ValueError('Operation not callable', op)
-
-        nFeat = len(feature)
-        pair_indexes = list(
-            np.arange(nFeat).reshape(int(nFeat / 2), 2))
-
-        outtype = feature.dtype
-        new_feat = []
-        for ind in pair_indexes:
-            new_feat.append(
-                op(feature[ind[0], ...], feature[ind[1], ...]))
-
-        return np.array(new_feat).astype(outtype)
 
     @staticmethod
     def _densgrid(center, vdw_radius, grid, npts):

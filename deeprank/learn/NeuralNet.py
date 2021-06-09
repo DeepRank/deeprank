@@ -271,9 +271,6 @@ class NeuralNet():
             logger.info(f'=\t features : {feat_type}')
             for name in feat_names:
                 logger.info(f'=\t\t     {name}')
-        if self.data_set.pair_chain_feature is not None:
-            logger.info(f'=\t Pair     : '
-                        f'{self.data_set.pair_chain_feature.__name__}')
         logger.info(f'=\t targets  : {self.data_set.select_target}')
         logger.info(f'=\t CUDA     : {str(self.cuda)}')
         if self.cuda:
@@ -439,7 +436,6 @@ class NeuralNet():
                  'select_feature': self.data_set.select_feature,
                  'select_target': self.data_set.select_target,
                  'target_ordering': self.data_set.target_ordering,
-                 'pair_chain_feature': self.data_set.pair_chain_feature,
                  'dict_filter': self.data_set.dict_filter,
                  'transform': self.data_set.transform,
                  'proj2D': self.data_set.proj2D,
@@ -476,7 +472,6 @@ class NeuralNet():
         self.data_set.select_feature = self.state['select_feature']
         self.data_set.select_target = self.state['select_target']
 
-        self.data_set.pair_chain_feature = self.state['pair_chain_feature']
         self.data_set.dict_filter = self.state['dict_filter']
 
         self.data_set.normalize_features = self.state['normalize_features']
