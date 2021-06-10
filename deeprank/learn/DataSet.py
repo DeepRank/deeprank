@@ -75,7 +75,7 @@ class DataSet():
                 Default: True
             dict_filter (None or dict, optional): Specify if we filter
                 the variants based on target values (in case of multiple?),
-                Example: {'Benign': '==0.0'}
+                Example: {'class': '==0.0'}
                 (select benign variants)
                 Default: None
             transform_to_2D (bool, optional):
@@ -115,7 +115,7 @@ class DataSet():
             >>>                    select_target='class',
             >>>                    normalize_features = True,
             >>>                    pair_chain_feature=None,
-            >>>                    dict_filter={'Benign': '==0.0'},
+            >>>                    dict_filter={'class': '==0.0'},
             >>>                    process = True)
         '''
 
@@ -501,7 +501,7 @@ class DataSet():
 
     def filter(self, molgrp):
         """Filter the molecule according to a dictionary, e.g.,
-        dict_filter={'Pathogenic':'==1.0'}
+        dict_filter={'class':'==1.0'}
 
         The filter is based on the attribute self.dict_filter
         that must be either of the form: { 'name': cond } or None
