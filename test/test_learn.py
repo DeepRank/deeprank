@@ -57,8 +57,7 @@ def test_learn():
         dataset = DataSet(hdf5_path, grid_info=grid_info,
                           select_feature='all',
                           select_target='target1',
-                          normalize_features=True,
-                          dict_filter={'target1':'>=1'})
+                          normalize_features=False)
 
         ok_(len(dataset) > 0)
         ok_(dataset[0] is not None)
