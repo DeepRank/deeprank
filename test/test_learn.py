@@ -1,260 +1,76 @@
-import glob
 import os
-import unittest
+from tempfile import mkdtemp
+from shutil import rmtree
 
-import numpy as np
+import numpy
+import torch.optim as optim
+from nose.tools import ok_
 
-try:
-    from deeprank.learn import *
-    from deeprank.learn.model3d import cnn_reg as cnn3d
-    from deeprank.learn.model3d import cnn_class as cnn3d_class
-    from deeprank.learn.model2d import cnn as cnn2d
-    skip = False
-except BaseException:
-    skip = True
-
-
-# all the import torch fails on TRAVIS
-# so we can only exectute this test locally
-class TestLearn(unittest.TestCase):
-
-    @unittest.skipIf(skip, "torch fails on Travis")
-    @staticmethod
-    def test_learn_3d_reg_mapfly():
-        """Use a 3D CNN for regularization."""
-
-        # adress of the database
-        database = '1ak4_mapfly.hdf5'
-        if not os.path.isfile(database):
-            raise FileNotFoundError(
-                'Database %s not found. Make sure to run test_generate before')
-
-        # clean the output dir
-        out = './out_3d_fly'
-        if os.path.isdir(out):
-            for f in glob.glob(out + '/*'):
-                os.remove(f)
-            os.removedirs(out)
-
-        # declare the dataset instance
-        data_set = DataSet(
-            database,
-            test_database=None,
-            chain1='C',
-            chain2='D',
-            mapfly=True,
-            use_rotation=2,
-            grid_info={
-                'number_of_points': (10, 10, 10),
-                'resolution': (3, 3, 3)},
-            select_feature={
-                'AtomicDensities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
-                'Features': ['coulomb', 'vdwaals', 'charge', 'PSSM_*']},
-            select_target='DOCKQ',
-            tqdm=True,
-            normalize_features=False,
-            normalize_targets=False,
-            clip_features=False,
-            pair_chain_feature=np.add,
-            dict_filter={'DOCKQ': '<1'})
-        # dict_filter={'IRMSD':'<4. or >10.'})
-
-        # create the networkt
-        model = NeuralNet(data_set, cnn3d, model_type='3d', task='reg',
-                          cuda=False, plot=True, outdir=out)
-
-        # start the training
-        model.train(
-            nepoch=5,
-            divide_trainset=0.8,
-            train_batch_size=2,
-            preshuffle_seed=2019,
-            num_workers=0)
-
-    @unittest.skipIf(skip, "torch fails on Travis")
-    @staticmethod
-    def test_learn_3d_reg():
-        """Use a 3D CNN for regularization."""
-
-        # adress of the database
-        train_database = '1ak4.hdf5'
-        if not os.path.isfile(train_database):
-            raise FileNotFoundError(
-                'Database %s not found. Make sure to run test_generate before',
-                train_database)
-
-        # clean the output dir
-        out = './out_3d_reg'
-        if os.path.isdir(out):
-            for f in glob.glob(out + '/*'):
-                os.remove(f)
-            os.removedirs(out)
-
-        # declare the dataset instance
-        data_set = DataSet(
-            train_database=train_database,
-            valid_database=None,
-            test_database=None,
-            chain1='C',
-            chain2='D',
-            mapfly=False,
-            use_rotation=2,
-            grid_shape=(30, 30, 30),
-            select_feature={
-                'AtomicDensities_ind': 'all',
-                'Feature_ind': [ 'coulomb', 'vdwaals', 'charge', 'PSSM_*']},
-            select_target='DOCKQ',
-            tqdm=True,
-            normalize_features=True,
-            normalize_targets=True,
-            clip_features=False,
-            pair_chain_feature=np.add,
-            dict_filter={ 'DOCKQ': '<1.'})
-        # dict_filter={'IRMSD':'<4. or >10.'})
-
-        # create the networkt
-        model = NeuralNet(data_set, cnn3d, model_type='3d', task='reg',
-                          cuda=False, plot=True, outdir=out)
-
-        # start the training
-        model.train(
-            nepoch=5,
-            divide_trainset=0.8,
-            train_batch_size=2,
-            num_workers=0,
-            preshuffle_seed=2019,
-            save_model='all')
-
-    @unittest.skipIf(skip, "Torch fails on Travis")
-    @staticmethod
-    def test_learn_3d_class():
-        """Use a 3D CNN for regularization."""
-
-        # adress of the database
-        database = ['1ak4.hdf5', 'native.hdf5']
-
-        # clean the output dir
-        out = './out_3d_class'
-        if os.path.isdir(out):
-            for f in glob.glob(out + '/*'):
-                os.remove(f)
-            os.removedirs(out)
-
-        # declare the dataset instance
-        data_set = DataSet(
-            train_database=database,
-            valid_database=None,
-            test_database=None,
-            chain1='C',
-            chain2='D',
-            mapfly=False,
-            grid_shape=( 30, 30, 30),
-            select_feature={
-                'AtomicDensities_ind': 'all',
-                'Feature_ind': [ 'coulomb', 'vdwaals', 'charge', 'PSSM_*']},
-            select_target='BIN_CLASS',
-            tqdm=True,
-            normalize_features=True,
-            normalize_targets=False,
-            clip_features=False,
-            pair_chain_feature=np.add)
-
-        # create the networkt
-        model = NeuralNet(data_set, cnn3d_class, model_type='3d', task='class',
-                          cuda=False, plot=True, outdir=out)
-
-        # start the training
-        model.train(
-            nepoch=5,
-            divide_trainset=0.8,
-            train_batch_size=2,
-            num_workers=0,
-            save_epoch='all')
-
-    @unittest.skipIf(skip, "torch fails on Travis")
-    @staticmethod
-    def test_learn_2d_reg():
-        """Use a 2D CNN for regularization."""
-
-        # adress of the database
-        database = '1ak4.hdf5'
-
-        # clean the output dir
-        out = './out_2d/'
-        if os.path.isdir(out):
-            for f in glob.glob(out + '/*'):
-                os.remove(f)
-            os.removedirs(out)
-
-        if not os.path.isfile(database):
-            raise FileNotFoundError(
-                'Database %s not found. Make sure to run test_generate before')
-
-        # declare the dataset instance
-        data_set = DataSet(
-            train_database=database,
-            valid_database=None,
-            test_database=None,
-            chain1='C',
-            chain2='D',
-            mapfly=False,
-            select_feature={
-                'AtomicDensities_ind': 'all',
-                'Feature_ind': [ 'coulomb', 'vdwaals', 'charge', 'PSSM_*']},
-            select_target='DOCKQ',
-            tqdm=True,
-            normalize_features=True,
-            normalize_targets=True,
-            clip_features=False,
-            pair_chain_feature=np.add,
-            dict_filter={
-                'IRMSD': '<4. or >10.'})
-
-        # create the network
-        model = NeuralNet(data_set, cnn2d, model_type='2d', task='reg',
-                          cuda=False, plot=True, outdir=out)
-
-        # start the training
-        model.train(
-            nepoch=5,
-            divide_trainset=0.8,
-            train_batch_size=2,
-            num_workers=0)
-
-    @unittest.skipIf(skip, "torch fails on Travis")
-    @staticmethod
-    def test_transfer():
-
-        # adress of the database
-        database = '1ak4.hdf5'
-
-        if not os.path.isfile(database):
-            raise FileNotFoundError(
-                'Database %s not found. Make sure to run test_generate before')
-
-        # clean the output dir
-        out = './out_test/'
-        if os.path.isdir(out):
-            for f in glob.glob(out + '/*'):
-                os.remove(f)
-            os.removedirs(out)
-
-        # create the network
-        model_name = './out_3d_fly/last_model.pth.tar'
-        model = NeuralNet(
-            database,
-            cnn3d,
-            pretrained_model=model_name,
-            chain1='C',
-            chain2='D',
-            outdir=out)
-        model.test()
+from deeprank.models.mutant import PdbMutantSelection
+from deeprank.generate.DataGenerator import DataGenerator
+from deeprank.learn.DataSet import DataSet
+from deeprank.learn.NeuralNet import NeuralNet
+from deeprank.learn.model3d import cnn_reg
+import deeprank.config
 
 
-if __name__ == "__main__":
+deeprank.config.DEBUG = True
 
-    TestLearn.test_learn_3d_reg_mapfly()
-    TestLearn.test_learn_3d_reg()
-    TestLearn.test_learn_3d_class()
-    TestLearn.test_learn_2d_reg()
-    TestLearn.test_transfer()
+
+def test_learn():
+    """ This test will simply run deeprank's learning code. It doesn't
+        test any particular feature or target classes.
+
+        The result of deeprank's learning is not verified. This test
+        only runs the code to be sure there are no exceptions thrown.
+    """
+
+    feature_modules = ["test.feature.feature1", "test.feature.feature2"]
+    target_modules = ["test.target.target1"]
+    pdb_path = "test/101M.pdb"
+    pssm_paths = {"A": "101M.A.pdb.pssm"}
+
+    atomic_densities = {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8}
+    grid_info = {
+       'number_of_points': [30,30,30],
+       'resolution': [1.,1.,1.],
+       'atomic_densities': atomic_densities,
+    }
+
+    mutant = PdbMutantSelection(pdb_path, "A", 10, "C", pssm_paths)
+
+    work_dir_path = mkdtemp()
+    try:
+        hdf5_path = os.path.join(work_dir_path, "test.hdf5")
+
+        # data_augmentation has been set to a high number, so that
+        # the train, valid and test set can be large enough.
+        data_generator = DataGenerator([mutant], data_augmentation=50,
+                                       compute_targets=target_modules,
+                                       compute_features=feature_modules,
+                                       hdf5=hdf5_path)
+
+        data_generator.create_database()
+
+        data_generator.map_features(grid_info)
+
+        dataset = DataSet(hdf5_path, grid_info=grid_info,
+                          select_feature='all',
+                          select_target='target1',
+                          normalize_features=False)
+
+        ok_(len(dataset) > 0)
+        ok_(dataset[0] is not None)
+
+        net_output_dir_path = os.path.join(work_dir_path, 'net-output')
+        neural_net = NeuralNet(dataset, cnn_reg, model_type='3d',task='reg',
+                               cuda=False, plot=True, outdir=net_output_dir_path)
+
+        neural_net.optimizer = optim.SGD(neural_net.net.parameters(),
+                                         lr=0.001,
+                                         momentum=0.9,
+                                         weight_decay=0.005)
+
+        neural_net.train(nepoch = 50, divide_trainset=0.8, train_batch_size = 5, num_workers=0)
+    finally:
+        rmtree(work_dir_path)

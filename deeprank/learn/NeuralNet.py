@@ -31,11 +31,8 @@ class NeuralNet():
                  model_type='3d', proj2d=0, task='reg',
                  class_weights = None,
                  pretrained_model=None,
-                 chain1='A',
-                 chain2='B',
                  cuda=False, ngpu=0,
                  plot=True,
-                 save_hitrate=True,
                  save_classmetrics=False,
                  outdir='./'):
         """Train a Convolutional Neural Network for DeepRank.
@@ -71,19 +68,13 @@ class NeuralNet():
                 Only applicable on 'class' task.
 
             pretrained_model (str): Saved model to be used for further
-                training or testing. When using pretrained model,
-                remember to set the following 'chain1' and 'chain2' for
-                the new data.
-            chain1 (str): first chain ID of new data when using pretrained model
-            chain2 (str): second chain ID of new data when using pretrained model
+                training or testing.
 
             cuda (bool): Use CUDA.
 
             ngpu (int): number of GPU to be used.
 
             plot (bool): Plot the prediction results.
-
-            save_hitrate (bool): Save and plot hit rate.
 
             save_classmetrics (bool): Save and plot classification metrics.
                 Classification metrics include:
@@ -102,7 +93,7 @@ class NeuralNet():
             >>> data_set = Dataset(...)
             >>> model = NeuralNet(data_set, cnn,
             ...                   model_type='3d', task='reg',
-            ...                   plot=True, save_hitrate=True,
+            ...                   plot=True,
             ...                   outdir='./out/')
             >>> model.train(nepoch = 50, divide_trainset=0.8,
             ...             train_batch_size = 5, num_workers=0)
@@ -144,8 +135,7 @@ class NeuralNet():
             # create the dataset if required
             # but don't process it yet
             if isinstance(self.data_set, (str, list)):
-                self.data_set = DataSet(self.data_set, chain1=chain1,
-                                    chain2=chain2, process=False)
+                self.data_set = DataSet(self.data_set, process=False)
 
             # load the model and
             # change dataset parameters
@@ -191,8 +181,6 @@ class NeuralNet():
         elif self.task == 'class':
             self.criterion = nn.CrossEntropyLoss(weight = self.class_weights, reduction='mean')
             self._plot_scatter = self._plot_boxplot_class
-            self.data_set.normalize_targets = False
-
         else:
             raise ValueError(
                 f"Task {self.task} not recognized. Options are:\n\t "
@@ -204,9 +192,6 @@ class NeuralNet():
 
         # plot or not plot
         self.plot = plot
-
-        # plot and save hitrate or not
-        self.save_hitrate = save_hitrate
 
         # plot and save classification metrics or not
         self.save_classmetrics = save_classmetrics
@@ -280,9 +265,6 @@ class NeuralNet():
             logger.info(f'=\t features : {feat_type}')
             for name in feat_names:
                 logger.info(f'=\t\t     {name}')
-        if self.data_set.pair_chain_feature is not None:
-            logger.info(f'=\t Pair     : '
-                        f'{self.data_set.pair_chain_feature.__name__}')
         logger.info(f'=\t targets  : {self.data_set.select_target}')
         logger.info(f'=\t CUDA     : {str(self.cuda)}')
         if self.cuda:
@@ -444,12 +426,9 @@ class NeuralNet():
 
         state = {'state_dict': self.net.state_dict(),
                  'optimizer': self.optimizer.state_dict(),
-                 'normalize_targets': self.data_set.normalize_targets,
                  'normalize_features': self.data_set.normalize_features,
                  'select_feature': self.data_set.select_feature,
                  'select_target': self.data_set.select_target,
-                 'target_ordering': self.data_set.target_ordering,
-                 'pair_chain_feature': self.data_set.pair_chain_feature,
                  'dict_filter': self.data_set.dict_filter,
                  'transform': self.data_set.transform,
                  'proj2D': self.data_set.proj2D,
@@ -457,7 +436,6 @@ class NeuralNet():
                  'clip_factor': self.data_set.clip_factor,
                  'grid_shape': self.data_set.grid_shape,
                  'grid_info': self.data_set.grid_info,
-                 'mapfly': self.data_set.mapfly,
                  'task': self.task,
                  'criterion': self.criterion,
                  'cuda': self.cuda
@@ -466,10 +444,6 @@ class NeuralNet():
         if self.data_set.normalize_features:
             state['feature_mean'] = self.data_set.feature_mean
             state['feature_std'] = self.data_set.feature_std
-
-        if self.data_set.normalize_targets:
-            state['target_min'] = self.data_set.target_min
-            state['target_max'] = self.data_set.target_max
 
         torch.save(state, filename)
 
@@ -491,13 +465,7 @@ class NeuralNet():
         self.data_set.select_feature = self.state['select_feature']
         self.data_set.select_target = self.state['select_target']
 
-        self.data_set.pair_chain_feature = self.state['pair_chain_feature']
         self.data_set.dict_filter = self.state['dict_filter']
-
-        self.data_set.normalize_targets = self.state['normalize_targets']
-        if self.data_set.normalize_targets:
-            self.data_set.target_min = self.state['target_min']
-            self.data_set.target_max = self.state['target_max']
 
         self.data_set.normalize_features = self.state['normalize_features']
         if self.data_set.normalize_features:
@@ -510,7 +478,6 @@ class NeuralNet():
         self.data_set.clip_features = self.state['clip_features']
         self.data_set.clip_factor = self.state['clip_factor']
         self.data_set.grid_shape = self.state['grid_shape']
-        self.data_set.mapfly = self.state['mapfly']
         self.data_set.grid_info = self.state['grid_info']
 
     def _divide_dataset(self, divide_set, preshuffle, preshuffle_seed):
@@ -734,11 +701,6 @@ class NeuralNet():
                         f"prediction_{epoch:04d}.png")
                     self._plot_scatter(figname)
 
-                if self.save_hitrate:
-                    figname = os.path.join(self.outdir,
-                        f"hitrate_{epoch:04d}.png")
-                    self.plot_hit_rate(figname)
-
                 self._export_epoch_hdf5(epoch, self.data)
 
             elif save_epoch == 'all':
@@ -773,8 +735,6 @@ class NeuralNet():
         # variables of the epoch
         running_loss = 0
         data = {'outputs': [], 'targets': [], 'mol': []}
-        if self.save_hitrate:
-            data['hit'] = None
 
         if self.save_classmetrics:
             for i in self.metricnames:
@@ -791,6 +751,7 @@ class NeuralNet():
         mini_batch = 0
 
         for d in data_loader:
+
             mini_batch = mini_batch + 1
 
             logger.info(f"\t\t-> mini-batch: {mini_batch} ")
@@ -837,21 +798,11 @@ class NeuralNet():
             data['mol'] += [(f, m) for f, m in zip(fname, molname)]
 
         # transform the output back
-        if self.data_set.normalize_targets:
-            data['outputs'] = self.data_set.backtransform_target(
-                np.array(data['outputs']))  # .flatten())
-            data['targets'] = self.data_set.backtransform_target(
-                np.array(data['targets']))  # .flatten())
-        else:
-            data['outputs'] = np.array(data['outputs'])  # .flatten()
-            data['targets'] = np.array(data['targets'])  # .flatten()
+        data['outputs'] = np.array(data['outputs'])  # .flatten()
+        data['targets'] = np.array(data['targets'])  # .flatten()
 
         # make np for export
         data['mol'] = np.array(data['mol'], dtype=object)
-
-        # get the relevance of the ranking
-        if self.save_hitrate:
-            data['hit'] = self._get_relevance(data)
 
         # get classification metrics
         if self.save_classmetrics:
@@ -991,6 +942,7 @@ class NeuralNet():
         ax.set_ylabel('Predictions')
 
         values = np.append(xvalues, yvalues)
+
         border = 0.1 * (values.max() - values.min())
         ax.plot([values.min() - border, values.max() + border],
                 [values.min() - border, values.max() + border])
@@ -1082,90 +1034,6 @@ class NeuralNet():
 
         fig.savefig(figname)
         plt.close()
-
-    def _compute_hitrate(self, irmsd_thr=4.0):
-
-        labels = ['train', 'valid', 'test']
-        self.hitrate = {}
-
-        # get the target ordering
-        inverse = self.data_set.target_ordering == 'lower'
-        if self.task == 'class':
-            inverse = False
-
-        for l in labels:
-
-            if l in self.data:
-
-                # get the target values
-                out = self.data[l]['outputs']
-
-                # get the irmsd
-                irmsd = []
-                for fname, mol in self.data[l]['mol']:
-
-                    f5 = h5py.File(fname, 'r')
-                    irmsd.append(f5[mol + '/targets/IRMSD'][()])
-                    f5.close()
-
-                # sort the data
-                if self.task == 'class':
-                    out = F.softmax(torch.FloatTensor(out),
-                                    dim=1).data.numpy()[:, 1]
-                ind_sort = np.argsort(out)
-
-                if not inverse:
-                    ind_sort = ind_sort[::-1]
-
-                # get the irmsd of the recommendation
-                irmsd = np.array(irmsd)[ind_sort]
-
-                # make a binary list out of that
-                binary_recomendation = (irmsd <= irmsd_thr).astype('int')
-
-                # number of recommended hit
-                npos = np.sum(binary_recomendation)
-                if npos == 0:
-                    npos = len(irmsd)
-                    warnings.warn(
-                        f'Non positive decoys found in {l} for hitrate plot')
-
-                # get the hitrate
-                self.data[l]['hitrate'] = rankingMetrics.hitrate(
-                    binary_recomendation, npos)
-                self.data[l]['relevance'] = binary_recomendation
-
-    def _get_relevance(self, data, irmsd_thr=4.0):
-
-        # get the target ordering
-        inverse = self.data_set.target_ordering == 'lower'
-        if self.task == 'class':
-            inverse = False
-
-        # get the target values
-        out = data['outputs']
-
-        # get the irmsd
-        irmsd = []
-        for fname, mol in data['mol']:
-
-            f5 = h5py.File(fname, 'r')
-            irmsd.append(f5[mol + '/targets/IRMSD'][()])
-            f5.close()
-
-        # sort the data
-        if self.task == 'class':
-            out = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()[:, 1]
-        ind_sort = np.argsort(out)
-
-        if not inverse:
-            ind_sort = ind_sort[::-1]
-
-        # get the irmsd of the recommendation
-        irmsd = np.array(irmsd)[ind_sort]
-
-        # make a binary list out of that
-        return (irmsd <= irmsd_thr).astype('int')
 
     def _get_classmetrics(self, data, metricname):
 

@@ -3,6 +3,7 @@ import unittest
 from time import time
 import shutil
 from tempfile import mkdtemp
+import logging
 
 import numpy
 import h5py
@@ -12,6 +13,9 @@ from deeprank.generate import *
 from deeprank.models.mutant import PdbMutantSelection
 from deeprank.tools.sparse import FLANgrid
 from deeprank.operate import hdf5data
+
+
+_log = logging.getLogger(__name__)
 
 
 def test_generate():
