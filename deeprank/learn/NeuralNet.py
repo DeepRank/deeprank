@@ -33,7 +33,6 @@ class NeuralNet():
                  pretrained_model=None,
                  cuda=False, ngpu=0,
                  plot=True,
-                 save_hitrate=False,
                  save_classmetrics=False,
                  outdir='./'):
         """Train a Convolutional Neural Network for DeepRank.
@@ -77,8 +76,6 @@ class NeuralNet():
 
             plot (bool): Plot the prediction results.
 
-            save_hitrate (bool): Save and plot hit rate.
-
             save_classmetrics (bool): Save and plot classification metrics.
                 Classification metrics include:
                 - accuracy(ACC)
@@ -96,7 +93,7 @@ class NeuralNet():
             >>> data_set = Dataset(...)
             >>> model = NeuralNet(data_set, cnn,
             ...                   model_type='3d', task='reg',
-            ...                   plot=True, save_hitrate=True,
+            ...                   plot=True,
             ...                   outdir='./out/')
             >>> model.train(nepoch = 50, divide_trainset=0.8,
             ...             train_batch_size = 5, num_workers=0)
@@ -195,9 +192,6 @@ class NeuralNet():
 
         # plot or not plot
         self.plot = plot
-
-        # plot and save hitrate or not
-        self.save_hitrate = save_hitrate
 
         # plot and save classification metrics or not
         self.save_classmetrics = save_classmetrics
@@ -435,7 +429,6 @@ class NeuralNet():
                  'normalize_features': self.data_set.normalize_features,
                  'select_feature': self.data_set.select_feature,
                  'select_target': self.data_set.select_target,
-                 'target_ordering': self.data_set.target_ordering,
                  'dict_filter': self.data_set.dict_filter,
                  'transform': self.data_set.transform,
                  'proj2D': self.data_set.proj2D,
@@ -708,11 +701,6 @@ class NeuralNet():
                         f"prediction_{epoch:04d}.png")
                     self._plot_scatter(figname)
 
-                if self.save_hitrate:
-                    figname = os.path.join(self.outdir,
-                        f"hitrate_{epoch:04d}.png")
-                    self.plot_hit_rate(figname)
-
                 self._export_epoch_hdf5(epoch, self.data)
 
             elif save_epoch == 'all':
@@ -747,8 +735,6 @@ class NeuralNet():
         # variables of the epoch
         running_loss = 0
         data = {'outputs': [], 'targets': [], 'mol': []}
-        if self.save_hitrate:
-            data['hit'] = None
 
         if self.save_classmetrics:
             for i in self.metricnames:
@@ -817,10 +803,6 @@ class NeuralNet():
 
         # make np for export
         data['mol'] = np.array(data['mol'], dtype=object)
-
-        # get the relevance of the ranking
-        if self.save_hitrate:
-            data['hit'] = self._get_relevance(data)
 
         # get classification metrics
         if self.save_classmetrics:
@@ -1052,90 +1034,6 @@ class NeuralNet():
 
         fig.savefig(figname)
         plt.close()
-
-    def _compute_hitrate(self, irmsd_thr=4.0):
-
-        labels = ['train', 'valid', 'test']
-        self.hitrate = {}
-
-        # get the target ordering
-        inverse = self.data_set.target_ordering == 'lower'
-        if self.task == 'class':
-            inverse = False
-
-        for l in labels:
-
-            if l in self.data:
-
-                # get the target values
-                out = self.data[l]['outputs']
-
-                # get the irmsd
-                irmsd = []
-                for fname, mol in self.data[l]['mol']:
-
-                    f5 = h5py.File(fname, 'r')
-                    irmsd.append(f5[mol + '/targets/IRMSD'][()])
-                    f5.close()
-
-                # sort the data
-                if self.task == 'class':
-                    out = F.softmax(torch.FloatTensor(out),
-                                    dim=1).data.numpy()[:, 1]
-                ind_sort = np.argsort(out)
-
-                if not inverse:
-                    ind_sort = ind_sort[::-1]
-
-                # get the irmsd of the recommendation
-                irmsd = np.array(irmsd)[ind_sort]
-
-                # make a binary list out of that
-                binary_recomendation = (irmsd <= irmsd_thr).astype('int')
-
-                # number of recommended hit
-                npos = np.sum(binary_recomendation)
-                if npos == 0:
-                    npos = len(irmsd)
-                    warnings.warn(
-                        f'Non positive decoys found in {l} for hitrate plot')
-
-                # get the hitrate
-                self.data[l]['hitrate'] = rankingMetrics.hitrate(
-                    binary_recomendation, npos)
-                self.data[l]['relevance'] = binary_recomendation
-
-    def _get_relevance(self, data, irmsd_thr=4.0):
-
-        # get the target ordering
-        inverse = self.data_set.target_ordering == 'lower'
-        if self.task == 'class':
-            inverse = False
-
-        # get the target values
-        out = data['outputs']
-
-        # get the irmsd
-        irmsd = []
-        for fname, mol in data['mol']:
-
-            f5 = h5py.File(fname, 'r')
-            irmsd.append(f5[mol + '/targets/IRMSD'][()])
-            f5.close()
-
-        # sort the data
-        if self.task == 'class':
-            out = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()[:, 1]
-        ind_sort = np.argsort(out)
-
-        if not inverse:
-            ind_sort = ind_sort[::-1]
-
-        # get the irmsd of the recommendation
-        irmsd = np.array(irmsd)[ind_sort]
-
-        # make a binary list out of that
-        return (irmsd <= irmsd_thr).astype('int')
 
     def _get_classmetrics(self, data, metricname):
 

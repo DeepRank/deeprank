@@ -63,7 +63,7 @@ def test_learn():
         ok_(dataset[0] is not None)
 
         net_output_dir_path = os.path.join(work_dir_path, 'net-output')
-        neural_net = NeuralNet(dataset, cnn_reg, model_type='3d',task='reg', save_hitrate=False,
+        neural_net = NeuralNet(dataset, cnn_reg, model_type='3d',task='reg',
                                cuda=False, plot=True, outdir=net_output_dir_path)
 
         neural_net.optimizer = optim.SGD(neural_net.net.parameters(),
