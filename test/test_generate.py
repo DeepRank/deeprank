@@ -10,7 +10,7 @@ import h5py
 from nose.tools import eq_, ok_
 
 from deeprank.generate import *
-from deeprank.models.mutant import PdbMutantSelection
+from deeprank.models.variant import PdbVariantSelection
 from deeprank.tools.sparse import FLANgrid
 from deeprank.operate import hdf5data
 
@@ -40,33 +40,33 @@ def test_generate():
     target_names = ["test.target.target1"]
 
     pdb_path = "test/101m.pdb"
-    mutants = [PdbMutantSelection(pdb_path, 'A', 25, 'A')]
+    variants = [PdbVariantSelection(pdb_path, 'A', 25, 'A')]
 
     tmp_dir = mkdtemp()
     try:
         hdf5_path = os.path.join(tmp_dir, "data.hdf5")
 
         # Make the class put the data in the HDF5 file:
-        data_generator = DataGenerator(mutants, None, target_names, feature_names, 1, hdf5_path)
+        data_generator = DataGenerator(variants, None, target_names, feature_names, 1, hdf5_path)
         data_generator.create_database()
         data_generator.map_features(grid_info)
 
-        # Read the resulting HDF5 file and check for all mutant data.
+        # Read the resulting HDF5 file and check for all variant data.
         with h5py.File(hdf5_path, 'r') as f5:
             eq_(list(f5.attrs['targets']), target_names)
             eq_(list(f5.attrs['features']), feature_names)
 
-            for mutant in mutants:
-                mutant_name = hdf5data.get_mutant_group_name(mutant)
+            for variant in variants:
+                variant_name = hdf5data.get_variant_group_name(variant)
 
                 # Check that the right number of grid point coordinates have been stored and are equally away from each other:
                 for coord in ['x', 'y', 'z']:
-                    coords = f5["%s/grid_points/%s" % (mutant_name, coord)]
+                    coords = f5["%s/grid_points/%s" % (variant_name, coord)]
                     for i in range(number_of_points - 1):
                         eq_(coords[i + 1] - coords[i], resolution)
 
                 # Check for mapped features in the HDF5 file:
-                feature_path = "%s/mapped_features/Feature_ind" % mutant_name
+                feature_path = "%s/mapped_features/Feature_ind" % variant_name
                 feature_keys = f5[feature_path].keys()
                 for feature_name in feature_names:
                     feature_name = feature_name.split('.')[-1]
@@ -75,13 +75,13 @@ def test_generate():
 
                 # Check that the atomic densities are present in the HDF5 file:
                 for element_name in atomic_densities:
-                    density_path = "%s/mapped_features/AtomicDensities_ind/%s_%s" % (mutant_name, element_name, mutant.chain_id)
+                    density_path = "%s/mapped_features/AtomicDensities_ind/%s_%s" % (variant_name, element_name, variant.chain_id)
                     ok_(len(f5[density_path]) > 0)
 
                 # Check that the target values have been placed in the HDF5 file:
                 for target_name in target_names:
                     target_name = target_name.split('.')[-1]
-                    target_path = "%s/targets" % mutant_name
+                    target_path = "%s/targets" % variant_name
                     ok_(target_name in f5[target_path])
     finally:
         shutil.rmtree(tmp_dir)

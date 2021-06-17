@@ -271,7 +271,7 @@ class AtomicContacts(FeatureClass):
 
         return None
 
-    def __init__(self, mutant,
+    def __init__(self, variant,
                  top_path, param_path, patch_path,
                  max_contact_distance=8.5):
         """Build a new residue contacts feature object
@@ -288,7 +288,7 @@ class AtomicContacts(FeatureClass):
 
         super().__init__("Atomic")
 
-        self.mutant = mutant
+        self.variant = variant
         self.max_contact_distance = max_contact_distance
 
         self.top_path = top_path
@@ -298,7 +298,7 @@ class AtomicContacts(FeatureClass):
     def __enter__(self):
         "open the with-clause"
 
-        self.sqldb = pdb2sql.interface(self.mutant.pdb_path)
+        self.sqldb = pdb2sql.interface(self.variant.pdb_path)
         return self
 
     def __exit__(self, exc_type, exc, tb):
@@ -351,8 +351,8 @@ class AtomicContacts(FeatureClass):
         "find out which atoms of the pdb file lie within the max distance of the residue"
 
         self._contact_atom_pairs = get_residue_contact_atom_pairs(self.sqldb,
-                                                                  self.mutant.chain_id,
-                                                                  self.mutant.residue_number,
+                                                                  self.variant.chain_id,
+                                                                  self.variant.residue_number,
                                                                   self.max_contact_distance)
 
     def _extend_contact_to_residues(self):
@@ -516,14 +516,14 @@ class AtomicContacts(FeatureClass):
         self._evaluate_physics()
 
 
-def __compute_feature__(pdb_path, feature_group, raw_feature_group, mutant):
+def __compute_feature__(pdb_path, feature_group, raw_feature_group, variant):
 
     forcefield_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'forcefield')
     top_path = os.path.join(forcefield_path, 'protein-allhdg5-4_new.top')
     param_path = os.path.join(forcefield_path, 'protein-allhdg5-4_new.param')
     patch_path = os.path.join(forcefield_path, 'patch.top')
 
-    with AtomicContacts(mutant, top_path, param_path, patch_path) as feature_object:
+    with AtomicContacts(variant, top_path, param_path, patch_path) as feature_object:
 
         feature_object.evaluate()
 

@@ -24,7 +24,7 @@ def logif(string, cond): return logger.info(string) if cond else None
 
 class GridTools(object):
 
-    def __init__(self, mutant_group, mutant,
+    def __init__(self, variant_group, variant,
                  number_of_points=30, resolution=1.,
                  atomic_densities=None, atomic_densities_mode='ind',
                  feature=None, feature_mode='ind',
@@ -34,8 +34,8 @@ class GridTools(object):
         """Map the feature of a complex on the grid.
 
         Args:
-            mutant_group(str): name of the group of the mutant in the HDF5 file.
-            mutant (PdbMutantSelection): The mutant
+            variant_group(str): name of the group of the variant in the HDF5 file.
+            variant (PdbVariantSelection): The variant
             number_of_points(int, optional): number of points we want in
                 each direction of the grid.
             resolution(float, optional): distance(in Angs) between two points.
@@ -45,7 +45,7 @@ class GridTools(object):
                 (deprecated must be 'ind').
             feature(None, optional): Name of the features to be mapped.
                 By default all the features present in
-                hdf5_file['< mutant_group > /features/] will be mapped.
+                hdf5_file['< variant_group > /features/] will be mapped.
             feature_mode(str, optional): Mode for mapping
                 (deprecated must be 'ind').
             contact_distance(float, optional): the dmaximum distance
@@ -66,15 +66,15 @@ class GridTools(object):
                 sparse format (default True).
         """
 
-        # mutant and hdf5 file
-        self.mutant_group = mutant_group
-        self.mutant_basename = mutant_group.name
+        # variant and hdf5 file
+        self.variant_group = variant_group
+        self.variant_basename = variant_group.name
 
-        # mutant query
-        self.mutant = mutant
+        # variant query
+        self.variant = variant
 
         # hdf5 file to strore data
-        self.hdf5 = self.mutant_group.file
+        self.hdf5 = self.variant_group.file
         self.try_sparse = try_sparse
 
         # parameter of the grid
@@ -138,15 +138,15 @@ class GridTools(object):
         # if we already have an output containing the grid
         # we update the existing features
         _update_ = False
-        if self.mutant_basename + '/grid_points/x' in self.hdf5:
+        if self.variant_basename + '/grid_points/x' in self.hdf5:
             _update_ = True
 
         if _update_:
-            logif(f'\n=Updating grid data for {self.mutant_basename}.',
+            logif(f'\n=Updating grid data for {self.variant_basename}.',
                   self.time)
             self.update_feature()
         else:
-            logif(f'\n= Creating grid and grid data for {self.mutant_basename}.',
+            logif(f'\n= Creating grid and grid data for {self.variant_basename}.',
                   self.time)
             self.create_new_data()
 
@@ -186,7 +186,7 @@ class GridTools(object):
         self.read_pdb()
 
         # read the grid from the hdf5
-        grid = self.hdf5.get(self.mutant_basename + '/grid_points/')
+        grid = self.hdf5.get(self.variant_basename + '/grid_points/')
         self.x, self.y, self.z = grid['x'][()], grid['y'][()], grid['z'][()]
 
         # create the grid
@@ -212,14 +212,14 @@ class GridTools(object):
     def read_pdb(self):
         """Create a sql databse for the pdb."""
 
-        self.sqldb = pdb2sql.interface(self.mutant_group.attrs['pdb_path'])
+        self.sqldb = pdb2sql.interface(self.variant_group.attrs['pdb_path'])
 
     # get the contact atoms and interface center
     def get_contact_center(self):
         """Get the center of conact atoms."""
 
         contact_atom_pairs = get_residue_contact_atom_pairs(self.sqldb,
-                                                            self.mutant.chain_id, self.mutant.residue_number,
+                                                            self.variant.chain_id, self.variant.residue_number,
                                                             self.contact_distance)
         contact_atom_ids = set([])
         for atom1, atom2 in contact_atom_pairs:
@@ -238,7 +238,7 @@ class GridTools(object):
     # add all the residue features to the data
 
     def add_all_features(self):
-        """Add all the features toa given mutant."""
+        """Add all the features toa given variant."""
 
         # map the features
         if self.feature is not None:
@@ -341,7 +341,7 @@ class GridTools(object):
         # get the contact atoms
         atoms_by_chain = {}
         if only_contact:
-            contact_atom_pairs = get_residue_contact_atom_pairs(self.sqldb, self.mutant.chain_id, self.mutant.residue_number, self.contact_distance)
+            contact_atom_pairs = get_residue_contact_atom_pairs(self.sqldb, self.variant.chain_id, self.variant.residue_number, self.contact_distance)
 
             for atom1, atom2 in contact_atom_pairs:
                 atoms_by_chain[atom1.chain_id] = atoms_by_chain.get(atom1.chain_id, []) + [atom1]
@@ -510,7 +510,7 @@ class GridTools(object):
                      self.npts[1], self.npts[2]), self.time)
 
             # read the data
-            featgrp = self.mutant_group['features']
+            featgrp = self.variant_group['features']
             if feature_name in featgrp.keys():
                 data = featgrp[feature_name][:]
             else:
@@ -734,8 +734,8 @@ class GridTools(object):
     def export_grid_points(self):
         """export the grid points to the hdf5 file."""
 
-        hdf5data.store_grid_points(self.mutant_group, self.x, self.y, self.z)
-        hdf5data.store_grid_center(self.mutant_group, self.center_contact)
+        hdf5data.store_grid_points(self.variant_group, self.x, self.y, self.z)
+        hdf5data.store_grid_center(self.variant_group, self.center_contact)
 
     # save the data in the hdf5 file
 
@@ -747,6 +747,6 @@ class GridTools(object):
             data_name(str): feature name
         """
 
-        hdf5data.store_grid_data(self.mutant_group, data_name, dict_data, try_sparse=self.try_sparse)
+        hdf5data.store_grid_data(self.variant_group, data_name, dict_data, try_sparse=self.try_sparse)
 
 ########################################################################

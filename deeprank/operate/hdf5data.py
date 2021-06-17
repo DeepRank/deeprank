@@ -2,79 +2,79 @@ import os
 
 import numpy
 
-from deeprank.models.mutant import PdbMutantSelection
+from deeprank.models.variant import PdbVariantSelection
 from deeprank.tools import sparse
 
 
-def get_mutant_group_name(mutant):
+def get_variant_group_name(variant):
     """
         Args:
-            mutant (PdbMutantSelection): a mutant object
-        Returns (str): an unique name for a given mutant object
+            variant (PdbVariantSelection): a variant object
+        Returns (str): an unique name for a given variant object
     """
 
-    mol_name = os.path.splitext(os.path.basename(mutant.pdb_path))[0]
+    mol_name = os.path.splitext(os.path.basename(variant.pdb_path))[0]
 
-    return "%s-%s" % (mol_name, str(hash(mutant)).replace('-', 'm'))
+    return "%s-%s" % (mol_name, str(hash(variant)).replace('-', 'm'))
 
 
-def store_mutant(mutant_group, mutant):
-    """ Stores the mutant in the HDF5 mutant group
+def store_variant(variant_group, variant):
+    """ Stores the variant in the HDF5 variant group
 
         Args:
-            mutant_group (HDF5 group): the group belonging to the mutant selection
-            mutant (PdbMutantSelection): the mutant object
+            variant_group (HDF5 group): the group belonging to the variant selection
+            variant (PdbVariantSelection): the variant object
     """
 
-    mutant_group.attrs['pdb_path'] = mutant.pdb_path
+    variant_group.attrs['pdb_path'] = variant.pdb_path
 
-    for chain_id in mutant.get_pssm_chains():
-        mutant_group.attrs['pssm_path_%s' % chain_id] = mutant.get_pssm_path(chain_id)
+    for chain_id in variant.get_pssm_chains():
+        variant_group.attrs['pssm_path_%s' % chain_id] = variant.get_pssm_path(chain_id)
 
-    mutant_group.attrs['mutant_chain_id'] = mutant.chain_id
+    variant_group.attrs['variant_chain_id'] = variant.chain_id
 
-    mutant_group.attrs['mutant_residue_number'] = mutant.residue_number
+    variant_group.attrs['variant_residue_number'] = variant.residue_number
 
-    mutant_group.attrs['mutant_amino_acid'] = mutant.mutant_amino_acid
+    variant_group.attrs['variant_amino_acid'] = variant.amino_acid
 
 
-def load_mutant(mutant_group):
-    """ Loads the mutant from the HDF5 mutant group
+def load_variant(variant_group):
+    """ Loads the variant from the HDF5 variant group
 
         Args:
-            mutant_group (HDF5 group): the group belonging to the mutant selection
+            variant_group (HDF5 group): the group belonging to the variant selection
 
-        Returns (PdbMutantSelection): the mutant object
+        Returns (PdbVariantSelection): the variant object
     """
 
-    pdb_path = mutant_group.attrs['pdb_path']
+    pdb_path = variant_group.attrs['pdb_path']
 
     pssm_paths_by_chain = {}
-    for attr_name in mutant_group.attrs:
+    for attr_name in variant_group.attrs:
         if attr_name.startswith("pssm_path_"):
             chain_id = attr_name.split('_')[-1]
-            pssm_paths_by_chain[chain_id] = mutant_group.attrs[attr_name]
+            pssm_paths_by_chain[chain_id] = variant_group.attrs[attr_name]
 
-    chain_id = mutant_group.attrs['mutant_chain_id']
+    chain_id = variant_group.attrs['variant_chain_id']
 
-    residue_number = mutant_group.attrs['mutant_residue_number']
+    residue_number = variant_group.attrs['variant_residue_number']
 
-    amino_acid = mutant_group.attrs['mutant_amino_acid']
+    amino_acid = variant_group.attrs['variant_amino_acid']
 
-    mutant = PdbMutantSelection(pdb_path, chain_id, residue_number, amino_acid, pssm_paths_by_chain)
+    variant = PdbVariantSelection(pdb_path, chain_id, residue_number, amino_acid, pssm_paths_by_chain)
 
-    return mutant
+    return variant
 
 
-def store_grid_center(mutant_group, center):
-    """ Stores the center position in the HDF5 mutant group
+def store_grid_center(variant_group, center):
+    """ Stores the center position in the HDF5 variant group
 
         Args:
-            mutant_group (HDF5 group): the group belonging to the mutant selection
+            variant_group (HDF5 group): the group belonging to the variant selection
             center (float, float, float): xyz position of the center
     """
 
-    grid_group = mutant_group.require_group("grid_points")
+    grid_group = variant_group.require_group("grid_points")
 
     if 'center' in grid_group:
         del(grid_group['center'])
@@ -82,31 +82,31 @@ def store_grid_center(mutant_group, center):
     grid_group.create_dataset('center', data=center)
 
 
-def load_grid_center(mutant_group):
-    """ Loads the center position from the HDF5 mutant group
+def load_grid_center(variant_group):
+    """ Loads the center position from the HDF5 variant group
 
         Args:
-            mutant_group (HDF5 group): the group belonging to the mutant selection
+            variant_group (HDF5 group): the group belonging to the variant selection
 
         Returns (float, float, float): xyz position of the center
     """
 
-    grid_group = mutant_group['grid_points']
+    grid_group = variant_group['grid_points']
 
     return numpy.array(grid_group['center'])
 
 
-def store_grid_points(mutant_group, x_coords, y_coords, z_coords):
-    """ Stores the grid point coordinates in the HDF5 mutant group
+def store_grid_points(variant_group, x_coords, y_coords, z_coords):
+    """ Stores the grid point coordinates in the HDF5 variant group
 
         Args:
-            mutant_group (HDF5 group): the group belonging to the mutant selection
+            variant_group (HDF5 group): the group belonging to the variant selection
             x_coords (list(float)): the x coords of the grid points
             y_coords (list(float)): the y coords of the grid points
             z_coords (list(float)): the z coords of the grid points
     """
 
-    grid_group = mutant_group.require_group("grid_points")
+    grid_group = variant_group.require_group("grid_points")
 
     for coord in ['x', 'y', 'z']:
         if coord in grid_group:
@@ -117,16 +117,16 @@ def store_grid_points(mutant_group, x_coords, y_coords, z_coords):
     grid_group.create_dataset('z', data=z_coords)
 
 
-def load_grid_points(mutant_group):
-    """ Loads the grid point coordinates from the HDF5 mutant group
+def load_grid_points(variant_group):
+    """ Loads the grid point coordinates from the HDF5 variant group
 
         Args:
-            mutant_group (HDF5 group): the group belonging to the mutant selection
+            variant_group (HDF5 group): the group belonging to the variant selection
 
         Returns (list(float), list(float), list(float)): the x, y and z coordinates of the grid points
     """
 
-    grid_group = mutant_group['grid_points']
+    grid_group = variant_group['grid_points']
 
     x_coords = numpy.array(grid_group['x'])
     y_coords = numpy.array(grid_group['y'])
@@ -135,16 +135,16 @@ def load_grid_points(mutant_group):
     return (x_coords, y_coords, z_coords)
 
 
-def store_grid_data(mutant_group, feature_name, feature_dict, try_sparse=True):
-    """ Store 3D grid data in a mutant group.
+def store_grid_data(variant_group, feature_name, feature_dict, try_sparse=True):
+    """ Store 3D grid data in a variant group.
 
         Args:
-            mutant_group (HDF5 group): the group belonging to the mutant selection
+            variant_group (HDF5 group): the group belonging to the variant selection
             feature_name (str): the name of the feature to store
             feature_dict (dict(str, matrix(number))): a dictionary, containing the data per subfeature name
     """
 
-    feature_group = mutant_group.require_group("mapped_features/%s" % feature_name)
+    feature_group = variant_group.require_group("mapped_features/%s" % feature_name)
 
     for subfeature_name, subfeature_data in feature_dict.items():
 
@@ -170,19 +170,19 @@ def store_grid_data(mutant_group, feature_name, feature_dict, try_sparse=True):
             subfeature_group.create_dataset('value', data=subfeature_data, compression='gzip', compression_opts=9)
 
 
-def load_grid_data(mutant_group, feature_name):
-    """ Load 3D grid data from a mutant group
+def load_grid_data(variant_group, feature_name):
+    """ Load 3D grid data from a variant group
 
         Args:
-            mutant_group (HDF5 group): the group belonging to the mutant selection
+            variant_group (HDF5 group): the group belonging to the variant selection
             feature_name (str): the name of the feature to store
 
         Returns (dict(str, matrix(number))): a dictionary, containing the data per subfeature name
     """
 
-    grid_shape = numpy.shape(load_grid_points(mutant_group))
+    grid_shape = numpy.shape(load_grid_points(variant_group))
 
-    feature_group = mutant_group["mapped_features/%s" % feature_name]
+    feature_group = variant_group["mapped_features/%s" % feature_name]
 
     grid_data = {}
     for subfeature_name in feature_group.keys():

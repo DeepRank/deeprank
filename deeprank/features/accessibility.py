@@ -10,17 +10,17 @@ from deeprank.operate.pdb import get_residue_contact_atom_pairs
 _log = logging.getLogger(__name__)
 
 
-def get_atoms_of_iterest(mutant, distance_cutoff):
+def get_atoms_of_iterest(variant, distance_cutoff):
 
-    pdb = pdb2sql(mutant.pdb_path)
+    pdb = pdb2sql(variant.pdb_path)
     try:
         atoms = set([])
         for atom1, atom2 in get_residue_contact_atom_pairs(pdb,
-                                                           mutant.chain_id,
-                                                           mutant.residue_number,
+                                                           variant.chain_id,
+                                                           variant.residue_number,
                                                            distance_cutoff):
 
-            # Add all atoms, even from the mutant residue itself:
+            # Add all atoms, even from the variant residue itself:
             atoms.add(atom1)
             atoms.add(atom2)
 
@@ -32,14 +32,14 @@ def get_atoms_of_iterest(mutant, distance_cutoff):
 FEATURE_NAME = "accessibility"
 
 
-def __compute_feature__(pdb_data, featgrp, featgrp_raw, mutant):
+def __compute_feature__(pdb_data, featgrp, featgrp_raw, variant):
     "computes SASA-based features"
 
-    # Let pdb2sql tell us which atoms are around the mutant residue:
+    # Let pdb2sql tell us which atoms are around the variant residue:
     distance_cutoff = 8.5
     atoms_keys = set([])
     chain_ids = set([])
-    for atom in get_atoms_of_iterest(mutant, distance_cutoff):
+    for atom in get_atoms_of_iterest(variant, distance_cutoff):
         atom_key = (atom.chain_id.strip(), int(atom.residue.number), atom.name.strip())
         atoms_keys.add(atom_key)
         chain_ids.add(atom.chain_id)
@@ -47,7 +47,7 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw, mutant):
         _log.debug("contact atom: {}".format(atom_key))
 
     # Get structure and area data from SASA:
-    structure = freesasa.Structure(mutant.pdb_path)
+    structure = freesasa.Structure(variant.pdb_path)
     result = freesasa.calc(structure)
 
     # Give each chain id a number:

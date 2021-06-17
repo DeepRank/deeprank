@@ -6,33 +6,33 @@ import numpy
 import h5py
 from nose.tools import eq_, ok_
 
-from deeprank.models.mutant import PdbMutantSelection
+from deeprank.models.variant import PdbVariantSelection
 from deeprank.operate import hdf5data
 
 
 def test_group_name():
-    mutant1 = PdbMutantSelection("not/existent/pdb.1", 'A', 111, 'M', {'A': 'not/existent/pssm.A.1'})
-    mutant2 = PdbMutantSelection("not/existent/pdb.2", 'A', 22, 'W', {'A': 'not/existent/pssm.A.2'})
+    variant1 = PdbVariantSelection("not/existent/pdb.1", 'A', 111, 'M', {'A': 'not/existent/pssm.A.1'})
+    variant2 = PdbVariantSelection("not/existent/pdb.2", 'A', 22, 'W', {'A': 'not/existent/pssm.A.2'})
 
-    ok_(hdf5data.get_mutant_group_name(mutant1) != hdf5data.get_mutant_group_name(mutant2))
-    eq_(hdf5data.get_mutant_group_name(mutant1), hdf5data.get_mutant_group_name(mutant1))
-    eq_(hdf5data.get_mutant_group_name(mutant2), hdf5data.get_mutant_group_name(mutant2))
+    ok_(hdf5data.get_variant_group_name(variant1) != hdf5data.get_variant_group_name(variant2))
+    eq_(hdf5data.get_variant_group_name(variant1), hdf5data.get_variant_group_name(variant1))
+    eq_(hdf5data.get_variant_group_name(variant2), hdf5data.get_variant_group_name(variant2))
 
 
-def test_mutant():
-    start_mutant = PdbMutantSelection("not/existent/pdb", 'A', 111, 'M', {'A': 'not/existent/pssm.A'})
+def test_variant():
+    start_variant = PdbVariantSelection("not/existent/pdb", 'A', 111, 'M', {'A': 'not/existent/pssm.A'})
 
     temp_dir_path = mkdtemp()
     try:
         hdf5_path = os.path.join(temp_dir_path, "test.hdf5")
         with h5py.File(hdf5_path, 'w') as f5:
-            group = f5.require_group("mutant1")
+            group = f5.require_group("variant1")
 
-            hdf5data.store_mutant(group, start_mutant)
+            hdf5data.store_variant(group, start_variant)
 
-            end_mutant = hdf5data.load_mutant(group)
+            end_variant = hdf5data.load_variant(group)
 
-            eq_(start_mutant, end_mutant)
+            eq_(start_variant, end_variant)
     finally:
         rmtree(temp_dir_path)
 
@@ -72,7 +72,7 @@ def test_grid():
         hdf5_path = os.path.join(temp_dir_path, "test.hdf5")
 
         with h5py.File(hdf5_path, 'w') as f5:
-            group = f5.require_group("mutant2")
+            group = f5.require_group("variant2")
 
             hdf5data.store_grid_points(group, x_coords, y_coords, z_coords)
             hdf5data.store_grid_center(group, center)

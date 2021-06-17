@@ -68,6 +68,7 @@ We give here the tutorial like introduction to the DeepRank machinery. More info
 The generation of the data require only require PDBs files of decoys and their native and the PSSM if needed. All the features/targets and mapped features onto grid points will be auomatically calculated and store in a HDF5 file.
 
 ```python
+from deeprank.models.variant import *
 from deeprank.generate import *
 from mpi4py import MPI
 
@@ -75,39 +76,34 @@ comm = MPI.COMM_WORLD
 
 # let's put this sample script in the test folder, so the working path will be deeprank/test/
 # name of the hdf5 to generate
-h5file = './hdf5/1ak4.hdf5'
+hdf5_path = '1ak4.hdf5'
 
-# for each hdf5 file where to find the pdbs
-pdb_source = ['./1AK4/decoys/']
+# where to find the native conformation
+pdb_path = "test/1AK4/native/1AK4.pdb"
 
-
-# where to find the native conformations
-# pdb_native is only used to calculate i-RMSD, dockQ and so on.
-# The native pdb files will not be saved in the hdf5 file
-pdb_native = ['./1AK4/native/']
-
+# The variant data
+chain_id = "C"
+pdb_resnum = 10
+amino_acid = "T"
 
 # where to find the pssm
-pssm_source = './1AK4/pssm_new/'
+pssm_paths = {"C": "test/1AK4/pssm_new/1AK4.C.pssm",
+              "D": "test/1AK4/pssm_new/1AK4.D.pssm"}
+
+variant_class = VariantClass.BENIGN
+
+variant = PdbVariantSelection(pdb_path, chain_id, pdb_resnum, amino_acid, pssm_paths, variant_class)
 
 
 # initialize the database
-database = DataGenerator(
-    chain1='C', chain2='D',
-    pdb_source=pdb_source,
-    pdb_native=pdb_native,
-    pssm_source=pssm_source,
-    data_augmentation=0,
-    compute_targets=[
-        'deeprank.targets.dockQ',
-        'deeprank.targets.binary_class'],
+database = DataGenerator(variants=[variant],
+    data_augmentation=10,
+    compute_targets=['deeprank.targets.variant_class'],
     compute_features=[
-        'deeprank.features.AtomicFeature',
-        'deeprank.features.FullPSSM',
-        'deeprank.features.PSSM_IC',
-        'deeprank.features.BSA',
-        'deeprank.features.ResidueDensity'],
-    hdf5=h5file,
+        'deeprank.features.atomic_contacts',
+        'deeprank.features.neighbour_profile',
+        'deeprank.features.accessibility'],
+    hdf5=hdf5_path,
     mpi_comm=comm)
 
 
@@ -139,8 +135,7 @@ In  the first part of the script we define the path where to find the PDBs of th
 
 We then initialize the `DataGenerator` object. This object (defined in `deeprank/generate/DataGenerator.py`) needs a few input parameters:
 
--   pdb_source: where to find the pdb to include in the dataset
--   pdb_native: where to find the corresponding native conformations
+-   variants: a selection of variant objects that make up the dataset
 -   compute_targets: list of modules used to compute the targets
 -   compute_features: list of modules used to compute the features
 -   hdf5: Name of the HDF5 file to store the data set
@@ -168,25 +163,18 @@ import torch.optim as optim
 import numpy as np
 
 # input database
-database = '1ak4.hdf5'
+hdf5_path = '1ak4.hdf5'
 
 # output directory
 out = './my_DL_test/'
 
 # declare the dataset instance
 data_set = DataSet(database,
-            chain1='C',
-            chain2='D',
             grid_info={
                 'number_of_points': (10, 10, 10),
                 'resolution': (3, 3, 3)},
-            select_feature={
-                'AtomicDensities': {'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.8},
-                'Features': ['coulomb', 'vdwaals', 'charge', 'PSSM_*']},
-            select_target='DOCKQ',
-            normalize_features = True, normalize_targets=True,
-            pair_chain_feature=np.add,
-            dict_filter={'DOCKQ':'<1'})
+            select_feature='all',
+            select_target='class')
 
 
 # create the network
@@ -200,7 +188,7 @@ model.optimizer = optim.SGD(model.net.parameters(),
                             weight_decay=0.005)
 
 # start the training
-model.train(nepoch = 50,divide_trainset=0.8, train_batch_size = 5,num_workers=0)
+model.train(nepoch=50, divide_trainset=0.8, train_batch_size=5, num_workers=0)
 ```
 
 In the first part of the script we create a Torch database from the HDF5 file. We can specify one or several HDF5 files and even select some conformations using the `dict_filter` argument. Other options of `DataSet` can be used to specify the features/targets the normalization, etc ...

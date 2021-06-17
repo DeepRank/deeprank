@@ -6,7 +6,7 @@ import numpy
 import torch.optim as optim
 from nose.tools import ok_
 
-from deeprank.models.mutant import PdbMutantSelection
+from deeprank.models.variant import PdbVariantSelection
 from deeprank.generate.DataGenerator import DataGenerator
 from deeprank.learn.DataSet import DataSet
 from deeprank.learn.NeuralNet import NeuralNet
@@ -37,7 +37,7 @@ def test_learn():
        'atomic_densities': atomic_densities,
     }
 
-    mutant = PdbMutantSelection(pdb_path, "A", 10, "C", pssm_paths)
+    variant = PdbVariantSelection(pdb_path, "A", 10, "C", pssm_paths)
 
     work_dir_path = mkdtemp()
     try:
@@ -45,7 +45,7 @@ def test_learn():
 
         # data_augmentation has been set to a high number, so that
         # the train, valid and test set can be large enough.
-        data_generator = DataGenerator([mutant], data_augmentation=50,
+        data_generator = DataGenerator([variant], data_augmentation=50,
                                        compute_targets=target_modules,
                                        compute_features=feature_modules,
                                        hdf5=hdf5_path)

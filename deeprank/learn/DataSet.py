@@ -63,8 +63,7 @@ class DataSet():
 
             select_feature (dict or 'all', optional):
                     Select the features used in the learning.
-                    - {'AtomDensities_ind': 'all', 'Feature_ind': 'all'}
-                    - {'Feature_ind': ['PSSM_*', 'pssm_ic_*']}
+                    - {'_ind': 'all', 'Feature_ind': 'all'}
                     Default: 'all'
             select_target (str): Specify required target.
                 Default: 'class' which holds binary values 
@@ -109,8 +108,7 @@ class DataSet():
             >>>                    grid_shape=(30,30,30),
             >>>                    select_feature = {
             >>>                       'AtomicDensities': 'all',
-            >>>                       'Features': [
-            >>>                            'PSSM_*', 'pssm_ic_*' ]
+            >>>                       'Features': 'all'
             >>>                    },
             >>>                    select_target='class',
             >>>                    normalize_features = True,

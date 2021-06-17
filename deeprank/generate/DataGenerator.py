@@ -5,12 +5,13 @@ import re
 import sys
 import warnings
 from collections import OrderedDict
+import traceback
 
 import h5py
 import numpy as np
 
 import deeprank
-from deeprank.models.mutant import PdbMutantSelection
+from deeprank.models.variant import PdbVariantSelection
 from deeprank import config
 from deeprank.config import logger
 from deeprank.generate import GridTools as gt
@@ -38,7 +39,7 @@ def _printif(string, cond): return print(string) if cond else None
 
 class DataGenerator(object):
 
-    def __init__(self, mutants,
+    def __init__(self, variants,
                  align=None,
                  compute_targets=None, compute_features=None,
                  data_augmentation=None, hdf5='database.h5',
@@ -46,7 +47,7 @@ class DataGenerator(object):
         """Generate the data (features/targets/maps) required for deeprank.
 
         Args:
-            mutant (list(PdbMutantSelection)): the selected mutants
+            variants (list(PdbVariantSelection)): the selected variants
             align (dict, optional): Dicitionary to align the compexes,
                                     e.g. align = {"selection":{"chainID":["A","B"]}, "axis":"z"}
                                     e.g. align = {"selection":{"chainID":["A","B"]}, "plane":"xy"}
@@ -64,26 +65,28 @@ class DataGenerator(object):
         Example:
 
             >>> from deeprank.generate import *
+            >>> from deeprank.models.variant import *
             >>> # sources to assemble the data base
-            >>> mutant = PdbMutantSelection(pdb_path="1AK4.pdb",
-            >>>                             chain_id="C",
-            >>>                             residue_number=10,
-            >>>                             mutant_amino_acid="T",
-            >>>                             pssm_paths_by_chain={"C": "pssm_new/1AK4.C.pssm",
-            >>>                                                  "D": "pssm_new/1AK4.D.pssm"})
+            >>> variant = PdbVariantSelection(pdb_path="1AK4.pdb",
+            >>>                               chain_id="C",
+            >>>                               residue_number=10,
+            >>>                               amino_acid="T",
+            >>>                               pssm_paths_by_chain={"C": "pssm_new/1AK4.C.pssm",
+            >>>                                                    "D": "pssm_new/1AK4.D.pssm"},
+            >>>                               variant_class=VariantClass.BENIGN)
             >>> h5file = '1ak4.hdf5'
             >>>
             >>> #init the data assembler
-            >>> database = DataGenerator([mutant],
+            >>> database = DataGenerator([variant],
             >>>                          data_augmentation=None,
-            >>>                          compute_targets=['deeprank.targets.dockQ'],
-            >>>                          compute_features=['deeprank.features.AtomicFeature',
-            >>>                                            'deeprank.features.PSSM_IC',
-            >>>                                            'deeprank.features.BSA'],
+            >>>                          compute_targets=['deeprank.targets.class'],
+            >>>                          compute_features=['deeprank.features.atomic_contacts',
+            >>>                                            'deeprank.features.accessibility',
+            >>>                                            'deeprank.features.neighbour_profile'],
             >>>                          hdf5=h5file)
         """
 
-        self.mutants = mutants
+        self.variants = variants
 
         self.align = align
 
@@ -130,18 +133,19 @@ class DataGenerator(object):
         Example:
 
         >>> # sources to assemble the data base
-        >>> mutant = PdbMutantSelection(pdb_path="1AK4.pdb",
-        >>>                             chain_id="C",
-        >>>                             residue_number=10,
-        >>>                             mutant_amino_acid="T",
-        >>>                             pssm_paths_by_chain={"C": "pssm_new/1AK4.C.pssm",
-        >>>                                                  "D": "pssm_new/1AK4.D.pssm"})
+        >>> variant = PdbVariantSelection(pdb_path="1AK4.pdb",
+        >>>                               chain_id="C",
+        >>>                               residue_number=10,
+        >>>                               amino_acid="T",
+        >>>                               pssm_paths_by_chain={"C": "pssm_new/1AK4.C.pssm",
+        >>>                                                    "D": "pssm_new/1AK4.D.pssm"},
+        >>>                               variant_class=VariantClass.BENIGN)
         >>> h5file = '1ak4.hdf5'
         >>>
         >>> #init the data assembler
-        >>> database = DataGenerator([mutant],
+        >>> database = DataGenerator([variant],
         >>>                          data_augmentation=None,
-        >>>                          compute_targets  = ['deeprank.targets.dockQ'],
+        >>>                          compute_targets  = ['deeprank.targets.variant_class'],
         >>>                          compute_features = ['deeprank.features.AtomicFeature',
         >>>                                              'deeprank.features.PSSM_IC',
         >>>                                              'deeprank.features.BSA'],
@@ -152,7 +156,7 @@ class DataGenerator(object):
         """
 
         # deals with the parallelization
-        self.local_mutants = self.mutants
+        self.local_variants = self.variants
 
         if self.mpi_comm is not None:
             rank = self.mpi_comm.Get_rank()
@@ -162,14 +166,14 @@ class DataGenerator(object):
 
         if size > 1:
             if rank == 0:
-                mutants_divided = [self.mutants[i::size] for i in range(size)]
-                self.local_mutants = mutant_divided[0]
+                variants_divided = [self.variants[i::size] for i in range(size)]
+                self.local_variants = variant_divided[0]
                 # send to other procs
                 for iP in range(1, size):
-                    self.mpi_comm.send(mutants_divided[iP], dest=iP, tag=11)
+                    self.mpi_comm.send(variants_divided[iP], dest=iP, tag=11)
             else:
                 # receive procs
-                self.local_mutants = self.mpi_comm.recv(source=0, tag=11)
+                self.local_variants = self.mpi_comm.recv(source=0, tag=11)
             # change hdf5 name
             h5path, h5name = os.path.split(self.hdf5)
             self.hdf5 = os.path.join(h5path, f"{rank:03d}_{h5name}")
@@ -192,17 +196,17 @@ class DataGenerator(object):
 
         # get the local progress bar
         desc = '{:25s}'.format('Creating database')
-        mutant_tqdm = tqdm(self.local_mutants, desc=desc,
+        variant_tqdm = tqdm(self.local_variants, desc=desc,
                            disable=not prog_bar)
 
-        for mutant in mutant_tqdm:
+        for variant in variant_tqdm:
 
-            mutant_tqdm.set_postfix(mutant=os.path.basename(mutant.pdb_path))
-            self.logger.info(f'\nProcessing PDB file: {mutant.pdb_path}')
+            variant_tqdm.set_postfix(variant=os.path.basename(variant.pdb_path))
+            self.logger.info(f'\nProcessing variant: {variant.pdb_path}')
 
-            # names of the mutant
-            mutant_name = hdf5data.get_mutant_group_name(mutant)
-            mutant_aug_name_list = []
+            # names of the variant
+            variant_name = hdf5data.get_variant_group_name(variant)
+            variant_aug_name_list = []
 
             try:
 
@@ -213,32 +217,32 @@ class DataGenerator(object):
 
                 if verbose:
                     self.logger.info(
-                        f'\nMutant: {mutant_name}.'
-                        f'\nStart generating top HDF5 group "{mutant_name}"...'
+                        f'\nVariant: {variant_name}.'
+                        f'\nStart generating top HDF5 group "{variant_name}"...'
                         f'\n{"":4s}Reading PDB data into database...')
 
-                # get the bare name of the mutant
+                # get the bare name of the variant
                 # and define the name of the native
                 # i.e. 1AK4-m1324578236_100w -> 1AK4-m1324578236
-                bare_mutant_name = mutant_name.split('_')[0]
-                ref_name = bare_mutant_name + '.pdb'
+                bare_variant_name = variant_name.split('_')[0]
+                ref_name = bare_variant_name + '.pdb'
 
                 # check if we have a decoy or native
                 # and find the reference
-                if mutant_name == bare_mutant_name:
-                    ref = mutant.pdb_path
+                if variant_name == bare_variant_name:
+                    ref = variant.pdb_path
                 else:
                     ref = None
 
-                # create a subgroup for the mutant
-                mutant_group = self.f5.require_group(mutant_name)
-                mutant_group.attrs['type'] = 'mutant'
-                hdf5data.store_mutant(mutant_group, mutant)
+                # create a subgroup for the variant
+                variant_group = self.f5.require_group(variant_name)
+                variant_group.attrs['type'] = 'variant'
+                hdf5data.store_variant(variant_group, variant)
 
                 # add the ref and the complex
-                self._add_pdb(mutant_group, mutant.pdb_path, 'complex')
+                self._add_pdb(variant_group, variant.pdb_path, 'complex')
                 if ref is not None:
-                    self._add_pdb(mutant_group, ref, 'native')
+                    self._add_pdb(variant_group, ref, 'native')
 
                 if verbose:
                     self.logger.info(
@@ -259,21 +263,21 @@ class DataGenerator(object):
                         self.logger.info(
                             f'{"":4s}Calculating features...')
 
-                    mutant_group.require_group('features')
-                    mutant_group.require_group('features_raw')
+                    variant_group.require_group('features')
+                    variant_group.require_group('features_raw')
 
                     feature_error_flag = self._compute_features(self.compute_features,
-                                                                mutant_group['complex'][()],
-                                                                mutant_group['features'],
-                                                                mutant_group['features_raw'],
-                                                                mutant,
+                                                                variant_group['complex'][()],
+                                                                variant_group['features'],
+                                                                variant_group['features_raw'],
+                                                                variant,
                                                                 self.logger)
                     if feature_error_flag:
-                        self.feature_error += [mutant_name]
+                        self.feature_error += [variant_name]
                         # ignore the targets/grid/augmentation computation
-                        # and directly go to next mutant. Remove errored
-                        # mutant later.
-                        # Otherwise, keep computing and report errored mutant.
+                        # and directly go to next variant. Remove errored
+                        # variant later.
+                        # Otherwise, keep computing and report errored variant.
                         if remove_error:
                             continue
 
@@ -293,11 +297,11 @@ class DataGenerator(object):
                         self.logger.info(
                             f'{"":4s}Calculating targets...')
 
-                    mutant_group.require_group('targets')
+                    variant_group.require_group('targets')
 
                     self._compute_targets(self.compute_targets,
-                                          mutant_group['complex'][()],
-                                          mutant_group['targets'])
+                                          variant,
+                                          variant_group['targets'])
 
                     if verbose:
                         self.logger.info(
@@ -312,18 +316,18 @@ class DataGenerator(object):
                         f'{"":4s}Calculating grid box center...')
 
                 grid_error_flag = False
-                mutant_group.require_group('grid_points')
+                variant_group.require_group('grid_points')
 
                 try:
-                    center = self._get_grid_center(mutant)
-                    mutant_group['grid_points'].create_dataset('center', data=center)
+                    center = self._get_grid_center(variant)
+                    variant_group['grid_points'].create_dataset('center', data=center)
                     if verbose:
                         self.logger.info(
                             f'{"":4s}Generated subgroup "grid_points"'
                             f' to store grid box center.')
                 except ValueError as ex:
                     grid_error_flag = True
-                    self.grid_error += [mutant_name]
+                    self.grid_error += [variant_name]
                     self.logger.exception(ex)
                     if remove_error:
                         continue
@@ -334,31 +338,31 @@ class DataGenerator(object):
 
                 # GET ALL THE NAMES
                 if self.data_augmentation is not None:
-                    mutant_aug_name_list = [
-                        mutant_name +
+                    variant_aug_name_list = [
+                        variant_name +
                         '_r%03d' %
                         (idir +
                          1) for idir in range(
                             self.data_augmentation)]
                 else:
-                    mutant_aug_name_list = []
+                    variant_aug_name_list = []
 
-                if verbose and mutant_aug_name_list:
+                if verbose and variant_aug_name_list:
                     self.logger.info(
                         f'{"":2s}Start augmenting data'
                         f' with {self.data_augmentation} times...')
 
-                # loop over the mutants
-                for mutant_aug_name in mutant_aug_name_list:
+                # loop over the variants
+                for variant_aug_name in variant_aug_name_list:
 
                     # create a subgroup for the molecule
-                    mutant_group = self.f5.require_group(mutant_aug_name)
-                    mutant_group.attrs['type'] = 'mutant'
-                    hdf5data.store_mutant(mutant_group, mutant)
+                    variant_group = self.f5.require_group(variant_aug_name)
+                    variant_group.attrs['type'] = 'variant'
+                    hdf5data.store_variant(variant_group, variant)
 
                     # copy the ref into it
                     if ref is not None:
-                        self._add_pdb(mutant_group, ref, 'native')
+                        self._add_pdb(variant_group, ref, 'native')
 
                     # get the rotation axis and angle
                     if self.align is None:
@@ -371,47 +375,47 @@ class DataGenerator(object):
                     # create the new pdb and get molecule center
                     # molecule center is the origin of rotation)
                     mol_center = self._add_aug_pdb(
-                        mutant_group, mutant.pdb_path, 'complex', axis, angle)
+                        variant_group, variant.pdb_path, 'complex', axis, angle)
 
                     # copy the targets/features
-                    if 'targets' in self.f5[mutant_name]:
-                        self.f5.copy(mutant_name + '/targets/', mutant_group)
-                    self.f5.copy(mutant_name + '/features/', mutant_group)
+                    if 'targets' in self.f5[variant_name]:
+                        self.f5.copy(variant_name + '/targets/', variant_group)
+                    self.f5.copy(variant_name + '/features/', variant_group)
 
                     # rotate the feature
-                    self._rotate_feature(mutant_group, axis, angle, mol_center)
+                    self._rotate_feature(variant_group, axis, angle, mol_center)
 
                     # grid center used to create grid box
-                    mutant_group.require_group('grid_points')
+                    variant_group.require_group('grid_points')
                     center = pdb2sql.transform.rot_xyz_around_axis(
-                        self.f5[mutant_name + '/grid_points/center'],
+                        self.f5[variant_name + '/grid_points/center'],
                         axis, angle, mol_center)
 
-                    mutant_group['grid_points'].create_dataset('center', data=center)
+                    variant_group['grid_points'].create_dataset('center', data=center)
 
                     # store the rotation axis/angl/center as attriutes
                     # in case we need them later
-                    mutant_group.attrs['axis'] = axis
-                    mutant_group.attrs['angle'] = angle
-                    mutant_group.attrs['center'] = mol_center
+                    variant_group.attrs['axis'] = axis
+                    variant_group.attrs['angle'] = angle
+                    variant_group.attrs['center'] = mol_center
 
-                # cache aug mutants if original mutant has errored features
+                # cache aug variants if original variant has errored features
                 if feature_error_flag:
-                    self.feature_error += mutant_aug_name_list
+                    self.feature_error += variant_aug_name_list
                 if grid_error_flag:
-                    self.grid_error += mutant_aug_name_list
+                    self.grid_error += variant_aug_name_list
 
-                if verbose and mutant_aug_name_list:
+                if verbose and variant_aug_name_list:
                     self.logger.info(
                         f'{"":2s}Completed data augmentation'
-                        f' and generated top HDF5 groups, e.g. {mutant_aug_name}.')
+                        f' and generated top HDF5 groups, e.g. {variant_aug_name}.')
 
                 ################################################
                 # Successul message
                 ################################################
                 if verbose:
                     self.logger.info(
-                        f'\nSuccessfully generated top HDF5 group "{mutant_name}".\n')
+                        f'\nSuccessfully generated top HDF5 group "{variant_name}".\n')
 
             # all other errors
             except BaseException:
@@ -420,12 +424,12 @@ class DataGenerator(object):
         ##################################################
         # Post processing
         ##################################################
-        #  Remove errored mutants
-        errored_mutants = list(set(self.feature_error + self.grid_error))
-        if len(errored_mutants) > 0:
+        #  Remove errored variants
+        errored_variants = list(set(self.feature_error + self.grid_error))
+        if len(errored_variants) > 0:
             if remove_error:
-                for mutant_name in errored_mutants:
-                    del self.f5[mutant_name]
+                for variant_name in errored_variants:
+                    del self.f5[variant_name]
                 if self.feature_error:
                     self.logger.info(
                         f'Molecules with errored features are removed:'
@@ -437,11 +441,11 @@ class DataGenerator(object):
             else:
                 if self.feature_error:
                     self.logger.warning(
-                        f'The following mutants have errored features:'
+                        f'The following variants have errored features:'
                         f'\n{self.feature_error}')
                 if self.grid_error:
                     self.logger.warning(
-                        f'The following mutants have errored grid points:'
+                        f'The following variants have errored grid points:'
                         f'\n{self.grid_error}')
 
         # close the file
@@ -499,24 +503,24 @@ class DataGenerator(object):
             f' with {augmentation} times...')
 
         # GET ALL THE NAMES
-        for mutant_name in fnames_original:
-            mutant_aug_name_list = [
-                mutant_name + '_r%03d' % (idir + 1) for idir in
+        for variant_name in fnames_original:
+            variant_aug_name_list = [
+                variant_name + '_r%03d' % (idir + 1) for idir in
                 range(aug_id_start, aug_id_start + augmentation)]
 
-            mutant = hdf5data.load_mutant(f5[mutant_name])
+            variant = hdf5data.load_variant(f5[variant_name])
 
             # loop over the complexes
-            for mutant_aug_name in mutant_aug_name_list:
+            for variant_aug_name in variant_aug_name_list:
 
-                # create a subgroup for the mutant
-                mutant_group = f5.require_group(mutant_aug_name)
-                mutant_group.attrs['type'] = 'mutant'
-                hdf5data.store_mutant(mutant_group, mutant)
+                # create a subgroup for the variant
+                variant_group = f5.require_group(variant_aug_name)
+                variant_group.attrs['type'] = 'variant'
+                hdf5data.store_variant(variant_group, variant)
 
                 # copy the ref into it
-                if 'native' in f5[mutant_name]:
-                    f5.copy(mutant_name + '/native', mutant_group)
+                if 'native' in f5[variant_name]:
+                    f5.copy(variant_name + '/native', variant_group)
 
                 # get the rotation axis and angle
                 if self.align is None:
@@ -529,29 +533,29 @@ class DataGenerator(object):
                 # create the new pdb and get molecule center
                 # molecule center is the origin of rotation)
                 mol_center = self._add_aug_pdb(
-                    mutant_group, f5[mutant_name + '/complex'][()], 'complex', axis, angle)
+                    variant_group, f5[variant_name + '/complex'][()], 'complex', axis, angle)
 
                 # copy the targets/features
-                if 'targets' in f5[mutant_name]:
-                    f5.copy(mutant_name + '/targets/', mutant_name)
-                f5.copy(mutant_name + '/features/', mutant_group)
+                if 'targets' in f5[variant_name]:
+                    f5.copy(variant_name + '/targets/', variant_name)
+                f5.copy(variant_name + '/features/', variant_group)
 
                 # rotate the feature
-                self._rotate_feature(mutant_group, axis, angle, mutant_center)
+                self._rotate_feature(variant_group, axis, angle, variant_center)
 
                 # grid center used to create grid box
-                mutant_group.require_group('grid_points')
+                variant_group.require_group('grid_points')
                 center = pdb2sql.transform.rot_xyz_around_axis(
-                    f5[mutant_name + '/grid_points/center'],
+                    f5[variant_name + '/grid_points/center'],
                     axis, angle, mol_center)
 
-                mutant_group['grid_points'].create_dataset('center', data=center)
+                variant_group['grid_points'].create_dataset('center', data=center)
 
                 # store the rotation axis/angl/center as attriutes
                 # in case we need them later
-                mutant_group.attrs['axis'] = axis
-                mutant_group.attrs['angle'] = angle
-                mutant_group.attrs['center'] = mol_center
+                variant_group.attrs['axis'] = axis
+                variant_group.attrs['angle'] = angle
+                variant_group.attrs['center'] = mol_center
         f5.close()
         self.logger.info(
             f'\n# Successfully augmented data in {self.hdf5}')
@@ -566,7 +570,7 @@ class DataGenerator(object):
         """Add a feature to an existing hdf5 file.
 
         Args:
-            remove_error (bool): remove errored mutant
+            remove_error (bool): remove errored variant
             prog_bar (bool, optional): use tqdm
 
         Example:
@@ -609,23 +613,23 @@ class DataGenerator(object):
                 ncols=100,
                 disable=not prog_bar):
 
-            # mutant group
-            mutant_group = f5[cplx_name]
+            # variant group
+            variant_group = f5[cplx_name]
 
-            mutant = hdf5data.load_mutant(mutant_group)
+            variant = hdf5data.load_variant(variant_group)
 
             error_flag = False
             if self.compute_features is not None:
 
                 # the internal features
-                mutant_group.require_group('features')
-                mutant_group.require_group('features_raw')
+                variant_group.require_group('features')
+                variant_group.require_group('features_raw')
 
                 error_flag = self._compute_features(self.compute_features,
-                                                    mutant_group['complex'][()],
-                                                    mutant_group['features'],
-                                                    mutant_group['features_raw'],
-                                                    mutant,
+                                                    variant_group['complex'][()],
+                                                    variant_group['features'],
+                                                    variant_group['features_raw'],
+                                                    variant,
                                                     self.logger)
 
                 if error_flag:
@@ -634,49 +638,49 @@ class DataGenerator(object):
         # copy the data from the original to the augmented
         for cplx_name in fnames_augmented:
 
-            # group of the mutant
-            aug_mutant_group = f5[cplx_name]
+            # group of the variant
+            aug_variant_group = f5[cplx_name]
 
             # get the source group
-            mutant_name = re.split(r'_r\d+', mutant_group.name)[0]
-            src_mutant_group = f5[mutant_name]
+            variant_name = re.split(r'_r\d+', variant_group.name)[0]
+            src_variant_group = f5[variant_name]
 
             # get the rotation parameters
-            axis = aug_mutant_group.attrs['axis']
-            angle = aug_mutant_group.attrs['angle']
-            center = aug_mutant_group.attrs['center']
+            axis = aug_variant_group.attrs['axis']
+            angle = aug_variant_group.attrs['angle']
+            center = aug_variant_group.attrs['center']
 
             # copy the features to the augmented
-            for k in mutant_group['features']:
-                if k not in aug_mutant_group['features']:
+            for k in variant_group['features']:
+                if k not in aug_variant_group['features']:
 
                     # copy
-                    data = src_mutant_group['features/' + k][()]
-                    aug_mutant_group.require_group('features')
-                    aug_mutant_group.create_dataset(
+                    data = src_variant_group['features/' + k][()]
+                    aug_variant_group.require_group('features')
+                    aug_variant_group.create_dataset(
                         "features/" + k, data=data)
 
                     # rotate
-                    self._rotate_feature(aug_mutant_group, axis, angle, center, feat_name=[k])
+                    self._rotate_feature(aug_variant_group, axis, angle, center, feat_name=[k])
 
-        # find errored augmented mutants
+        # find errored augmented variants
         tmp_aug_error = []
-        for mutant_name in self.feature_error:
-            tmp_aug_error += list(filter(lambda x: mutant_name in x,
+        for variant_name in self.feature_error:
+            tmp_aug_error += list(filter(lambda x: variant_name in x,
                                          fnames_augmented))
         self.feature_error += tmp_aug_error
 
-        #  Remove errored mutants
+        #  Remove errored variants
         if self.feature_error:
             if remove_error:
-                for mutant_name in self.feature_error:
-                    del f5[mutant_name]
+                for variant_name in self.feature_error:
+                    del f5[variant_name]
                 self.logger.info(
                     f'Molecules with errored features are removed:\n'
                     f'{self.feature_error}')
             else:
                 self.logger.warning(
-                    f"The following mutants have errored features:\n"
+                    f"The following variants have errored features:\n"
                     f'{self.feature_error}')
 
         # close the file
@@ -707,8 +711,8 @@ class DataGenerator(object):
                 'File %s does not exists' % self.hdf5)
 
         f5 = h5py.File(self.hdf5, 'a')
-        for mutant_name in list(f5.keys()):
-            targrp = f5[mutant_name].require_group('targets')
+        for variant_name in list(f5.keys()):
+            targrp = f5[variant_name].require_group('targets')
             for name, value in targdict.items():
                 targrp.create_dataset(name, data=np.array([value]))
         f5.close()
@@ -750,36 +754,38 @@ class DataGenerator(object):
         # compute the targets  of the original
         desc = '{:25s}'.format('Add targets')
 
-        for cplx_name in tqdm(fnames_original, desc=desc,
+        for variant_name in tqdm(fnames_original, desc=desc,
                               ncols=100, disable=not prog_bar):
 
-            # group of the mutant
-            mutant_group = f5[cplx_name]
+            # group of the variant
+            variant_group = f5[variant_name]
 
             # add the targets
             if self.compute_targets is not None:
 
-                mutant_group.require_group('targets')
+                variant = hdf5data.load_variant(f5[variant_name])
+
+                variant_group.require_group('targets')
                 self._compute_targets(self.compute_targets,
-                                      mutant_group['complex'][()],
-                                      mutant_group['targets'])
+                                      variant,
+                                      variant_group['targets'])
 
         # copy the targets of the original to the rotated
         for cplx_name in fnames_augmented:
 
-            # group of the mutant
-            aug_mutant_group = f5[cplx_name]
+            # group of the variant
+            aug_variant_group = f5[cplx_name]
 
             # get the source group
-            mutant_name = re.split(r'_r\d+', mutant_group.name)[0]
-            src_mutant_group = f5[mutant_name]
+            variant_name = re.split(r'_r\d+', variant_group.name)[0]
+            src_variant_group = f5[variant_name]
 
             # copy the targets to the augmented
-            for k in mutant_group['targets']:
-                if k not in aug_mutant_group['targets']:
-                    data = src_mutant_group['targets/' + k][()]
-                    aug_mutant_group.require_group('targets')
-                    aug_mutant_group.create_dataset(
+            for k in variant_group['targets']:
+                if k not in aug_variant_group['targets']:
+                    data = src_variant_group['targets/' + k][()]
+                    aug_variant_group.require_group('targets')
+                    aug_variant_group.create_dataset(
                         "targets/" + k, data=data)
 
         # close the file
@@ -813,7 +819,7 @@ class DataGenerator(object):
 
         f5 = h5py.File(self.hdf5, 'a')
 
-        mutant_names = f5.keys()
+        variant_names = f5.keys()
         self.logger.info(
             f'\n# Start aligning the HDF5 database: {self.hdf5}')
 
@@ -839,36 +845,36 @@ class DataGenerator(object):
 
         # loop over the complexes
         desc = '{:25s}'.format('Add features')
-        for mutant_name in tqdm(mutant_names, desc=desc, ncols=100):
+        for variant_name in tqdm(variant_names, desc=desc, ncols=100):
 
-            mutant = hdf5data.load_mutant(f5[mutant_name])
+            variant = hdf5data.load_variant(f5[variant_name])
 
             # align the pdb
-            mutant_group = f5[mutant_name]
-            pdb = mutant_group['complex'][()]
+            variant_group = f5[variant_name]
+            pdb = variant_group['complex'][()]
 
             sqldb = self._get_aligned_sqldb(pdb, align)
             data = sqldb.sql2pdb()
 
             data = np.array(data).astype('|S78')
-            mutant_group['complex'][...] = data
+            variant_group['complex'][...] = data
 
             # remove prexisting features
             old_dir = ['features', 'features_raw', 'mapped_features']
             for od in old_dir:
-                if od in mutant_group:
-                    del mutant_group[od]
+                if od in variant_group:
+                    del variant_group[od]
 
             # the internal features
-            mutant_group.require_group('features')
-            mutant_group.require_group('features_raw')
+            variant_group.require_group('features')
+            variant_group.require_group('features_raw')
 
             # compute features
             error_flag = self._compute_features(self.compute_features,
-                                                mutant_group['complex'][()],
-                                                mutant_group['features'],
-                                                mutant_group['features_raw'],
-                                                mutant,
+                                                variant_group['complex'][()],
+                                                variant_group['features'],
+                                                variant_group['features_raw'],
+                                                variant,
                                                 self.logger)
 
         f5.close()
@@ -879,14 +885,14 @@ class DataGenerator(object):
 #
 # ====================================================================================
 
-    def _get_grid_center(self, mutant):
-        "gets the C-alpha position of the mutant residue"
+    def _get_grid_center(self, variant):
+        "gets the C-alpha position of the variant residue"
 
-        sqldb = pdb2sql.interface(mutant.pdb_path)
+        sqldb = pdb2sql.interface(variant.pdb_path)
         try:
             c_alpha_position = sqldb.get("x,y,z",
-                                         chainID=mutant.chain_id,
-                                         resSeq=mutant.residue_number,
+                                         chainID=variant.chain_id,
+                                         resSeq=variant.residue_number,
                                          name="CA")[0]
 
         finally:
@@ -905,25 +911,25 @@ class DataGenerator(object):
         f5 = h5py.File(self.hdf5, 'a')
 
         # check all the input PDB files
-        mutant_names = f5.keys()
+        variant_names = f5.keys()
 
         # get the local progress bar
         desc = '{:25s}'.format('Precompute grid points')
-        mutant_tqdm = tqdm(mutant_names, desc=desc, disable=not prog_bar)
+        variant_tqdm = tqdm(variant_names, desc=desc, disable=not prog_bar)
 
         if not prog_bar:
             print(desc, ':', self.hdf5)
             sys.stdout.flush()
 
         # loop over the data files
-        for mutant_name in mutant_tqdm:
+        for variant_name in variant_tqdm:
 
-            mutant_tqdm.set_postfix(mutant=mutant_name)
+            variant_tqdm.set_postfix(variant=variant_name)
 
-            mutant = hdf5data.load_mutant(f5[mutant_name])
+            variant = hdf5data.load_variant(f5[variant_name])
 
             # compute the data we want on the grid
-            gt.GridTools(mutant_group=f5[mutant_name], mutant=mutant,
+            gt.GridTools(variant_group=f5[variant_name], variant=variant,
                          number_of_points=grid_info['number_of_points'],
                          resolution=grid_info['resolution'],
                          contact_distance=contact_distance,
@@ -953,8 +959,8 @@ class DataGenerator(object):
         """Map the feature on a grid of points centered at the interface.
 
         If features to map are not given, they will be are automatically
-        determined for each mutant. Otherwise, given features will be mapped
-        for all mutants (i.e. existing mapped features will be recalculated).
+        determined for each variant. Otherwise, given features will be mapped
+        for all variants (i.e. existing mapped features will be recalculated).
 
         Args:
             grid_info (dict): Informaton for the grid.
@@ -967,7 +973,7 @@ class DataGenerator(object):
             reset (bool, optional): remove grids if some are already present
             use_tmpdir (bool, optional): use a scratch directory
             time (bool, optional): time the mapping process
-            prog_bar (bool, optional): use tqdm for each mutant
+            prog_bar (bool, optional): use tqdm for each variant
             grid_prog_bar (bool, optional): use tqdm for each grid
             remove_error (bool, optional): remove the data that errored
 
@@ -1002,11 +1008,11 @@ class DataGenerator(object):
         f5 = h5py.File(self.hdf5, 'a')
 
         # check all the input PDB files
-        mutant_names = f5.keys()
+        variant_names = f5.keys()
 
-        if len(mutant_names) == 0:
+        if len(variant_names) == 0:
             f5.close()
-            raise ValueError(f'No mutants found in {self.hdf5}.')
+            raise ValueError(f'No variants found in {self.hdf5}.')
 
         ################################################################
         # Check grid_info
@@ -1057,34 +1063,34 @@ class DataGenerator(object):
 
         # get the local progress bar
         desc = '{:25s}'.format('Map Features')
-        mutant_tqdm = tqdm(mutant_names, desc=desc, disable=not prog_bar)
+        variant_tqdm = tqdm(variant_names, desc=desc, disable=not prog_bar)
 
         if not prog_bar:
             self.logger.info(f'{desc}: {self.hdf5}')
 
         # loop over the data files
-        for mutant_name in mutant_tqdm:
-            mutant_tqdm.set_postfix(mutant=mutant_name)
+        for variant_name in variant_tqdm:
+            variant_tqdm.set_postfix(variant=variant_name)
 
-            mutant = hdf5data.load_mutant(f5[mutant_name])
+            variant = hdf5data.load_variant(f5[variant_name])
 
             # Determine which feature to map
-            # if feature not given, then determine it for each mutant
+            # if feature not given, then determine it for each variant
             if 'feature' not in grid_info_ref:
                 # if we havent mapped anything yet or if we reset
-                if 'mapped_features' not in list(f5[mutant_name].keys()) or reset:
+                if 'mapped_features' not in list(f5[variant_name].keys()) or reset:
                     grid_info['feature'] = list(
-                        f5[mutant_name + '/features'].keys())
+                        f5[variant_name + '/features'].keys())
 
                 # if we have already mapped stuff
-                elif 'mapped_features' in list(f5[mutant_name].keys()):
+                elif 'mapped_features' in list(f5[variant_name].keys()):
 
                     # feature name
-                    all_feat = list(f5[mutant_name + '/features'].keys())
+                    all_feat = list(f5[variant_name + '/features'].keys())
 
                     # feature already mapped
                     mapped_feat = list(
-                        f5[mutant_name + '/mapped_features/Feature_ind'].keys())
+                        f5[variant_name + '/mapped_features/Feature_ind'].keys())
 
                     # we select only the feture that were not mapped yet
                     grid_info['feature'] = []
@@ -1096,8 +1102,8 @@ class DataGenerator(object):
             try:
                 # compute the data we want on the grid
                 gt.GridTools(
-                    mutant_group=f5[mutant_name],
-                    mutant=mutant,
+                    variant_group=f5[variant_name],
+                    variant=variant,
                     number_of_points=grid_info['number_of_points'],
                     resolution=grid_info['resolution'],
                     atomic_densities=grid_info['atomic_densities'],
@@ -1113,21 +1119,22 @@ class DataGenerator(object):
                     try_sparse=try_sparse)
 
             except BaseException:
-                self.map_error.append(mutant_name)
+                self.map_error.append(variant_name)
                 self.logger.exception(
-                    f'Error during the mapping of {mutant_name}')
+                    f'Error during the mapping of {variant_name}'+
+                    traceback.format_exc())
 
-        # remove the mutants with issues
+        # remove the variants with issues
         if self.map_error:
             if remove_error:
-                for mutant_name in self.map_error:
-                    del f5[mutant_name]
+                for variant_name in self.map_error:
+                    del f5[variant_name]
                 self.logger.warning(
-                    f"Molecules with errored feature mapping are removed:\n"
+                    f"Variants with errored feature mapping are removed:\n"
                     f"{self.map_error}")
             else:
                 self.logger.warning(
-                    f"The following mutants have errored feature mapping:\n"
+                    f"The following variants have errored feature mapping:\n"
                     f"{self.map_error}")
 
         # close he hdf5 file
@@ -1158,22 +1165,22 @@ class DataGenerator(object):
         f5 = h5py.File(self.hdf5, 'a')
 
         # get the folder names
-        mutant_names = f5.keys()
+        variant_names = f5.keys()
 
-        for mutant_name in mutant_names:
+        for variant_name in variant_names:
 
-            mutant_group = f5[mutant_name]
+            variant_group = f5[variant_name]
 
-            if feature and 'features' in mutant_group:
-                del mutant_group['features']
-                del mutant_group['features_raw']
-            if pdb and 'complex' in mutant_group and 'native' in mutant_group:
-                del mutant_group['complex']
-                del mutant_group['native']
-            if points and 'grid_points' in mutant_group:
-                del mutant_group['grid_points']
-            if grid and 'mapped_features' in mutant_group:
-                del mutant_group['mapped_features']
+            if feature and 'features' in variant_group:
+                del variant_group['features']
+                del variant_group['features_raw']
+            if pdb and 'complex' in variant_group and 'native' in variant_group:
+                del variant_group['complex']
+                del variant_group['native']
+            if points and 'grid_points' in variant_group:
+                del variant_group['grid_points']
+            if grid and 'mapped_features' in variant_group:
+                del variant_group['mapped_features']
 
         f5.close()
 
@@ -1425,7 +1432,7 @@ class DataGenerator(object):
 # ====================================================================================
 
     @staticmethod
-    def _compute_features(feat_list, pdb_data, featgrp, featgrp_raw, mutant, logger):
+    def _compute_features(feat_list, pdb_data, featgrp, featgrp_raw, variant, logger):
         """Compute the features.
 
         Args:
@@ -1435,7 +1442,7 @@ class DataGenerator(object):
             pdb_data (bytes): PDB translated in bytes
             featgrp (str): name of the group where to store the xyz feature
             featgrp_raw (str): name of the group where to store the raw feature
-            mutant (PdbMutantSelection): the selected mutant
+            variant (PdbVariantSelection): the selected variant
             logger (logger): name of logger object
 
         Return:
@@ -1445,7 +1452,7 @@ class DataGenerator(object):
         for feat in feat_list:
             try:
                 feat_module = importlib.import_module(feat, package=None)
-                feat_module.__compute_feature__(pdb_data, featgrp, featgrp_raw, mutant)
+                feat_module.__compute_feature__(pdb_data, featgrp, featgrp_raw, variant)
             except Exception as ex:
                 logger.exception(ex)
                 error_flag = True
@@ -1460,7 +1467,7 @@ class DataGenerator(object):
 # ====================================================================================
 
     @staticmethod
-    def _compute_targets(targ_list, pdb_data, targrp):
+    def _compute_targets(targ_list, variant, targrp):
         """Compute the targets.
 
         Args:
@@ -1471,7 +1478,7 @@ class DataGenerator(object):
         """
         for targ in targ_list:
             targ_module = importlib.import_module(targ, package=None)
-            targ_module.__compute_target__(pdb_data, targrp)
+            targ_module.__compute_target__(variant, targrp)
 
 
 # ====================================================================================
@@ -1481,13 +1488,13 @@ class DataGenerator(object):
 # ====================================================================================
 
 
-    def _add_pdb(self, mutant_group, pdbfile, name):
-        """Add a pdb to a mutant group
+    def _add_pdb(self, variant_group, pdbfile, name):
+        """Add a pdb to a variant group
 
         Args:
-            mutant_group (str): mutant group where to add the pdb
+            variant_group (str): variant group where to add the pdb
             pdbfile (str): psb file to add
-            name (str): dataset name in the hdf5 mutant group
+            name (str): dataset name in the hdf5 variant group
         """
 
         # no alignement
@@ -1506,7 +1513,7 @@ class DataGenerator(object):
         #  PDB default line length is 80
         #  http://www.wwpdb.org/documentation/file-format
         data = np.array(data).astype('|S78')
-        mutant_group.create_dataset(name, data=data)
+        variant_group.create_dataset(name, data=data)
 
     # @staticmethod
     def _get_aligned_sqldb(self, pdbfile, dict_align):
@@ -1582,11 +1589,11 @@ class DataGenerator(object):
         return axis, angle
 
     # add a rotated pdb structure to the database
-    def _add_aug_pdb(self, mutant_group, pdbfile, name, axis, angle):
+    def _add_aug_pdb(self, variant_group, pdbfile, name, axis, angle):
         """Add augmented pdbs to the dataset.
 
         Args:
-            mutant_group (str): name of the mutant group
+            variant_group (str): name of the variant group
             pdbfile (str): pdb file name
             name (str): name of the dataset
             axis (list(float)): axis of rotation
@@ -1594,7 +1601,7 @@ class DataGenerator(object):
             dict_align (dict): dict for alignement of the original pdb
 
         Returns:
-            list(float): center of the mutant
+            list(float): center of the variant
         """
         # create the sqldb and extract positions
         if self.align is None:
@@ -1612,7 +1619,7 @@ class DataGenerator(object):
         # get the pdb-format data
         data = sqldb.sql2pdb()
         data = np.array(data).astype('|S78')
-        mutant_group.create_dataset(name, data=data)
+        variant_group.create_dataset(name, data=data)
 
         # close the db
         sqldb._close()
@@ -1622,18 +1629,18 @@ class DataGenerator(object):
     # rotate th xyz-formatted feature in the database
 
     @staticmethod
-    def _rotate_feature(mutant_group, axis, angle, center, feat_name='all'):
+    def _rotate_feature(variant_group, axis, angle, center, feat_name='all'):
         """Rotate the raw feature values.
 
         Args:
-            mutant group (str): name pf the mutant group
+            variant group (str): name pf the variant group
             axis (list(float)): axis of rotation
             angle (float): angle of rotation
             center (list(float)): center of rotation
             feat_name (str): name of the feature to rotate or 'all'
         """
         if feat_name == 'all':
-            feat = list(mutant_group['features'].keys())
+            feat = list(variant_group['features'].keys())
         else:
             feat = feat_name
             if not isinstance(feat, list):
@@ -1642,7 +1649,7 @@ class DataGenerator(object):
         for fn in feat:
 
             # extract the data
-            data = mutant_group['features/' + fn][()]
+            data = variant_group['features/' + fn][()]
 
             # if data not empty
             if data.shape[0] != 0:
@@ -1655,4 +1662,4 @@ class DataGenerator(object):
                     xyz, axis, angle, center)
 
                 # put back the data
-                mutant_group['features/' + fn][:, 1:4] = xyz_rot
+                variant_group['features/' + fn][:, 1:4] = xyz_rot

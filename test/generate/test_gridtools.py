@@ -8,7 +8,7 @@ import h5py
 from nose.tools import ok_, eq_
 
 from deeprank.generate.GridTools import GridTools
-from deeprank.models.mutant import PdbMutantSelection
+from deeprank.models.variant import PdbVariantSelection
 
 
 def _get_feature_grid(hdf5, feature_group_name, feature_name, points_count):
@@ -61,7 +61,7 @@ def test_feature_mapping():
             ]:
                f.write(line) 
 
-        mutant = PdbMutantSelection(pdb_path, 'A', 1, 'V')
+        variant = PdbVariantSelection(pdb_path, 'A', 1, 'V')
 
         tmp_path = os.path.join(tmp_dir, "test.hdf5")
 
@@ -86,7 +86,7 @@ def test_feature_mapping():
             points_count = 30
 
             # Build the grid and map the features.
-            gridtools = GridTools(mol_group, mutant,
+            gridtools = GridTools(mol_group, variant,
                                   number_of_points=points_count, resolution=1.0,
                                   atomic_densities={'C': 1.7},  # only collect density data on carbon
                                   feature=[feature_type_name],

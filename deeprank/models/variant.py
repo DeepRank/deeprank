@@ -1,30 +1,30 @@
 from enum import Enum
 
 
-class MutantClass(Enum):
+class VariantClass(Enum):
     BENIGN = 0
     PATHOGENIC = 1
 
 
-class PdbMutantSelection:
-    """Refers to a mutant in a pdb file.
+class PdbVariantSelection:
+    """Refers to a variant in a pdb file.
 
     Args:
         pdb_path (str): on disk file path to the pdb file
-        chain_id (str): chain within the pdb file, where the mutant is
+        chain_id (str): chain within the pdb file, where the variation is
         residue_number (int): the identifying number of the residue within the protein chain
-        mutant_amino_acid (str): one letter code of the amino acid to place at this position
+        amino_acid (str): one letter code of the amino acid to place at this position
         pssm_paths_by_chain (dict(str, str), optional): the paths of the pssm files per chain id, associated with the pdb file
-        mutant_class (MutantClass, optional): if known, the expected classification of the mutant
+        variant_class (VariantClass, optional): if known, the expected classification of the variant
     """
 
-    def __init__(self, pdb_path, chain_id, residue_number, mutant_amino_acid, pssm_paths_by_chain=None, mutant_class=None):
+    def __init__(self, pdb_path, chain_id, residue_number, amino_acid, pssm_paths_by_chain=None, variant_class=None):
         self._pdb_path = pdb_path
         self._chain_id = chain_id
         self._residue_number = residue_number
-        self._mutant_amino_acid = mutant_amino_acid
+        self._amino_acid = amino_acid
         self._pssm_paths_by_chain = pssm_paths_by_chain
-        self._mutant_class = mutant_class
+        self._variant_class = variant_class
 
     @property
     def pdb_path(self):
@@ -44,7 +44,7 @@ class PdbMutantSelection:
     def get_pssm_path(self, chain_id):
         "returns the pssm path for the given chain id"
         if self._pssm_paths_by_chain is None:
-            raise ValueError("pssm paths are not set in this mutant selection")
+            raise ValueError("pssm paths are not set in this variant selection")
 
         return self._pssm_paths_by_chain[chain_id]
 
@@ -57,8 +57,8 @@ class PdbMutantSelection:
         return self._residue_number
 
     @property
-    def mutant_amino_acid(self):
-        return self._mutant_amino_acid
+    def amino_acid(self):
+        return self._amino_acid
 
     def get_pssm_path(self, chain_id):
         return self._pssm_paths_by_chain[chain_id]
@@ -67,21 +67,25 @@ class PdbMutantSelection:
         return self._pdb_path == other._pdb_path and \
                self._chain_id == other._chain_id and \
                self._residue_number == other._residue_number and \
-               self._mutant_amino_acid == other._mutant_amino_acid and \
-               self._pssm_paths_by_chain == other._pssm_paths_by_chain
+               self._amino_acid == other._amino_acid and \
+               self._pssm_paths_by_chain == other._pssm_paths_by_chain and \
+               self._variant_class == other._variant_class
 
     def __hash__(self):
         s = "pdb=%s;" % self._pdb_path + \
             "chain=%s;" % self._chain_id + \
             "residue_number=%s;" % self._residue_number + \
-            "mutant_amino_acid=%s;" % self._mutant_amino_acid
+            "amino_acid=%s;" % self._amino_acid
 
         if self._pssm_paths_by_chain is not None:
             for chain_id, path in self._pssm_paths_by_chain.items():
                 s += "pssm_%s=%s;" % (chain_id, path)
 
+        if self._variant_class is not None:
+            s += "class=%s" % self._variant_class.name
+
         return hash(s)
 
     @property
-    def mutant_class(self):
-        return self._mutant_class
+    def variant_class(self):
+        return self._variant_class
