@@ -9,3 +9,6 @@ API Reference
    deeprank.features
    deeprank.targets
    deeprank.tools
+   deeprank.models
+   deeprank.parse
+   deeprank.operate
