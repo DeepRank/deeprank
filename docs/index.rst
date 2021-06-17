@@ -1,5 +1,4 @@
-.. DeepRank documentation master file, created by
-   sphinx-quickstart on Mon Feb 26 14:44:07 2018.
+.. DeepRank documentation file
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
@@ -19,7 +18,7 @@ targets, as well as training and testing CNN models.
 - Predefined atom-level and residue-level structural feature types
    - *e.g. residue contacts, atomic density, vdw energy, solvent accessibility, PSSM.*
 - Predefined target types
-   - *e.g. damaging, benign, likely damaging, likely benign*
+   - *e.g. Benign or Pathogenic*
 - Flexible definition of both new features and targets
 - 3D grid feature mapping
 - Efficient data storage in HDF5 format
