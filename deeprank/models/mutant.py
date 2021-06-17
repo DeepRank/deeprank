@@ -1,3 +1,9 @@
+from enum import Enum
+
+
+class MutantClass(Enum):
+    BENIGN = 0
+    PATHOGENIC = 1
 
 
 class PdbMutantSelection:
@@ -9,14 +15,16 @@ class PdbMutantSelection:
         residue_number (int): the identifying number of the residue within the protein chain
         mutant_amino_acid (str): one letter code of the amino acid to place at this position
         pssm_paths_by_chain (dict(str, str), optional): the paths of the pssm files per chain id, associated with the pdb file
+        mutant_class (MutantClass, optional): if known, the expected classification of the mutant
     """
 
-    def __init__(self, pdb_path, chain_id, residue_number, mutant_amino_acid, pssm_paths_by_chain=None):
+    def __init__(self, pdb_path, chain_id, residue_number, mutant_amino_acid, pssm_paths_by_chain=None, mutant_class=None):
         self._pdb_path = pdb_path
         self._chain_id = chain_id
         self._residue_number = residue_number
         self._mutant_amino_acid = mutant_amino_acid
         self._pssm_paths_by_chain = pssm_paths_by_chain
+        self._mutant_class = mutant_class
 
     @property
     def pdb_path(self):
@@ -73,3 +81,7 @@ class PdbMutantSelection:
                 s += "pssm_%s=%s;" % (chain_id, path)
 
         return hash(s)
+
+    @property
+    def mutant_class(self):
+        return self._mutant_class
