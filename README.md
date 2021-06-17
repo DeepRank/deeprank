@@ -19,17 +19,15 @@
 ## Overview
 ![alt-text](./pics/deeprank.png)
 
-DeepRank is a general, configurable deep learning framework for data mining protein-protein interactions (PPIs) using 3D convolutional neural networks (CNNs).
+DeepRank is a general, configurable deep learning framework for predicting pathogenicity of missense variants using 3D convolutional neural networks (CNNs).
 
-DeepRank contains useful APIs for pre-processing PPIs data, computing features and targets, as well as training and testing CNN models.
+DeepRank contains useful APIs for pre-processing protein structural data, computing features for atoms/residues surrounding the missense variant, as well as training and testing CNN models.
 
 #### Features:
 
-- Predefined atom-level and residue-level PPI feature types
+- Predefined atom-level and residue-level feature types
    - *e.g. atomic density, vdw energy, residue contacts, PSSM, etc.*
-- Predefined target types
-   - *e.g. binary class, CAPRI categories, DockQ, RMSD, FNAT, etc.*
-- Flexible definition of both new features and targets
+- Flexible definition of new features
 - 3D grid feature mapping
 - Efficient data storage in HDF5 format
 - Support both classification and regression (based on PyTorch)
@@ -131,16 +129,15 @@ This script can be exectuted using for example 4 MPI processes with the command:
     mpiexec -n $NP python generate.py
 ```
 
-In  the first part of the script we define the path where to find the PDBs of the decoys and natives that we want to have in the dataset. All the .pdb files present in _pdb_source_ will be used in the dataset. We need to specify where to find the native conformations to be able to compute RMSD and the dockQ score. For each pdb file detected in _pdb_source_, the code will try to find a native conformation in _pdb_native_.
-
+In  the first part of the script we define the path where to find the PDBs of the native structure of interest. We then specify position of variant in the structure and the variant amino acid, to enable the code to compute features of the amino acids surrounding the variant. 
 We then initialize the `DataGenerator` object. This object (defined in `deeprank/generate/DataGenerator.py`) needs a few input parameters:
 
 -   variants: a selection of variant objects that make up the dataset
--   compute_targets: list of modules used to compute the targets
+-   compute_targets: the module used to compute the target: 'Benign' or 'Pathogenic'
 -   compute_features: list of modules used to compute the features
 -   hdf5: Name of the HDF5 file to store the data set
 
-We then create the data base with the command `database.create_database()`. This function autmatically create an HDF5 files where each pdb has its own group. In each group we can find the pdb of the complex and its native form, the calculated features and the calculated targets. We can now mapped the features to a grid. This is done via the command `database.map_features()`. As you can see this method requires a dictionary as input. The dictionary contains the instruction to map the data.
+We then create the data base with the command `database.create_database()`. This function automatically creates an HDF5 files where the pdb has its own group. In each group we can find the pdb, its calculated features and the target. We can now mapped the features to a grid. This is done via the command `database.map_features()`. As you can see this method requires a dictionary as input. The dictionary contains the instruction to map the data.
 
 -   number_of_points: the number of points in each direction
 -   resolution: the resolution in Angs
@@ -150,7 +147,7 @@ The atomic densities are mapped following the [protein-ligand paper](https://arx
 
 #### Visualization of the mapped features
 
-To explore the HDf5 file and vizualize the features you can use the dedicated browser <https://github.com/DeepRank/DeepXplorer>. This tool saloows to dig through the hdf5 file and to directly generate the files required to vizualie the features in VMD or PyMol. An iPython comsole is also embedded to analyze the feature values, plot them etc ....
+To explore the HDf5 file and vizualize the features you can use the dedicated browser <https://github.com/DeepRank/DeepXplorer>. This tool allows to dig through the hdf5 file and to directly generate the files required to vizualize the features in VMD or PyMol. An iPython comsole is also embedded to analyze the feature values, plot them etc ....
 
 ### B . Deep Learning
 
