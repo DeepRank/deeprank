@@ -7,7 +7,7 @@ from nose.tools import ok_
 
 from deeprank.features.neighbour_profile import (__compute_feature__,
                                                  IC_FEATURE_NAME, WT_FEATURE_NAME, MUT_FEATURE_NAME)
-from deeprank.models.mutant import PdbMutantSelection
+from deeprank.models.variant import PdbVariantSelection
 
 
 def test_feature():
@@ -16,12 +16,12 @@ def test_feature():
     try:
         hdf5_path = os.path.join(tmp_dir_path, 'test.hdf5')
 
-        mutant = PdbMutantSelection("test/101M.pdb", "A", 25, "W",
-                                    {'A': "test/101M.A.pdb.pssm"})
+        variant = PdbVariantSelection("test/101M.pdb", "A", 25, "W",
+                                      {'A': "test/101M.A.pdb.pssm"})
 
         with h5py.File(hdf5_path, 'w') as f5:
             group = f5.require_group("features")
-            __compute_feature__(mutant.pdb_path, group, None, mutant)
+            __compute_feature__(variant.pdb_path, group, None, variant)
 
             # Check that the features are present on the grid:
             ok_(len(group.get(WT_FEATURE_NAME)) > 0)

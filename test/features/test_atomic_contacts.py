@@ -7,13 +7,13 @@ import numpy
 from nose.tools import ok_, eq_
 
 from deeprank.features.atomic_contacts import __compute_feature__, _PhysicsStorage
-from deeprank.models.mutant import PdbMutantSelection
+from deeprank.models.variant import PdbVariantSelection
 
 
 def test_compute_feature():
     pdb_path = "test/1AK4/native/1AK4.pdb"
 
-    mutant = PdbMutantSelection(pdb_path, 'C', 25, 'A')
+    variant = PdbVariantSelection(pdb_path, 'C', 25, 'A')
 
     tmp_path = tempfile.mkdtemp()
     try:
@@ -24,7 +24,7 @@ def test_compute_feature():
             features_group = molgrp.require_group('features')
             raw_group = molgrp.require_group('features_raw')
 
-            __compute_feature__(pdb_path, features_group, raw_group, mutant)
+            __compute_feature__(pdb_path, features_group, raw_group, variant)
 
             vdwaals_data = features_group['vdwaals']
             coulomb_data = features_group['coulomb']

@@ -5,7 +5,7 @@ import os
 from nose.tools import ok_
 import h5py
 
-from deeprank.models.mutant import PdbMutantSelection
+from deeprank.models.variant import PdbVariantSelection
 from deeprank.features.accessibility import __compute_feature__, FEATURE_NAME
 
 
@@ -17,9 +17,9 @@ def test_compute_feature():
         with h5py.File(hdf5_path, 'w') as f5:
             feature_group = f5.require_group("features")
             raw_feature_group = f5.require_group("raw_features")
-            mutant = PdbMutantSelection("test/101M.pdb", 'A', 25, 'C')
+            variant = PdbVariantSelection("test/101M.pdb", 'A', 25, 'C')
 
-            __compute_feature__(mutant.pdb_path, feature_group, raw_feature_group, mutant)
+            __compute_feature__(variant.pdb_path, feature_group, raw_feature_group, variant)
 
             # Did the feature get stored:
             ok_(len(feature_group.get(FEATURE_NAME)) > 0)
