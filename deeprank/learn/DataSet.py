@@ -283,9 +283,10 @@ class DataSet():
 
         # get the pairing
         self.get_pairing_feature()
-
-        # get grid shape
-        self.get_grid_shape()
+        
+        if self.grid_shape is None: 
+            # get grid shape
+            self.get_grid_shape()
 
         # get the input shape
         self.get_input_shape()
