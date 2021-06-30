@@ -26,14 +26,18 @@ class Edesolv(FeatureClass):
         print(pdb_data)
         print('TYPE: ' + str(type(pdb_data)))
 
+
+        self.feature_data = {}
+        self.feature_data_xyz = {}
     # the feature extractor
         
     def get_feature(self, verbose=False):
+    #def __compute_feature__(self, verbose=False):
         esolcpx = 0.0
         esolfree = 0.0
         # create a sql database
         pdb_db = pdb2sql(self.pdb)
-        db = interface(pdb_db)
+        self.db = interface(pdb_db)
         temp_pdb = StringIO(('\n').join(pdb_db.sql2pdb()))
         temp_pdb.seek(0)
 
@@ -62,11 +66,11 @@ class Edesolv(FeatureClass):
         
         
         # get the contact atoms
-        indA,indB = list(db.get_contact_atoms(chain1=chainA, chain2=chainB).values())
+        indA,indB = list(self.db.get_contact_atoms(chain1=chainA, chain2=chainB).values())
         contact = indA + indB
         # extract the atom keys and xyz of the contact CA atoms
-        keys = db.get('serial,chainID,resName,resSeq,name',rowID=contact)
-        xyz = db.get('x,y,z',rowID=contact)
+        keys = self.db.get('serial,chainID,resName,resSeq,name',rowID=contact)
+        xyz = self.db.get('x,y,z',rowID=contact)
         
         #Make SASA class
         sr = SASA.ShrakeRupley()
@@ -77,58 +81,63 @@ class Edesolv(FeatureClass):
 
 
         # Get disulfide bonds (important to determine sulfide atoms edesolv values)
-        disulfides_cys = get_disulfide_bonds(db)
+        disulfides_cys = get_disulfide_bonds(self.db)
 
+        
         # create the dictionary of human readable and xyz-val data
         hread, xyzval = {},{}
-        #hread = {}
+        self.edesolv_data = {}
+        self.edesolv_data_xyz = {}
+
         for key, coords in zip(keys, xyz):
             brk_flag = False
             disulf_bond = False
             atom = Atom(key)
-            if verbose:
-                print(key)
-                print('Values for atom n. ', atom.serial)
-                print('PDB2SQL values:')
-                print('Name: ', atom.name, 'Resn: ', atom.resn, 'Pos: ', atom.position) # atom.position specifies the position in the residue, if Back Bone or Side Chain
+            #if verbose:
+            print('key: ', key)
+            #print('Values for atom n. ', atom.serial)
+            #print('PDB2SQL values:')
+            #print('Name: ', atom.name, 'Resn: ', atom.resn, 'Pos: ', atom.position) # atom.position specifies the position in the residue, if Back Bone or Side Chain
 
             try:
                 atom.cpx_sasa = struct[0][atom.chainID][atom.resid][atom.name].sasa
             except KeyError: #Handling alternative residues error
-                print(key)
+                print('Alternative residue found at:', key)
                 brk_flag = True
                 #raise Exception('KeyError')
                 pass 
             try:
                 atom.free_sasa = free_struct[0][atom.chainID][atom.resid][atom.name].sasa
             except KeyError: #Handling alternative residues error
-                print(key)
+                print('Alternative residue found at:', key)
                 brk_flag = True
                 #raise Exception('KeyError')
                 pass 
             
             if not brk_flag:
                 
-                if verbose:
-                    print('Complex SASA: ', atom.cpx_sasa)
-                    print('Free    SASA: ', atom.free_sasa)
+                #if verbose:
+                #print('Complex SASA: ', atom.cpx_sasa)
+                #print('Free    SASA: ', atom.free_sasa)
                 
                 for cys in disulfides_cys:
                     if cys == (atom.chainID, atom.resid):
                         disulf_bond = True
                         
                 assign_solv_param(atom, disulf_bond)
-                if verbose:
-                    print('Solv: ', atom.solv)
+                #if verbose:
+                #print('Solv: ', atom.solv)
                 
                 atom.esolcpx = atom.cpx_sasa * atom.solv
                 atom.esolfree = atom.free_sasa * atom.solv
                 atom.edesolv = atom.esolcpx - atom.esolfree
                 esolcpx += atom.esolcpx
                 esolfree += atom.esolfree
-                if verbose:
-                    print('Edesolv: ', atom.edesolv)
-                    print('\n')
+                #if verbose:
+                #print('atom_esolcpx: ', atom.esolcpx)
+                #print('atom_esolfree: ', atom.esolfree)
+                #print('atom_Edesolv: ', atom.edesolv)
+                #print('\n')
                 #raise Exception('OK.')
     
                 # human readable
@@ -137,16 +146,41 @@ class Edesolv(FeatureClass):
                 
                 # xyz-val
                 # { (0|1,x,y,z) : [val] }
-                chain = [{chainA:0,chainB:1}[key[0]]]
-                k = tuple( chain + xyz)
-                xyzval[k] = [atom.edesolv]
+                chain = [{chainA:0,chainB:1}[key[1]]]
+                #k = tuple(chain + xyz)
+                k = tuple(chain + coords)
+                #print(k, type(k))
+                #xyzval[k] = [atom.edesolv]
+
+                self.edesolv_data[(key[1], key[3], key[2], key[4])] = [atom.edesolv]
+                self.edesolv_data_xyz[k] = [atom.edesolv]
 
 
-        self.feature_data['Edesolv'] = hread
-        self.feature_data_xyz['Edesolv'] = xyzval
+        #self.feature_data['Edesolv'] = hread
+        #self.feature_data_xyz['Edesolv'] = xyzval
+        print('edesolv_data: ', self.edesolv_data)
+        print('edesolv_data_xyz: ', self.edesolv_data_xyz)
+        self.feature_data['Edesolv'] = self.edesolv_data
+        self.feature_data_xyz['Edesolv'] = self.edesolv_data_xyz
+
         #Edesolv = esolcpx - esolfree
         #return Edesolv
-        
+
+##################################################################
+
+##################################################################
+
+def __compute_feature__(pdb_data, featgrp, featgrp_raw, chainA, chainB):
+
+        edesolv_feat = Edesolv(pdb_data)
+        edesolv_feat.get_feature()
+
+        # export in the hdf5 file
+        edesolv_feat.export_dataxyz_hdf5(featgrp)
+        edesolv_feat.export_data_hdf5(featgrp_raw)
+
+        # close
+        edesolv_feat.db._close()        
         
 class Atom():
 
@@ -293,10 +327,6 @@ def assign_solv_param(atom, disulf_bond=False):
         atom.solv = 0.0
     '''
     
-def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2):
-    Ed = Edesolv(pdb_data)
-    Ed.get_feature()
-
 def get_disulfide_bonds(pdb_data):
     '''Gets all the cysteine pairs that have the SG around 1.80 and 2.05 Angstron and the CB-SG-SG-CB angle around 
        +- 90°
