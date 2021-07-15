@@ -35,6 +35,16 @@ Buried Surface Area
 
 .. autofunction:: deeprank.features.BSA.__compute_feature__
 
+Energy of desolvation
+-------------------
+
+.. automodule:: deeprank.features.Edesolv
+    :members:
+    :undoc-members:
+    :private-members:
+
+.. autofunction:: deeprank.features.Edesolv.__compute_feature__
+
 FullPSSM
 --------
 
