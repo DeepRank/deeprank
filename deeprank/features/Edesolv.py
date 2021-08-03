@@ -19,8 +19,21 @@ class Edesolv(FeatureClass):
     # init the class
     def __init__(self, pdb_data):
         """Compute the energy of desolvation feature.
+        Desolvation energy calculation method taken from
+        Dominguez et al. JACS 125:1731 (2003)
+        Biopython 1.79 or later is required for this feature to calculate SASA.
 
-        Biopython 1.79 or later is required for this feature.
+        Energy of desolvation for each atom is calculated as:
+        Edesolv = (Cplx desolvation energy) - (Unbound desolvation energy)
+
+        Complex (Cplx) and Unbound desolvation energy are calculated as:
+        CplxEdesolv = Cplx SASA * Atomic Desolvation Parameter
+        UnboundEdesolv = Unbound SASA * Atomic Desolvation Parameter        
+
+        Atomic solvation parameters are taken from 
+        Fernandez-Recio et al. JMB 335:843 (2004)
+        Unbound SASA is calculated by simply moving away the two chains 
+        and calculating the resulting SASA.
 
         Args:
             pdb_data (list(byte) or str): pdb data
@@ -30,16 +43,11 @@ class Edesolv(FeatureClass):
             >>> edesolv.get_feature()
         """
         self.pdb = pdb_data
-        print('PDB DATA: ')
-        print(pdb_data)
-        print('TYPE: ' + str(type(pdb_data)))
-
-
         self.feature_data = {}
         self.feature_data_xyz = {}
     
     # the feature extractor
-    def get_feature(self, verbose=False):
+    def compute_feature(self, chain1='A', chain2='B'):
         """ Computes the actual Edesolv feature"""
         
         esolcpx = 0.0
@@ -57,11 +65,6 @@ class Edesolv(FeatureClass):
         p = PDBParser(QUIET=1) 
         struct = p.get_structure('temp', temp_pdb)
         
-        # Identify chains in the Bio.PDB object
-        chains = [x.id for x in struct[0] if x.id != ' ']
-        chainA = chains[0]
-        chainB = chains[1]
-        
         # Make free_structure fake object and translate the chains away from each other
         # TODO: use pdb2sql.translation for this
         free_struct = deepcopy(struct)
@@ -75,7 +78,7 @@ class Edesolv(FeatureClass):
         
         
         # get the contact atoms
-        indA,indB = list(self.db.get_contact_atoms(chain1=chainA, chain2=chainB).values())
+        indA,indB = list(self.db.get_contact_atoms(chain1=chain1, chain2=chain2).values())
         contact = indA + indB
         
         # extract the atom keys and xyz of the contact CA atoms
@@ -138,7 +141,7 @@ class Edesolv(FeatureClass):
                 
                 # xyz-val
                 # { (0|1,x,y,z) : [val] }
-                chain = [{chainA:0,chainB:1}[key[1]]]
+                chain = [{chain1:0,chain2:1}[key[1]]]
                 k = tuple(chain + coords)
 
                 #Human readable
@@ -163,7 +166,7 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw):
     """
 
     edesolv_feat = Edesolv(pdb_data)
-    edesolv_feat.get_feature()
+    edesolv_feat.compute_feature()
 
     # export in the hdf5 file
     edesolv_feat.export_dataxyz_hdf5(featgrp)
