@@ -48,7 +48,11 @@ class Edesolv(FeatureClass):
     
     # the feature extractor
     def compute_feature(self, chain1='A', chain2='B'):
-        """ Computes the actual Edesolv feature"""
+        """ Computes the actual Edesolv feature
+
+        Args:
+            chain1 (str): First chain ID
+            chain2 (str): Second chain ID"""
         
         esolcpx = 0.0
         esolfree = 0.0
@@ -65,10 +69,11 @@ class Edesolv(FeatureClass):
         p = PDBParser(QUIET=1) 
         struct = p.get_structure('temp', temp_pdb)
         
-        # Make free_structure fake object and translate the chains away from each other
+        # Make free_structure fake object and 
+        # translate the chains away from each other
         # TODO: use pdb2sql.translation for this
         free_struct = deepcopy(struct)
-        for i, chain in enumerate(chains):
+        for i, chain in enumerate((chain1, chain2)):
             for residue in free_struct[0][chain]:
                 for atom in residue:
                     if i == 0:
@@ -78,7 +83,8 @@ class Edesolv(FeatureClass):
         
         
         # get the contact atoms
-        indA,indB = list(self.db.get_contact_atoms(chain1=chain1, chain2=chain2).values())
+        indA,indB = list(self.db.get_contact_atoms(chain1=chain1, 
+                                                   chain2=chain2).values())
         contact = indA + indB
         
         # extract the atom keys and xyz of the contact CA atoms
@@ -93,7 +99,7 @@ class Edesolv(FeatureClass):
         sr.compute(free_struct, level='A')
 
 
-        # Get disulfide bonds (important to determine sulfide atoms edesolv values)
+        # Get disulfide bonds
         disulfides_cys = get_disulfide_bonds(self.db)
 
         
@@ -152,21 +158,19 @@ class Edesolv(FeatureClass):
         self.feature_data['Edesolv'] = self.edesolv_data
         self.feature_data_xyz['Edesolv'] = self.edesolv_data_xyz
 
-##################################################################
-
-##################################################################
-
-def __compute_feature__(pdb_data, featgrp, featgrp_raw):
+def __compute_feature__(pdb_data, featgrp, featgrp_raw, chain1, chain2):
     """Main function called in deeprank for the feature calculations.
 
     Args:
         pdb_data (list(bytes)): pdb information
         featgrp (str): name of the group where to save xyz-val data
         featgrp_raw (str): name of the group where to save human readable data
+        chain1 (str): First chain ID
+        chain2 (str): Second chain ID
     """
 
     edesolv_feat = Edesolv(pdb_data)
-    edesolv_feat.compute_feature()
+    edesolv_feat.compute_feature(chain1, chain2)
 
     # export in the hdf5 file
     edesolv_feat.export_dataxyz_hdf5(featgrp)
@@ -178,11 +182,13 @@ def __compute_feature__(pdb_data, featgrp, featgrp_raw):
 class Atom():
 
     def __init__(self,atom_specs):
-        """Atom class necessary to calculate atomic-level surface area,
-        solvation parameters and desolvation energy.
+        """Atom class. Necessary to calculate atomic-level surface area,
+        solvation parameters and desolvation energy at atomic-level.
         
         Args:
-            atom_specs("""
+            atom_specs (list): list of atom specifications as
+                               [serial,chainID,resName,resSeq,name]
+        """
 
         serial = atom_specs[0]
         chainID = atom_specs[1]
