@@ -42,6 +42,8 @@ class Edesolv(FeatureClass):
             >>> edesolv = Edesolv('1AK4.pdb')
             >>> edesolv.get_feature()
         """
+        super().__init__("Atomic")
+        
         self.pdb = pdb_data
         self.feature_data = {}
         self.feature_data_xyz = {}
