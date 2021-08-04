@@ -10,7 +10,8 @@ try:
     from Bio.PDB import PDBParser, SASA
 
 except ImportError:
-    warnings.warn('Biopython module not found. Make sure you have Biopython 1.79 or later')
+    Error='Biopython module not found. Make sure you have Biopython 1.79 or later'
+    warnings.warn(Error)
     raise
 
 
@@ -63,7 +64,8 @@ class Edesolv(FeatureClass):
         pdb_db = pdb2sql(self.pdb)
         self.db = interface(pdb_db)
         
-        #Create a temporary pdb-like string to calculate complex and free Edesolv
+        # Create a temporary pdb-like string 
+        # to calculate complex and free Edesolv
         temp_pdb = StringIO(('\n').join(pdb_db.sql2pdb()))
         temp_pdb.seek(0)
 
@@ -116,7 +118,8 @@ class Edesolv(FeatureClass):
 
             # Calculate complex sasa
             try:
-                atom.cpx_sasa = struct[0][atom.chainID][atom.resid][atom.name].sasa
+                atom_spec = struct[0][atom.chainID][atom.resid][atom.name]
+                atom.cpx_sasa = atom_spec.sasa
             except KeyError: #Handling alternative residues error
                 print('Alternative residue found at:', key)
                 brk_flag = True
@@ -124,7 +127,8 @@ class Edesolv(FeatureClass):
             
             # Calculate unbound (translated) sasa
             try:
-                atom.free_sasa = free_struct[0][atom.chainID][atom.resid][atom.name].sasa
+                atom_spec = free_struct[0][atom.chainID][atom.resid][atom.name]
+                atom.free_sasa = atom_spec.sasa
             except KeyError: #Handling alternative residues error
                 print('Alternative residue found at:', key)
                 brk_flag = True
@@ -140,7 +144,8 @@ class Edesolv(FeatureClass):
                 # Assign solvation parameters
                 Assign_solv_param(atom, disulf_bond)
                 
-                #Calculate atom complex edesolv, free edesolv and final edesolv (cpx - free)
+                # Calculate atom complex edesolv, 
+                # free edesolv and final edesolv (cpx - free)
                 atom.esolcpx = atom.cpx_sasa * atom.solv
                 atom.esolfree = atom.free_sasa * atom.solv
                 atom.edesolv = atom.esolcpx - atom.esolfree
@@ -153,7 +158,8 @@ class Edesolv(FeatureClass):
                 k = tuple(chain + coords)
 
                 #Human readable
-                self.edesolv_data[(key[1], key[3], key[2], key[4])] = [atom.edesolv]
+                self.edesolv_data[(key[1], key[3], 
+                                   key[2], key[4])] = [atom.edesolv]
                 #XYZ data
                 self.edesolv_data_xyz[k] = [atom.edesolv]
 
@@ -214,7 +220,9 @@ def Assign_solv_param(atom, disulf_bond=False):
 
     Args:
         atom (Atom): Edesolv.Atom object.
-        disulf_bond (bool, optional): Disulfide bond flag. If true, the atom is a sulfide involved in a disulfie bond. Defaults to False.
+        disulf_bond (bool, optional): Disulfide bond flag. 
+            If true, the atom is a sulfide involved in a disulfie bond. 
+            Defaults to False.
 
     Returns:
         None.
@@ -225,28 +233,35 @@ def Assign_solv_param(atom, disulf_bond=False):
     alifac = 1.27
     polfac = 2.30
 
-
-    if atom.position == "BB" or atom.position=="SC": #Check meaning and position of this line
+    # Check meaning and position of this line
+    if atom.position == "BB" or atom.position=="SC": 
         atom.solv = 0.0000
 
-    if (((atom.name.startswith('CG')) or (atom.name.startswith('CD')) or (atom.name.startswith('CE')) or (atom.name.startswith('CH')) or (atom.name.startswith('CZ')))
-        and (atom.resn=='PHE' or atom.resn=='TYR' or atom.resn=='HIS' or atom.resn=='TRP')):
+    if (((atom.name.startswith('CG')) or (atom.name.startswith('CD'))
+        or (atom.name.startswith('CE')) or (atom.name.startswith('CH')) 
+        or (atom.name.startswith('CZ'))) 
+        and (atom.resn=='PHE' or atom.resn=='TYR' 
+             or atom.resn=='HIS' or atom.resn=='TRP')):
         atom.solv = 0.0176 * arofac
     elif atom.name.startswith('C'):
         atom.solv = 0.0151 * alifac
     elif atom.name.startswith('NH') and atom.resn=='ARG':
         atom.solv = -0.0273 * polfac
-    elif atom.name.startswith('NT') or (atom.name.startswith('NZ') and atom.resn=='LYS'):
+    elif (atom.name.startswith('NT') 
+        or (atom.name.startswith('NZ') and atom.resn=='LYS')):
         atom.solv = -0.0548 * polfac
     elif atom.name.startswith('N'):
         atom.solv = -0.0170 * polfac
-    elif (atom.name.startswith('OD') and atom.resn=='ASP') or (atom.name.startswith('OE') and atom.resn=='GLU'):
+    elif ((atom.name.startswith('OD') and atom.resn=='ASP')
+        or (atom.name.startswith('OE') and atom.resn=='GLU')):
         atom.solv = -0.0299 * polfac
     elif atom.name.startswith('OG') or atom.name=='OH':
         atom.solv = -0.0185 * polfac
     elif atom.name.startswith('O'):
         atom.solv = -0.0136 * polfac
-    elif (atom.name.startswith('SD') and atom.resn=='MET') or (atom.name == 'SG' and disulf_bond == True): ## If S in CYS disulfide bond
+    ## Check if S in CYS disulfide bond
+    elif ((atom.name.startswith('SD') and atom.resn=='MET') 
+        or (atom.name == 'SG' and disulf_bond == True)):
         atom.solv = 0.0022 * polfac
     elif atom.name.startswith('S'):
         atom.solv = 0.0112 * polfac
@@ -254,7 +269,8 @@ def Assign_solv_param(atom, disulf_bond=False):
         atom.solv = 0.0000
 
     '''
-    # Corarse-Grained model from HADDOCK code for eventual future implementation
+    # Corarse-Grained model from HADDOCK code 
+    # for eventual future implementation
     if atom.position == "BB" and atom.resn=="ALA":
         atom.solv = -0.0107
     elif atom.position == "BB" and atom.resn=="GLY":
@@ -346,17 +362,19 @@ def Assign_solv_param(atom, disulf_bond=False):
     '''
     
 def get_disulfide_bonds(pdb_data):
-    '''Gets all the cysteine pairs that have the SG around 1.80 and 2.05 Angstron and the CB-SG-SG-CB angle around 
-       +- 90°
+    '''Gets all the cysteine pairs that have the SG around 1.80 and 2.05 
+       Angstrom and the CB-SG-SG-CB angle around +- 90°
 
     Args:
         pdb_data (pdb2sqlcore): pdb2sqlcore object 
 
     Returns:
-        disulfide_cys (list(tuple(str, int))): returns a list of chain IDs and resSeq numbers of cysteines bound in disulfide bonds
+        disulfide_cys (list(tuple(str, int))): returns a list of chain IDs and 
+        resSeq numbers of cysteines bound in disulfide bonds
 
     '''
-    cys_atoms = pdb_data.get('serial,chainID,resName,resSeq,name,x,y,z', resName='CYS')
+    cys_atoms = pdb_data.get('serial,chainID,resName,resSeq,name,x,y,z', 
+                             resName='CYS')
     cys_dict = {}
     for atom in cys_atoms:
         try:
@@ -369,15 +387,19 @@ def get_disulfide_bonds(pdb_data):
         for second_cys in cys_dict:
             if second_cys != first_cys:
                 # calculate distance
-                dist = np.linalg.norm(cys_dict[first_cys]['SG']-cys_dict[second_cys]['SG'])
+                dist = np.linalg.norm(
+                       cys_dict[first_cys]['SG']-cys_dict[second_cys]['SG'])
                 #if distance 1.80~2.05
                 if dist >= 1.80 and dist <= 2.10:
                     #calc dihedral
-                    selection = [cys_dict[first_cys]['CB'], cys_dict[first_cys]['SG'],
-                                 cys_dict[second_cys]['CB'], cys_dict[second_cys]['SG']]
+                    selection = [cys_dict[first_cys]['CB'], 
+                                 cys_dict[first_cys]['SG'],
+                                 cys_dict[second_cys]['CB'], 
+                                 cys_dict[second_cys]['SG']]
                     dihedral = get_dihedral(selection)
                     #if dihedral = ~+- 90
-                    if (-91.0 <= dihedral <= -89.0) or (89.0 <= dihedral <= 91.0):
+                    if ((-91.0 <= dihedral <= -89.0) 
+                        or (89.0 <= dihedral <= 91.0)):
                         disulfide_cys.extend([first_cys, second_cys])
                     #append to list to return
     
@@ -388,7 +410,8 @@ def get_dihedral(p):
     """Get dihedral angle from four points (atoms) 3D coordinates.
     
     Args:
-        p (list): list of four points 3D coordinates. Each element must be a list of floats.
+        p (list): list of four points 3D coordinates. 
+                  Each element must be a list of floats.
         
     Returns:
         dihedral (float): Dihedral angle.
