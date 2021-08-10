@@ -76,14 +76,18 @@ class Edesolv(FeatureClass):
         # Make free_structure fake object and 
         # translate the chains away from each other
         # TODO: use pdb2sql.translation for this
-        free_struct = deepcopy(struct)
-        for i, chain in enumerate((chain1, chain2)):
-            for residue in free_struct[0][chain]:
-                for atom in residue:
-                    if i == 0:
-                        atom.coord += 300
-                    elif i == 0:
-                        atom.coord -= 300
+        chain1_struct = deepcopy(struct)
+        del(chain1_struct[0][chain2])
+        
+        chain2_struct = deepcopy(struct)
+        del(chain2_struct[0][chain1])
+        #for i, chain in enumerate((chain1, chain2)):
+        #    for residue in free_struct[0][chain]:
+        #        for atom in residue:
+        #            if i == 0:
+        #                atom.coord += 300
+        #            elif i == 1:
+        #                atom.coord -= 300
         
         
         # get the contact atoms
@@ -100,7 +104,8 @@ class Edesolv(FeatureClass):
         #Compute complex structue SASA
         sr.compute(struct, level='A') 
         #Compute free structure SASA
-        sr.compute(free_struct, level='A')
+        sr.compute(chain1_struct, level='A')
+        sr.compute(chain2_struct, level='A')
 
 
         # Get disulfide bonds
@@ -127,7 +132,10 @@ class Edesolv(FeatureClass):
             
             # Calculate unbound (translated) sasa
             try:
-                atom_spec = free_struct[0][atom.chainID][atom.resid][atom.name]
+                if atom.chainID == chain1:
+                    atom_spec = chain1_struct[0][atom.chainID][atom.resid][atom.name]
+                elif atom.chainID == chain2:
+                    atom_spec = chain2_struct[0][atom.chainID][atom.resid][atom.name]
                 atom.free_sasa = atom_spec.sasa
             except KeyError: #Handling alternative residues error
                 print('Alternative residue found at:', key)
