@@ -54,7 +54,8 @@ class TestGenerateData(unittest.TestCase):
                     'deeprank.features.FullPSSM',
                     'deeprank.features.PSSM_IC',
                     'deeprank.features.BSA',
-                    'deeprank.features.ResidueDensity'],
+                    'deeprank.features.ResidueDensity',
+                    'deeprank.features.Edesolv'],
                 hdf5=h5)
 
             # create new files
