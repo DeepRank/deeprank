@@ -250,8 +250,9 @@ class DataGenerator(object):
             os.path.abspath(f) for f in self.pdb_source]
         self.f5.attrs['pdb_native'] = [
             os.path.abspath(f) for f in self.pdb_native]
-        self.f5.attrs['pssm_source'] = os.path.abspath(
-            self.pssm_source)
+        if self.pssm_source is not None:
+            self.f5.attrs['pssm_source'] = os.path.abspath(
+                self.pssm_source)
         if self.compute_features is not None:
             self.f5.attrs['features'] = self.compute_features
         if self.compute_targets is not None:
