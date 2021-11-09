@@ -297,8 +297,6 @@ class DataSet():
                 self.compute_norm()
             else:
                 self.get_norm()
-        else: 
-            self.get_feature_mean()
         
         logger.info('\n')
         logger.info("   Data Set Info:")
