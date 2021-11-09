@@ -285,7 +285,8 @@ class DataSet():
         self.get_pairing_feature()
 
         # get grid shape
-        self.get_grid_shape()
+        if self.grid_shape == None:
+            self.get_grid_shape()
 
         # get the input shape
         self.get_input_shape()
@@ -296,7 +297,9 @@ class DataSet():
                 self.compute_norm()
             else:
                 self.get_norm()
-
+        else: 
+            self.get_feature_mean()
+        
         logger.info('\n')
         logger.info("   Data Set Info:")
         logger.info(
@@ -340,7 +343,7 @@ class DataSet():
             if self.clip_features:
                 feature = self._clip_feature(feature)
 
-            if self.normalize_features:
+            if self.normalize_features or self.clip_features:
                 feature = self._normalize_feature(feature)
 
             if self.normalize_targets:
@@ -837,6 +840,7 @@ class DataSet():
 
         elif self.grid_info is not None:
             self.grid_shape = self.grid_info['number_of_points']
+        
 
         else:
             raise ValueError(
@@ -897,7 +901,7 @@ class DataSet():
         self.target_min = self.param_norm['targets'].min[0]
         self.target_max = self.param_norm['targets'].max[0]
 
-        logger.info(self.target_min, self.target_max)
+        logger.info(f'{self.target_min}, {self.target_max}')
 
     def get_norm(self):
         """Get the normalization values for the features."""
@@ -1045,6 +1049,7 @@ class DataSet():
                            ) / self.feature_std[ic]
         return feature
 
+
     def _clip_feature(self, feature):
         """Clip the value of the features at +/- mean + clip_factor * std.
         Args:
@@ -1052,13 +1057,15 @@ class DataSet():
         Returns:
             np.array: clipped feature values
         """
-
+        
         w = self.clip_factor
         for ic in range(self.data_shape[0]):
-            minv = self.feature_mean[ic] - w * self.feature_std[ic]
-            maxv = self.feature_mean[ic] + w * self.feature_std[ic]
-            feature[ic] = np.clip(feature[ic], minv, maxv)
-            #feature[ic] = self._mad_based_outliers(feature[ic],minv,maxv)
+            if len(feature[ic]) > 0:
+                minv = self.feature_mean[ic] - w * self.feature_std[ic]
+                maxv = self.feature_mean[ic] + w * self.feature_std[ic]
+                if minv != maxv: 
+                    feature[ic] = np.clip(feature[ic], minv, maxv)
+                    #feature[ic] = self._mad_based_outliers(feature[ic],minv,maxv)
         return feature
 
     @staticmethod
@@ -1431,32 +1438,36 @@ class DataSet():
             tmp_feat_ser = [np.zeros(npts), np.zeros(npts)]
             tmp_feat_vect = [np.zeros(npts), np.zeros(npts)]
             data = np.array(mol_data['features/' + name][()])
+            
+            if data.shape[0] > 0 :
+                chain = data[:, 0]
+                pos = data[:, 1:4]
+                feat_value = data[:, 4]
+                
+                if angle is not None:
+                    pos = pdb2sql.transform.rot_xyz_around_axis(
+                        pos, axis, angle, center)
+                    
+                if __vectorize__ or __vectorize__ == 'both':
+                    
+                    for chainID in [0, 1]:
+                        tmp_feat_vect[chainID] = np.sum(
+                            vmap(pos[chain == chainID, :],
+                                 feat_value[chain == chainID]),
+                            0)
 
-            chain = data[:, 0]
-            pos = data[:, 1:4]
-            feat_value = data[:, 4]
+                if not __vectorize__ or __vectorize__ == 'both':
+                    
+                    for chainID, xyz, val in zip(chain, pos, feat_value):
+                        tmp_feat_ser[int(chainID)] += \
+                                                      self._featgrid(xyz, val, grid, npts)
 
-            if angle is not None:
-                pos = pdb2sql.transform.rot_xyz_around_axis(
-                    pos, axis, angle, center)
+                if __vectorize__ == 'both':
+                    assert np.allclose(tmp_feat_ser, tmp_feat_vect)
 
-            if __vectorize__ or __vectorize__ == 'both':
-
-                for chainID in [0, 1]:
-                    tmp_feat_vect[chainID] = np.sum(
-                        vmap(pos[chain == chainID, :],
-                             feat_value[chain == chainID]),
-                        0)
-
-            if not __vectorize__ or __vectorize__ == 'both':
-
-                for chainID, xyz, val in zip(chain, pos, feat_value):
-                    tmp_feat_ser[int(chainID)] += \
-                        self._featgrid(xyz, val, grid, npts)
-
-            if __vectorize__ == 'both':
-                assert np.allclose(tmp_feat_ser, tmp_feat_vect)
-
+            else: 
+                print(f'no value for feature: {name}')
+                
             if __vectorize__:
                 feat += tmp_feat_vect
             else:
