@@ -285,7 +285,7 @@ class DataSet():
         self.get_pairing_feature()
 
         # get grid shape
-        if self.grid_shape == None:
+        if self.grid_shape is None:
             self.get_grid_shape()
 
         # get the input shape
@@ -821,24 +821,20 @@ class DataSet():
             mol_data = fh5.get(mol)
 
             # get the grid size
-            if self.grid_shape is None:
+            if 'grid_points' in mol_data:
+                nx = mol_data['grid_points']['x'].shape[0]
+                ny = mol_data['grid_points']['y'].shape[0]
+                nz = mol_data['grid_points']['z'].shape[0]
+                self.grid_shape = (nx, ny, nz)
+            else:
+                raise ValueError(
+                    f'Impossible to determine sparse grid shape.\n '
+                    f'Specify argument grid_shape=(x,y,z)')
 
-                if 'grid_points' in mol_data:
-                    nx = mol_data['grid_points']['x'].shape[0]
-                    ny = mol_data['grid_points']['y'].shape[0]
-                    nz = mol_data['grid_points']['z'].shape[0]
-                    self.grid_shape = (nx, ny, nz)
-
-                else:
-                    raise ValueError(
-                        f'Impossible to determine sparse grid shape.\n '
-                        f'Specify argument grid_shape=(x,y,z)')
-
-                fh5.close()
+            fh5.close()
 
         elif self.grid_info is not None:
             self.grid_shape = self.grid_info['number_of_points']
-        
 
         else:
             raise ValueError(
