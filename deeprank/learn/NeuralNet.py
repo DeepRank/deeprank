@@ -35,8 +35,9 @@ class NeuralNet():
                  chain2='B',
                  cuda=False, ngpu=0,
                  plot=True,
-                 save_hitrate=True,
+                 save_hitrate=False,
                  save_classmetrics=False,
+                 benchmark=False,
                  outdir='./'):
         """Train a Convolutional Neural Network for DeepRank.
 
@@ -179,6 +180,9 @@ class NeuralNet():
         # ------------------------------------------
         # Regression or classifiation
         # ------------------------------------------
+
+        # benchmark mode
+        self.benchmark = benchmark
 
         # task to accomplish
         self.task = task
@@ -424,13 +428,14 @@ class NeuralNet():
         # do test
         self.data = {}
         _, self.data['test'] = self._epoch(loader, train_model=False)
-        if self.task == 'reg':
-            self._plot_scatter_reg(os.path.join(self.outdir, 'prediction.png'))
-        else:
-            self._plot_boxplot_class(os.path.join(self.outdir, 'prediction.png'))
+        if self.benchmark is True :
+            if self.task == 'reg':
+                self._plot_scatter_reg(os.path.join(self.outdir, 'prediction.png'))
+            else:
+                self._plot_boxplot_class(os.path.join(self.outdir, 'prediction.png'))
 
-        self.plot_hit_rate(os.path.join(self.outdir + 'hitrate.png'))
-
+            self.plot_hit_rate(os.path.join(self.outdir + 'hitrate.png'))
+            
         self._export_epoch_hdf5(0, self.data)
         self.f5.close()
 
