@@ -215,9 +215,8 @@ class NeuralNet():
 
         # output directory
         self.outdir = outdir
-        if self.plot:
-            if not os.path.isdir(self.outdir):
-                os.mkdir(outdir)
+        if not os.path.isdir(self.outdir):
+            os.mkdir(outdir)
 
         # ------------------------------------------
         # Network
