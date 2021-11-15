@@ -292,7 +292,7 @@ class DataSet():
         self.get_input_shape()
 
         # get renormalization factor
-        if self.normalize_features or self.normalize_targets:
+        if self.normalize_features or self.normalize_targets or self.clip_features:
             if self.mapfly:
                 self.compute_norm()
             else:
@@ -341,9 +341,9 @@ class DataSet():
             if self.clip_features:
                 feature = self._clip_feature(feature)
 
-            if self.normalize_features or self.clip_features:
+            if self.normalize_features:
                 feature = self._normalize_feature(feature)
-
+                
             if self.normalize_targets:
                 target = self._normalize_target(target)
 
