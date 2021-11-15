@@ -1441,7 +1441,7 @@ class DataSet():
             
             if data.shape[0]==0:
                 logger.warning(f'No {name} retrieved at the protein/protein interface')
-                continue
+
             else:
                 chain = data[:, 0]
                 pos = data[:, 1:4]
