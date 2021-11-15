@@ -425,7 +425,7 @@ class NeuralNet():
         self.data = {}
         _, self.data['test'] = self._epoch(loader, train_model=False)
         
-        # plot results if the test set is assigned target values (i.e. in a benchmarking mode)
+        # plot results 
         if self.plot is True :
             self._plot_scatter(os.path.join(self.outdir, 'prediction.png'))
         if self.save_hitrate:
@@ -1061,11 +1061,11 @@ class NeuralNet():
 
         Args:
             figname (str): filename for the plot
-            irmsd_thr (float, optional): threshold for 'good' models
+            target_thr (float, optional): threshold for 'good' models
         """
         if self.plot is False:
             return
-
+        
         logger.info(f'\n  --> Hitrate plot: {figname}\n')
 
         color_plot = {'train': 'red', 'valid': 'blue', 'test': 'green'}
@@ -1074,8 +1074,14 @@ class NeuralNet():
         fig, ax = plt.subplots()
         for l in labels:
             if l in self.data:
+                try:
+                    hits = self.data[l]['hit']
+                except Exception:
+                    logger.exception(f'No hitrate computed for the {l} set')
+                    continue
+                    
                 if 'hit' in self.data[l]:
-                    hitrate = rankingMetrics.hitrate(self.data[l]['hit'])
+                    hitrate = rankingMetrics.hitrate(hits)
                     m = len(hitrate)
                     x = np.linspace(0, 100, m)
                     plt.plot(x, hitrate, c=color_plot[l], label=f"{l} M={m}")
@@ -1090,7 +1096,7 @@ class NeuralNet():
         fig.savefig(figname)
         plt.close()
 
-    def _compute_hitrate(self, irmsd_thr=4.0):
+    def _compute_hitrate(self, target_thr=4.0):
 
         labels = ['train', 'valid', 'test']
         self.hitrate = {}
@@ -1107,14 +1113,17 @@ class NeuralNet():
                 # get the target values
                 out = self.data[l]['outputs']
 
-                # get the irmsd
-                irmsd = []
-                for fname, mol in self.data[l]['mol']:
-
-                    f5 = h5py.File(fname, 'r')
-                    irmsd.append(f5[mol + '/targets/IRMSD'][()])
-                    f5.close()
-
+                # get the target vaues
+                targets = []
+                try:
+                    for fname, mol in self.data[l]['mol']:
+                        f5 = h5py.File(fname, 'r')
+                        targets.append(f5[mol + f'/targets/self.data_set.select_target'][()])
+                        f5.close()
+                except Exception:
+                    logger.exception(f'No target value ({self.data_set.select_target}) provided for for the {l} set. Skip Hitrate computation for the {l} set.')
+                    continue
+                    
                 # sort the data
                 if self.task == 'class':
                     out = F.softmax(torch.FloatTensor(out),
@@ -1124,16 +1133,16 @@ class NeuralNet():
                 if not inverse:
                     ind_sort = ind_sort[::-1]
 
-                # get the irmsd of the recommendation
-                irmsd = np.array(irmsd)[ind_sort]
+                # get the targets of the recommendation
+                targets = np.array(targets)[ind_sort]
 
                 # make a binary list out of that
-                binary_recomendation = (irmsd <= irmsd_thr).astype('int')
+                binary_recomendation = (targets <= target_thr).astype('int')
 
                 # number of recommended hit
                 npos = np.sum(binary_recomendation)
                 if npos == 0:
-                    npos = len(irmsd)
+                    npos = len(targets)
                     warnings.warn(
                         f'Non positive decoys found in {l} for hitrate plot')
 
@@ -1142,7 +1151,7 @@ class NeuralNet():
                     binary_recomendation, npos)
                 self.data[l]['relevance'] = binary_recomendation
 
-    def _get_relevance(self, data, irmsd_thr=4.0):
+    def _get_relevance(self, data, target_thr=4.0):
 
         # get the target ordering
         inverse = self.data_set.target_ordering == 'lower'
@@ -1152,12 +1161,12 @@ class NeuralNet():
         # get the target values
         out = data['outputs']
 
-        # get the irmsd
-        irmsd = []
+        # get the targets
+        targets = []
         for fname, mol in data['mol']:
 
             f5 = h5py.File(fname, 'r')
-            irmsd.append(f5[mol + '/targets/IRMSD'][()])
+            targets.append(f5[mol + f'/targets/self.data_set.select_target'][()])
             f5.close()
 
         # sort the data
@@ -1168,11 +1177,11 @@ class NeuralNet():
         if not inverse:
             ind_sort = ind_sort[::-1]
 
-        # get the irmsd of the recommendation
-        irmsd = np.array(irmsd)[ind_sort]
+        # get the targets of the recommendation
+        targets = np.array(targets)[ind_sort]
 
         # make a binary list out of that
-        return (irmsd <= irmsd_thr).astype('int')
+        return (targets <= target_thr).astype('int')
 
     def _get_classmetrics(self, data, metricname):
 
