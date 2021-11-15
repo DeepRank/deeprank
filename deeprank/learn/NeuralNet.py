@@ -34,10 +34,9 @@ class NeuralNet():
                  chain1='A',
                  chain2='B',
                  cuda=False, ngpu=0,
-                 plot=True,
+                 plot=False,
                  save_hitrate=False,
                  save_classmetrics=False,
-                 benchmark=False,
                  outdir='./'):
         """Train a Convolutional Neural Network for DeepRank.
 
@@ -178,11 +177,8 @@ class NeuralNet():
             self.ngpu = 1
 
         # ------------------------------------------
-        # Regression or classifiation
+        # Regression or classification
         # ------------------------------------------
-
-        # benchmark mode
-        self.benchmark = benchmark
 
         # task to accomplish
         self.task = task
@@ -428,14 +424,13 @@ class NeuralNet():
         # do test
         self.data = {}
         _, self.data['test'] = self._epoch(loader, train_model=False)
-        if self.benchmark is True :
-            if self.task == 'reg':
-                self._plot_scatter_reg(os.path.join(self.outdir, 'prediction.png'))
-            else:
-                self._plot_boxplot_class(os.path.join(self.outdir, 'prediction.png'))
+        
+        # plot results if the test set is assigned target values (i.e. in a benchmarking mode)
+        if self.plot is True :
+            self._plot_scatter(os.path.join(self.outdir, 'prediction.png'))
+        if self.save_hitrate:
+                self.plot_hit_rate(os.path.join(self.outdir + 'hitrate.png'))
 
-            self.plot_hit_rate(os.path.join(self.outdir + 'hitrate.png'))
-            
         self._export_epoch_hdf5(0, self.data)
         self.f5.close()
 
@@ -980,10 +975,14 @@ class NeuralNet():
         yvalues = np.array([])
 
         for l in labels:
-
+            
             if l in self.data:
-
-                targ = self.data[l]['targets'].flatten()
+                try:
+                    targ = self.data[l]['targets']
+                except Exception:
+                    logger.exception(f'No target values are provided for the {l} set \n Skip {l} in the scatter plot')
+                    continue
+                
                 out = self.data[l]['outputs'].flatten()
 
                 xvalues = np.append(xvalues, targ)
@@ -1029,10 +1028,13 @@ class NeuralNet():
         for l in labels:
 
             if l in self.data:
+                try:
+                    tar = self.data[l]['targets']
+                except Exception:
+                    logger.exception(f'No target values are provided for the {l} set \n Skip {l} in the boxplot')
+                    continue
 
-                tar = self.data[l]['targets']
                 out = self.data[l]['outputs']
-
                 data = [[], []]
                 confusion = [[0, 0], [0, 0]]
                 for pts, t in zip(out, tar):
