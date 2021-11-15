@@ -1439,7 +1439,10 @@ class DataSet():
             tmp_feat_vect = [np.zeros(npts), np.zeros(npts)]
             data = np.array(mol_data['features/' + name][()])
             
-            if data.shape[0] > 0 :
+            if data.shape[0]==0:
+                logger.warning(f'No {name} retrieved at the protein/protein interface')
+                continue
+            else:
                 chain = data[:, 0]
                 pos = data[:, 1:4]
                 feat_value = data[:, 4]
