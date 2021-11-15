@@ -1467,9 +1467,6 @@ class DataSet():
 
                 if __vectorize__ == 'both':
                     assert np.allclose(tmp_feat_ser, tmp_feat_vect)
-
-            else: 
-                print(f'no value for feature: {name}')
                 
             if __vectorize__:
                 feat += tmp_feat_vect
