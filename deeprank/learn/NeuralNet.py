@@ -427,7 +427,7 @@ class NeuralNet():
         # define the target value threshold to compute the hits if save_hitrate is True
         if self.save_hitrate and target_thr is not None: 
             self.target_thr = target_thr
-        print(f'Use a {self.target_thr} to depict hits (i.e. true positives predictions).)
+        print(f'Use a {self.target_thr} to depict hits (i.e. true positives predictions).')
                
         # do test
         self.data = {}
