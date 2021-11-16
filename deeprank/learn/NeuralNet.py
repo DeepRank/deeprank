@@ -1108,7 +1108,7 @@ class NeuralNet():
         # define the target value threshold to compute the hits if save_hitrate is True
         if target_thr is None: 
             target_thr = self.target_thr
-        print(f'Use a {target_thr} threshold to depict hits (i.e. true positives predictions).)
+        print(f'Use a {target_thr} threshold to depict hits (i.e. true positives predictions).')
                        
         labels = ['train', 'valid', 'test']
         self.hitrate = {}
@@ -1134,6 +1134,7 @@ class NeuralNet():
                         f5.close()
                 except Exception:
                     logger.exception(f'No target value ({self.data_set.select_target}) provided for for the {l} set. Skip Hitrate computation for the {l} set.')
+                    
                     continue
 
                 # sort the data
