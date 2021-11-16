@@ -798,8 +798,7 @@ class DataSet():
 
         self.input_shape = feature.shape
 
-    def get_grid_shapegrid_shape
-    (self):
+    def get_grid_shape(self):
         """Get the shape of the matrices.
 
         Raises:
