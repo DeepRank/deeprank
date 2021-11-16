@@ -33,7 +33,6 @@ class DataSet():
                  target_ordering=None,
                  dict_filter=None, pair_chain_feature=None,
                  transform_to_2D=False, projection=0,
-                 grid_shape=None,
                  clip_features=True, clip_factor=1.5,
                  rotation_seed=None,
                  tqdm=False,
@@ -105,9 +104,6 @@ class DataSet():
             projection (int): Projection axis from 3D to 2D:
                 Mapping: 0 -> yz, 1 -> xz, 2 -> xy
                 Default = 0
-            grid_shape (None or tuple(int), optional):
-                Shape of the grid in the hdf5 file. Is not necessary
-                if the grid points are still present in the HDF5 file.
             clip_features (bool, optional):
                 Remove too large values of the grid.
                 Can be needed for native complexes where the coulomb
@@ -185,7 +181,6 @@ class DataSet():
         # shape of the data
         self.input_shape = None
         self.data_shape = None
-        self.grid_shape = grid_shape
 
         # the possible pairing of the ind features
         self.pair_chain_feature = pair_chain_feature
@@ -285,8 +280,7 @@ class DataSet():
         self.get_pairing_feature()
 
         # get grid shape
-        if self.grid_shape is None:
-            self.get_grid_shape()
+        self.get_grid_shape()
 
         # get the input shape
         self.get_input_shape()
@@ -804,7 +798,8 @@ class DataSet():
 
         self.input_shape = feature.shape
 
-    def get_grid_shape(self):
+    def get_grid_shapegrid_shape
+    (self):
         """Get the shape of the matrices.
 
         Raises:
