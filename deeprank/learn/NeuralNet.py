@@ -1164,7 +1164,7 @@ class NeuralNet():
         # define the target value threshold to compute the hits if save_hitrate is True
         if target_thr is None: 
             target_thr = self.target_thr
-        print(f'Use a {target_thr} threshold to depict hits (i.e. true positives predictions).)
+        print(f'Use a {target_thr} threshold to depict hits (i.e. true positives predictions).')
               
         if target_thr is not None:
             # get the target ordering
