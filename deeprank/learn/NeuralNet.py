@@ -307,8 +307,8 @@ class NeuralNet():
               export_intermediate=True,
               num_workers=1,
               save_model='best',
-              save_epoch='intermediate', 
-              target_thr=None):
+              save_epoch='intermediate',
+              hit_cutoff=None):
         """Perform a simple training of the model.
 
         Args:
@@ -338,11 +338,12 @@ class NeuralNet():
 
             save_epoch (str, optional): 'intermediate' or 'all',
                 save the epochs data to HDF5.
-                
-            target_thr (float, optional): threshold to consider binarize the prediction values in the hit calculation.
+
+            hit_cutoff (float, optional): the cutoff used to define hit by
+                comparing with docking models' target value, e.g. IRMSD value
         """
-        self.target_thr = target_thr
-        
+        self.hit_cutoff = hit_cutoff
+
         logger.info(f'\n: Batch Size: {train_batch_size}')
         if self.cuda:
             logger.info(f': NGPU      : {self.ngpu}')
@@ -396,7 +397,7 @@ class NeuralNet():
         seconds = time
         return '%02d-%02d:%02d:%02d' % (day, hour, minutes, seconds)
 
-    def test(self, hdf5='test_data.hdf5', target_thr=None):
+    def test(self, hdf5='test_data.hdf5', hit_cutoff=None):
         """Test a predefined model on a new dataset.
 
         Args:
@@ -411,7 +412,7 @@ class NeuralNet():
             ...                   outdir='./test/')
             >>> # test the model
             >>> model.test()
-        """   
+        """
         # output
         fname = os.path.join(self.outdir, hdf5)
         self.f5 = h5py.File(fname, 'w')
@@ -425,15 +426,15 @@ class NeuralNet():
         loader = data_utils.DataLoader(self.data_set, sampler=sampler)
 
         # define the target value threshold to compute the hits if save_hitrate is True
-        if self.save_hitrate and target_thr is not None: 
-            self.target_thr = target_thr
-        print(f'Use a {self.target_thr} to depict hits (i.e. true positives predictions).')
-               
+        if self.save_hitrate and hit_cutoff is not None:
+            self.hit_cutoff = hit_cutoff
+        logger.info(f'Use hit cutoff {self.hit_cutoff}')
+
         # do test
         self.data = {}
         _, self.data['test'] = self._epoch(loader, train_model=False)
-        
-        # plot results 
+
+        # plot results
         if self.plot is True :
             self._plot(os.path.join(self.outdir, 'prediction.png'))
         if self.save_hitrate:
@@ -463,7 +464,7 @@ class NeuralNet():
                  'proj2D': self.data_set.proj2D,
                  'clip_features': self.data_set.clip_features,
                  'clip_factor': self.data_set.clip_factor,
-                 'target_thr': self.target_thr,
+                 'hit_cutoff': self.hit_cutoff,
                  'grid_info': self.data_set.grid_info,
                  'mapfly': self.data_set.mapfly,
                  'task': self.task,
@@ -493,7 +494,7 @@ class NeuralNet():
         """Get NeuralNet parameters from a saved model."""
         self.task = self.state['task']
         self.criterion = self.state['criterion']
-        self.target_thr = self.state['target_thr']
+        self.hit_cutoff = self.state['hit_cutoff']
 
     def load_data_params(self):
         """Get dataset parameters from a saved model."""
@@ -858,8 +859,8 @@ class NeuralNet():
 
         # get the relevance of the ranking
         if self.save_hitrate:
-            print(f'Use a {self.target_thr} to depict hits (i.e. true positives predictions). \n Make sure this threshold is correct or run \n NeuralNet._get_relevance(data, target_thr) again before plotting/saving results')
-            data['hit'] = self._get_relevance(data, self.target_thr)
+            logger.info(f'Use hit cutoff {self.hit_cutoff}')
+            data['hit'] = self._get_relevance(data, self.hit_cutoff)
 
         # get classification metrics
         if self.save_classmetrics:
@@ -983,14 +984,16 @@ class NeuralNet():
         yvalues = np.array([])
 
         for l in labels:
-            
+
             if l in self.data:
                 try:
                     targ = self.data[l]['targets'].flatten()
                 except Exception:
-                    logger.exception(f'No target values are provided for the {l} set \n Skip {l} in the scatter plot')
+                    logger.exception(
+                        f'No target values are provided for the {l} set, ',
+                        f'skip {l} in the scatter plot')
                     continue
-                
+
                 out = self.data[l]['outputs'].flatten()
 
                 xvalues = np.append(xvalues, targ)
@@ -1039,7 +1042,9 @@ class NeuralNet():
                 try:
                     tar = self.data[l]['targets']
                 except Exception:
-                    logger.exception(f'No target values are provided for the {l} set \n Skip {l} in the boxplot')
+                    logger.exception(
+                        f'No target values are provided for the {l} set, ',
+                        f'skip {l} in the boxplot')
                     continue
 
                 out = self.data[l]['outputs']
@@ -1072,7 +1077,7 @@ class NeuralNet():
         """
         if self.plot is False:
             return
-        
+
         logger.info(f'\n  --> Hitrate plot: {figname}\n')
 
         color_plot = {'train': 'red', 'valid': 'blue', 'test': 'green'}
@@ -1084,9 +1089,9 @@ class NeuralNet():
                 try:
                     hits = self.data[l]['hit']
                 except Exception:
-                    logger.exception(f'No hitrate computed for the {l} set. \n Run NeuralNet._get_relevance(data, target_thr) to first compute hits')
+                    logger.exception(f'No hitrate computed for the {l} set.')
                     continue
-                    
+
                 if 'hit' in self.data[l]:
                     hitrate = rankingMetrics.hitrate(hits)
                     m = len(hitrate)
@@ -1103,13 +1108,13 @@ class NeuralNet():
         fig.savefig(figname)
         plt.close()
 
-    def _compute_hitrate(self, target_thr=None):
+    def _compute_hitrate(self, hit_cutoff=None):
 
         # define the target value threshold to compute the hits if save_hitrate is True
-        if target_thr is None: 
-            target_thr = self.target_thr
-        print(f'Use a {target_thr} threshold to depict hits (i.e. true positives predictions).')
-                       
+        if hit_cutoff is None:
+            hit_cutoff = self.hit_cutoff
+            logger.info(f'Use hit cutoff {self.hit_cutoff}')
+
         labels = ['train', 'valid', 'test']
         self.hitrate = {}
 
@@ -1133,8 +1138,9 @@ class NeuralNet():
                         targets.append(f5[mol + f'/targets/{self.data_set.select_target}'][()])
                         f5.close()
                 except Exception:
-                    logger.exception(f'No target value ({self.data_set.select_target}) provided for for the {l} set. Skip Hitrate computation for the {l} set.')
-                    
+                    logger.exception(
+                        f'No target value {self.data_set.select_target} ',
+                        f'provided for the {l} set. Skip Hitrate computation.')
                     continue
 
                 # sort the data
@@ -1150,7 +1156,7 @@ class NeuralNet():
                 targets = np.array(targets)[ind_sort]
 
                 # make a binary list out of that
-                binary_recomendation = (targets <= target_thr).astype('int')
+                binary_recomendation = (targets <= hit_cutoff).astype('int')
 
                 # number of recommended hit
                 npos = np.sum(binary_recomendation)
@@ -1158,15 +1164,15 @@ class NeuralNet():
                     npos = len(targets)
                     warnings.warn(
                         f'Non positive decoys found in {l} for hitrate plot')
-                  
-    def _get_relevance(self, data, target_thr=None):
+
+    def _get_relevance(self, data, hit_cutoff=None):
 
         # define the target value threshold to compute the hits if save_hitrate is True
-        if target_thr is None: 
-            target_thr = self.target_thr
-        print(f'Use a {target_thr} threshold to depict hits (i.e. true positives predictions).')
-              
-        if target_thr is not None:
+        if hit_cutoff is None:
+            hit_cutoff = self.hit_cutoff
+            logger.info(f'Use hit cutoff {self.hit_cutoff}')
+
+        if hit_cutoff is not None:
             # get the target ordering
             inverse = self.data_set.target_ordering == 'lower'
             if self.task == 'class':
@@ -1195,8 +1201,8 @@ class NeuralNet():
             targets = np.array(targets)[ind_sort]
 
             # make a binary list out of that
-            return (targets <= target_thr).astype('int')
-        else: 
+            return (targets <= hit_cutoff).astype('int')
+        else:
             return (targets == None).astype('int')
 
     def _get_classmetrics(self, data, metricname):
