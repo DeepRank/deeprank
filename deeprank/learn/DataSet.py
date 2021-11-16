@@ -26,9 +26,7 @@ class DataSet():
 
     def __init__(self, train_database, valid_database=None, test_database=None,
                  chain1='A', chain2='B',
-                 mapfly=True, grid_info={
-                'number_of_points': (10, 10, 10),
-                'resolution': (3, 3, 3)},
+                 mapfly=True, grid_info=None,
                  use_rotation=None,
                  select_feature='all', select_target='DOCKQ',
                  normalize_features=True, normalize_targets=True,
@@ -61,10 +59,13 @@ class DataSet():
             mapfly (bool): do we compute the map in the batch
                 preparation or read them
 
-            grid_info(dict): grid information to map the feature on the
-                fly. if None the original grid points are used.
+            grid_info(dict): grid information to map the feature.
+                If None the original grid points are used.
+                The dict contains:
+                    -  'number_of_points", the shape of grid
+                    -  'resolution', the resolution of grid, unit in A
                 Example:
-                    {'number_of_points': [X,Y,Z], 'resolution': [X,Y,Z]}
+                    {'number_of_points': [10, 10, 10], 'resolution': [3, 3, 3]}
 
             use_rotation (int): number of rotations to use.
                 Example: 0 (use only original data)
@@ -126,7 +127,10 @@ class DataSet():
             >>>                    test_database = None,
             >>>                    chain1='C',
             >>>                    chain2='D',
-            >>>                    grid_shape=(30,30,30),
+            >>>                    grid_info = {
+            >>>                        'number_of_points': (10, 10, 10),
+            >>>                        'resolution': (3, 3, 3)
+            >>>                    },
             >>>                    select_feature = {
             >>>                       'AtomicDensities': 'all',
             >>>                       'Features': [
@@ -163,6 +167,7 @@ class DataSet():
         # map generation
         self.mapfly = mapfly
         self.grid_info = grid_info
+        self._grid_shape = None
 
         # data agumentation
         if self.mapfly:
@@ -293,7 +298,7 @@ class DataSet():
                 self.compute_norm()
             else:
                 self.get_norm()
-        
+
         logger.info('\n')
         logger.info("   Data Set Info:")
         logger.info(
@@ -339,7 +344,7 @@ class DataSet():
 
             if self.normalize_features:
                 feature = self._normalize_feature(feature)
-                
+
             if self.normalize_targets:
                 target = self._normalize_target(target)
 
@@ -808,7 +813,6 @@ class DataSet():
                 the HDF5 file
         """
         if self.mapfly is False:
-
             fname = self.train_database[0]
             fh5 = h5py.File(fname, 'r')
             mol = list(fh5.keys())[0]
@@ -821,22 +825,18 @@ class DataSet():
                 nx = mol_data['grid_points']['x'].shape[0]
                 ny = mol_data['grid_points']['y'].shape[0]
                 nz = mol_data['grid_points']['z'].shape[0]
-                self.grid_shape = (nx, ny, nz)
-            else:
-                raise ValueError(
-                    f'Impossible to determine sparse grid shape.\n '
-                    f'Specify argument grid_shape=(x,y,z)')
+                self._grid_shape = (nx, ny, nz)
 
             fh5.close()
 
-        elif self.grid_info is not None:
-            self.grid_shape = self.grid_info['number_of_points']
-
-        else:
-            raise ValueError(
-                f'Impossible to determine sparse grid shape.\n'
-                f'If you are not loading a pretrained model, '
-                f' specify grid_shape or grid_info')
+        if self._grid_shape is None:
+            if self.grid_info is not None:
+                self._grid_shape = self.grid_info['number_of_points']
+            else:
+                raise ValueError(
+                    f'Impossible to determine sparse grid shape.\n'
+                    f'If you are not loading a pretrained model, '
+                    f' specify argument "grid_info".')
 
     def compute_norm(self):
         """compute the normalization factors."""
@@ -934,7 +934,7 @@ class DataSet():
             # if the file doesn't exist we create it
             if not os.path.isfile(fdata):
                 logger.info(f"      Computing norm for {f5}")
-                norm = NormalizeData(f5, shape=self.grid_shape)
+                norm = NormalizeData(f5, shape=self._grid_shape)
                 norm.get()
 
             # read the data
@@ -1047,13 +1047,13 @@ class DataSet():
         Returns:
             np.array: clipped feature values
         """
-        
+
         w = self.clip_factor
         for ic in range(self.data_shape[0]):
             if len(feature[ic]) > 0:
                 minv = self.feature_mean[ic] - w * self.feature_std[ic]
                 maxv = self.feature_mean[ic] + w * self.feature_std[ic]
-                if minv != maxv: 
+                if minv != maxv:
                     feature[ic] = np.clip(feature[ic], minv, maxv)
                     #feature[ic] = self._mad_based_outliers(feature[ic],minv,maxv)
         return feature
@@ -1157,7 +1157,7 @@ class DataSet():
                     mat = sparse.FLANgrid(sparse=True,
                                           index=data['index'][:],
                                           value=data['value'][:],
-                                          shape=self.grid_shape).to_dense()
+                                          shape=self._grid_shape).to_dense()
                 else:
                     mat = data['value'][:]
 
@@ -1168,7 +1168,7 @@ class DataSet():
         try:
             target = mol_data.get('targets/' + self.select_target)[()]
         except Exception:
-            logger.exception(f'No target value for: {fname} - not required for the test set')            
+            logger.exception(f'No target value for: {fname} - not required for the test set')
 
         # close
         fh5.close()
@@ -1217,7 +1217,7 @@ class DataSet():
         try:
             target = mol_data.get('targets/' + self.select_target)[()]
         except Exception:
-            logger.exception(f'No target value for: {fname} - not required for the test set')            
+            logger.exception(f'No target value for: {fname} - not required for the test set')
 
         # close
         fh5.close()
@@ -1434,7 +1434,7 @@ class DataSet():
             tmp_feat_ser = [np.zeros(npts), np.zeros(npts)]
             tmp_feat_vect = [np.zeros(npts), np.zeros(npts)]
             data = np.array(mol_data['features/' + name][()])
-            
+
             if data.shape[0]==0:
                 logger.warning(f'No {name} retrieved at the protein/protein interface')
 
@@ -1442,13 +1442,13 @@ class DataSet():
                 chain = data[:, 0]
                 pos = data[:, 1:4]
                 feat_value = data[:, 4]
-                
+
                 if angle is not None:
                     pos = pdb2sql.transform.rot_xyz_around_axis(
                         pos, axis, angle, center)
-                    
+
                 if __vectorize__ or __vectorize__ == 'both':
-                    
+
                     for chainID in [0, 1]:
                         tmp_feat_vect[chainID] = np.sum(
                             vmap(pos[chain == chainID, :],
@@ -1456,14 +1456,14 @@ class DataSet():
                             0)
 
                 if not __vectorize__ or __vectorize__ == 'both':
-                    
+
                     for chainID, xyz, val in zip(chain, pos, feat_value):
                         tmp_feat_ser[int(chainID)] += \
                                                       self._featgrid(xyz, val, grid, npts)
 
                 if __vectorize__ == 'both':
                     assert np.allclose(tmp_feat_ser, tmp_feat_vect)
-                
+
             if __vectorize__:
                 feat += tmp_feat_vect
             else:
