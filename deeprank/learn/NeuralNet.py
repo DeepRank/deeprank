@@ -493,6 +493,7 @@ class NeuralNet():
         """Get NeuralNet parameters from a saved model."""
         self.task = self.state['task']
         self.criterion = self.state['criterion']
+        self.target_thr = self.state['target_thr']
 
     def load_data_params(self):
         """Get dataset parameters from a saved model."""
@@ -517,7 +518,6 @@ class NeuralNet():
         self.data_set.target_ordering = self.state['target_ordering']
         self.data_set.clip_features = self.state['clip_features']
         self.data_set.clip_factor = self.state['clip_factor']
-        self.data_set.grid_shape = self.state['grid_shape']
         self.data_set.mapfly = self.state['mapfly']
         self.data_set.grid_info = self.state['grid_info']
 
