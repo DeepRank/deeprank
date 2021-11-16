@@ -186,11 +186,11 @@ class NeuralNet():
         # Set the loss functiom
         if self.task == 'reg':
             self.criterion = nn.MSELoss(reduction='sum')
-            self._plot_scatter = self._plot_scatter_reg
+            self._plot = self._plot_scatter_reg
 
         elif self.task == 'class':
             self.criterion = nn.CrossEntropyLoss(weight = self.class_weights, reduction='mean')
-            self._plot_scatter = self._plot_boxplot_class
+            self._plot = self._plot_boxplot_class
             self.data_set.normalize_targets = False
 
         else:
@@ -307,7 +307,8 @@ class NeuralNet():
               export_intermediate=True,
               num_workers=1,
               save_model='best',
-              save_epoch='intermediate'):
+              save_epoch='intermediate', 
+              target_thr=None):
         """Perform a simple training of the model.
 
         Args:
@@ -337,8 +338,11 @@ class NeuralNet():
 
             save_epoch (str, optional): 'intermediate' or 'all',
                 save the epochs data to HDF5.
-
+                
+            target_thr (float, optional): threshold to consider binarize the prediction values in the hit calculation.
         """
+        self.target_thr = target_thr
+        
         logger.info(f'\n: Batch Size: {train_batch_size}')
         if self.cuda:
             logger.info(f': NGPU      : {self.ngpu}')
@@ -392,7 +396,7 @@ class NeuralNet():
         seconds = time
         return '%02d-%02d:%02d:%02d' % (day, hour, minutes, seconds)
 
-    def test(self, hdf5='test_data.hdf5'):
+    def test(self, hdf5='test_data.hdf5', target_thr=None):
         """Test a predefined model on a new dataset.
 
         Args:
@@ -407,7 +411,7 @@ class NeuralNet():
             ...                   outdir='./test/')
             >>> # test the model
             >>> model.test()
-        """
+        """   
         # output
         fname = os.path.join(self.outdir, hdf5)
         self.f5 = h5py.File(fname, 'w')
@@ -420,15 +424,20 @@ class NeuralNet():
         sampler = data_utils.sampler.SubsetRandomSampler(index)
         loader = data_utils.DataLoader(self.data_set, sampler=sampler)
 
+        # define the target value threshold to compute the hits if save_hitrate is True
+        if self.save_hitrate and target_thr is not None: 
+            self.target_thr = target_thr
+        print(f'Use a {self.target_thr} to depict hits (i.e. true positives predictions).)
+               
         # do test
         self.data = {}
         _, self.data['test'] = self._epoch(loader, train_model=False)
         
         # plot results 
         if self.plot is True :
-            self._plot_scatter(os.path.join(self.outdir, 'prediction.png'))
+            self._plot(os.path.join(self.outdir, 'prediction.png'))
         if self.save_hitrate:
-                self.plot_hit_rate(os.path.join(self.outdir + 'hitrate.png'))
+            self.plot_hit_rate(os.path.join(self.outdir + 'hitrate.png'))
 
         self._export_epoch_hdf5(0, self.data)
         self.f5.close()
@@ -454,7 +463,7 @@ class NeuralNet():
                  'proj2D': self.data_set.proj2D,
                  'clip_features': self.data_set.clip_features,
                  'clip_factor': self.data_set.clip_factor,
-                 'grid_shape': self.data_set.grid_shape,
+                 'target_thr': self.target_thr,
                  'grid_info': self.data_set.grid_info,
                  'mapfly': self.data_set.mapfly,
                  'task': self.task,
@@ -731,7 +740,7 @@ class NeuralNet():
                 if self.plot:
                     figname = os.path.join(self.outdir,
                         f"prediction_{epoch:04d}.png")
-                    self._plot_scatter(figname)
+                    self._plot(figname)
 
                 if self.save_hitrate:
                     figname = os.path.join(self.outdir,
@@ -741,7 +750,6 @@ class NeuralNet():
                 self._export_epoch_hdf5(epoch, self.data)
 
             elif save_epoch == 'all':
-                # self._compute_hitrate()
                 self._export_epoch_hdf5(epoch, self.data)
 
             sys.stdout.flush()
@@ -850,7 +858,8 @@ class NeuralNet():
 
         # get the relevance of the ranking
         if self.save_hitrate:
-            data['hit'] = self._get_relevance(data)
+            print(f'Use a {self.target_thr} to depict hits (i.e. true positives predictions). \n Make sure this threshold is correct or run \n NeuralNet._get_relevance(data, target_thr) again before plotting/saving results')
+            data['hit'] = self._get_relevance(data, self.target_thr)
 
         # get classification metrics
         if self.save_classmetrics:
@@ -977,7 +986,7 @@ class NeuralNet():
             
             if l in self.data:
                 try:
-                    targ = self.data[l]['targets']
+                    targ = self.data[l]['targets'].flatten()
                 except Exception:
                     logger.exception(f'No target values are provided for the {l} set \n Skip {l} in the scatter plot')
                     continue
@@ -1060,7 +1069,6 @@ class NeuralNet():
 
         Args:
             figname (str): filename for the plot
-            target_thr (float, optional): threshold for 'good' models
         """
         if self.plot is False:
             return
@@ -1076,7 +1084,7 @@ class NeuralNet():
                 try:
                     hits = self.data[l]['hit']
                 except Exception:
-                    logger.exception(f'No hitrate computed for the {l} set')
+                    logger.exception(f'No hitrate computed for the {l} set. \n Run NeuralNet._get_relevance(data, target_thr) to first compute hits')
                     continue
                     
                 if 'hit' in self.data[l]:
@@ -1095,8 +1103,13 @@ class NeuralNet():
         fig.savefig(figname)
         plt.close()
 
-    def _compute_hitrate(self, target_thr=4.0):
+    def _compute_hitrate(self, target_thr=None):
 
+        # define the target value threshold to compute the hits if save_hitrate is True
+        if target_thr is None: 
+            target_thr = self.target_thr
+        print(f'Use a {target_thr} threshold to depict hits (i.e. true positives predictions).)
+                       
         labels = ['train', 'valid', 'test']
         self.hitrate = {}
 
@@ -1117,12 +1130,12 @@ class NeuralNet():
                 try:
                     for fname, mol in self.data[l]['mol']:
                         f5 = h5py.File(fname, 'r')
-                        targets.append(f5[mol + f'/targets/self.data_set.select_target'][()])
+                        targets.append(f5[mol + f'/targets/{self.data_set.select_target}'][()])
                         f5.close()
                 except Exception:
                     logger.exception(f'No target value ({self.data_set.select_target}) provided for for the {l} set. Skip Hitrate computation for the {l} set.')
                     continue
-                    
+
                 # sort the data
                 if self.task == 'class':
                     out = F.softmax(torch.FloatTensor(out),
@@ -1144,43 +1157,46 @@ class NeuralNet():
                     npos = len(targets)
                     warnings.warn(
                         f'Non positive decoys found in {l} for hitrate plot')
+                  
+    def _get_relevance(self, data, target_thr=None):
 
-                # get the hitrate
-                self.data[l]['hitrate'] = rankingMetrics.hitrate(
-                    binary_recomendation, npos)
-                self.data[l]['relevance'] = binary_recomendation
+        # define the target value threshold to compute the hits if save_hitrate is True
+        if target_thr is None: 
+            target_thr = self.target_thr
+        print(f'Use a {target_thr} threshold to depict hits (i.e. true positives predictions).)
+              
+        if target_thr is not None:
+            # get the target ordering
+            inverse = self.data_set.target_ordering == 'lower'
+            if self.task == 'class':
+                inverse = False
 
-    def _get_relevance(self, data, target_thr=4.0):
+            # get the target values
+            out = data['outputs']
 
-        # get the target ordering
-        inverse = self.data_set.target_ordering == 'lower'
-        if self.task == 'class':
-            inverse = False
+            # get the targets
+            targets = []
+            for fname, mol in data['mol']:
 
-        # get the target values
-        out = data['outputs']
+                f5 = h5py.File(fname, 'r')
+                targets.append(f5[mol + f'/targets/{self.data_set.select_target}'][()])
+                f5.close()
 
-        # get the targets
-        targets = []
-        for fname, mol in data['mol']:
+            # sort the data
+            if self.task == 'class':
+                out = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()[:, 1]
+            ind_sort = np.argsort(out)
 
-            f5 = h5py.File(fname, 'r')
-            targets.append(f5[mol + f'/targets/self.data_set.select_target'][()])
-            f5.close()
+            if not inverse:
+                ind_sort = ind_sort[::-1]
 
-        # sort the data
-        if self.task == 'class':
-            out = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()[:, 1]
-        ind_sort = np.argsort(out)
+            # get the targets of the recommendation
+            targets = np.array(targets)[ind_sort]
 
-        if not inverse:
-            ind_sort = ind_sort[::-1]
-
-        # get the targets of the recommendation
-        targets = np.array(targets)[ind_sort]
-
-        # make a binary list out of that
-        return (targets <= target_thr).astype('int')
+            # make a binary list out of that
+            return (targets <= target_thr).astype('int')
+        else: 
+            return (targets == None).astype('int')
 
     def _get_classmetrics(self, data, metricname):
 
