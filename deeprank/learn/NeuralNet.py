@@ -34,8 +34,8 @@ class NeuralNet():
                  chain1='A',
                  chain2='B',
                  cuda=False, ngpu=0,
-                 plot=True,
-                 save_hitrate=True,
+                 plot=False,
+                 save_hitrate=False,
                  save_classmetrics=False,
                  outdir='./'):
         """Train a Convolutional Neural Network for DeepRank.
@@ -177,7 +177,7 @@ class NeuralNet():
             self.ngpu = 1
 
         # ------------------------------------------
-        # Regression or classifiation
+        # Regression or classification
         # ------------------------------------------
 
         # task to accomplish
@@ -186,11 +186,11 @@ class NeuralNet():
         # Set the loss functiom
         if self.task == 'reg':
             self.criterion = nn.MSELoss(reduction='sum')
-            self._plot_scatter = self._plot_scatter_reg
+            self._plot = self._plot_scatter_reg
 
         elif self.task == 'class':
             self.criterion = nn.CrossEntropyLoss(weight = self.class_weights, reduction='mean')
-            self._plot_scatter = self._plot_boxplot_class
+            self._plot = self._plot_boxplot_class
             self.data_set.normalize_targets = False
 
         else:
@@ -215,9 +215,8 @@ class NeuralNet():
 
         # output directory
         self.outdir = outdir
-        if self.plot:
-            if not os.path.isdir(self.outdir):
-                os.mkdir(outdir)
+        if not os.path.isdir(self.outdir):
+            os.mkdir(outdir)
 
         # ------------------------------------------
         # Network
@@ -308,7 +307,8 @@ class NeuralNet():
               export_intermediate=True,
               num_workers=1,
               save_model='best',
-              save_epoch='intermediate'):
+              save_epoch='intermediate',
+              hit_cutoff=None):
         """Perform a simple training of the model.
 
         Args:
@@ -339,7 +339,11 @@ class NeuralNet():
             save_epoch (str, optional): 'intermediate' or 'all',
                 save the epochs data to HDF5.
 
+            hit_cutoff (float, optional): the cutoff used to define hit by
+                comparing with docking models' target value, e.g. IRMSD value
         """
+        self.hit_cutoff = hit_cutoff
+
         logger.info(f'\n: Batch Size: {train_batch_size}')
         if self.cuda:
             logger.info(f': NGPU      : {self.ngpu}')
@@ -393,7 +397,7 @@ class NeuralNet():
         seconds = time
         return '%02d-%02d:%02d:%02d' % (day, hour, minutes, seconds)
 
-    def test(self, hdf5='test_data.hdf5'):
+    def test(self, hdf5='test_data.hdf5', hit_cutoff=None):
         """Test a predefined model on a new dataset.
 
         Args:
@@ -421,15 +425,20 @@ class NeuralNet():
         sampler = data_utils.sampler.SubsetRandomSampler(index)
         loader = data_utils.DataLoader(self.data_set, sampler=sampler)
 
+        # define the target value threshold to compute the hits if save_hitrate is True
+        if self.save_hitrate and hit_cutoff is not None:
+            self.hit_cutoff = hit_cutoff
+        logger.info(f'Use hit cutoff {self.hit_cutoff}')
+
         # do test
         self.data = {}
         _, self.data['test'] = self._epoch(loader, train_model=False)
-        if self.task == 'reg':
-            self._plot_scatter_reg(os.path.join(self.outdir, 'prediction.png'))
-        else:
-            self._plot_boxplot_class(os.path.join(self.outdir, 'prediction.png'))
 
-        self.plot_hit_rate(os.path.join(self.outdir + 'hitrate.png'))
+        # plot results
+        if self.plot is True :
+            self._plot(os.path.join(self.outdir, 'prediction.png'))
+        if self.save_hitrate:
+            self.plot_hit_rate(os.path.join(self.outdir + 'hitrate.png'))
 
         self._export_epoch_hdf5(0, self.data)
         self.f5.close()
@@ -455,7 +464,7 @@ class NeuralNet():
                  'proj2D': self.data_set.proj2D,
                  'clip_features': self.data_set.clip_features,
                  'clip_factor': self.data_set.clip_factor,
-                 'grid_shape': self.data_set.grid_shape,
+                 'hit_cutoff': self.hit_cutoff,
                  'grid_info': self.data_set.grid_info,
                  'mapfly': self.data_set.mapfly,
                  'task': self.task,
@@ -485,6 +494,7 @@ class NeuralNet():
         """Get NeuralNet parameters from a saved model."""
         self.task = self.state['task']
         self.criterion = self.state['criterion']
+        self.hit_cutoff = self.state['hit_cutoff']
 
     def load_data_params(self):
         """Get dataset parameters from a saved model."""
@@ -509,7 +519,6 @@ class NeuralNet():
         self.data_set.target_ordering = self.state['target_ordering']
         self.data_set.clip_features = self.state['clip_features']
         self.data_set.clip_factor = self.state['clip_factor']
-        self.data_set.grid_shape = self.state['grid_shape']
         self.data_set.mapfly = self.state['mapfly']
         self.data_set.grid_info = self.state['grid_info']
 
@@ -732,7 +741,7 @@ class NeuralNet():
                 if self.plot:
                     figname = os.path.join(self.outdir,
                         f"prediction_{epoch:04d}.png")
-                    self._plot_scatter(figname)
+                    self._plot(figname)
 
                 if self.save_hitrate:
                     figname = os.path.join(self.outdir,
@@ -742,7 +751,6 @@ class NeuralNet():
                 self._export_epoch_hdf5(epoch, self.data)
 
             elif save_epoch == 'all':
-                # self._compute_hitrate()
                 self._export_epoch_hdf5(epoch, self.data)
 
             sys.stdout.flush()
@@ -851,7 +859,8 @@ class NeuralNet():
 
         # get the relevance of the ranking
         if self.save_hitrate:
-            data['hit'] = self._get_relevance(data)
+            logger.info(f'Use hit cutoff {self.hit_cutoff}')
+            data['hit'] = self._get_relevance(data, self.hit_cutoff)
 
         # get classification metrics
         if self.save_classmetrics:
@@ -977,8 +986,14 @@ class NeuralNet():
         for l in labels:
 
             if l in self.data:
+                try:
+                    targ = self.data[l]['targets'].flatten()
+                except Exception:
+                    logger.exception(
+                        f'No target values are provided for the {l} set, ',
+                        f'skip {l} in the scatter plot')
+                    continue
 
-                targ = self.data[l]['targets'].flatten()
                 out = self.data[l]['outputs'].flatten()
 
                 xvalues = np.append(xvalues, targ)
@@ -1024,10 +1039,15 @@ class NeuralNet():
         for l in labels:
 
             if l in self.data:
+                try:
+                    tar = self.data[l]['targets']
+                except Exception:
+                    logger.exception(
+                        f'No target values are provided for the {l} set, ',
+                        f'skip {l} in the boxplot')
+                    continue
 
-                tar = self.data[l]['targets']
                 out = self.data[l]['outputs']
-
                 data = [[], []]
                 confusion = [[0, 0], [0, 0]]
                 for pts, t in zip(out, tar):
@@ -1054,7 +1074,6 @@ class NeuralNet():
 
         Args:
             figname (str): filename for the plot
-            irmsd_thr (float, optional): threshold for 'good' models
         """
         if self.plot is False:
             return
@@ -1067,8 +1086,14 @@ class NeuralNet():
         fig, ax = plt.subplots()
         for l in labels:
             if l in self.data:
+                try:
+                    hits = self.data[l]['hit']
+                except Exception:
+                    logger.exception(f'No hitrate computed for the {l} set.')
+                    continue
+
                 if 'hit' in self.data[l]:
-                    hitrate = rankingMetrics.hitrate(self.data[l]['hit'])
+                    hitrate = rankingMetrics.hitrate(hits)
                     m = len(hitrate)
                     x = np.linspace(0, 100, m)
                     plt.plot(x, hitrate, c=color_plot[l], label=f"{l} M={m}")
@@ -1083,7 +1108,12 @@ class NeuralNet():
         fig.savefig(figname)
         plt.close()
 
-    def _compute_hitrate(self, irmsd_thr=4.0):
+    def _compute_hitrate(self, hit_cutoff=None):
+
+        # define the target value threshold to compute the hits if save_hitrate is True
+        if hit_cutoff is None:
+            hit_cutoff = self.hit_cutoff
+            logger.info(f'Use hit cutoff {self.hit_cutoff}')
 
         labels = ['train', 'valid', 'test']
         self.hitrate = {}
@@ -1100,13 +1130,18 @@ class NeuralNet():
                 # get the target values
                 out = self.data[l]['outputs']
 
-                # get the irmsd
-                irmsd = []
-                for fname, mol in self.data[l]['mol']:
-
-                    f5 = h5py.File(fname, 'r')
-                    irmsd.append(f5[mol + '/targets/IRMSD'][()])
-                    f5.close()
+                # get the target vaues
+                targets = []
+                try:
+                    for fname, mol in self.data[l]['mol']:
+                        f5 = h5py.File(fname, 'r')
+                        targets.append(f5[mol + f'/targets/{self.data_set.select_target}'][()])
+                        f5.close()
+                except Exception:
+                    logger.exception(
+                        f'No target value {self.data_set.select_target} ',
+                        f'provided for the {l} set. Skip Hitrate computation.')
+                    continue
 
                 # sort the data
                 if self.task == 'class':
@@ -1117,55 +1152,58 @@ class NeuralNet():
                 if not inverse:
                     ind_sort = ind_sort[::-1]
 
-                # get the irmsd of the recommendation
-                irmsd = np.array(irmsd)[ind_sort]
+                # get the targets of the recommendation
+                targets = np.array(targets)[ind_sort]
 
                 # make a binary list out of that
-                binary_recomendation = (irmsd <= irmsd_thr).astype('int')
+                binary_recomendation = (targets <= hit_cutoff).astype('int')
 
                 # number of recommended hit
                 npos = np.sum(binary_recomendation)
                 if npos == 0:
-                    npos = len(irmsd)
+                    npos = len(targets)
                     warnings.warn(
                         f'Non positive decoys found in {l} for hitrate plot')
 
-                # get the hitrate
-                self.data[l]['hitrate'] = rankingMetrics.hitrate(
-                    binary_recomendation, npos)
-                self.data[l]['relevance'] = binary_recomendation
+    def _get_relevance(self, data, hit_cutoff=None):
 
-    def _get_relevance(self, data, irmsd_thr=4.0):
+        # define the target value threshold to compute the hits if save_hitrate is True
+        if hit_cutoff is None:
+            hit_cutoff = self.hit_cutoff
+            logger.info(f'Use hit cutoff {self.hit_cutoff}')
 
-        # get the target ordering
-        inverse = self.data_set.target_ordering == 'lower'
-        if self.task == 'class':
-            inverse = False
+        if hit_cutoff is not None:
+            # get the target ordering
+            inverse = self.data_set.target_ordering == 'lower'
+            if self.task == 'class':
+                inverse = False
 
-        # get the target values
-        out = data['outputs']
+            # get the target values
+            out = data['outputs']
 
-        # get the irmsd
-        irmsd = []
-        for fname, mol in data['mol']:
+            # get the targets
+            targets = []
+            for fname, mol in data['mol']:
 
-            f5 = h5py.File(fname, 'r')
-            irmsd.append(f5[mol + '/targets/IRMSD'][()])
-            f5.close()
+                f5 = h5py.File(fname, 'r')
+                targets.append(f5[mol + f'/targets/{self.data_set.select_target}'][()])
+                f5.close()
 
-        # sort the data
-        if self.task == 'class':
-            out = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()[:, 1]
-        ind_sort = np.argsort(out)
+            # sort the data
+            if self.task == 'class':
+                out = F.softmax(torch.FloatTensor(out), dim=1).data.numpy()[:, 1]
+            ind_sort = np.argsort(out)
 
-        if not inverse:
-            ind_sort = ind_sort[::-1]
+            if not inverse:
+                ind_sort = ind_sort[::-1]
 
-        # get the irmsd of the recommendation
-        irmsd = np.array(irmsd)[ind_sort]
+            # get the targets of the recommendation
+            targets = np.array(targets)[ind_sort]
 
-        # make a binary list out of that
-        return (irmsd <= irmsd_thr).astype('int')
+            # make a binary list out of that
+            return (targets <= hit_cutoff).astype('int')
+        else:
+            return (targets == None).astype('int')
 
     def _get_classmetrics(self, data, metricname):
 

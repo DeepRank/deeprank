@@ -99,7 +99,6 @@ class TestLearn(unittest.TestCase):
             chain2='D',
             mapfly=False,
             use_rotation=2,
-            grid_shape=(30, 30, 30),
             select_feature={
                 'AtomicDensities_ind': 'all',
                 'Feature_ind': [ 'coulomb', 'vdwaals', 'charge', 'PSSM_*']},
@@ -148,7 +147,6 @@ class TestLearn(unittest.TestCase):
             chain1='C',
             chain2='D',
             mapfly=False,
-            grid_shape=( 30, 30, 30),
             select_feature={
                 'AtomicDensities_ind': 'all',
                 'Feature_ind': [ 'coulomb', 'vdwaals', 'charge', 'PSSM_*']},
