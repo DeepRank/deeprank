@@ -34,7 +34,7 @@ for complx in database :
         # Start the training
         ################################################################################
         try:
-            model = NeuralNet(complx,cnn3d_class,pretrained_model='best_model.pth.tar', outdir=outpath)
+            model = NeuralNet(complx,cnn3d_class,pretrained_model='best_model.pt', outdir=outpath)
             model.test()
 
         except:
