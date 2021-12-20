@@ -1168,6 +1168,7 @@ class DataSet():
         try:
             target = mol_data.get('targets/' + self.select_target)[()]
         except Exception:
+            target = None
             logger.exception(f'No target value for: {fname} - not required for the test set')
 
         # close
@@ -1217,6 +1218,7 @@ class DataSet():
         try:
             target = mol_data.get('targets/' + self.select_target)[()]
         except Exception:
+            target = None
             logger.exception(f'No target value for: {fname} - not required for the test set')
 
         # close
