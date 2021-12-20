@@ -244,9 +244,10 @@ class NeuralNet():
             if self.state['cuda']:
                 for paramname in list(self.state['state_dict'].keys()):
                     paramname_new = paramname.lstrip('module.')
-                    self.state['state_dict'][paramname_new] = \
-                        self.state['state_dict'][paramname]
-                    del self.state['state_dict'][paramname]
+                    if paramname != paramname_new:
+                        self.state['state_dict'][paramname_new] = \
+                            self.state['state_dict'][paramname]
+                        del self.state['state_dict'][paramname]
             self.load_model_params()
 
         # multi-gpu
@@ -428,11 +429,13 @@ class NeuralNet():
         # define the target value threshold to compute the hits if save_hitrate is True
         if self.save_hitrate and hit_cutoff is not None:
             self.hit_cutoff = hit_cutoff
-        logger.info(f'Use hit cutoff {self.hit_cutoff}')
+            logger.info(f'Use hit cutoff {self.hit_cutoff}')
 
         # do test
         self.data = {}
-        _, self.data['test'] = self._epoch(loader, train_model=False)
+        
+        # check if target values are provided
+        _, self.data['test'] = self._epoch(loader, train_model=False, test_model=True)
 
         # plot results
         if self.plot is True :
@@ -494,7 +497,10 @@ class NeuralNet():
         """Get NeuralNet parameters from a saved model."""
         self.task = self.state['task']
         self.criterion = self.state['criterion']
-        self.hit_cutoff = self.state['hit_cutoff']
+        try:
+            self.hit_cutoff = self.state['hit_cutoff']
+        except Exception:
+            print('No hit_cutoff provided')
 
     def load_data_params(self):
         """Get dataset parameters from a saved model."""
@@ -766,7 +772,8 @@ class NeuralNet():
         return torch.cat([param.data.view(-1)
                           for param in self.net.parameters()], 0)
 
-    def _epoch(self, data_loader, train_model):
+
+    def _epoch(self, data_loader, train_model, test_model=False):
         """Perform one single epoch iteration over a data loader.
 
         Args:
@@ -821,9 +828,10 @@ class NeuralNet():
             if self.task == 'class':
                 targets = targets.view(-1)
 
-            # evaluate loss
-            loss = self.criterion(outputs, targets)
-            running_loss += loss.data.item()  # pytorch1 compatible
+            if not test_model:
+                # evaluate loss
+                loss = self.criterion(outputs, targets)
+                running_loss += loss.data.item()  # pytorch1 compatible
             n += len(inputs)
 
             # zero + backward + step
@@ -875,6 +883,7 @@ class NeuralNet():
 
         return running_loss, data
 
+
     def _get_variables(self, inputs, targets):
         # xue: why not put this step to DataSet.py?
         """Convert the feature/target in torch.Variables.
@@ -896,7 +905,7 @@ class NeuralNet():
             inputs = inputs.cuda(non_blocking=True)
             targets = targets.cuda(non_blocking=True)
 
-        # get the varialbe as float by default
+        # get the variable as float by default
         inputs, targets = Variable(inputs).float(), Variable(targets).float()
 
         # change the targets to long for classification
