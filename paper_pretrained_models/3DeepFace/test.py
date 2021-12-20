@@ -10,6 +10,9 @@ from deeprank.learn import *
 # to set your own architecture
 from arch_001_02 import cnn_class as cnn3d_class
 
+pdb_source = '../../test/1AK4/decoys'
+pssm_source = '../../test/1AK4/pssm_new'
+
 database = DataGenerator(pdb_source=pdb_source,
                          chain1='A', chain2='B',
                          pssm_source=pssm_source,
@@ -19,7 +22,7 @@ database = DataGenerator(pdb_source=pdb_source,
                                              'deeprank.features.BSA',
                                              'deeprank.features.ResidueDensity'],
                          data_augmentation = 30, # rotate complexes
-                         hdf5=./)
+                         hdf5=output.hdf5)
 
 # compute features/targets, and write to hdf5 file
 print('{:25s}'.format('Create new database') + database.hdf5)
