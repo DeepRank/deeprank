@@ -433,8 +433,6 @@ class NeuralNet():
 
         # do test
         self.data = {}
-        
-        # check if target values are provided
         _, self.data['test'] = self._epoch(loader, train_model=False, test_model=True)
 
         # plot results
