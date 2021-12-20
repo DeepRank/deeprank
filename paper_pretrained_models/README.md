@@ -1,4 +1,4 @@
-# Run DeepRank-GNN pre-trained model on your own data
+# Run DeepRank pre-trained model on your own data
 
 We herein provide the best models discussed in the DeepRank paper (doi: 10.1038/s41467-021-27396-0) for the following applications:
 - 3DeepFace
