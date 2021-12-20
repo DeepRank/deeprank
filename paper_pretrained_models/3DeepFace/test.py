@@ -42,7 +42,7 @@ database.map_features(grid_info, try_sparse=True, time=False, prog_bar=True)
 # You need to add path for the dataset
 database = glob.glob('*hdf5')
 
-model = NeuralNet(database,cnn3d_class,pretrained_model='best_model.pt', outdir=outpath)
+model = NeuralNet(database,cnn3d_class,pretrained_model='best_model.pt', outdir=./)
 
 # test the pre-trained model on new data
 model.test()
