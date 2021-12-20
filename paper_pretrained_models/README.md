@@ -4,7 +4,7 @@ We herein provide the best models discussed in the DeepRank paper (doi: 10.1038/
 - 3DeepFace
 - Re-scoring of docking models
 
-An example of code to run DeepRank on new data with the pre-trained model is provided (*test.py*) in each subdirectory.
+Example of codes to run DeepRank on new data with the pre-trained models are provided (*test.py* in each subdirectory).
 
 ## Usage: 
 `python test.py `
