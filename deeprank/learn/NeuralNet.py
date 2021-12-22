@@ -244,9 +244,10 @@ class NeuralNet():
             if self.state['cuda']:
                 for paramname in list(self.state['state_dict'].keys()):
                     paramname_new = paramname.lstrip('module.')
-                    self.state['state_dict'][paramname_new] = \
-                        self.state['state_dict'][paramname]
-                    del self.state['state_dict'][paramname]
+                    if paramname != paramname_new:
+                        self.state['state_dict'][paramname_new] = \
+                            self.state['state_dict'][paramname]
+                        del self.state['state_dict'][paramname]
             self.load_model_params()
 
         # multi-gpu
@@ -397,12 +398,16 @@ class NeuralNet():
         seconds = time
         return '%02d-%02d:%02d:%02d' % (day, hour, minutes, seconds)
 
-    def test(self, hdf5='test_data.hdf5', hit_cutoff=None):
+    def test(self, hdf5='test_data.hdf5', hit_cutoff=None, has_target=False):
         """Test a predefined model on a new dataset.
 
         Args:
             hdf5 (str, optional): hdf5 file to store the test results
-
+            hit_cutoff (float, optional): the cutoff used to define hit by
+                comparing with docking models' target value, e.g. IRMSD value
+            has_target(bool, optional): specify the presence (True) or absence (False) of 
+                target values in the test set. No metrics can be computed if False.
+            
         Examples:
             >>> # adress of the database
             >>> database = '1ak4.hdf5'
@@ -428,11 +433,11 @@ class NeuralNet():
         # define the target value threshold to compute the hits if save_hitrate is True
         if self.save_hitrate and hit_cutoff is not None:
             self.hit_cutoff = hit_cutoff
-        logger.info(f'Use hit cutoff {self.hit_cutoff}')
+            logger.info(f'Use hit cutoff {self.hit_cutoff}')
 
         # do test
         self.data = {}
-        _, self.data['test'] = self._epoch(loader, train_model=False)
+        _, self.data['test'] = self._epoch(loader, train_model=False, has_target=has_target)
 
         # plot results
         if self.plot is True :
@@ -494,7 +499,10 @@ class NeuralNet():
         """Get NeuralNet parameters from a saved model."""
         self.task = self.state['task']
         self.criterion = self.state['criterion']
-        self.hit_cutoff = self.state['hit_cutoff']
+        try:
+            self.hit_cutoff = self.state['hit_cutoff']
+        except Exception:
+            logger.warning(f'No "hit_cutoff" found in {self.pretrained_model}. Please set it in function "test()" when doing benchmark"')
 
     def load_data_params(self):
         """Get dataset parameters from a saved model."""
@@ -766,7 +774,8 @@ class NeuralNet():
         return torch.cat([param.data.view(-1)
                           for param in self.net.parameters()], 0)
 
-    def _epoch(self, data_loader, train_model):
+
+    def _epoch(self, data_loader, train_model, has_target=True):
         """Perform one single epoch iteration over a data loader.
 
         Args:
@@ -821,9 +830,10 @@ class NeuralNet():
             if self.task == 'class':
                 targets = targets.view(-1)
 
-            # evaluate loss
-            loss = self.criterion(outputs, targets)
-            running_loss += loss.data.item()  # pytorch1 compatible
+            if has_target:
+                # evaluate loss
+                loss = self.criterion(outputs, targets)
+                running_loss += loss.data.item()  # pytorch1 compatible
             n += len(inputs)
 
             # zero + backward + step
@@ -858,12 +868,12 @@ class NeuralNet():
         data['mol'] = np.array(data['mol'], dtype=object)
 
         # get the relevance of the ranking
-        if self.save_hitrate:
+        if self.save_hitrate and has_target:
             logger.info(f'Use hit cutoff {self.hit_cutoff}')
             data['hit'] = self._get_relevance(data, self.hit_cutoff)
 
         # get classification metrics
-        if self.save_classmetrics:
+        if self.save_classmetrics and has_target:
             for i in self.metricnames:
                 data[i] = self._get_classmetrics(data, i)
 
@@ -874,6 +884,7 @@ class NeuralNet():
             warnings.warn(f'Empty input in data_loader {data_loader}.')
 
         return running_loss, data
+
 
     def _get_variables(self, inputs, targets):
         # xue: why not put this step to DataSet.py?
@@ -896,7 +907,7 @@ class NeuralNet():
             inputs = inputs.cuda(non_blocking=True)
             targets = targets.cuda(non_blocking=True)
 
-        # get the varialbe as float by default
+        # get the variable as float by default
         inputs, targets = Variable(inputs).float(), Variable(targets).float()
 
         # change the targets to long for classification
