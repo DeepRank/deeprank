@@ -398,12 +398,16 @@ class NeuralNet():
         seconds = time
         return '%02d-%02d:%02d:%02d' % (day, hour, minutes, seconds)
 
-    def test(self, hdf5='test_data.hdf5', hit_cutoff=None):
+    def test(self, hdf5='test_data.hdf5', hit_cutoff=None, has_target=False):
         """Test a predefined model on a new dataset.
 
         Args:
             hdf5 (str, optional): hdf5 file to store the test results
-
+            hit_cutoff (float, optional): the cutoff used to define hit by
+                comparing with docking models' target value, e.g. IRMSD value
+            has_target(bool, optional): specify the presence (True) or absence (False) of 
+                target values in the test set. No metrics can be computed if False.
+            
         Examples:
             >>> # adress of the database
             >>> database = '1ak4.hdf5'
@@ -433,7 +437,7 @@ class NeuralNet():
 
         # do test
         self.data = {}
-        _, self.data['test'] = self._epoch(loader, train_model=False, test_model=True)
+        _, self.data['test'] = self._epoch(loader, train_model=False, has_target)
 
         # plot results
         if self.plot is True :
@@ -498,7 +502,7 @@ class NeuralNet():
         try:
             self.hit_cutoff = self.state['hit_cutoff']
         except Exception:
-            print('No hit_cutoff provided')
+            print(f'No "hit_cutoff" found in {self.pretrained_model}. Please set it in function "test()" when doing benchmark"')
 
     def load_data_params(self):
         """Get dataset parameters from a saved model."""
@@ -771,7 +775,7 @@ class NeuralNet():
                           for param in self.net.parameters()], 0)
 
 
-    def _epoch(self, data_loader, train_model, test_model=False):
+    def _epoch(self, data_loader, train_model, has_target=True):
         """Perform one single epoch iteration over a data loader.
 
         Args:
@@ -826,7 +830,7 @@ class NeuralNet():
             if self.task == 'class':
                 targets = targets.view(-1)
 
-            if not test_model:
+            if has_target:
                 # evaluate loss
                 loss = self.criterion(outputs, targets)
                 running_loss += loss.data.item()  # pytorch1 compatible
@@ -864,12 +868,12 @@ class NeuralNet():
         data['mol'] = np.array(data['mol'], dtype=object)
 
         # get the relevance of the ranking
-        if self.save_hitrate:
+        if self.save_hitrate and has_target:
             logger.info(f'Use hit cutoff {self.hit_cutoff}')
             data['hit'] = self._get_relevance(data, self.hit_cutoff)
 
         # get classification metrics
-        if self.save_classmetrics:
+        if self.save_classmetrics and has_target:
             for i in self.metricnames:
                 data[i] = self._get_classmetrics(data, i)
 
