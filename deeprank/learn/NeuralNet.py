@@ -502,7 +502,7 @@ class NeuralNet():
         try:
             self.hit_cutoff = self.state['hit_cutoff']
         except Exception:
-            print(f'No "hit_cutoff" found in {self.pretrained_model}. Please set it in function "test()" when doing benchmark"')
+            logger.warning(f'No "hit_cutoff" found in {self.pretrained_model}. Please set it in function "test()" when doing benchmark"')
 
     def load_data_params(self):
         """Get dataset parameters from a saved model."""
