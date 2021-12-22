@@ -437,7 +437,7 @@ class NeuralNet():
 
         # do test
         self.data = {}
-        _, self.data['test'] = self._epoch(loader, train_model=False, has_target)
+        _, self.data['test'] = self._epoch(loader, train_model=False, has_target=has_target)
 
         # plot results
         if self.plot is True :
