@@ -5,11 +5,6 @@ on: [push, pull_request]
 jobs:
   build_test:
 
-    # runs-on: ubuntu-latest
-    # strategy:
-    #   matrix:
-    #     python-version: [3.7, 3.8]
-
     name: ${{ matrix.os }}, ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
