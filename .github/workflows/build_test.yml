@@ -25,11 +25,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install openmpi - Ubuntu
-      if: runner.os == 'Ubuntu'
+      if: runner.os == 'Linux'
       run: |
         sudo apt-get install libopenmpi-dev openmpi-bin
     - name: Install openmpi - OSX
-      if: runner.os == 'Macos'
+      if: runner.os == 'macOS'
       run: |
         brew install openmpi
     - name: Install dependencies
