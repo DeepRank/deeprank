@@ -24,10 +24,11 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install openmpi
+    - name: Install openmpi - Ubuntu
       if: runner.os == 'Ubuntu'
       run: |
         sudo apt-get install libopenmpi-dev openmpi-bin
+    - name: Install openmpi - OSX
       if: runner.os == 'Macos'
       run: |
         brew install openmpi
