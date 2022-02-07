@@ -50,7 +50,7 @@ setup(
         'torch',
         'pdb2sql >= 0.5.0',
         'freesasa==2.0.3.post7;platform_system=="Linux"',
-        'freesasa;platform_system=="Darwin"'
+        'freesasa==2.1.0;platform_system=="Darwin"'
         ],
     extras_require={
         'test': ['nose', 'coverage', 'pytest', 'pytest-cov',
