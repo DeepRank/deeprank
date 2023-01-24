@@ -37,6 +37,7 @@ DeepRank contains useful APIs for pre-processing PPIs data, computing features a
 ## Installation
 
 DeepRank requires a Python version 3.7 or 3.8 on Linux and MacOS.
+Make sure that mpi4py is installed in your environment before installing deeprank: `conda install mpi4py`
 
 #### Stable Release
 
