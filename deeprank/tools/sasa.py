@@ -112,8 +112,8 @@ class SASA(object):
             np.unique(resB[:, 0].astype(np.int)).tolist())
 
         self.xyz = {}
-        self.xyz[chain1] = resA[:, 2:].astype(np.float)
-        self.xyz[chain2] = resB[:, 2:].astype(np.float)
+        self.xyz[chain1] = resA[:, 2:].astype(np.float32)
+        self.xyz[chain2] = resB[:, 2:].astype(np.float32)
 
         self.resinfo = {}
         self.resinfo[chain1] = resA[:, :2]
