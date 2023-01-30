@@ -418,15 +418,19 @@ class DataSet():
                 fh5 = h5py.File(fdata, 'r')
                 mol_names = list(fh5.keys())
                 mol_names = self._select_pdb(mol_names)
-                for k in mol_names:
-                    if self.filter(fh5[k]):
-                        self.index_complexes += [(fdata,
-                                                  k, None, None)]
-                        for irot in range(self.data_augmentation):
-                            axis, angle = pdb2sql.transform.get_rot_axis_angle(
-                                self.rotation_seed)
-                            self.index_complexes += [
-                                (fdata, k, angle, axis)]
+                # to speed up in case of no filtering:
+                if not self.dict_filter:
+                    self.index_complexes = [[fdata, k, None, None] for k in mol_names]
+                else:
+                    for k in mol_names:            
+                        if self.filter(fh5[k]):
+                            self.index_complexes += [(fdata,
+                                                    k, None, None)]
+                            for irot in range(self.data_augmentation):
+                                axis, angle = pdb2sql.transform.get_rot_axis_angle(
+                                    self.rotation_seed)
+                                self.index_complexes += [
+                                    (fdata, k, angle, axis)]
                 fh5.close()
             except Exception:
                 logger.exception(f'Ignore file: {fdata}')
