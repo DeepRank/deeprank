@@ -58,8 +58,8 @@ class SASA(object):
         resA = np.array(sql.get('resSeq,resName', chainID=chain1))
         resB = np.array(sql.get('resSeq,resName', chainID=chain2))
 
-        resSeqA = np.unique(resA[:, 0].astype(np.int))
-        resSeqB = np.unique(resB[:, 0].astype(np.int))
+        resSeqA = np.unique(resA[:, 0].astype(np.int32))
+        resSeqB = np.unique(resB[:, 0].astype(np.int32))
 
         self.xyz = {}
 
@@ -106,14 +106,14 @@ class SASA(object):
                 chainID=chain2))
         sql._close()
 
-        assert len(resA[:, 0].astype(np.int).tolist()) == len(
-            np.unique(resA[:, 0].astype(np.int)).tolist())
-        assert len(resB[:, 0].astype(np.int).tolist()) == len(
-            np.unique(resB[:, 0].astype(np.int)).tolist())
+        assert len(resA[:, 0].astype(np.int32).tolist()) == len(
+            np.unique(resA[:, 0].astype(np.int32)).tolist())
+        assert len(resB[:, 0].astype(np.int32).tolist()) == len(
+            np.unique(resB[:, 0].astype(np.int32)).tolist())
 
         self.xyz = {}
-        self.xyz[chain1] = resA[:, 2:].astype(np.float32)
-        self.xyz[chain2] = resB[:, 2:].astype(np.float32)
+        self.xyz[chain1] = resA[:, 2:].astype(np.float3232)
+        self.xyz[chain2] = resB[:, 2:].astype(np.float3232)
 
         self.resinfo = {}
         self.resinfo[chain1] = resA[:, :2]

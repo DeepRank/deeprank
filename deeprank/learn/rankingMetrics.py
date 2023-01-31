@@ -47,7 +47,7 @@ def success(rs):
     """
     success = np.cumsum(rs) > 0
 
-    return success.astype(np.int)
+    return success.astype(np.int32)
 
 
 def avprec(rs):

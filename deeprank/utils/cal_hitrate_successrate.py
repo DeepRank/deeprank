@@ -103,9 +103,9 @@ def evaluate(data):
             for caseID, df_one_case in df_grped:
                 df_sorted = df_one_case.sort_values(by=M, ascending=True)
                 hitrate.extend(rankingMetrics.hitrate(
-                    df_sorted['target'].astype(np.int)))
+                    df_sorted['target'].astype(np.int32)))
                 success.extend(rankingMetrics.success(
-                    df_sorted['target'].astype(np.int)))
+                    df_sorted['target'].astype(np.int32)))
                 caseIDs.extend([caseID] * len(df_one_case))
 
             # success =[0, 0, 1, 1, 1,...]: starting from rank 3 this case is a success
