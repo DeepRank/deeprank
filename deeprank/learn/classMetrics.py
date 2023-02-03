@@ -128,7 +128,7 @@ def mcc(yp, yt):
     denominator = np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
     # if denominator is zero and causes an error, set it to 1 (source: https://en.wikipedia.org/wiki/Phi_coefficient) 
     if denominator == 0:
-        mcc = (tp * tn - fp * fn) / 1
+        mcc = 0
     else:
         mcc = (tp * tn - fp * fn) / denominator
 
