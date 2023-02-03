@@ -125,12 +125,12 @@ def mcc(yp, yt):
     fn = false_negative(yp, yt)
     tp, tn, fp, fn = map(np.float64, [tp, tn, fp, fn])
 
-    with np.errstate(invalid='raise'):
-        try:
-            mcc = (tp * tn - fp * fn) / np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
-        except FloatingPointError as e:
-            # if denominator is zero and causes an error, set it to 1 (source: https://en.wikipedia.org/wiki/Phi_coefficient) 
-            mcc = (tp * tn - fp * fn) / 1
+    denominator = np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+    # if denominator is zero and causes an error, set it to 1 (source: https://en.wikipedia.org/wiki/Phi_coefficient) 
+    if denominator == 0:
+        mcc = (tp * tn - fp * fn) / 1
+    else:
+        mcc = (tp * tn - fp * fn) / denominator
 
     return mcc
 
