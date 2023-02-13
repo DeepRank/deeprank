@@ -49,7 +49,7 @@ setup(
         'torchsummary',
         'torch',
         'pdb2sql >= 0.5.0',
-        'freesasa==2.1.0;platform_system=="Linux"',
+        'freesasa==2.2.0.post3;platform_system=="Linux"',
         'freesasa==2.1.0;platform_system=="Darwin"'
         ],
     extras_require={
