@@ -120,7 +120,7 @@ class FullPSSM(FeatureClass):
             self.pssm_res_id = np.array(raw_data)[:, :3]
             self.pssm_res_id = [(r[0], int(r[1]), r[2])
                                 for r in self.pssm_res_id]
-            self.pssm_data = np.array(raw_data)[:, 3:].astype(np.float)
+            self.pssm_data = np.array(raw_data)[:, 3:].astype(np.float32)
 
         # new format with ≥2 files (each chain has one file)
         # and aligned mapping and IC (i.e. the iScore format)
@@ -148,9 +148,9 @@ class FullPSSM(FeatureClass):
                 rd = np.array(raw_data)[1:, :2]
                 rd = [(chainID, int(r[0]), resmap[r[1]]) for r in rd]
                 if self.out_type == 'pssmvalue':
-                    pd = np.array(raw_data)[1:, 4:-1].astype(np.float)
+                    pd = np.array(raw_data)[1:, 4:-1].astype(np.float32)
                 else:
-                    pd = np.array(raw_data)[1:, -1].astype(np.float)
+                    pd = np.array(raw_data)[1:, -1].astype(np.float32)
                     pd = pd.reshape(pd.shape[0], -1)
 
                 if iiter == 0:
