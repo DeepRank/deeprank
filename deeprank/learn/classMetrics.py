@@ -124,7 +124,14 @@ def mcc(yp, yt):
     fp = false_positive(yp, yt)
     fn = false_negative(yp, yt)
     tp, tn, fp, fn = map(np.float64, [tp, tn, fp, fn])
-    mcc = (tp * tn - fp * fn) / np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+
+    denominator = np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+    # if denominator is zero and causes an error, set it to 1 (source: https://en.wikipedia.org/wiki/Phi_coefficient) 
+    if denominator == 0:
+        mcc = 0
+    else:
+        mcc = (tp * tn - fp * fn) / denominator
+
     return mcc
 
 def true_positive(yp, yt):
