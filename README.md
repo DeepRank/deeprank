@@ -23,6 +23,8 @@ DeepRank is a general, configurable deep learning framework for data mining prot
 
 DeepRank contains useful APIs for pre-processing PPIs data, computing features and targets, as well as training and testing CNN models.
 
+We recently developed [DeepRank2](https://github.com/DeepRank/deeprank2), an upgraded package that includes all the functionalities of DeepRank and more.
+
 #### Features:
 
 - Predefined atom-level and residue-level PPI feature types
