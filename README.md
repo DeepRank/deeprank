@@ -6,11 +6,11 @@ We have now developed [DeepRank2](https://github.com/DeepRank/deeprank2), an imp
 
 :sparkles: DeepRank2 allows for transformation and storage of 3D representations of both protein-protein interfaces (PPIs) and protein single-residue variants (SRVs) into either graphs or volumetric grids containing structural and physico-chemical information. These can be used for training neural networks for a variety of patterns of interest, using either our pre-implemented training pipeline for graph neural networks (GNNs) or convolutional neural networks (CNNs) or external pipelines.
 
-- :wrench: **Pull Requests** at github.com/DeepRank/deeprank2
-- :bug: **Bugs**: Reports of bugs can be filed agains our new repo github.com/DeepRank/deeprank2
-- :star: **Feature Requests**: Add your request or discuss the project w/ the community at github.com/DeepRank/deeprank2
+- :wrench: **Pull Requests** at [github.com/DeepRank/deeprank2/pulls](https://github.com/DeepRank/deeprank2/pulls)
+- :bug: **Bugs**: Reports of bugs can be filed agains our new repo [github.com/DeepRank/deeprank2/issues](https://github.com/DeepRank/deeprank2/issues)
+- :star: **Feature Requests**: Add your request or discuss the project w/ the community at [github.com/DeepRank/deeprank2/issues](https://github.com/DeepRank/deeprank2/issues)
 
-We look forward to seeing you in our new spaces!
+We look forward to seeing you in our new space - [DeepRank2](https://github.com/DeepRank/deeprank2)!
 
 # DeepRank
 [![PyPI](https://img.shields.io/pypi/v/deeprank)](https://pypi.org/project/deeprank/)
@@ -36,8 +36,6 @@ We look forward to seeing you in our new spaces!
 DeepRank is a general, configurable deep learning framework for data mining protein-protein interactions (PPIs) using 3D convolutional neural networks (CNNs).
 
 DeepRank contains useful APIs for pre-processing PPIs data, computing features and targets, as well as training and testing CNN models.
-
-We recently developed [DeepRank2](https://github.com/DeepRank/deeprank2), an upgraded package that includes all the functionalities of DeepRank and more.
 
 #### Features:
 
